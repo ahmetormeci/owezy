@@ -1,0 +1,294 @@
+// SplitApp - Prisma Schema
+//
+// NOT: Bu dosya henuz migration'a donusturulmedi ("prisma migrate dev" calistirilmadi)
+// ve veritabanina hicbir baglanti kurulmadi. Sadece veri modelinin tanimidir.
+//
+// Asagidaki kurallar Prisma'nin sema dilinde DOGRUDAN ifade edilemez.
+// Ilk migration olusturulduktan sonra migration SQL dosyasina ELLE eklenecekler
+// (her biri, ilgili modelin yaninda da ayrica not dusulmustur):
+//   1. GroupMember(groupId, userId) uzerinde PARTIAL UNIQUE INDEX (yalnizca leftAt IS NULL icin)
+//   2. CHECK (amount > 0)                -> Expense.amount
+//   3. CHECK (shareAmount >= 0)          -> ExpenseParticipant.shareAmount
+//   4. CHECK (fromUserId <> toUserId)    -> Settlement
+//   5. CHECK (useCount <= maxUses)       -> GroupInvite
+//   6. Cross-table currency tutarliligi  -> Expense.currency / Settlement.currency == Group.currency
+//   7. SUM(ExpenseParticipant.shareAmount) = Expense.amount (trigger veya uygulama katmani)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum GroupRole {
+  OWNER
+  MEMBER
+}
+
+enum SplitType {
+  EQUAL
+  EXACT
+  PERCENTAGE
+}
+
+enum ExpenseCategory {
+  FOOD
+  TRANSPORT
+  ACCOMMODATION
+  SHOPPING
+  BILLS
+  ENTERTAINMENT
+  OTHER
+}
+
+enum ExpenseEditAction {
+  UPDATE
+  DELETE
+  RESTORE
+}
+
+enum NotificationType {
+  EXPENSE_ADDED
+  GROUP_INVITE
+  SETTLEMENT_RECORDED
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id          String    @id @default(uuid()) @db.Uuid
+  clerkId     String    @unique
+  email       String
+  displayName String
+  avatarUrl   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // Bu kullanicinin olusturdugu gruplar
+  createdGroups Group[] @relation("GroupCreatedBy")
+
+  // Bu kullanicinin aktif/gecmis grup uyelikleri
+  memberships GroupMember[] @relation("GroupMemberUser")
+
+  // Bu kullanicinin baskalarini davet ettigi uyelik kayitlari
+  invitedMembers GroupMember[] @relation("GroupMemberInvitedBy")
+
+  // User <-> Expense arasinda UC ayri iliski var (paidBy / createdBy / deletedBy)
+  // Her biri ayri @relation adiyla ayristirilmistir (asagida Expense modeline bakiniz).
+  expensesPaid    Expense[] @relation("paidBy")
+  expensesCreated Expense[] @relation("createdBy")
+  expensesDeleted Expense[] @relation("deletedBy")
+
+  expenseParticipations ExpenseParticipant[]
+
+  // User <-> Settlement arasinda DORT ayri iliski var
+  settlementsSent      Settlement[] @relation("fromUser")
+  settlementsReceived  Settlement[] @relation("toUser")
+  settlementsCreated   Settlement[] @relation("createdBy")
+  settlementsCancelled Settlement[] @relation("cancelledBy")
+
+  expenseEdits  ExpenseEdit[]  @relation("changedBy")
+  groupInvites  GroupInvite[]  @relation("invitedBy")
+  notifications Notification[]
+
+  @@index([email])
+}
+
+model Group {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  description String?   @db.Text
+  currency    String    @db.Char(3)
+  createdById String    @db.Uuid
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  createdBy   User          @relation("GroupCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  members     GroupMember[]
+  expenses    Expense[]
+  settlements Settlement[]
+  invites     GroupInvite[]
+
+  @@index([createdById])
+  @@index([deletedAt])
+}
+
+model GroupMember {
+  id          String    @id @default(uuid()) @db.Uuid
+  groupId     String    @db.Uuid
+  userId      String    @db.Uuid
+  role        GroupRole @default(MEMBER)
+  joinedAt    DateTime  @default(now())
+  leftAt      DateTime?
+  invitedById String?   @db.Uuid
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  user      User  @relation("GroupMemberUser", fields: [userId], references: [id], onDelete: Restrict)
+  invitedBy User? @relation("GroupMemberInvitedBy", fields: [invitedById], references: [id], onDelete: Restrict)
+
+  // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
+  //   CREATE UNIQUE INDEX group_member_active_unique
+  //     ON "GroupMember" ("groupId", "userId") WHERE "leftAt" IS NULL;
+  //   Amac: bir kullanicinin bir grupta AYNI ANDA yalnizca bir aktif uyeligi olabilir.
+  //   (Zaman icinde ayrilip tekrar katilirsa birden fazla satir olusabilir, bu istenen davranistir.)
+
+  @@index([groupId])
+  @@index([userId])
+}
+
+model Expense {
+  id          String          @id @default(uuid()) @db.Uuid
+  groupId     String          @db.Uuid
+  paidById    String          @db.Uuid
+  createdById String          @db.Uuid
+  deletedById String?         @db.Uuid
+  description String          @db.Text
+  amount      Int
+  currency    String          @db.Char(3)
+  category    ExpenseCategory @default(OTHER)
+  splitType   SplitType
+  expenseDate DateTime        @db.Date
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+
+  group        Group                @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  paidBy       User                 @relation("paidBy", fields: [paidById], references: [id], onDelete: Restrict)
+  createdBy    User                 @relation("createdBy", fields: [createdById], references: [id], onDelete: Restrict)
+  deletedBy    User?                @relation("deletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
+  participants ExpenseParticipant[]
+  edits        ExpenseEdit[]
+
+  // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
+  //   CHECK (amount > 0)
+  // NOT (cross-table kural, CHECK ile yazilamaz -> trigger veya uygulama katmani):
+  //   currency, bu harcamanin bagli oldugu Group.currency ile ayni olmalidir.
+
+  @@index([groupId])
+  @@index([groupId, deletedAt])
+  @@index([expenseDate])
+  @@index([paidById])
+}
+
+model ExpenseParticipant {
+  id          String   @id @default(uuid()) @db.Uuid
+  expenseId   String   @db.Uuid
+  userId      String   @db.Uuid
+  shareAmount Int
+  createdAt   DateTime @default(now())
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
+  //   CHECK (shareAmount >= 0)
+  // NOT (coklu satir toplami, CHECK ile yazilamaz -> trigger veya uygulama katmani):
+  //   SUM(shareAmount) WHERE expenseId = X, ilgili Expense.amount'a HER ZAMAN tam esit olmalidir.
+  //   Bu kural oncelikle uygulama katmaninda (tek transaction icinde) garanti edilecek.
+
+  @@unique([expenseId, userId])
+  @@index([expenseId])
+  @@index([userId])
+}
+
+model Settlement {
+  id            String    @id @default(uuid()) @db.Uuid
+  groupId       String    @db.Uuid
+  fromUserId    String    @db.Uuid
+  toUserId      String    @db.Uuid
+  amount        Int
+  currency      String    @db.Char(3)
+  note          String?   @db.Text
+  settledAt     DateTime  @db.Date
+  createdById   String    @db.Uuid
+  createdAt     DateTime  @default(now())
+  cancelledAt   DateTime?
+  cancelledById String?   @db.Uuid
+
+  group       Group @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  fromUser    User  @relation("fromUser", fields: [fromUserId], references: [id], onDelete: Restrict)
+  toUser      User  @relation("toUser", fields: [toUserId], references: [id], onDelete: Restrict)
+  createdBy   User  @relation("createdBy", fields: [createdById], references: [id], onDelete: Restrict)
+  cancelledBy User? @relation("cancelledBy", fields: [cancelledById], references: [id], onDelete: Restrict)
+
+  // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
+  //   CHECK (amount > 0)
+  //   CHECK (fromUserId <> toUserId)
+  // NOT (cross-table kural -> trigger veya uygulama katmani):
+  //   currency, bu settlement'in bagli oldugu Group.currency ile ayni olmalidir.
+
+  @@index([groupId])
+  @@index([groupId, cancelledAt])
+  @@index([fromUserId])
+  @@index([toUserId])
+}
+
+model ExpenseEdit {
+  id           String            @id @default(uuid()) @db.Uuid
+  expenseId    String            @db.Uuid
+  action       ExpenseEditAction
+  previousData Json?             @db.JsonB
+  newData      Json?             @db.JsonB
+  changedById  String            @db.Uuid
+  changedAt    DateTime          @default(now())
+
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  changedBy User    @relation("changedBy", fields: [changedById], references: [id], onDelete: Restrict)
+
+  // Bu tablo immutable bir audit log'dur: satirlar hicbir zaman
+  // UPDATE veya DELETE edilmez, yalnizca INSERT edilir.
+  // action = UPDATE  -> previousData ve newData ikisi de dolu
+  // action = DELETE  -> yalnizca previousData dolu
+  // action = RESTORE -> previousData (silinmis hal) ve newData (geri yuklenen hal) dolu
+
+  @@index([expenseId])
+  @@index([changedById])
+}
+
+model GroupInvite {
+  id          String    @id @default(uuid()) @db.Uuid
+  groupId     String    @db.Uuid
+  invitedById String    @db.Uuid
+  tokenHash   String    @db.VarChar(128)
+  expiresAt   DateTime
+  maxUses     Int       @default(1)
+  useCount    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  invitedBy User  @relation("invitedBy", fields: [invitedById], references: [id], onDelete: Restrict)
+
+  // Guvenlik notu: tokenHash, ham davet token'inin hash'idir (orn. SHA-256).
+  // Ham token veritabaninda ASLA saklanmaz; kullaniciya yalnizca link olusturulurken bir kez gosterilir.
+  //
+  // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
+  //   CHECK (useCount <= maxUses)
+
+  @@unique([tokenHash])
+  @@index([groupId])
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  payload   Json?            @db.JsonB
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, readAt])
+}
