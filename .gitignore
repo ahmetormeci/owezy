@@ -39,6 +39,9 @@ yarn-error.log*
 # claude code local settings
 .claude/
 
+# manuel API testleri icin lokal istek govdeleri (dev veritabanina ozgu ID'ler icerir)
+/test-requests/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
