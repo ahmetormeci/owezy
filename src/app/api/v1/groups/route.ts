@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { getOrCreateCurrentUser } from "@/lib/auth";
 import { createGroup, listGroupsForUser } from "@/lib/groups";
+import { createGroupSchema } from "@/lib/group-schemas";
 import { handleApiError } from "@/lib/api";
-
-const createGroupSchema = z.object({
-  name: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-  currency: z.string().length(3).optional(),
-});
 
 export async function GET() {
   try {

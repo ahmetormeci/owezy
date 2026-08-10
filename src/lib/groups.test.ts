@@ -25,8 +25,14 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-const { listGroupInvites, revokeGroupInvite, listGroupMembers, leaveGroup, removeGroupMember } =
-  await import("@/lib/groups");
+const {
+  getGroupForUser,
+  listGroupInvites,
+  revokeGroupInvite,
+  listGroupMembers,
+  leaveGroup,
+  removeGroupMember,
+} = await import("@/lib/groups");
 
 const GROUP_ID = "group-1";
 const OWNER = "user-owner";
@@ -72,6 +78,48 @@ function memberOwesMoney() {
   ]);
   mockTx.settlement.findMany.mockResolvedValue([]);
 }
+
+describe("getGroupForUser", () => {
+  beforeEach(resetMocks);
+
+  it("grup bulunamazsa NotFoundError firlatir", async () => {
+    mockPrisma.group.findUnique.mockResolvedValue(null);
+
+    await expect(getGroupForUser(OWNER, GROUP_ID)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("grup soft-delete edilmisse NotFoundError firlatir", async () => {
+    mockPrisma.group.findUnique.mockResolvedValue({ id: GROUP_ID, deletedAt: new Date() });
+
+    await expect(getGroupForUser(OWNER, GROUP_ID)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("aktif uye olmayan kullanici gruba erisemez", async () => {
+    liveGroupPrisma();
+    mockPrisma.groupMember.findFirst.mockResolvedValue(null);
+
+    await expect(getGroupForUser(OTHER, GROUP_ID)).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("grubu cagiran kisinin roluyle birlikte doner", async () => {
+    mockPrisma.group.findUnique.mockResolvedValue({
+      id: GROUP_ID,
+      name: "Ev Arkadaslari",
+      description: null,
+      currency: "TRY",
+      deletedAt: null,
+    });
+    mockPrisma.groupMember.findFirst.mockResolvedValue({ id: "m1", role: "OWNER" });
+
+    await expect(getGroupForUser(OWNER, GROUP_ID)).resolves.toEqual({
+      id: GROUP_ID,
+      name: "Ev Arkadaslari",
+      description: null,
+      currency: "TRY",
+      role: "OWNER",
+    });
+  });
+});
 
 describe("listGroupInvites", () => {
   beforeEach(resetMocks);

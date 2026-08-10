@@ -1,0 +1,57 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getOrCreateCurrentUser } from "@/lib/auth";
+import { getGroupForUser, listGroupMembers } from "@/lib/groups";
+import { AppError } from "@/lib/errors";
+import { ExpenseForm } from "@/components/expense-form";
+
+export default async function NewExpensePage({
+  params,
+}: {
+  params: Promise<{ groupId: string }>;
+}) {
+  const { groupId } = await params;
+
+  const user = await getOrCreateCurrentUser();
+  if (!user) {
+    return null;
+  }
+
+  let group: Awaited<ReturnType<typeof getGroupForUser>>;
+  let members: Awaited<ReturnType<typeof listGroupMembers>>;
+  try {
+    [group, members] = await Promise.all([
+      getGroupForUser(user.id, groupId),
+      listGroupMembers(user.id, groupId),
+    ]);
+  } catch (error) {
+    if (error instanceof AppError) {
+      notFound();
+    }
+    throw error;
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-1">
+        <Link
+          href={`/groups/${groupId}`}
+          className="text-sm text-muted-foreground hover:underline"
+        >
+          ← {group.name}
+        </Link>
+        <h1 className="text-2xl font-semibold">Harcama ekle</h1>
+      </div>
+
+      <ExpenseForm
+        groupId={groupId}
+        currency={group.currency}
+        currentUserId={user.id}
+        members={members.map((member) => ({
+          userId: member.userId,
+          displayName: member.displayName,
+        }))}
+      />
+    </div>
+  );
+}

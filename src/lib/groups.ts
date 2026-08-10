@@ -137,6 +137,30 @@ export async function acceptGroupInvite(userId: string, rawToken: string) {
   });
 }
 
+// Grup detay sayfasi icin: grubun kendisi + cagiran kisinin rolu.
+// listGroupsForUser'i filtrelemek yerine tek kayda giden ayri bir okuma.
+export async function getGroupForUser(userId: string, groupId: string) {
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group || group.deletedAt) {
+    throw new NotFoundError("Grup bulunamadi");
+  }
+
+  const membership = await prisma.groupMember.findFirst({
+    where: { groupId, userId, leftAt: null },
+  });
+  if (!membership) {
+    throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+  }
+
+  return {
+    id: group.id,
+    name: group.name,
+    description: group.description,
+    currency: group.currency,
+    role: membership.role,
+  };
+}
+
 export async function listGroupInvites(userId: string, groupId: string) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {

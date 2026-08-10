@@ -171,6 +171,33 @@ export async function listExpenses(
   };
 }
 
+// Duzenleme sayfasi icin tek harcama. Okuma yetkisi listeleme ile ayni:
+// grubun her aktif uyesi gorebilir (duzenleyip duzenleyemeyecegi ayri konu,
+// onu updateExpense kendi icinde kontrol ediyor).
+export async function getExpenseForUser(
+  userId: string,
+  groupId: string,
+  expenseId: string,
+) {
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group || group.deletedAt) {
+    throw new NotFoundError("Grup bulunamadi");
+  }
+
+  await assertActiveMemberOfGroup(groupId, userId);
+
+  const expense = await prisma.expense.findUnique({
+    where: { id: expenseId },
+    include: { participants: true },
+  });
+
+  if (!expense || expense.deletedAt || expense.groupId !== groupId) {
+    throw new NotFoundError("Harcama bulunamadi");
+  }
+
+  return expense;
+}
+
 export async function createExpense(userId: string, groupId: string, input: CreateExpenseInput) {
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.findUnique({ where: { id: groupId } });

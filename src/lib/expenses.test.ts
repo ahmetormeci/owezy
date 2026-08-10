@@ -29,7 +29,7 @@ const { mockPrisma } = vi.hoisted(() => ({
   mockPrisma: {
     group: { findUnique: vi.fn() },
     groupMember: { findFirst: vi.fn() },
-    expense: { findMany: vi.fn() },
+    expense: { findMany: vi.fn(), findUnique: vi.fn() },
   },
 }));
 
@@ -42,8 +42,14 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-const { createExpense, updateExpense, deleteExpense, restoreExpense, listExpenses } =
-  await import("@/lib/expenses");
+const {
+  createExpense,
+  updateExpense,
+  deleteExpense,
+  restoreExpense,
+  listExpenses,
+  getExpenseForUser,
+} = await import("@/lib/expenses");
 
 const GROUP_ID = "group-1";
 const CALLER_ID = "user-caller";
@@ -72,6 +78,7 @@ function resetMocks() {
   mockPrisma.group.findUnique.mockReset();
   mockPrisma.groupMember.findFirst.mockReset();
   mockPrisma.expense.findMany.mockReset();
+  mockPrisma.expense.findUnique.mockReset();
 }
 
 function allMembersActive() {
@@ -1011,5 +1018,81 @@ describe("listExpenses", () => {
     const args = mockPrisma.expense.findMany.mock.calls[0][0];
     expect(args.cursor).toEqual({ id: "expense-42" });
     expect(args.skip).toBe(1);
+  });
+});
+
+describe("getExpenseForUser", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  function readableGroup() {
+    mockPrisma.group.findUnique.mockResolvedValue({
+      id: GROUP_ID,
+      currency: "TRY",
+      deletedAt: null,
+    });
+    mockPrisma.groupMember.findFirst.mockResolvedValue({ id: "m1", userId: CALLER_ID });
+  }
+
+  it("grup bulunamazsa NotFoundError firlatir", async () => {
+    mockPrisma.group.findUnique.mockResolvedValue(null);
+
+    await expect(
+      getExpenseForUser(CALLER_ID, GROUP_ID, EXPENSE_ID),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("aktif uye olmayan kullanici goremez", async () => {
+    mockPrisma.group.findUnique.mockResolvedValue({ id: GROUP_ID, deletedAt: null });
+    mockPrisma.groupMember.findFirst.mockResolvedValue(null);
+
+    await expect(
+      getExpenseForUser(CALLER_ID, GROUP_ID, EXPENSE_ID),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("harcama bulunamazsa NotFoundError firlatir", async () => {
+    readableGroup();
+    mockPrisma.expense.findUnique.mockResolvedValue(null);
+
+    await expect(
+      getExpenseForUser(CALLER_ID, GROUP_ID, EXPENSE_ID),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("silinmis harcama getirilmez", async () => {
+    readableGroup();
+    mockPrisma.expense.findUnique.mockResolvedValue(
+      existingExpense({ deletedAt: new Date() }),
+    );
+
+    await expect(
+      getExpenseForUser(CALLER_ID, GROUP_ID, EXPENSE_ID),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("baska gruba ait harcama getirilmez", async () => {
+    readableGroup();
+    mockPrisma.expense.findUnique.mockResolvedValue(
+      existingExpense({ groupId: "baska-grup" }),
+    );
+
+    await expect(
+      getExpenseForUser(CALLER_ID, GROUP_ID, EXPENSE_ID),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("harcamayi katilimcilariyla birlikte doner", async () => {
+    readableGroup();
+    mockPrisma.expense.findUnique.mockResolvedValue(existingExpense());
+
+    const expense = await getExpenseForUser(CALLER_ID, GROUP_ID, EXPENSE_ID);
+
+    expect(expense.id).toBe(EXPENSE_ID);
+    expect(expense.participants).toHaveLength(2);
+    expect(mockPrisma.expense.findUnique.mock.calls[0][0].include).toEqual({
+      participants: true,
+    });
   });
 });
