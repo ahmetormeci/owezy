@@ -2,6 +2,10 @@ import type { ExpenseCategory, Prisma, SplitType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import {
+  DEFAULT_EXPENSE_PAGE_SIZE,
+  MAX_EXPENSE_PAGE_SIZE,
+} from "@/lib/expense-schemas";
+import {
   splitByPercentage,
   splitEqually,
   splitExactly,
@@ -65,6 +69,18 @@ function computeShares(amount: number, input: CreateExpenseInput): SplitShare[] 
 //      degilse (ayrildi veya cikarildi). Bu, sahibi gitmis kayitlarin sonsuza
 //      kadar kilitli kalmasini onleyen tek istisnadir. Olusturan kisi grupta
 //      oldugu surece OWNER dahil hic kimse onun kaydina dokunamaz.
+// Okuma islemleri icin: grubun aktif uyesi olan herkes harcamalari gorebilir.
+// (Yazma islemlerindeki "yalnizca olusturan kisi" kisiti okumada gecerli degil -
+// grubun butun harcamalarini gormek, uygulamanin temel amaci.)
+async function assertActiveMemberOfGroup(groupId: string, userId: string) {
+  const membership = await prisma.groupMember.findFirst({
+    where: { groupId, userId, leftAt: null },
+  });
+  if (!membership) {
+    throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+  }
+}
+
 async function assertCanModifyExpense(
   tx: Prisma.TransactionClient,
   groupId: string,
@@ -152,6 +168,50 @@ function buildSnapshot(
         shareAmount: participant.shareAmount,
       }))
       .sort((a, b) => a.userId.localeCompare(b.userId)),
+  };
+}
+
+export type ListExpensesOptions = {
+  limit?: number;
+  cursor?: string;
+  includeDeleted?: boolean;
+};
+
+export async function listExpenses(
+  userId: string,
+  groupId: string,
+  options: ListExpensesOptions = {},
+) {
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group || group.deletedAt) {
+    throw new NotFoundError("Grup bulunamadi");
+  }
+
+  await assertActiveMemberOfGroup(groupId, userId);
+
+  const limit = Math.min(options.limit ?? DEFAULT_EXPENSE_PAGE_SIZE, MAX_EXPENSE_PAGE_SIZE);
+
+  const rows = await prisma.expense.findMany({
+    where: {
+      groupId,
+      ...(options.includeDeleted ? {} : { deletedAt: null }),
+    },
+    include: { participants: true },
+    // Cursor sayfalamasinin dogru calismasi icin siralama BENZERSIZ olmali.
+    // expenseDate tek basina yeterli degil (ayni gune birden fazla harcama
+    // dusebilir), bu yuzden createdAt ve id ile kesinlestiriliyor.
+    orderBy: [{ expenseDate: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+    // Bir fazla kayit cekip "daha var mi" sorusunu ek sorgu yapmadan cevapliyoruz.
+    take: limit + 1,
+    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+  });
+
+  const hasMore = rows.length > limit;
+  const expenses = hasMore ? rows.slice(0, limit) : rows;
+
+  return {
+    expenses,
+    nextCursor: hasMore ? expenses[expenses.length - 1].id : null,
   };
 }
 

@@ -5,9 +5,10 @@ import { ForbiddenError } from "@/lib/errors";
 // Route'un kendi sorumlulugunu (auth kontrolu, Zod dogrulama, cevap sekli, hata
 // esleme) izole test etmek icin auth ve expenses servislerini mock'luyoruz.
 // createExpense'in ic mantigi zaten src/lib/expenses.test.ts'te test edildi.
-const { mockGetOrCreateCurrentUser, mockCreateExpense } = vi.hoisted(() => ({
+const { mockGetOrCreateCurrentUser, mockCreateExpense, mockListExpenses } = vi.hoisted(() => ({
   mockGetOrCreateCurrentUser: vi.fn(),
   mockCreateExpense: vi.fn(),
+  mockListExpenses: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -16,9 +17,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/expenses", () => ({
   createExpense: mockCreateExpense,
+  listExpenses: mockListExpenses,
 }));
 
-const { POST } = await import("./route");
+const { POST, GET } = await import("./route");
 
 const GROUP_ID = "11111111-1111-4111-8111-111111111111";
 const USER_ID = "22222222-2222-4222-8222-222222222222";
@@ -128,5 +130,101 @@ describe("POST /api/v1/groups/[groupId]/expenses", () => {
 
     expect(response.status).toBe(403);
     expect(json).toEqual({ ok: false, error: "Bu grubun uyesi degilsiniz" });
+  });
+});
+
+function callGetRoute(queryString = "") {
+  const request = new NextRequest(
+    `http://localhost/api/v1/groups/x/expenses${queryString}`,
+    { method: "GET" },
+  );
+  return GET(request, { params: Promise.resolve({ groupId: GROUP_ID }) });
+}
+
+describe("GET /api/v1/groups/[groupId]/expenses", () => {
+  beforeEach(() => {
+    mockGetOrCreateCurrentUser.mockReset();
+    mockListExpenses.mockReset();
+  });
+
+  it("giris yapilmamissa 401 doner ve listExpenses hic cagrilmaz", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue(null);
+
+    const response = await callGetRoute();
+
+    expect(response.status).toBe(401);
+    expect(mockListExpenses).not.toHaveBeenCalled();
+  });
+
+  it("parametresiz istekte bos secenekle cagirir ve 200 doner", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+    mockListExpenses.mockResolvedValue({ expenses: [], nextCursor: null });
+
+    const response = await callGetRoute();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json).toEqual({ ok: true, expenses: [], nextCursor: null });
+    expect(mockListExpenses).toHaveBeenCalledWith(USER_ID, GROUP_ID, {});
+  });
+
+  it("limit ve cursor parametreleri servise aktarilir", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+    mockListExpenses.mockResolvedValue({ expenses: [], nextCursor: null });
+
+    await callGetRoute(`?limit=10&cursor=${PARTICIPANT_ID}`);
+
+    expect(mockListExpenses).toHaveBeenCalledWith(USER_ID, GROUP_ID, {
+      limit: 10,
+      cursor: PARTICIPANT_ID,
+    });
+  });
+
+  it("includeDeleted=true boolean'a cevrilir", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+    mockListExpenses.mockResolvedValue({ expenses: [], nextCursor: null });
+
+    await callGetRoute("?includeDeleted=true");
+
+    expect(mockListExpenses).toHaveBeenCalledWith(USER_ID, GROUP_ID, { includeDeleted: true });
+  });
+
+  it("includeDeleted=false true'ya donusmez", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+    mockListExpenses.mockResolvedValue({ expenses: [], nextCursor: null });
+
+    await callGetRoute("?includeDeleted=false");
+
+    expect(mockListExpenses).toHaveBeenCalledWith(USER_ID, GROUP_ID, { includeDeleted: false });
+  });
+
+  it("limit ust sinirin uzerindeyse 400 doner", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+
+    const response = await callGetRoute("?limit=5000");
+
+    expect(response.status).toBe(400);
+    expect(mockListExpenses).not.toHaveBeenCalled();
+  });
+
+  it("gecersiz cursor (UUID olmayan) icin 400 doner", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+
+    const response = await callGetRoute("?cursor=not-a-uuid");
+
+    expect(response.status).toBe(400);
+    expect(mockListExpenses).not.toHaveBeenCalled();
+  });
+
+  it("nextCursor cevaba aktarilir", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+    mockListExpenses.mockResolvedValue({
+      expenses: [{ id: "e1" }],
+      nextCursor: "e1",
+    });
+
+    const json = await (await callGetRoute("?limit=1")).json();
+
+    expect(json.nextCursor).toBe("e1");
   });
 });

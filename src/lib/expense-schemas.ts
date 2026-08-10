@@ -2,6 +2,13 @@ import { z } from "zod";
 import { ExpenseCategory } from "@prisma/client";
 import { MAX_SPLIT_AMOUNT } from "@/lib/split";
 
+// Sayfalama sinirlari API sozlesmesinin parcasi oldugu icin sema dosyasinda
+// tanimli; servis katmani (expenses.ts) bunlari buradan okur. Ters yonde
+// (servisten semaya) import etmek, servisi mock'layan route testlerinde
+// semayi de bozardi.
+export const DEFAULT_EXPENSE_PAGE_SIZE = 50;
+export const MAX_EXPENSE_PAGE_SIZE = 100;
+
 // Prisma'nin ExpenseCategory enum'unu tekrar yazmak yerine, uretilen degerlerden
 // bir Zod semasi turetiyoruz - tek kaynak schema.prisma'da kalir.
 const categorySchema = z.enum(
@@ -34,6 +41,19 @@ const percentageShareSchema = z.object({
 // currency BILEREK bu semada yok - istemciden asla alinmiyor, servis katmani her
 // zaman grubun currency'sini kullanir. Zod'un varsayilan "strip" davranisi geregi,
 // body'de fazladan bir "currency" alani gonderilse bile parse sonrasi elenir.
+// Query string'ten gelen her deger string oldugu icin sayisal alanlarda coerce
+// kullaniyoruz. includeDeleted'i z.coerce.boolean() ile parse ETMIYORUZ: bos
+// olmayan her string true'ya donusurdu, yani "?includeDeleted=false" bile true
+// olurdu. Bu yuzden kabul edilen degerleri acikca listeliyoruz.
+export const listExpensesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(MAX_EXPENSE_PAGE_SIZE).optional(),
+  cursor: z.uuid().optional(),
+  includeDeleted: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
+});
+
 export const expenseBodySchema = z.discriminatedUnion("splitType", [
   baseExpenseSchema.extend({
     splitType: z.literal("EQUAL"),

@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+import {
+  DEFAULT_EXPENSE_PAGE_SIZE,
+  MAX_EXPENSE_PAGE_SIZE,
+} from "@/lib/expense-schemas";
 
 // prisma.ts modulu gercek Neon baglantisi kurmaya calisir (DATABASE_URL okur).
 // Servis-seviyesi testlerde gercek DB'ye dokunmamak icin $transaction'i, verdigimiz
@@ -19,15 +23,27 @@ const { mockTx } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    $transaction: (callback: (tx: typeof mockTx) => unknown) => callback(mockTx),
+// listExpenses transaction kullanmaz (salt okuma), dogrudan prisma uzerinden
+// calisir - o yuzden mock'ta hem $transaction hem de duz model erisimi var.
+const { mockPrisma } = vi.hoisted(() => ({
+  mockPrisma: {
+    group: { findUnique: vi.fn() },
+    groupMember: { findFirst: vi.fn() },
+    expense: { findMany: vi.fn() },
   },
 }));
 
-const { createExpense, updateExpense, deleteExpense, restoreExpense } = await import(
-  "@/lib/expenses"
-);
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    $transaction: (callback: (tx: typeof mockTx) => unknown) => callback(mockTx),
+    group: mockPrisma.group,
+    groupMember: mockPrisma.groupMember,
+    expense: mockPrisma.expense,
+  },
+}));
+
+const { createExpense, updateExpense, deleteExpense, restoreExpense, listExpenses } =
+  await import("@/lib/expenses");
 
 const GROUP_ID = "group-1";
 const CALLER_ID = "user-caller";
@@ -53,6 +69,9 @@ function resetMocks() {
   mockTx.expenseParticipant.createMany.mockReset();
   mockTx.expenseParticipant.deleteMany.mockReset();
   mockTx.expenseEdit.create.mockReset();
+  mockPrisma.group.findUnique.mockReset();
+  mockPrisma.groupMember.findFirst.mockReset();
+  mockPrisma.expense.findMany.mockReset();
 }
 
 function allMembersActive() {
@@ -830,5 +849,167 @@ describe("restoreExpense", () => {
 
     // Paylar degismedigi icin iki snapshot'ta da ayni kalmali.
     expect(auditData.newData.participants).toEqual(auditData.previousData.participants);
+  });
+});
+
+describe("listExpenses", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  function readableGroup() {
+    mockPrisma.group.findUnique.mockResolvedValue({
+      id: GROUP_ID,
+      currency: "TRY",
+      deletedAt: null,
+    });
+    mockPrisma.groupMember.findFirst.mockResolvedValue({
+      id: "membership-1",
+      userId: CALLER_ID,
+      role: "MEMBER",
+    });
+  }
+
+  function fakeExpenses(count: number) {
+    return Array.from({ length: count }, (_, index) => ({
+      id: `expense-${index}`,
+      participants: [],
+    }));
+  }
+
+  it("grup bulunamazsa NotFoundError firlatir", async () => {
+    mockPrisma.group.findUnique.mockResolvedValue(null);
+
+    await expect(listExpenses(CALLER_ID, GROUP_ID)).rejects.toBeInstanceOf(NotFoundError);
+    expect(mockPrisma.expense.findMany).not.toHaveBeenCalled();
+  });
+
+  it("grup soft-delete edilmisse NotFoundError firlatir", async () => {
+    mockPrisma.group.findUnique.mockResolvedValue({ id: GROUP_ID, deletedAt: new Date() });
+
+    await expect(listExpenses(CALLER_ID, GROUP_ID)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("aktif uye olmayan kullanici listeleyemez", async () => {
+    mockPrisma.group.findUnique.mockResolvedValue({ id: GROUP_ID, deletedAt: null });
+    mockPrisma.groupMember.findFirst.mockResolvedValue(null);
+
+    await expect(listExpenses(CALLER_ID, GROUP_ID)).rejects.toBeInstanceOf(ForbiddenError);
+    expect(mockPrisma.expense.findMany).not.toHaveBeenCalled();
+  });
+
+  it("olusturan kisi olmasa da grubun her aktif uyesi listeleyebilir", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue(fakeExpenses(2));
+
+    const result = await listExpenses(CALLER_ID, GROUP_ID);
+
+    expect(result.expenses).toHaveLength(2);
+  });
+
+  it("varsayilan olarak silinmis harcamalari haric tutar", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue([]);
+
+    await listExpenses(CALLER_ID, GROUP_ID);
+
+    expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toEqual({
+      groupId: GROUP_ID,
+      deletedAt: null,
+    });
+  });
+
+  it("includeDeleted ile silinmis harcamalar da dahil edilir", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue([]);
+
+    await listExpenses(CALLER_ID, GROUP_ID, { includeDeleted: true });
+
+    expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toEqual({ groupId: GROUP_ID });
+  });
+
+  it("katilimcilar cevaba dahil edilir", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue([]);
+
+    await listExpenses(CALLER_ID, GROUP_ID);
+
+    expect(mockPrisma.expense.findMany.mock.calls[0][0].include).toEqual({ participants: true });
+  });
+
+  it("siralama benzersiz olacak sekilde id ile kesinlestirilir", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue([]);
+
+    await listExpenses(CALLER_ID, GROUP_ID);
+
+    expect(mockPrisma.expense.findMany.mock.calls[0][0].orderBy).toEqual([
+      { expenseDate: "desc" },
+      { createdAt: "desc" },
+      { id: "desc" },
+    ]);
+  });
+
+  it("limit verilmezse varsayilan sayfa boyutu kullanilir", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue([]);
+
+    await listExpenses(CALLER_ID, GROUP_ID);
+
+    expect(mockPrisma.expense.findMany.mock.calls[0][0].take).toBe(
+      DEFAULT_EXPENSE_PAGE_SIZE + 1,
+    );
+  });
+
+  it("limit ust sinirin uzerine cikamaz", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue([]);
+
+    await listExpenses(CALLER_ID, GROUP_ID, { limit: 5000 });
+
+    expect(mockPrisma.expense.findMany.mock.calls[0][0].take).toBe(MAX_EXPENSE_PAGE_SIZE + 1);
+  });
+
+  it("daha fazla kayit varsa nextCursor doner ve fazladan kayit kirpilir", async () => {
+    readableGroup();
+    // limit=2 istendiginde servis 3 kayit ceker; ucuncusu "daha var" isaretidir.
+    mockPrisma.expense.findMany.mockResolvedValue(fakeExpenses(3));
+
+    const result = await listExpenses(CALLER_ID, GROUP_ID, { limit: 2 });
+
+    expect(result.expenses).toHaveLength(2);
+    expect(result.nextCursor).toBe("expense-1");
+  });
+
+  it("son sayfada nextCursor null doner", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue(fakeExpenses(2));
+
+    const result = await listExpenses(CALLER_ID, GROUP_ID, { limit: 5 });
+
+    expect(result.expenses).toHaveLength(2);
+    expect(result.nextCursor).toBeNull();
+  });
+
+  it("cursor verilmezse sorguda cursor/skip kullanilmaz", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue([]);
+
+    await listExpenses(CALLER_ID, GROUP_ID);
+
+    const args = mockPrisma.expense.findMany.mock.calls[0][0];
+    expect(args).not.toHaveProperty("cursor");
+    expect(args).not.toHaveProperty("skip");
+  });
+
+  it("cursor verilirse kendisi haric sonraki kayitlardan devam eder", async () => {
+    readableGroup();
+    mockPrisma.expense.findMany.mockResolvedValue([]);
+
+    await listExpenses(CALLER_ID, GROUP_ID, { cursor: "expense-42" });
+
+    const args = mockPrisma.expense.findMany.mock.calls[0][0];
+    expect(args.cursor).toEqual({ id: "expense-42" });
+    expect(args.skip).toBe(1);
   });
 });
