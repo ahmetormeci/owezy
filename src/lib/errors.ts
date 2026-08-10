@@ -25,3 +25,9 @@ export class ConflictError extends AppError {
     super(message, 409);
   }
 }
+
+export class ValidationError extends AppError {
+  constructor(message = "Geçersiz istek") {
+    super(message, 400);
+  }
+}
