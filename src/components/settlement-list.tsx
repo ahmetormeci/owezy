@@ -42,6 +42,7 @@ function CancelSettlementButton({
   settlementId: string;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
   async function handleCancel() {
@@ -51,6 +52,7 @@ function CancelSettlementButton({
         method: "POST",
       });
       toast.success("Odeme kaydi iptal edildi");
+      setOpen(false);
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Odeme kaydi iptal edilemedi");
@@ -60,7 +62,7 @@ function CancelSettlementButton({
   }
 
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger
         render={
           <Button variant="ghost" size="sm">

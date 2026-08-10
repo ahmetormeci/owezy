@@ -31,6 +31,7 @@ export function RemoveMemberButton({
   displayName: string;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
 
   async function handleRemove() {
@@ -38,6 +39,7 @@ export function RemoveMemberButton({
     try {
       await apiRequest(`/api/v1/groups/${groupId}/members/${userId}`, { method: "DELETE" });
       toast.success(`${displayName} gruptan cikarildi`);
+      setOpen(false);
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Uye cikarilamadi");
@@ -47,7 +49,7 @@ export function RemoveMemberButton({
   }
 
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger
         render={
           <Button variant="ghost" size="sm">
@@ -88,6 +90,7 @@ export function LeaveGroupButton({
   otherMembers: { userId: string; displayName: string }[];
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [newOwnerId, setNewOwnerId] = useState(otherMembers[0]?.userId ?? "");
 
@@ -103,6 +106,7 @@ export function LeaveGroupButton({
         body: JSON.stringify(mustTransferOwnership ? { newOwnerId } : {}),
       });
       toast.success("Gruptan ayrildin");
+      setOpen(false);
       router.push("/groups");
       router.refresh();
     } catch (error) {
@@ -112,7 +116,7 @@ export function LeaveGroupButton({
   }
 
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger
         render={
           <Button variant="outline" size="sm">

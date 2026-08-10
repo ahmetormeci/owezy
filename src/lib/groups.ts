@@ -161,6 +161,90 @@ export async function getGroupForUser(userId: string, groupId: string) {
   };
 }
 
+type UpdateGroupInput = {
+  name: string;
+  description?: string;
+};
+
+/**
+ * Grup adi ve aciklamasini gunceller. Yetki grup sahibindedir.
+ *
+ * currency BILEREK guncellenemez: mevcut harcama ve odemeler kendi
+ * currency'lerini kayit aninda saklamis durumda ve veritabani trigger'i
+ * bunlarin Group.currency ile ayni olmasini sart kosuyor. Grubun para birimini
+ * sonradan degistirmek gecmis kayitlari bu kuralla celiskiye dusururdu.
+ */
+export async function updateGroup(
+  userId: string,
+  groupId: string,
+  input: UpdateGroupInput,
+) {
+  return prisma.$transaction(async (tx) => {
+    const group = await tx.group.findUnique({ where: { id: groupId } });
+    if (!group || group.deletedAt) {
+      throw new NotFoundError("Grup bulunamadi");
+    }
+
+    const membership = await tx.groupMember.findFirst({
+      where: { groupId, userId, leftAt: null },
+    });
+    if (!membership) {
+      throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+    }
+    if (membership.role !== "OWNER") {
+      throw new ForbiddenError("Grup bilgilerini yalnizca grup sahibi degistirebilir");
+    }
+
+    return tx.group.update({
+      where: { id: groupId },
+      data: {
+        name: input.name,
+        description: input.description ?? null,
+      },
+    });
+  });
+}
+
+export type InviteStatus =
+  | { valid: true; groupName: string }
+  | { valid: false; reason: "NOT_FOUND" | "REVOKED" | "EXPIRED" | "EXHAUSTED" };
+
+/**
+ * Katilma sayfasi icin davetin durumunu kontrol eder - HENUZ KATILMADAN.
+ * Kullanici gecersiz bir linke tiklayip once giris yapip sonra hata almasin.
+ *
+ * Grup adini yalnizca davet GECERLIYSE donuyoruz. Token 32 rastgele bayt
+ * oldugu icin tahmin edilemez; adi gormek icin gecerli bir davete sahip
+ * olmak gerekiyor.
+ */
+export async function getInviteStatus(rawToken: string): Promise<InviteStatus> {
+  const invite = await prisma.groupInvite.findUnique({
+    where: { tokenHash: hashToken(rawToken) },
+    select: {
+      revokedAt: true,
+      expiresAt: true,
+      maxUses: true,
+      useCount: true,
+      group: { select: { name: true, deletedAt: true } },
+    },
+  });
+
+  if (!invite || invite.group.deletedAt) {
+    return { valid: false, reason: "NOT_FOUND" };
+  }
+  if (invite.revokedAt) {
+    return { valid: false, reason: "REVOKED" };
+  }
+  if (invite.expiresAt < new Date()) {
+    return { valid: false, reason: "EXPIRED" };
+  }
+  if (invite.useCount >= invite.maxUses) {
+    return { valid: false, reason: "EXHAUSTED" };
+  }
+
+  return { valid: true, groupName: invite.group.name };
+}
+
 export async function listGroupInvites(userId: string, groupId: string) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {

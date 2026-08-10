@@ -12,7 +12,7 @@ const { mockTx, mockPrisma } = vi.hoisted(() => ({
   mockPrisma: {
     group: { findUnique: vi.fn() },
     groupMember: { findFirst: vi.fn(), findMany: vi.fn() },
-    groupInvite: { findMany: vi.fn() },
+    groupInvite: { findMany: vi.fn(), findUnique: vi.fn() },
   },
 }));
 
@@ -27,6 +27,8 @@ vi.mock("@/lib/prisma", () => ({
 
 const {
   getGroupForUser,
+  updateGroup,
+  getInviteStatus,
   listGroupInvites,
   revokeGroupInvite,
   listGroupMembers,
@@ -118,6 +120,158 @@ describe("getGroupForUser", () => {
       currency: "TRY",
       role: "OWNER",
     });
+  });
+});
+
+describe("updateGroup", () => {
+  beforeEach(resetMocks);
+
+  const validInput = { name: "Yeni ad", description: "Yeni aciklama" };
+
+  it("grup bulunamazsa NotFoundError firlatir", async () => {
+    mockTx.group.findUnique.mockResolvedValue(null);
+
+    await expect(updateGroup(OWNER, GROUP_ID, validInput)).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+
+  it("uye olmayan kullanici guncelleyemez", async () => {
+    liveGroupTx();
+    mockTx.groupMember.findFirst.mockResolvedValue(null);
+
+    await expect(updateGroup(OTHER, GROUP_ID, validInput)).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+    expect(mockTx.group.update).not.toHaveBeenCalled();
+  });
+
+  it("OWNER olmayan uye guncelleyemez", async () => {
+    liveGroupTx();
+    mockTx.groupMember.findFirst.mockResolvedValue({ id: "m1", role: "MEMBER" });
+
+    await expect(updateGroup(MEMBER, GROUP_ID, validInput)).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+    expect(mockTx.group.update).not.toHaveBeenCalled();
+  });
+
+  it("grup sahibi ad ve aciklamayi guncelleyebilir", async () => {
+    liveGroupTx();
+    mockTx.groupMember.findFirst.mockResolvedValue({ id: "m-owner", role: "OWNER" });
+    mockTx.group.update.mockResolvedValue({ id: GROUP_ID, name: "Yeni ad" });
+
+    await updateGroup(OWNER, GROUP_ID, validInput);
+
+    expect(mockTx.group.update).toHaveBeenCalledWith({
+      where: { id: GROUP_ID },
+      data: { name: "Yeni ad", description: "Yeni aciklama" },
+    });
+  });
+
+  it("currency guncellenmez", async () => {
+    liveGroupTx();
+    mockTx.groupMember.findFirst.mockResolvedValue({ id: "m-owner", role: "OWNER" });
+    mockTx.group.update.mockResolvedValue({ id: GROUP_ID });
+
+    await updateGroup(OWNER, GROUP_ID, validInput);
+
+    expect(mockTx.group.update.mock.calls[0][0].data).not.toHaveProperty("currency");
+  });
+
+  it("aciklama gonderilmezse temizlenir", async () => {
+    liveGroupTx();
+    mockTx.groupMember.findFirst.mockResolvedValue({ id: "m-owner", role: "OWNER" });
+    mockTx.group.update.mockResolvedValue({ id: GROUP_ID });
+
+    await updateGroup(OWNER, GROUP_ID, { name: "Yeni ad" });
+
+    expect(mockTx.group.update.mock.calls[0][0].data.description).toBeNull();
+  });
+});
+
+describe("getInviteStatus", () => {
+  beforeEach(resetMocks);
+
+  function invite(overrides: Record<string, unknown> = {}) {
+    return {
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      maxUses: 1,
+      useCount: 0,
+      group: { name: "Ev Arkadaslari", deletedAt: null },
+      ...overrides,
+    };
+  }
+
+  it("bulunamayan token icin NOT_FOUND doner", async () => {
+    mockPrisma.groupInvite.findUnique.mockResolvedValue(null);
+
+    await expect(getInviteStatus("token")).resolves.toEqual({
+      valid: false,
+      reason: "NOT_FOUND",
+    });
+  });
+
+  it("grubu silinmis davet icin NOT_FOUND doner", async () => {
+    mockPrisma.groupInvite.findUnique.mockResolvedValue(
+      invite({ group: { name: "Ev", deletedAt: new Date() } }),
+    );
+
+    await expect(getInviteStatus("token")).resolves.toEqual({
+      valid: false,
+      reason: "NOT_FOUND",
+    });
+  });
+
+  it("iptal edilmis davet icin REVOKED doner", async () => {
+    mockPrisma.groupInvite.findUnique.mockResolvedValue(invite({ revokedAt: new Date() }));
+
+    await expect(getInviteStatus("token")).resolves.toEqual({
+      valid: false,
+      reason: "REVOKED",
+    });
+  });
+
+  it("suresi dolmus davet icin EXPIRED doner", async () => {
+    mockPrisma.groupInvite.findUnique.mockResolvedValue(
+      invite({ expiresAt: new Date(Date.now() - 1000) }),
+    );
+
+    await expect(getInviteStatus("token")).resolves.toEqual({
+      valid: false,
+      reason: "EXPIRED",
+    });
+  });
+
+  it("kullanim limiti dolmus davet icin EXHAUSTED doner", async () => {
+    mockPrisma.groupInvite.findUnique.mockResolvedValue(
+      invite({ maxUses: 1, useCount: 1 }),
+    );
+
+    await expect(getInviteStatus("token")).resolves.toEqual({
+      valid: false,
+      reason: "EXHAUSTED",
+    });
+  });
+
+  it("gecerli davet icin grup adini doner", async () => {
+    mockPrisma.groupInvite.findUnique.mockResolvedValue(invite());
+
+    await expect(getInviteStatus("token")).resolves.toEqual({
+      valid: true,
+      groupName: "Ev Arkadaslari",
+    });
+  });
+
+  it("token'i hash'leyerek arar, ham token ile degil", async () => {
+    mockPrisma.groupInvite.findUnique.mockResolvedValue(null);
+
+    await getInviteStatus("ham-token");
+
+    const where = mockPrisma.groupInvite.findUnique.mock.calls[0][0].where;
+    expect(where.tokenHash).not.toBe("ham-token");
+    expect(where.tokenHash).toMatch(/^[a-f0-9]{64}$/);
   });
 });
 

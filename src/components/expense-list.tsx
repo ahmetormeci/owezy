@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { ExpenseCategory } from "@prisma/client";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +48,7 @@ function DeleteExpenseButton({
   description: string;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleDelete() {
@@ -57,6 +58,9 @@ function DeleteExpenseButton({
         method: "DELETE",
       });
       toast.success("Harcama silindi");
+      // Pencereyi acikca kapatiyoruz: acik kalirsa kullanici islemin
+      // basarisiz oldugunu saniyor ve tekrar deneyince "bulunamadi" aliyor.
+      setOpen(false);
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Harcama silinemedi");
@@ -66,7 +70,7 @@ function DeleteExpenseButton({
   }
 
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger
         render={
           <Button variant="ghost" size="sm">
@@ -168,11 +172,12 @@ export function ExpenseList({
                   </p>
                   {canModify ? (
                     <div className="mt-1 flex gap-1">
-                      <Button variant="ghost" size="sm" render={
-                        <Link href={`/groups/${groupId}/expenses/${expense.id}/edit`}>
-                          Duzenle
-                        </Link>
-                      } />
+                      <Link
+                        href={`/groups/${groupId}/expenses/${expense.id}/edit`}
+                        className={buttonVariants({ variant: "ghost", size: "sm" })}
+                      >
+                        Duzenle
+                      </Link>
                       <DeleteExpenseButton
                         groupId={groupId}
                         expenseId={expense.id}

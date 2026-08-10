@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -150,29 +151,40 @@ export function InviteManager({
           <p className="text-sm text-muted-foreground">Aktif bir davet linki yok.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-border">
-            {invites.map((invite) => (
-              <li
-                key={invite.id}
-                className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
-              >
-                <div className="min-w-0 text-sm">
-                  <p>
-                    {invite.useCount}/{invite.maxUses} kullanildi
-                  </p>
-                  <p className="text-muted-foreground">
-                    {dateFormatter.format(new Date(invite.expiresAt))} tarihine kadar ·{" "}
-                    {nameByUserId[invite.invitedById] ?? "Bilinmeyen"} olusturdu
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRevoke(invite.id)}
+            {invites.map((invite) => {
+              // Kullanim limiti dolmus bir davet zaten kullanilamaz; "iptal et"
+              // sunmak yaniltici olur. Bunun yerine durumunu belirtiyoruz.
+              const isExhausted = invite.useCount >= invite.maxUses;
+
+              return (
+                <li
+                  key={invite.id}
+                  className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
                 >
-                  Iptal et
-                </Button>
-              </li>
-            ))}
+                  <div className="min-w-0 text-sm">
+                    <p>
+                      {invite.useCount}/{invite.maxUses} kullanildi
+                    </p>
+                    <p className="text-muted-foreground">
+                      {dateFormatter.format(new Date(invite.expiresAt))} tarihine kadar ·{" "}
+                      {nameByUserId[invite.invitedById] ?? "Bilinmeyen"} olusturdu
+                    </p>
+                  </div>
+
+                  {isExhausted ? (
+                    <Badge variant="outline">Tukendi</Badge>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRevoke(invite.id)}
+                    >
+                      Iptal et
+                    </Button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

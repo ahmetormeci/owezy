@@ -8,8 +8,9 @@ import { listSettlements } from "@/lib/settlements";
 import { AppError } from "@/lib/errors";
 import { formatMoney } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EditGroupDialog } from "@/components/edit-group-dialog";
 import { ExpenseList } from "@/components/expense-list";
 import { SettlementList } from "@/components/settlement-list";
 import { RecordSettlementDialog } from "@/components/record-settlement-dialog";
@@ -69,7 +70,16 @@ export default async function GroupDetailPage({
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">{group.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold">{group.name}</h1>
+              {group.role === "OWNER" ? (
+                <EditGroupDialog
+                  groupId={groupId}
+                  initialName={group.name}
+                  initialDescription={group.description}
+                />
+              ) : null}
+            </div>
             {group.description ? (
               <p className="text-muted-foreground">{group.description}</p>
             ) : null}
@@ -87,9 +97,12 @@ export default async function GroupDetailPage({
                 }))}
               suggestedTransfers={suggestedTransfers}
             />
-            <Button render={<Link href={`/groups/${groupId}/expenses/new`} />}>
+            <Link
+              href={`/groups/${groupId}/expenses/new`}
+              className={buttonVariants()}
+            >
               Harcama ekle
-            </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -148,11 +161,12 @@ export default async function GroupDetailPage({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle>Uyeler ve bakiyeler</CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            render={<Link href={`/groups/${groupId}/members`}>Uyeleri yonet</Link>}
-          />
+          <Link
+            href={`/groups/${groupId}/members`}
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            Uyeleri yonet
+          </Link>
         </CardHeader>
         <CardContent>
           <ul className="flex flex-col divide-y divide-border">
