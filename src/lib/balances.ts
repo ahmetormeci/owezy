@@ -9,7 +9,8 @@
 // bu saf fonksiyonlara verir.
 
 import { prisma } from "@/lib/prisma";
-import { ForbiddenError, NotFoundError } from "@/lib/errors";
+import { NotFoundError } from "@/lib/errors";
+import { assertActiveMemberOfGroup } from "@/lib/group-access";
 
 export type ExpenseForBalance = {
   paidById: string;
@@ -150,12 +151,7 @@ export async function getGroupBalances(userId: string, groupId: string) {
     throw new NotFoundError("Grup bulunamadi");
   }
 
-  const callerMembership = await prisma.groupMember.findFirst({
-    where: { groupId, userId, leftAt: null },
-  });
-  if (!callerMembership) {
-    throw new ForbiddenError("Bu grubun uyesi degilsiniz");
-  }
+  await assertActiveMemberOfGroup(groupId, userId);
 
   // Yalnizca silinmemis harcamalar ve iptal edilmemis odemeler hesaba katilir.
   const [expenses, settlements, memberships] = await Promise.all([

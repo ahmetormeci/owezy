@@ -1,6 +1,7 @@
 import type { ExpenseCategory, Prisma, SplitType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+import { assertActiveMemberOfGroup, assertCanModifyRecord } from "@/lib/group-access";
 import {
   DEFAULT_EXPENSE_PAGE_SIZE,
   MAX_EXPENSE_PAGE_SIZE,
@@ -58,61 +59,16 @@ function computeShares(amount: number, input: CreateExpenseInput): SplitShare[] 
   }
 }
 
-// Bir harcama uzerinde (update / delete / restore) kimin islem yapabilecegi:
-//
-//   1. Kayit sahibi (createdById) - grubun aktif uyesi olmak sartiyla.
-//      paidById olmak yetki VERMEZ: parayi odeyen kisi baskasinin girdigi
-//      kaydi duzenleyemez, cunku paidById'nin kendisi de duzenlenebilir bir
-//      alan - aksi halde biri paidById'yi kendine cevirip yetki kazanabilirdi.
-//
-//   2. Grup OWNER'i - YALNIZCA kaydi olusturan kisi artik grubun aktif uyesi
-//      degilse (ayrildi veya cikarildi). Bu, sahibi gitmis kayitlarin sonsuza
-//      kadar kilitli kalmasini onleyen tek istisnadir. Olusturan kisi grupta
-//      oldugu surece OWNER dahil hic kimse onun kaydina dokunamaz.
-// Okuma islemleri icin: grubun aktif uyesi olan herkes harcamalari gorebilir.
-// (Yazma islemlerindeki "yalnizca olusturan kisi" kisiti okumada gecerli degil -
-// grubun butun harcamalarini gormek, uygulamanin temel amaci.)
-async function assertActiveMemberOfGroup(groupId: string, userId: string) {
-  const membership = await prisma.groupMember.findFirst({
-    where: { groupId, userId, leftAt: null },
-  });
-  if (!membership) {
-    throw new ForbiddenError("Bu grubun uyesi degilsiniz");
-  }
-}
-
-async function assertCanModifyExpense(
+// Harcamalarda "paidById olmak yetki VERMEZ" kurali kritik: parayi odeyen kisi
+// baskasinin girdigi kaydi duzenleyemez, cunku paidById'nin kendisi de
+// duzenlenebilir bir alan - aksi halde biri paidById'yi kendine cevirip o kayit
+// uzerinde kalici yetki kazanabilirdi. Bu yuzden yetki yalnizca createdById'ye bakar.
+const assertCanModifyExpense = (
   tx: Prisma.TransactionClient,
   groupId: string,
   expense: { createdById: string },
   userId: string,
-) {
-  const callerMembership = await tx.groupMember.findFirst({
-    where: { groupId, userId, leftAt: null },
-  });
-  if (!callerMembership) {
-    throw new ForbiddenError("Bu grubun uyesi degilsiniz");
-  }
-
-  if (expense.createdById === userId) {
-    return;
-  }
-
-  const creatorMembership = await tx.groupMember.findFirst({
-    where: { groupId, userId: expense.createdById, leftAt: null },
-  });
-  if (creatorMembership) {
-    throw new ForbiddenError(
-      "Bu harcama uzerinde yalnizca onu olusturan kisi islem yapabilir",
-    );
-  }
-
-  if (callerMembership.role !== "OWNER") {
-    throw new ForbiddenError(
-      "Harcamayi olusturan kisi gruptan ayrildi; bu kayit uzerinde yalnizca grup sahibi islem yapabilir",
-    );
-  }
-}
+) => assertCanModifyRecord(tx, groupId, expense, userId, "harcama");
 
 // ExpenseEdit.previousData / newData icin kullanilan anlik goruntu.
 // ExpenseParticipant satirlari guncellemede fiziksel olarak silinip yeniden
