@@ -1,0 +1,32 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getOrCreateCurrentUser } from "@/lib/auth";
+import { leaveGroup } from "@/lib/groups";
+import { handleApiError } from "@/lib/api";
+
+// newOwnerId yalnizca grup sahibi ayrilirken ve arkasinda aktif uye kalirken
+// zorunludur; servis katmani bu kurali uyguluyor.
+const leaveGroupSchema = z.object({
+  newOwnerId: z.uuid().optional(),
+});
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> },
+) {
+  try {
+    const user = await getOrCreateCurrentUser();
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "not signed in" }, { status: 401 });
+    }
+
+    const { groupId } = await params;
+    const rawBody = await request.text();
+    const { newOwnerId } = leaveGroupSchema.parse(rawBody ? JSON.parse(rawBody) : {});
+
+    const membership = await leaveGroup(user.id, groupId, newOwnerId);
+    return NextResponse.json({ ok: true, membership });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
