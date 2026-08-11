@@ -1,0 +1,82 @@
+# Surekli entegrasyon: main'e giden her degisiklikte tip kontrolu, lint ve
+# birim testleri calisir.
+#
+# NEDEN VAR: main'e push, Vercel'de production deploy tetikliyor. Bu dosyadan
+# once o yolun onunde otomatik hicbir kapi yoktu; her dogrulama elle
+# yapiliyordu. Burasi o boslugu kapatiyor.
+#
+# E2E BILEREK YOK. Playwright kosusu ~5,5 dakika suruyor, gercek Clerk test
+# kullanicilari ve ayri bir Neon veritabani istiyor. Bunlari CI'a tasimak,
+# uretim disi sirlari yeni bir ortama kopyalamak demek - kazanci degil.
+# E2E yerelde calismaya devam ediyor: npm run test:e2e
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Panelden elle de calistirilabilsin (bir seyi denemek istedigimizde).
+  workflow_dispatch:
+
+# En az yetki: is akisinin depoyu okumaktan baska bir sey yapmasina gerek yok.
+permissions:
+  contents: read
+
+# Ayni dal icin arka arkaya push atilirsa, eskiyen kosuyu iptal et.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Tip, lint ve birim testleri
+    runs-on: ubuntu-latest
+
+    env:
+      # prisma.config.ts, DATABASE_URL tanimli degilse HATA firlatiyor
+      # (bkz. prisma-url.ts). Ama "prisma generate" veritabanina BAGLANMIYOR,
+      # yalnizca semayi okuyor - bu yuzden sahte bir deger yetiyor ve CI'a
+      # gercek bir baglanti dizesi koymamiz gerekmiyor.
+      #
+      # Bu deger bilerek acikca sahte. Hicbir sunucuya baglanilmiyor.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_not_a_real_database
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node kur
+        uses: actions/setup-node@v4
+        with:
+          # Yerel gelistirme surumuyle ayni tutuluyor (v24). CI ile yerelin
+          # farkli Node surumlerinde olmasi, "bende calisiyordu" hatalarinin
+          # klasik kaynagi.
+          node-version: 24
+          cache: npm
+
+      - name: Bagimliliklari kur
+        # "npm ci" package-lock.json'i birebir uygular ve lock dosyasi
+        # package.json ile uyusmuyorsa bilerek patlar - "npm install"in
+        # aksine lock'u sessizce guncellemez.
+        run: npm ci
+
+      - name: Prisma Client uret
+        # ZORUNLU ADIM. Prisma 7'de @prisma/client'in postinstall betigi yok,
+        # yani "npm ci" tek basina client'i URETMIYOR. Uretilmezse
+        # "tsc --noEmit" @prisma/client tiplerini bulamaz ve butun proje
+        # derlenmez. Yerelde bu adim gorunmuyor cunku client bir kez uretilip
+        # node_modules icinde duruyor.
+        run: npx prisma generate
+
+      - name: Tip kontrolu
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Birim testleri
+        # Vitest yalnizca src/**/*.test.ts topluyor; e2e/ klasoru Playwright'a
+        # ait ve buraya dahil degil. Testlerin tamami Prisma'yi mock'ladigi
+        # icin gercek bir veritabani gerekmiyor - dogrulandi.
+        run: npm test
