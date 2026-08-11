@@ -12,7 +12,7 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 347 | ✅ tümü geçiyor |
+| Birim (Vitest) | 360 | ✅ tümü geçiyor |
 | E2E (Playwright) | 24 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -164,7 +164,7 @@ eşit genişlikli rakamlar.
 |---|---|---|
 | 11.1 | **DONE** | Yazı tipi hatası + koyu tema bağlantısı |
 | 11.2 | **DONE** | Tasarım tokenları (kobalt, alacak/borç, tipografi ölçeği) |
-| 11.3 | TODO | Para biçimlendirmesi dile duyarlı hale gelir |
+| 11.3 | **DONE** | Para biçimlendirmesi dile duyarlı hale gelir |
 | 11.4 | TODO | API hata kodları + çeviri altyapısı |
 | 11.5 | TODO | Grup sayfası hiyerarşisi |
 | 11.6 | TODO | Karşılama, formlar, boş durumlar, mobil |
@@ -185,7 +185,15 @@ doğrudan renk sınıfları (`text-emerald-600` vb.) kaldırıldı.
 önünde gri bir karşılama sayfası tutarsız olurdu. Butonların sırası da
 değişti, birincil eylem ("Kayıt ol") öne geçti.
 
-**Test:** 347 birim / 24 E2E.
+**11.3'te yapıldı:** `formatMoney` ve `formatBasisPoints` dil parametresi
+aldı (varsayılan `tr`). `parseMoney`'ye **dokunulmadı** — ölçüldüğünde zaten
+dilden bağımsız olduğu görüldü, ADR-017'nin bu maddesi düzeltildi.
+
+Dilin **nereden geldiği** henüz bağlı değil; fonksiyonlar saf, tesisat
+11.4'ün işi. Bugün her çağrı varsayılanı kullandığı için ekran çıktısı
+bit bit aynı.
+
+**Test:** 360 birim / 24 E2E.
 **Commit:** (bkz. CHANGELOG)
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce

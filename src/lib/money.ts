@@ -15,19 +15,70 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   GBP: "£",
 };
 
-export function formatMoney(minorUnits: number, currency = "TRY"): string {
+/**
+ * Desteklenen diller. Dil DEGERININ nereden geldigi (cerez, hesap tercihi)
+ * bu dosyanin isi degil - buradaki fonksiyonlar saf: ayni girdi + ayni dil
+ * her zaman ayni ciktiyi verir. Boylece test edilebilir kaliyorlar ve hem
+ * sunucuda hem istemcide ayni sonucu uretiyorlar.
+ */
+export type Locale = "tr" | "en";
+
+const LOCALE_RULES: Record<
+  Locale,
+  {
+    // Binlik gruplamasini Intl'e yaptiriyoruz; ayrac dilden dile degisiyor
+    // ("1.234" / "1,234") ve bu listeyi elle tutmak hataya acik.
+    intlLocale: string;
+    decimal: string;
+    // Turkce: "120,50 ₺" (sembol sonda). Ingilizce: "$120.50" (sembol basta).
+    symbolFirst: boolean;
+    // Turkce: "%33,33". Ingilizce: "33.33%".
+    percentFirst: boolean;
+  }
+> = {
+  tr: { intlLocale: "tr-TR", decimal: ",", symbolFirst: false, percentFirst: true },
+  en: { intlLocale: "en-US", decimal: ".", symbolFirst: true, percentFirst: false },
+};
+
+// Intl.NumberFormat kurulumu pahalidir ve formatMoney bakiye listelerinde
+// satir basina cagriliyor. Dil basina bir kez kurup saklıyoruz.
+const groupingFormatters: Partial<Record<Locale, Intl.NumberFormat>> = {};
+
+function groupingFormatter(locale: Locale): Intl.NumberFormat {
+  return (groupingFormatters[locale] ??= new Intl.NumberFormat(
+    LOCALE_RULES[locale].intlLocale,
+  ));
+}
+
+export function formatMoney(
+  minorUnits: number,
+  currency = "TRY",
+  locale: Locale = "tr",
+): string {
+  const rules = LOCALE_RULES[locale];
   const isNegative = minorUnits < 0;
   const absolute = Math.abs(minorUnits);
 
   // Tam sayi bolme + kalan: ondalikli ara deger uretilmiyor.
+  // Intl'e yalnizca TAM SAYI olan lira kismi gidiyor; kurus kismi metin
+  // olarak ekleniyor. Yani para hicbir asamada float'a donusmuyor.
   const major = Math.trunc(absolute / 100);
   const minor = absolute % 100;
 
-  const majorText = new Intl.NumberFormat("tr-TR").format(major);
+  const majorText = groupingFormatter(locale).format(major);
   const minorText = String(minor).padStart(2, "0");
-  const symbol = CURRENCY_SYMBOLS[currency] ?? currency;
+  const body = `${majorText}${rules.decimal}${minorText}`;
 
-  return `${isNegative ? "-" : ""}${majorText},${minorText} ${symbol}`;
+  // Bilinmeyen bir para biriminde sembol yerine kodun kendisini gosteriyoruz
+  // ("JPY"). Kod bir sembol degil, o yuzden basa yapistirilmiyor: "JPY120.50"
+  // okunmaz, "120.50 JPY" okunur.
+  const symbol = CURRENCY_SYMBOLS[currency];
+  const display = symbol ?? currency;
+  const sign = isNegative ? "-" : "";
+
+  return rules.symbolFirst && symbol !== undefined
+    ? `${sign}${display}${body}`
+    : `${sign}${body} ${display}`;
 }
 
 /**
@@ -46,8 +97,12 @@ export function formatMoney(minorUnits: number, currency = "TRY"): string {
  * degil. Kisa tire cogu yazi tipinde rakamlardan dar; sut sut alta gelen
  * tutarlarda virgullerin hizasini kaydiriyor. U+2212 rakam genisligindedir.
  */
-export function formatSignedMoney(minorUnits: number, currency = "TRY"): string {
-  const formatted = formatMoney(Math.abs(minorUnits), currency);
+export function formatSignedMoney(
+  minorUnits: number,
+  currency = "TRY",
+  locale: Locale = "tr",
+): string {
+  const formatted = formatMoney(Math.abs(minorUnits), currency, locale);
   if (minorUnits > 0) {
     return `+${formatted}`;
   }
@@ -68,6 +123,22 @@ export function formatSignedMoney(minorUnits: number, currency = "TRY"): string 
  *   - tam 3 basamak    -> binlik    ("1.234" -> 123400)
  *   - diger            -> gecersiz
  * Para hicbir zaman 3 ondalik basamakla yazilmadigi icin bu ayrim guvenli.
+ *
+ * NEDEN BU FONKSIYON DILE DUYARLI DEGIL (Faz 11.3'te olculdu):
+ * Kural ayracin KIMLIGINE degil, ondan sonraki BASAMAK SAYISINA baktigi icin
+ * iki yazim da ayni sonuca cikiyor - olculdu, tahmin edilmedi:
+ *
+ *   "2.500"        -> 250000      "2,500"        -> 250000
+ *   "2,50"         -> 250         "2.50"         -> 250
+ *   "1.234,56"     -> 123456      "1,234.56"     -> 123456
+ *   "12.345.678,90"-> 1234567890  "12,345,678.90"-> 1234567890
+ *
+ * Buraya bir "locale" parametresi eklemek davranisi degistirmez, yalnizca
+ * yanlis bir izlenim verir. Katilastirmak ise bugun calisan girdileri
+ * reddederdi: numpad aliskanligiyla "120.50" yazan Turk kullanici su an
+ * dogru sonucu aliyor, katı kuralda hata gorurdu.
+ *
+ * Dile bagimli olan taraf GOSTERIM (formatMoney), giris degil.
  */
 export function parseMoney(input: string): number | null {
   const cleaned = input.trim().replace(/[₺$€£\s ]/g, "");
@@ -136,10 +207,21 @@ export function parsePercentageToBasisPoints(input: string): number | null {
   return parsed;
 }
 
-export function formatBasisPoints(basisPoints: number): string {
+/**
+ * Yuzde gosterimi de dile bagimli, hem de iki yerden: ondalik ayraci
+ * ("33,33" / "33.33") ve isaretin yeri. Turkce yuzde isaretini ONE yazar
+ * ("%33"), Ingilizce ARKAYA ("33%"). Ikisi de dogru; birbirinin yerine
+ * kullanilinca yanlis.
+ */
+export function formatBasisPoints(basisPoints: number, locale: Locale = "tr"): string {
+  const rules = LOCALE_RULES[locale];
   const whole = Math.trunc(basisPoints / 100);
   const fraction = basisPoints % 100;
-  return fraction === 0
-    ? `%${whole}`
-    : `%${whole},${String(fraction).padStart(2, "0")}`;
+
+  const body =
+    fraction === 0
+      ? String(whole)
+      : `${whole}${rules.decimal}${String(fraction).padStart(2, "0")}`;
+
+  return rules.percentFirst ? `%${body}` : `${body}%`;
 }

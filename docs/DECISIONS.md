@@ -357,8 +357,11 @@ hizalanması detay değil, ürünün karakteridir.
 1. API hata **metni** değil **kodu** döndürür (`group.not_found`); metni
    istemci üretir.
 2. Dil tercihi çerezde ve hesap kaydında tutulur; **URL'de dil segmenti yok**.
-3. `formatMoney` / `parseMoney` dil parametresi alır ve bu iş **çeviriden
-   önce** yapılır.
+3. **`formatMoney` / `formatBasisPoints`** dil parametresi alır ve bu iş
+   **çeviriden önce** yapılır. `parseMoney` **dil parametresi almaz** —
+   gerekçe aşağıda düzeltildi.
+4. İngilizcede sembol başa gelir (`$1,234.56`), Türkçede sona
+   (`1.234,56 ₺`). Yüzde işareti de yer değiştirir: `%33,33` / `33.33%`.
 
 **Neden:**
 
@@ -367,12 +370,31 @@ hizalanması detay değil, ürünün karakteridir.
    sunucuya hapsederdi.
 2. URL'de dil segmenti olsaydı tüm yönlendirmeler, davet linkleri ve 24 E2E
    testi değişirdi. Çerezle mevcut linkler olduğu gibi çalışır.
-3. **Ayracın anlamı dile göre değişiyor.** `parseMoney` son ayraçtan sonraki
-   basamak sayısına bakıyor: 3 basamak ⇒ binlik ayracı. Kullanıcı `2.500`
-   yazdığında Türkçe kural `2500,00 ₺` okur; İngilizce niyet `2,50 ₺`'dir.
-   **1000 kat fark.** Bu, 8. kuralın (finansal doğruluk en yüksek öncelik)
-   tam merkezinde; yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten
-   çok daha pahalıdır.
+3. **Gösterim dile bağımlı, giriş değil.** `formatMoney` içinde
+   `Intl.NumberFormat("tr-TR")` sabit yazılıydı ve sembol her zaman sona
+   ekleniyordu; İngilizce kullanıcı `1.234,56 ₺` görürdü. Bu gerçek bir
+   hata ve çeviriden önce çözülmeli — ekrandaki tutar yanlış okunursa
+   arayüzün dili doğru olsa ne yazar.
+
+> **DÜZELTME (2026-08-11, 11.3 uygulanırken).** Bu maddenin ilk hâli şunu
+> iddia ediyordu: `parseMoney` `2.500` girdisini Türkçe kuralla `2500,00 ₺`
+> okur, İngilizce niyet `2,50 ₺`'dir, **1000 kat fark**. Kod ölçüldüğünde bu
+> doğru çıkmadı. `parseMoney` ayracın *kimliğine* değil, ondan sonraki
+> *basamak sayısına* bakıyor; bu yüzden iki yazım da aynı sonucu veriyor:
+>
+> | Girdi | Sonuç | Girdi | Sonuç |
+> |---|---|---|---|
+> | `2.500` | 250000 | `2,500` | 250000 |
+> | `2,50` | 250 | `2.50` | 250 |
+> | `1.234,56` | 123456 | `1,234.56` | 123456 |
+>
+> Ayrıştırıcı zaten dilden bağımsız. Ona dil parametresi eklemek davranışı
+> değiştirmez, yalnızca yanlış bir izlenim verir; katılaştırmak ise bugün
+> çalışan girdileri reddederdi (numpad alışkanlığıyla `120.50` yazan Türk
+> kullanıcı hata görürdü). **Kararın kendisi — 11.3'ün 11.4'ten önce
+> gelmesi — ayakta**, gerekçesi yukarıda düzeltildi. Ölçüm
+> `src/lib/money.ts` içindeki yorumda ve `money.test.ts`'teki
+> "parseMoney - dilden bagimsizligi" testlerinde saklı.
 
 **Alternatifler:** Sunucunun `Accept-Language` okuyup çeviriyi kendisinin
 yapması (mobil istemciyi sunucunun desteğine bağımlı kılardı); yalnızca

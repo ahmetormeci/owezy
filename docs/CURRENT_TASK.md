@@ -22,8 +22,9 @@ Current task:
   Alti asamali plan icin PROGRESS.md'ye bak.
 
 Status:
-  IN_PROGRESS — 11.1 ve 11.2 bitti, 11.3 baslamadi.
-  11.2 COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
+  IN_PROGRESS — 11.1, 11.2, 11.3 bitti. 11.4 baslamadi.
+  11.3 COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
+  (11.2 commitlendi: a125fc3, HENUZ PUSH EDILMEDI.)
 
 Completed in this task:
   - 11.1 Yazi tipi hatasi duzeltildi (site Times New Roman'da calisiyordu)
@@ -31,16 +32,25 @@ Completed in this task:
   - 11.2 Kobalt kimlik + --credit/--debt anlam tokenlari (globals.css)
   - 11.2 formatSignedMoney + "money" sinifi (esit genislikli rakamlar)
   - 11.2 Marka isareti, yapiskan baslik, karsilama sayfasi
-  - Testler: 347 birim, 24 E2E, tsc + lint temiz
+  - 11.3 formatMoney + formatBasisPoints dil parametresi aldi (varsayilan tr)
+  - 11.3 parseMoney'ye DOKUNULMADI; ADR-017'nin gerekcesi olcume gore duzeltildi
+  - Testler: 360 birim, tsc + lint temiz
 
 Next action:
-  11.3 — Para bicimlendirmesi dile duyarli hale gelir.
-  formatMoney / parseMoney su an "tr-TR" kurallarini SABIT kullaniyor.
-  Dosya: src/lib/money.ts (+ money.test.ts)
+  11.4 — API hata kodlari + ceviri altyapisi.
+  Iki parcasi var, sirasi onemli:
+    a) /api/v1 altindaki ~40 hata MESAJI yerine KOD dondurecek
+       (ornek: "group.not_found"). Metni istemci uretecek.
+    b) Dil degeri cerezden + hesap tercihinden okunacak ve
+       formatMoney/formatBasisPoints'e GECIRILECEK.
+       Bugun her cagri varsayilani (tr) kullaniyor - tesisat yok.
 
-  Dikkat: parseMoney'de son ayractan sonraki basamak sayisina bakan kural
-  dile bagimli. "2.500" Turkce kuralda 2500,00; Ingilizce niyetle yazilmissa
-  2,50 olmaliydi - 1000 kat fark. Bu yuzden 11.3, 11.4'ten (ceviri) ONCE.
+  Dikkat: formatMoney sunucu bileseninde de cagriliyor
+  (groups/[groupId]/page.tsx). Dil hem sunucuda hem istemcide okunabilmeli;
+  cerez bu yuzden secildi (ADR-017).
+
+  Dikkat: varsayilan dil Turkce kaldigi surece 24 E2E testi degismeden
+  gecmeli. Gecmiyorsa tesisat bir yerde varsayilani ezmis demektir.
 
 Blocked by:
   Yok.

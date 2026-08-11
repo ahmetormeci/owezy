@@ -47,6 +47,85 @@ describe("formatMoney", () => {
   });
 });
 
+describe("formatMoney - dil", () => {
+  it("Ingilizcede ondalik ayraci nokta, binlik ayraci virgul olur", () => {
+    expect(formatMoney(123456789, "USD", "en")).toBe("$1,234,567.89");
+  });
+
+  it("Ingilizcede sembol basa gelir, Turkcede sona", () => {
+    expect(formatMoney(12050, "USD", "en")).toBe("$120.50");
+    expect(formatMoney(12050, "USD", "tr")).toBe("120,50 $");
+  });
+
+  it("dil belirtilmezse Turkce davranir", () => {
+    // Mevcut cagrilarin hicbiri dil vermiyor; varsayilan degisirse
+    // butun arayuz sessizce degisir. Bu test onu sabitliyor.
+    expect(formatMoney(12050, "USD")).toBe(formatMoney(12050, "USD", "tr"));
+  });
+
+  it("grup para birimi TRY olsa da yerlesim dile gore belirlenir", () => {
+    // Para birimi gruba ait, dil kullaniciya ait. Ingilizce konusan bir uye
+    // TRY'li bir grupta sembolu yine basta gorur.
+    expect(formatMoney(12050, "TRY", "en")).toBe("₺120.50");
+  });
+
+  it("negatif tutarda isaret en basta durur", () => {
+    expect(formatMoney(-12050, "USD", "en")).toBe("-$120.50");
+  });
+
+  it("bilinmeyen para biriminde kod basa yapistirilmaz", () => {
+    // "JPY120.50" okunmaz. Kod bir sembol degil, bosluklu ve sonda durmali.
+    expect(formatMoney(12050, "JPY", "en")).toBe("120.50 JPY");
+  });
+
+  it("Ingilizce ciktisi parseMoney tarafindan geri cozulebilir", () => {
+    // Dil degistiginde ekrandaki tutarin tekrar okunabilir kalmasi sart:
+    // kullanici bir tutari kopyalayip forma yapistirabilir.
+    for (const amount of [0, 1, 99, 12050, 123456789]) {
+      expect(parseMoney(formatMoney(amount, "USD", "en"))).toBe(amount);
+    }
+  });
+});
+
+describe("formatBasisPoints - dil", () => {
+  it("Turkcede yuzde isareti basta, Ingilizcede sonda durur", () => {
+    expect(formatBasisPoints(3333, "tr")).toBe("%33,33");
+    expect(formatBasisPoints(3333, "en")).toBe("33.33%");
+  });
+
+  it("tam sayi yuzdede ondalik gostermez", () => {
+    expect(formatBasisPoints(5000, "tr")).toBe("%50");
+    expect(formatBasisPoints(5000, "en")).toBe("50%");
+  });
+
+  it("dil belirtilmezse Turkce davranir", () => {
+    expect(formatBasisPoints(3333)).toBe(formatBasisPoints(3333, "tr"));
+  });
+});
+
+describe("parseMoney - dilden bagimsizligi", () => {
+  // Bu testler bir DAVRANISI degil, bir KARARI koruyor: parseMoney bilerek
+  // dile duyarli degil, cunku kurali ayracin kimligine degil ondan sonraki
+  // basamak sayisina bakiyor. Iki yazim da ayni sonuca cikmali.
+  it("iki yazim da ayni sonucu verir", () => {
+    const pairs: Array<[string, string]> = [
+      ["2.500", "2,500"],
+      ["2,50", "2.50"],
+      ["1.234,56", "1,234.56"],
+      ["12.345.678,90", "12,345,678.90"],
+    ];
+    for (const [turkish, english] of pairs) {
+      expect(parseMoney(turkish)).toBe(parseMoney(english));
+      expect(parseMoney(turkish)).not.toBeNull();
+    }
+  });
+
+  it("numpad aliskanligiyla yazilan noktali tutari kabul eder", () => {
+    // Bu girdi katı bir dil kuralinda reddedilirdi. Reddedilmemeli.
+    expect(parseMoney("120.50")).toBe(12050);
+  });
+});
+
 describe("formatSignedMoney", () => {
   it("alacagi arti isaretiyle gosterir", () => {
     expect(formatSignedMoney(12050)).toBe("+120,50 ₺");
@@ -69,6 +148,11 @@ describe("formatSignedMoney", () => {
 
   it("binlik ayracini ve para birimini korur", () => {
     expect(formatSignedMoney(-123456789, "USD")).toBe("−1.234.567,89 $");
+  });
+
+  it("dili formatMoney'e gecirir ve isaret en basta kalir", () => {
+    expect(formatSignedMoney(12050, "USD", "en")).toBe("+$120.50");
+    expect(formatSignedMoney(-12050, "USD", "en")).toBe("−$120.50");
   });
 });
 

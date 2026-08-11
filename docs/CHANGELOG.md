@@ -10,6 +10,20 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-11
 
+### Para biçimlendirmesi dile duyarlı (Faz 11.3)
+- `formatMoney` ve `formatBasisPoints` artık dil parametresi alıyor
+  (varsayılan `tr`). İngilizce: `$1,234.56` ve `33.33%`; Türkçe: `1.234,56 ₺`
+  ve `%33,33`. Sembolün ve yüzde işaretinin **yeri** de dile göre değişiyor.
+- Bilinmeyen para biriminde kod başa yapıştırılmıyor (`120.50 JPY`).
+- Para hâlâ hiçbir aşamada float'a dönüşmüyor: `Intl`'e yalnızca tam sayı
+  olan lira kısmı gidiyor, kuruş metin olarak ekleniyor.
+- `Intl.NumberFormat` dil başına bir kez kuruluyor — bakiye listelerinde
+  satır başına çağrılıyordu.
+- **`parseMoney` değişmedi.** Ölçüldüğünde zaten dilden bağımsız olduğu
+  görüldü: kural ayracın kimliğine değil sonrasındaki basamak sayısına
+  bakıyor, bu yüzden `2.500` ve `2,500` aynı sonucu veriyor. ADR-017'nin
+  "1000 kat fark" gerekçesi bu ölçüme göre düzeltildi.
+
 ### Tasarım tokenları (Faz 11.2)
 - **Kimlik rengi kobalt oldu.** Yeşil ve kırmızı bu uygulamada zaten anlam
   taşıdığı için (alacak / borç) kimlik rengi üçüncü bir renk ailesi açıyor.
