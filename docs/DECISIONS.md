@@ -303,3 +303,82 @@ metinleri tek bir çeviri dosyasında toplamak (i18n gerekene kadar erken).
 kelime haritası `"Giriş tamamlanmadi"` gibi yarı çevrilmiş cümleler üretti ve
 bu, hiç çevirmemekten kötüydü. Cümle eşlemesinde bir metin ya tamamen
 çevrilir ya hiç dokunulmaz.
+
+---
+
+## ADR-015 — Kimlik rengi kobalt; yeşil ve kırmızı yalnızca anlam taşır
+**Tarih:** 2026-08-11 · **Durum:** Kabul edildi
+
+**Karar:** Marka/kimlik rengi **kobalt mavi**. Yeşil ve kırmızı yalnızca
+bakiye anlamı için ayrılmıştır (yeşil = sana borçlular, kırmızı = sen
+borçlusun) ve başka hiçbir amaçla kullanılmaz.
+
+**Neden:** Bu üründe renk zaten **bilgi taşıyor**. Kimlik rengi de yeşil ya da
+kırmızı olsaydı, kullanıcı bir rengin "marka mı, bakiye mi" olduğunu her
+seferinde yeniden çözmek zorunda kalırdı. Kobalt bu paletle çakışmaz ve
+yanlarında durunca ikisini de öne çıkarır.
+
+**Alternatifler:** Yeşil kimlik (finans uygulamalarında yaygın — burada
+anlamla çakışırdı); nötr gri kimlik (çakışmaz ama karaktersiz).
+
+**Sonuç:** "Borç" rengi saf kırmızı değil, kiremit tonunda: arkadaşına 87 lira
+borçlu olmak bir *hata* değildir, saf kırmızı hata mesajı gibi bağırır.
+Nötrler hafif maviye çalıyor. Renk tek başına bilgi taşımaz: bakiye
+satırlarında `+` / `−` işaretleri de bulunur — kırmızı-yeşil ayırt edemeyen
+kullanıcı için asıl taşıyıcı bunlardır.
+
+---
+
+## ADR-016 — Sayfa hiyerarşisi bakiyeye göre kurulur
+**Tarih:** 2026-08-11 · **Durum:** Kabul edildi
+
+**Karar:** Grup sayfasında "senin durumun" panelinin görsel ağırlığı diğer
+bölümlerden belirgin biçimde büyüktür ve bakiyenin işareti sayfanın tonunu
+belirler. Tutarlar **eşit genişlikli (tabular) rakamlarla** dizilir.
+
+**Neden:** Kullanıcı bu sayfaya tek bir soruyla geliyor: *alacaklı mıyım,
+borçlu muyum, ne kadar?* Önceki düzende beş özdeş kart vardı; "Senin durumun"
+ile "Kaydedilen ödemeler" göze eşit önemdeydi. Her şey aynı sesle konuşunca
+hiçbiri duyulmuyordu.
+
+**Alternatifler:** Kartların tümünü korumak (mevcut durum); bakiyeyi başlığa
+taşımak (sayfa bağlamı kaybolurdu).
+
+**Sonuç:** Kuruşuna kadar doğru bölüşen bir uygulamada rakamların alt alta
+hizalanması detay değil, ürünün karakteridir.
+
+---
+
+## ADR-017 — İki dil: API kod döndürür, dil çerezde tutulur
+**Tarih:** 2026-08-11 · **Durum:** Kabul edildi (uygulanmadı — Faz 11.3/11.4)
+
+**Karar:** Türkçe ve İngilizce desteklenecek.
+
+1. API hata **metni** değil **kodu** döndürür (`group.not_found`); metni
+   istemci üretir.
+2. Dil tercihi çerezde ve hesap kaydında tutulur; **URL'de dil segmenti yok**.
+3. `formatMoney` / `parseMoney` dil parametresi alır ve bu iş **çeviriden
+   önce** yapılır.
+
+**Neden:**
+
+1. Sunucu, isteğin hangi dilde cevaplanacağını bilemez — mobil istemci de
+   aynı uçları çağıracak (ADR-002). Metin döndürmek, çeviri sözlüğünü
+   sunucuya hapsederdi.
+2. URL'de dil segmenti olsaydı tüm yönlendirmeler, davet linkleri ve 24 E2E
+   testi değişirdi. Çerezle mevcut linkler olduğu gibi çalışır.
+3. **Ayracın anlamı dile göre değişiyor.** `parseMoney` son ayraçtan sonraki
+   basamak sayısına bakıyor: 3 basamak ⇒ binlik ayracı. Kullanıcı `2.500`
+   yazdığında Türkçe kural `2500,00 ₺` okur; İngilizce niyet `2,50 ₺`'dir.
+   **1000 kat fark.** Bu, 8. kuralın (finansal doğruluk en yüksek öncelik)
+   tam merkezinde; yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten
+   çok daha pahalıdır.
+
+**Alternatifler:** Sunucunun `Accept-Language` okuyup çeviriyi kendisinin
+yapması (mobil istemciyi sunucunun desteğine bağımlı kılardı); yalnızca
+arayüzü çevirip API mesajlarını Türkçe bırakmak (İngilizce kullanıcı hata
+alınca Türkçe mesaj görürdü).
+
+**Sonuç:** Mevcut ~40 hata mesajı koda dönüşecek ve onları kontrol eden
+testler güncellenecek. Varsayılan dil Türkçe kaldığı için E2E testleri
+değişmeden geçmeye devam etmeli.
