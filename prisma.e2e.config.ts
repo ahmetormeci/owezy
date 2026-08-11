@@ -1,5 +1,6 @@
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 import { config as loadEnv } from "dotenv";
+import { migrationUrl } from "./prisma-url";
 
 // E2E testleri ayri bir Neon branch'ine yazar; o branch'in de ayni tablolara
 // sahip olmasi gerekiyor. Bu dosya SADECE o branch'e migration uygulamak icin
@@ -14,6 +15,6 @@ loadEnv({ path: ".env.local" });
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    url: env("E2E_DATABASE_URL"),
+    url: migrationUrl("E2E_DATABASE_URL"),
   },
 });
