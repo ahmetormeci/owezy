@@ -39,7 +39,7 @@ export function CreateGroupDialog() {
     });
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Gecersiz giris");
+      setError(parsed.error.issues[0]?.message ?? "Geçersiz giriş");
       return;
     }
 
@@ -50,7 +50,7 @@ export function CreateGroupDialog() {
         body: JSON.stringify(parsed.data),
       });
 
-      toast.success("Grup olusturuldu");
+      toast.success("Grup oluşturuldu");
       setName("");
       setDescription("");
       setOpen(false);
@@ -61,7 +61,7 @@ export function CreateGroupDialog() {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Beklenmeyen bir hata olustu",
+          : "Beklenmeyen bir hata oluştu",
       );
     } finally {
       setIsSubmitting(false);
@@ -74,26 +74,26 @@ export function CreateGroupDialog() {
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Yeni grup olustur</DialogTitle>
+            <DialogTitle>Yeni grup oluştur</DialogTitle>
             <DialogDescription>
-              Ortak harcamalari takip edecegin bir grup olustur.
+              Ortak harcamaları takip edeceğin bir grup oluştur.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="group-name">Grup adi</Label>
+              <Label htmlFor="group-name">Grup adı</Label>
               <Input
                 id="group-name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="Ev Arkadaslari"
+                placeholder="Ev Arkadaşları"
                 autoFocus
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="group-description">Aciklama (istege bagli)</Label>
+              <Label htmlFor="group-description">Açıklama (isteğe bağlı)</Label>
               <Input
                 id="group-description"
                 value={description}
@@ -107,7 +107,7 @@ export function CreateGroupDialog() {
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Olusturuluyor..." : "Olustur"}
+              {isSubmitting ? "Oluşturuluyor..." : "Oluştur"}
             </Button>
           </DialogFooter>
         </form>

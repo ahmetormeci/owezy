@@ -18,7 +18,7 @@ export type ClerkUserPayload = {
   updated_at: number;
 };
 
-const DELETED_DISPLAY_NAME = "Silinmis kullanici";
+const DELETED_DISPLAY_NAME = "Silinmiş kullanıcı";
 
 function pickPrimaryEmail(payload: ClerkUserPayload): string | null {
   const primary = payload.email_addresses.find(

@@ -20,13 +20,13 @@ export default async function GroupsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Gruplarim</h1>
+        <h1 className="text-2xl font-semibold">Gruplarım</h1>
         <CreateGroupDialog />
       </div>
 
       {groups.length === 0 ? (
         <Card className="p-6 text-muted-foreground">
-          Henuz bir grubun yok. Yeni bir grup olusturarak baslayabilirsin.
+          Henüz bir grubun yok. Yeni bir grup oluşturarak başlayabilirsin.
         </Card>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -44,7 +44,7 @@ export default async function GroupsPage() {
                       ) : null}
                     </div>
                     <Badge variant="secondary">
-                      {group.role === "OWNER" ? "Sahip" : "Uye"}
+                      {group.role === "OWNER" ? "Sahip" : "Üye"}
                     </Badge>
                   </div>
                 </Card>

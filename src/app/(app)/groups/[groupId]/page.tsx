@@ -66,7 +66,7 @@ export default async function GroupDetailPage({
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <Link href="/groups" className="text-sm text-muted-foreground hover:underline">
-          ← Gruplarim
+          ← Gruplarım
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -113,26 +113,26 @@ export default async function GroupDetailPage({
         </CardHeader>
         <CardContent>
           <p className={`text-3xl font-semibold ${balanceToneClass(myAmount)}`}>
-            {myAmount === 0 ? "Odestin" : formatMoney(Math.abs(myAmount), currency)}
+            {myAmount === 0 ? "Ödeştin" : formatMoney(Math.abs(myAmount), currency)}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             {myAmount > 0
-              ? "Bu tutar sana borclu"
+              ? "Bu tutar sana borçlu"
               : myAmount < 0
-                ? "Bu tutari borclusun"
-                : "Bu grupta acik hesabin yok"}
+                ? "Bu tutarı borçlusun"
+                : "Bu grupta açık hesabın yok"}
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Onerilen odemeler</CardTitle>
+          <CardTitle>Önerilen ödemeler</CardTitle>
         </CardHeader>
         <CardContent>
           {suggestedTransfers.length === 0 ? (
             <p className="text-muted-foreground">
-              Herkes odesmis durumda, yapilacak bir odeme yok.
+              Herkes ödeşmiş durumda, yapılacak bir ödeme yok.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -160,12 +160,12 @@ export default async function GroupDetailPage({
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle>Uyeler ve bakiyeler</CardTitle>
+          <CardTitle>Üyeler ve bakiyeler</CardTitle>
           <Link
             href={`/groups/${groupId}/members`}
             className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
-            Uyeleri yonet
+            Üyeleri yönet
           </Link>
         </CardHeader>
         <CardContent>
@@ -180,7 +180,7 @@ export default async function GroupDetailPage({
                   {roleByUserId.get(balance.userId) === "OWNER" ? (
                     <Badge variant="secondary">Sahip</Badge>
                   ) : null}
-                  {balance.hasLeft ? <Badge variant="outline">Ayrildi</Badge> : null}
+                  {balance.hasLeft ? <Badge variant="outline">Ayrıldı</Badge> : null}
                 </div>
                 <span className={`shrink-0 font-medium ${balanceToneClass(balance.amount)}`}>
                   {balance.amount === 0 ? "—" : formatMoney(balance.amount, currency)}
@@ -223,7 +223,7 @@ export default async function GroupDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Kaydedilen odemeler</CardTitle>
+          <CardTitle>Kaydedilen ödemeler</CardTitle>
         </CardHeader>
         <CardContent>
           <SettlementList

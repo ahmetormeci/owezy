@@ -44,7 +44,7 @@ export function EditGroupDialog({
     });
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Gecersiz giris");
+      setError(parsed.error.issues[0]?.message ?? "Geçersiz giriş");
       return;
     }
 
@@ -55,12 +55,12 @@ export function EditGroupDialog({
         body: JSON.stringify(parsed.data),
       });
 
-      toast.success("Grup guncellendi");
+      toast.success("Grup güncellendi");
       setOpen(false);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Beklenmeyen bir hata olustu",
+        submitError instanceof Error ? submitError.message : "Beklenmeyen bir hata oluştu",
       );
     } finally {
       setIsSubmitting(false);
@@ -72,23 +72,23 @@ export function EditGroupDialog({
       <DialogTrigger
         render={
           <Button variant="ghost" size="sm">
-            Duzenle
+            Düzenle
           </Button>
         }
       />
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Grubu duzenle</DialogTitle>
+            <DialogTitle>Grubu düzenle</DialogTitle>
             <DialogDescription>
-              Grup adini ve aciklamasini degistirebilirsin. Para birimi, mevcut
-              kayitlarla tutarlilik icin degistirilemez.
+              Grup adını ve açıklamasını değiştirebilirsin. Para birimi, mevcut
+              kayıtlarla tutarlılık için değiştirilemez.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="edit-group-name">Grup adi</Label>
+              <Label htmlFor="edit-group-name">Grup adı</Label>
               <Input
                 id="edit-group-name"
                 value={name}
@@ -98,7 +98,7 @@ export function EditGroupDialog({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="edit-group-description">Aciklama (istege bagli)</Label>
+              <Label htmlFor="edit-group-description">Açıklama (isteğe bağlı)</Label>
               <Input
                 id="edit-group-description"
                 value={description}

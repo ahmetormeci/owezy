@@ -51,12 +51,12 @@ export default async function GroupMembersPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="text-2xl font-semibold">Uyeler ve davetler</h1>
+        <h1 className="text-2xl font-semibold">Üyeler ve davetler</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Uyeler</CardTitle>
+          <CardTitle>Üyeler</CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="flex flex-col divide-y divide-border">

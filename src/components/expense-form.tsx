@@ -42,9 +42,9 @@ type ParticipantDraft = {
 };
 
 const SPLIT_TYPE_LABELS: Record<SplitType, string> = {
-  EQUAL: "Esit bol",
+  EQUAL: "Eşit böl",
   EXACT: "Tutar gir",
-  PERCENTAGE: "Yuzde gir",
+  PERCENTAGE: "Yüzde gir",
 };
 
 // Native <select>, shadcn'in Select bilesenine gore daha az kod ve mobilde
@@ -135,7 +135,7 @@ export function ExpenseForm({
           amount: parseMoney(participant.amountText),
         }));
         if (shares.some((share) => share.amount === null)) {
-          return { error: "Her katilimci icin gecerli bir tutar gir" };
+          return { error: "Her katılımcı için geçerli bir tutar gir" };
         }
         return {
           shares: splitExactly({
@@ -150,7 +150,7 @@ export function ExpenseForm({
         basisPoints: parsePercentageToBasisPoints(participant.percentageText),
       }));
       if (shares.some((share) => share.basisPoints === null)) {
-        return { error: "Her katilimci icin gecerli bir yuzde gir" };
+        return { error: "Her katılımcı için geçerli bir yüzde gir" };
       }
       return {
         shares: splitByPercentage({
@@ -160,7 +160,7 @@ export function ExpenseForm({
       };
     } catch (previewError) {
       return {
-        error: previewError instanceof Error ? previewError.message : "Bolusum hesaplanamadi",
+        error: previewError instanceof Error ? previewError.message : "Bölüşüm hesaplanamadı",
       };
     }
   }, [amount, selected, splitType]);
@@ -216,15 +216,15 @@ export function ExpenseForm({
     setError(null);
 
     if (!description.trim()) {
-      setError("Aciklama bos olamaz");
+      setError("Açıklama boş olamaz");
       return;
     }
     if (amount === null || amount <= 0) {
-      setError("Gecerli ve sifirdan buyuk bir tutar gir. Ornek: 120,50");
+      setError("Geçerli ve sıfırdan büyük bir tutar gir. Örnek: 120,50");
       return;
     }
     if (selected.length === 0) {
-      setError("En az bir katilimci secmelisin");
+      setError("En az bir katılımcı seçmelisin");
       return;
     }
     if (preview && "error" in preview) {
@@ -243,12 +243,12 @@ export function ExpenseForm({
         body: JSON.stringify(buildRequestBody()),
       });
 
-      toast.success(isEditing ? "Harcama guncellendi" : "Harcama eklendi");
+      toast.success(isEditing ? "Harcama güncellendi" : "Harcama eklendi");
       router.push(`/groups/${groupId}`);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Beklenmeyen bir hata olustu",
+        submitError instanceof Error ? submitError.message : "Beklenmeyen bir hata oluştu",
       );
       setIsSubmitting(false);
     }
@@ -259,12 +259,12 @@ export function ExpenseForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="description">Aciklama</Label>
+        <Label htmlFor="description">Açıklama</Label>
         <Input
           id="description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder="Market alisverisi"
+          placeholder="Market alışverişi"
           autoFocus
         />
       </div>
@@ -280,16 +280,16 @@ export function ExpenseForm({
         />
         <p className="text-sm text-muted-foreground">
           {amountText.trim() === ""
-            ? "Ornek: 120,50"
+            ? "Örnek: 120,50"
             : amount === null
-              ? "Tutari anlayamadim"
+              ? "Tutarı anlayamadım"
               : `= ${formatMoney(amount, currency)}`}
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="paidBy">Kim odedi?</Label>
+          <Label htmlFor="paidBy">Kim ödedi?</Label>
           <select
             id="paidBy"
             className={selectClassName}
@@ -333,7 +333,7 @@ export function ExpenseForm({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="splitType">Nasil bolunecek?</Label>
+          <Label htmlFor="splitType">Nasıl bölünecek?</Label>
           <select
             id="splitType"
             className={selectClassName}
@@ -350,7 +350,7 @@ export function ExpenseForm({
       </div>
 
       <div className="flex flex-col gap-3">
-        <Label>Katilimcilar</Label>
+        <Label>Katılımcılar</Label>
         <div className="flex flex-col gap-2">
           {participants.map((participant) => (
             <div key={participant.userId} className="flex items-center gap-3">
@@ -377,7 +377,7 @@ export function ExpenseForm({
                   }
                   placeholder="0,00"
                   inputMode="decimal"
-                  aria-label={`${nameByUserId.get(participant.userId)} tutari`}
+                  aria-label={`${nameByUserId.get(participant.userId)} tutarı`}
                 />
               ) : null}
 
@@ -392,7 +392,7 @@ export function ExpenseForm({
                   }
                   placeholder="%0"
                   inputMode="decimal"
-                  aria-label={`${nameByUserId.get(participant.userId)} yuzdesi`}
+                  aria-label={`${nameByUserId.get(participant.userId)} yüzdesi`}
                 />
               ) : null}
             </div>
@@ -403,7 +403,7 @@ export function ExpenseForm({
       {preview ? (
         <Card>
           <CardContent className="flex flex-col gap-2 py-4">
-            <p className="text-sm font-medium">Bolusum onizlemesi</p>
+            <p className="text-sm font-medium">Bölüşüm önizlemesi</p>
             {"error" in preview ? (
               <p className="text-sm text-destructive">{preview.error}</p>
             ) : (
@@ -437,15 +437,15 @@ export function ExpenseForm({
           {isSubmitting
             ? "Kaydediliyor..."
             : isEditing
-              ? "Degisiklikleri kaydet"
-              : "Harcamayi kaydet"}
+              ? "Değişiklikleri kaydet"
+              : "Harcamayı kaydet"}
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={() => router.push(`/groups/${groupId}`)}
         >
-          Vazgec
+          Vazgeç
         </Button>
       </div>
     </form>

@@ -22,15 +22,15 @@ test.describe("cok kullanicili akislar", () => {
     // Owner 100 TL odeyip iki kisiye esit boluyor -> uye 50 TL borclu.
     await openGroup(owner, groupName);
     await owner.getByRole("link", { name: "Harcama ekle" }).click();
-    await owner.getByLabel("Aciklama").fill("Ortak yemek");
+    await owner.getByLabel("Açıklama").fill("Ortak yemek");
     await owner.getByLabel("Tutar").fill("100");
-    await owner.getByRole("button", { name: "Harcamayi kaydet" }).click();
+    await owner.getByRole("button", { name: "Harcamayı kaydet" }).click();
 
-    await expect(owner.getByText("Bu tutar sana borclu")).toBeVisible();
+    await expect(owner.getByText("Bu tutar sana borçlu")).toBeVisible();
     await expect(owner.getByText("50,00 ₺").first()).toBeVisible();
 
     await openGroup(member, groupName);
-    await expect(member.getByText("Bu tutari borclusun")).toBeVisible();
+    await expect(member.getByText("Bu tutarı borçlusun")).toBeVisible();
   });
 
   test("odeme kaydedilince bakiyeler sifirlanir", async ({ browser }) => {
@@ -44,22 +44,22 @@ test.describe("cok kullanicili akislar", () => {
 
     await openGroup(owner, groupName);
     await owner.getByRole("link", { name: "Harcama ekle" }).click();
-    await owner.getByLabel("Aciklama").fill("Tasi tasi");
+    await owner.getByLabel("Açıklama").fill("Tasi tasi");
     await owner.getByLabel("Tutar").fill("100");
-    await owner.getByRole("button", { name: "Harcamayi kaydet" }).click();
-    await expect(owner.getByText("Bu tutar sana borclu")).toBeVisible();
+    await owner.getByRole("button", { name: "Harcamayı kaydet" }).click();
+    await expect(owner.getByText("Bu tutar sana borçlu")).toBeVisible();
 
     // Borclu olan uye "ben odedim" kaydi giriyor.
     await openGroup(member, groupName);
-    await member.getByRole("button", { name: "Odeme kaydet" }).click();
-    await member.getByLabel("Islem yonu").selectOption("outgoing");
-    await member.getByText(/Onerilen tutari kullan/).click();
+    await member.getByRole("button", { name: "Ödeme kaydet" }).click();
+    await member.getByLabel("İşlem yönü").selectOption("outgoing");
+    await member.getByText(/Önerilen tutarı kullan/).click();
     await member.getByRole("button", { name: "Kaydet", exact: true }).click();
 
-    await expect(member.getByText("Odestin")).toBeVisible();
+    await expect(member.getByText("Ödeştin")).toBeVisible();
 
     await openGroup(owner, groupName);
-    await expect(owner.getByText("Odestin")).toBeVisible();
+    await expect(owner.getByText("Ödeştin")).toBeVisible();
   });
 
   test("uc kisilik esit bolusumde kalan kurus dagitilir", async ({ browser }) => {
@@ -72,9 +72,9 @@ test.describe("cok kullanicili akislar", () => {
 
     // Iki kisilik davet linkiyle iki kullaniciyi da ekliyoruz.
     await openGroup(owner, groupName);
-    await owner.getByRole("link", { name: "Uyeleri yonet" }).click();
-    await owner.getByLabel("Kac kisi kullanabilsin?").selectOption("5");
-    await owner.getByRole("button", { name: "Davet linki olustur" }).click();
+    await owner.getByRole("link", { name: "Üyeleri yönet" }).click();
+    await owner.getByLabel("Kaç kişi kullanabilsin?").selectOption("5");
+    await owner.getByRole("button", { name: "Davet linki oluştur" }).click();
     const inviteLink = await owner.locator("input[readonly]").inputValue();
 
     await joinViaInvite(member, inviteLink, groupName);
@@ -83,7 +83,7 @@ test.describe("cok kullanicili akislar", () => {
     // 100 TL / 3 kisi -> 33,34 + 33,33 + 33,33 (toplam tam 100 TL)
     await openGroup(owner, groupName);
     await owner.getByRole("link", { name: "Harcama ekle" }).click();
-    await owner.getByLabel("Aciklama").fill("Uce bolunen");
+    await owner.getByLabel("Açıklama").fill("Uce bolunen");
     await owner.getByLabel("Tutar").fill("100");
 
     await expect(owner.getByText("33,34 ₺")).toBeVisible();
@@ -101,15 +101,15 @@ test.describe("cok kullanicili akislar", () => {
 
     await openGroup(owner, groupName);
     await owner.getByRole("link", { name: "Harcama ekle" }).click();
-    await owner.getByLabel("Aciklama").fill("Owner harcamasi");
+    await owner.getByLabel("Açıklama").fill("Owner harcamasi");
     await owner.getByLabel("Tutar").fill("60");
-    await owner.getByRole("button", { name: "Harcamayi kaydet" }).click();
+    await owner.getByRole("button", { name: "Harcamayı kaydet" }).click();
     await expect(owner.getByText("Owner harcamasi")).toBeVisible();
 
     // Uye harcamayi GORUYOR ama duzenleyemiyor/silemiyor.
     await openGroup(member, groupName);
     await expect(member.getByText("Owner harcamasi")).toBeVisible();
-    await expect(member.getByRole("link", { name: "Duzenle" })).toHaveCount(0);
+    await expect(member.getByRole("link", { name: "Düzenle" })).toHaveCount(0);
     await expect(member.getByRole("button", { name: "Sil", exact: true })).toHaveCount(0);
   });
 
@@ -137,7 +137,7 @@ test.describe("cok kullanicili akislar", () => {
     await joinViaInvite(member, inviteLink, groupName);
 
     await openGroup(member, groupName);
-    await expect(member.getByRole("button", { name: "Duzenle" })).toHaveCount(0);
+    await expect(member.getByRole("button", { name: "Düzenle" })).toHaveCount(0);
   });
 
   test("iptal edilen davet linki kullanilamaz", async ({ browser }) => {
@@ -148,12 +148,12 @@ test.describe("cok kullanicili akislar", () => {
     await createGroupAndOpen(owner, groupName);
     const inviteLink = await createInviteLink(owner, groupName);
 
-    await owner.getByRole("button", { name: "Iptal et" }).click();
+    await owner.getByRole("button", { name: "İptal et" }).click();
     await expect(owner.getByText("Aktif bir davet linki yok")).toBeVisible();
 
     await outsider.goto(inviteLink);
 
-    await expect(outsider.getByRole("heading", { name: "Davet kullanilamiyor" })).toBeVisible();
-    await expect(outsider.getByText("Bu davet iptal edilmis")).toBeVisible();
+    await expect(outsider.getByRole("heading", { name: "Davet kullanılamıyor" })).toBeVisible();
+    await expect(outsider.getByText("Bu davet iptal edilmiş")).toBeVisible();
   });
 });

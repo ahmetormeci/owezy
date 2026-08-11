@@ -36,7 +36,7 @@ export async function getOrCreateCurrentUser() {
     )?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress;
 
   if (!primaryEmail) {
-    throw new Error(`Clerk kullanicisinin (${clerkId}) e-posta adresi bulunamadi.`);
+    throw new Error(`Clerk kullanıcısının (${clerkId}) e-posta adresi bulunamadı.`);
   }
 
   const displayName =

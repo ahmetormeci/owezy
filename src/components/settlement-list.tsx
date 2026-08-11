@@ -51,11 +51,11 @@ function CancelSettlementButton({
       await apiRequest(`/api/v1/groups/${groupId}/settlements/${settlementId}/cancel`, {
         method: "POST",
       });
-      toast.success("Odeme kaydi iptal edildi");
+      toast.success("Ödeme kaydı iptal edildi");
       setOpen(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Odeme kaydi iptal edilemedi");
+      toast.error(error instanceof Error ? error.message : "Ödeme kaydı iptal edilemedi");
     } finally {
       setIsCancelling(false);
     }
@@ -66,23 +66,23 @@ function CancelSettlementButton({
       <AlertDialogTrigger
         render={
           <Button variant="ghost" size="sm">
-            Iptal et
+            İptal et
           </Button>
         }
       />
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Odeme kaydi iptal edilsin mi?</AlertDialogTitle>
+          <AlertDialogTitle>Ödeme kaydı iptal edilsin mi?</AlertDialogTitle>
           <AlertDialogDescription>
-            Kayit iptal edilirse bu odeme bakiyelerden dusulmez ve borc geri doner.
+            Kayıt iptal edilirse bu ödeme bakiyelerden düşülmez ve borç geri döner.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="outline">Vazgec</Button>} />
+          <AlertDialogCancel render={<Button variant="outline">Vazgeç</Button>} />
           <AlertDialogAction
             render={
               <Button variant="destructive" disabled={isCancelling} onClick={handleCancel}>
-                {isCancelling ? "Iptal ediliyor..." : "Iptal et"}
+                {isCancelling ? "İptal ediliyor..." : "İptal et"}
               </Button>
             }
           />
@@ -108,7 +108,7 @@ export function SettlementList({
   if (settlements.length === 0) {
     return (
       <p className="text-muted-foreground">
-        Henuz kaydedilmis bir odeme yok. Borc kapatinca buraya ekleyebilirsin.
+        Henüz kaydedilmiş bir ödeme yok. Borç kapatınca buraya ekleyebilirsin.
       </p>
     );
   }

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SplitApp",
-  description: "Grup harcamalarini paylas, kimin kime ne kadar borclu oldugunu gor.",
+  description: "Grup harcamalarını paylaş, kimin kime ne kadar borçlu olduğunu gör.",
 };
 
 export default function RootLayout({

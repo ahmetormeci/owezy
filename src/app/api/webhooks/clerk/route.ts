@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     // dogrulamayi yapan fonksiyonun onu ilk okuyan olmasi gerekiyor.
     event = await verifyWebhook(request);
   } catch (error) {
-    console.error("Clerk webhook imzasi dogrulanamadi", error);
+    console.error("Clerk webhook imzası doğrulanamadı", error);
     return NextResponse.json({ ok: false, error: "invalid signature" }, { status: 400 });
   }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Buraya dusen hata gecici olabilir (orn. veritabanina ulasilamiyor).
     // 500 donuyoruz ki Clerk olayi daha sonra tekrar gondersin - burada
     // durum kodu bir hata mesaji degil, "tekrar dene" sinyali.
-    console.error("Clerk webhook islenemedi", error);
+    console.error("Clerk webhook işlenemedi", error);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

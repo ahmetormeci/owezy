@@ -22,12 +22,12 @@ export async function apiRequest<T>(url: string, options: RequestInit = {}): Pro
   try {
     body = await response.json();
   } catch {
-    throw new Error("Sunucudan beklenmeyen bir cevap alindi");
+    throw new Error("Sunucudan beklenmeyen bir cevap alındı");
   }
 
   const parsed = body as ApiErrorBody;
   if (!response.ok || parsed.ok === false) {
-    throw new Error(parsed.error ?? "Beklenmeyen bir hata olustu");
+    throw new Error(parsed.error ?? "Beklenmeyen bir hata oluştu");
   }
 
   return body as T;

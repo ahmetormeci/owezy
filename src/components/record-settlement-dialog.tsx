@@ -77,11 +77,11 @@ export function RecordSettlementDialog({
     setError(null);
 
     if (!counterpartyId) {
-      setError("Karsi tarafi sec");
+      setError("Karşı tarafı seç");
       return;
     }
     if (amount === null || amount <= 0) {
-      setError("Gecerli ve sifirdan buyuk bir tutar gir. Ornek: 120,50");
+      setError("Geçerli ve sıfırdan büyük bir tutar gir. Örnek: 120,50");
       return;
     }
 
@@ -98,14 +98,14 @@ export function RecordSettlementDialog({
         }),
       });
 
-      toast.success("Odeme kaydedildi");
+      toast.success("Ödeme kaydedildi");
       setAmountText("");
       setNote("");
       setOpen(false);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Beklenmeyen bir hata olustu",
+        submitError instanceof Error ? submitError.message : "Beklenmeyen bir hata oluştu",
       );
     } finally {
       setIsSubmitting(false);
@@ -118,20 +118,20 @@ export function RecordSettlementDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline">Odeme kaydet</Button>} />
+      <DialogTrigger render={<Button variant="outline">Ödeme kaydet</Button>} />
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Odeme kaydet</DialogTitle>
+            <DialogTitle>Ödeme kaydet</DialogTitle>
             <DialogDescription>
-              Gerceklesen bir odemeyi kaydeder. Uygulama para transferi yapmaz,
-              yalnizca bakiyeleri gunceller.
+              Gerçekleşen bir ödemeyi kaydeder. Uygulama para transferi yapmaz,
+              yalnızca bakiyeleri günceller.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="direction">Islem yonu</Label>
+              <Label htmlFor="direction">İşlem yönü</Label>
               <select
                 id="direction"
                 className={selectClassName}
@@ -140,14 +140,14 @@ export function RecordSettlementDialog({
                   setDirection(event.target.value as "outgoing" | "incoming")
                 }
               >
-                <option value="outgoing">Ben odedim</option>
-                <option value="incoming">Bana odendi</option>
+                <option value="outgoing">Ben ödedim</option>
+                <option value="incoming">Bana ödendi</option>
               </select>
             </div>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="counterparty">
-                {direction === "outgoing" ? "Kime odedin?" : "Kim odedi?"}
+                {direction === "outgoing" ? "Kime ödedin?" : "Kim ödedi?"}
               </Label>
               <select
                 id="counterparty"
@@ -174,9 +174,9 @@ export function RecordSettlementDialog({
               />
               <p className="text-sm text-muted-foreground">
                 {amountText.trim() === ""
-                  ? "Ornek: 120,50"
+                  ? "Örnek: 120,50"
                   : amount === null
-                    ? "Tutari anlayamadim"
+                    ? "Tutarı anlayamadım"
                     : `= ${formatMoney(amount, currency)}`}
               </p>
               {matchingSuggestion ? (
@@ -189,7 +189,7 @@ export function RecordSettlementDialog({
                     )
                   }
                 >
-                  Onerilen tutari kullan: {formatMoney(matchingSuggestion.amount, currency)}
+                  Önerilen tutarı kullan: {formatMoney(matchingSuggestion.amount, currency)}
                 </button>
               ) : null}
             </div>
@@ -205,12 +205,12 @@ export function RecordSettlementDialog({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="settlement-note">Not (istege bagli)</Label>
+              <Label htmlFor="settlement-note">Not (isteğe bağlı)</Label>
               <Input
                 id="settlement-note"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder="Havale ile odendi"
+                placeholder="Havale ile ödendi"
               />
             </div>
 

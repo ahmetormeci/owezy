@@ -11,11 +11,11 @@ export function handleApiError(error: unknown) {
 
   if (error instanceof ZodError) {
     return NextResponse.json(
-      { ok: false, error: "Gecersiz istek", issues: error.issues },
+      { ok: false, error: "Geçersiz istek", issues: error.issues },
       { status: 400 },
     );
   }
 
   console.error(error);
-  return NextResponse.json({ ok: false, error: "Beklenmeyen bir hata olustu" }, { status: 500 });
+  return NextResponse.json({ ok: false, error: "Beklenmeyen bir hata oluştu" }, { status: 500 });
 }

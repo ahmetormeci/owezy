@@ -19,10 +19,10 @@ export type SplitShare = {
 
 function assertValidAmount(amount: number) {
   if (!Number.isInteger(amount) || amount <= 0) {
-    throw new Error("amount pozitif bir tam sayi olmalidir");
+    throw new Error("amount pozitif bir tam sayı olmalıdır");
   }
   if (amount > MAX_SPLIT_AMOUNT) {
-    throw new Error(`amount ${MAX_SPLIT_AMOUNT} degerini asamaz`);
+    throw new Error(`amount ${MAX_SPLIT_AMOUNT} değerini aşamaz`);
   }
 }
 
@@ -30,7 +30,7 @@ function assertNoDuplicateUserIds(userIds: string[]) {
   const seen = new Set<string>();
   for (const userId of userIds) {
     if (seen.has(userId)) {
-      throw new Error(`ayni katilimci birden fazla kez belirtilemez: ${userId}`);
+      throw new Error(`aynı katılımcı birden fazla kez belirtilemez: ${userId}`);
     }
     seen.add(userId);
   }
@@ -48,7 +48,7 @@ export type EqualSplitInput = {
 export function splitEqually({ amount, participantUserIds }: EqualSplitInput): SplitShare[] {
   assertValidAmount(amount);
   if (participantUserIds.length === 0) {
-    throw new Error("en az bir katilimci gerekli");
+    throw new Error("en az bir katılımcı gerekli");
   }
   assertNoDuplicateUserIds(participantUserIds);
 
@@ -81,20 +81,20 @@ export type ExactSplitInput = {
 export function splitExactly({ amount, shares }: ExactSplitInput): SplitShare[] {
   assertValidAmount(amount);
   if (shares.length === 0) {
-    throw new Error("en az bir katilimci gerekli");
+    throw new Error("en az bir katılımcı gerekli");
   }
   assertNoDuplicateUserIds(shares.map((share) => share.userId));
 
   let total = 0;
   for (const share of shares) {
     if (!Number.isInteger(share.amount) || share.amount < 0) {
-      throw new Error(`${share.userId} icin pay negatif olamaz ve tam sayi olmalidir`);
+      throw new Error(`${share.userId} için pay negatif olamaz ve tam sayı olmalıdır`);
     }
     total += share.amount;
   }
 
   if (total !== amount) {
-    throw new Error(`paylarin toplami (${total}) amount'a (${amount}) esit degil`);
+    throw new Error(`payların toplamı (${total}) amount'a (${amount}) eşit değil`);
   }
 
   return shares.map((share) => ({ userId: share.userId, amount: share.amount }));
@@ -117,7 +117,7 @@ export type PercentageSplitInput = {
 export function splitByPercentage({ amount, shares }: PercentageSplitInput): SplitShare[] {
   assertValidAmount(amount);
   if (shares.length === 0) {
-    throw new Error("en az bir katilimci gerekli");
+    throw new Error("en az bir katılımcı gerekli");
   }
   assertNoDuplicateUserIds(shares.map((share) => share.userId));
 
@@ -125,18 +125,18 @@ export function splitByPercentage({ amount, shares }: PercentageSplitInput): Spl
   for (const share of shares) {
     if (!Number.isInteger(share.basisPoints) || share.basisPoints < 0) {
       throw new Error(
-        `${share.userId} icin yuzde negatif olamaz ve tam sayi (basis point) olmalidir`,
+        `${share.userId} için yüzde negatif olamaz ve tam sayı (basis point) olmalıdır`,
       );
     }
     if (share.basisPoints > BASIS_POINTS_TOTAL) {
-      throw new Error(`${share.userId} icin yuzde %100'u asamaz`);
+      throw new Error(`${share.userId} için yüzde %100'ü aşamaz`);
     }
     totalBasisPoints += share.basisPoints;
   }
 
   if (totalBasisPoints !== BASIS_POINTS_TOTAL) {
     throw new Error(
-      `yuzdelerin toplami (${totalBasisPoints / 100}) tam olarak %100 olmalidir`,
+      `yüzdelerin toplamı (${totalBasisPoints / 100}) tam olarak %100 olmalıdır`,
     );
   }
 

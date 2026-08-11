@@ -23,14 +23,14 @@ export function AcceptInvite({ token }: { token: string }) {
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error ?? "Gruba katilinamadi");
+        throw new Error(data.error ?? "Gruba katılınamadı");
       }
 
-      toast.success("Gruba katildin");
+      toast.success("Gruba katıldın");
       router.push(`/groups/${data.membership.groupId}`);
       router.refresh();
     } catch (joinError) {
-      setError(joinError instanceof Error ? joinError.message : "Gruba katilinamadi");
+      setError(joinError instanceof Error ? joinError.message : "Gruba katılınamadı");
       setIsJoining(false);
     }
   }
@@ -38,7 +38,7 @@ export function AcceptInvite({ token }: { token: string }) {
   return (
     <div className="flex flex-col items-center gap-4">
       <Button onClick={handleJoin} disabled={isJoining}>
-        {isJoining ? "Katiliniyor..." : "Gruba katil"}
+        {isJoining ? "Katılınıyor..." : "Gruba katıl"}
       </Button>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>

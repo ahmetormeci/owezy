@@ -4,7 +4,7 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL ortam degiskeni bulunamadi.");
+  throw new Error("DATABASE_URL ortam değişkeni bulunamadı.");
 }
 
 const adapter = new PrismaNeon({ connectionString });

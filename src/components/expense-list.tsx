@@ -82,12 +82,12 @@ function DeleteExpenseButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Harcama silinsin mi?</AlertDialogTitle>
           <AlertDialogDescription>
-            “{description}” kaydi silinecek ve bakiyelerden dusulecek. Kayit tamamen
-            yok olmaz; gerekirse geri yuklenebilir.
+            “{description}” kaydı silinecek ve bakiyelerden düşülecek. Kayıt tamamen
+            yok olmaz; gerekirse geri yüklenebilir.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="outline">Vazgec</Button>} />
+          <AlertDialogCancel render={<Button variant="outline">Vazgeç</Button>} />
           <AlertDialogAction
             render={
               <Button variant="destructive" disabled={isDeleting} onClick={handleDelete}>
@@ -149,7 +149,7 @@ export function ExpenseList({
       setExpenses((current) => [...current, ...data.expenses]);
       setNextCursor(data.nextCursor);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Harcamalar yuklenemedi");
+      toast.error(error instanceof Error ? error.message : "Harcamalar yüklenemedi");
     } finally {
       setIsLoadingMore(false);
     }
@@ -158,7 +158,7 @@ export function ExpenseList({
   if (expenses.length === 0) {
     return (
       <p className="text-muted-foreground">
-        Bu grupta henuz harcama yok. Ilk harcamani ekleyerek baslayabilirsin.
+        Bu grupta henüz harcama yok. İlk harcamanı ekleyerek başlayabilirsin.
       </p>
     );
   }
@@ -182,7 +182,7 @@ export function ExpenseList({
                   <p className="text-sm text-muted-foreground">
                     {dateFormatter.format(new Date(expense.expenseDate))} ·{" "}
                     {EXPENSE_CATEGORY_LABELS[expense.category]} ·{" "}
-                    {nameByUserId[expense.paidById] ?? "Bilinmeyen"} odedi
+                    {nameByUserId[expense.paidById] ?? "Bilinmeyen"} ödedi
                   </p>
                   {canModify ? (
                     <div className="mt-1 flex gap-1">
@@ -190,7 +190,7 @@ export function ExpenseList({
                         href={`/groups/${groupId}/expenses/${expense.id}/edit`}
                         className={buttonVariants({ variant: "ghost", size: "sm" })}
                       >
-                        Duzenle
+                        Düzenle
                       </Link>
                       <DeleteExpenseButton
                         groupId={groupId}
@@ -204,7 +204,7 @@ export function ExpenseList({
                   <p className="font-medium">{formatMoney(expense.amount, currency)}</p>
                   {myShare ? (
                     <p className="text-sm text-muted-foreground">
-                      senin payin {formatMoney(myShare.shareAmount, currency)}
+                      senin payın {formatMoney(myShare.shareAmount, currency)}
                     </p>
                   ) : null}
                 </div>
@@ -216,7 +216,7 @@ export function ExpenseList({
 
       {nextCursor ? (
         <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>
-          {isLoadingMore ? "Yukleniyor..." : "Daha fazla yukle"}
+          {isLoadingMore ? "Yükleniyor..." : "Daha fazla yükle"}
         </Button>
       ) : null}
     </div>

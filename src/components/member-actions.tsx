@@ -38,11 +38,11 @@ export function RemoveMemberButton({
     setIsRemoving(true);
     try {
       await apiRequest(`/api/v1/groups/${groupId}/members/${userId}`, { method: "DELETE" });
-      toast.success(`${displayName} gruptan cikarildi`);
+      toast.success(`${displayName} gruptan çıkarıldı`);
       setOpen(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Uye cikarilamadi");
+      toast.error(error instanceof Error ? error.message : "Üye çıkarılamadı");
     } finally {
       setIsRemoving(false);
     }
@@ -53,7 +53,7 @@ export function RemoveMemberButton({
       <AlertDialogTrigger
         render={
           <Button variant="ghost" size="sm">
-            Cikar
+            Çıkar
           </Button>
         }
       />
@@ -61,16 +61,16 @@ export function RemoveMemberButton({
         <AlertDialogHeader>
           <AlertDialogTitle>{displayName} gruptan cikarilsin mi?</AlertDialogTitle>
           <AlertDialogDescription>
-            Gecmis harcamalari grupta kalir. Acik bir bakiyesi varsa once
-            odesilmesi gerekir.
+            Geçmiş harcamaları grupta kalır. Açık bir bakiyesi varsa önce
+            ödeşilmesi gerekir.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="outline">Vazgec</Button>} />
+          <AlertDialogCancel render={<Button variant="outline">Vazgeç</Button>} />
           <AlertDialogAction
             render={
               <Button variant="destructive" disabled={isRemoving} onClick={handleRemove}>
-                {isRemoving ? "Cikariliyor..." : "Cikar"}
+                {isRemoving ? "Çıkarılıyor..." : "Çıkar"}
               </Button>
             }
           />
@@ -105,12 +105,12 @@ export function LeaveGroupButton({
         method: "POST",
         body: JSON.stringify(mustTransferOwnership ? { newOwnerId } : {}),
       });
-      toast.success("Gruptan ayrildin");
+      toast.success("Gruptan ayrıldın");
       setOpen(false);
       router.push("/groups");
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Gruptan ayrilinamadi");
+      toast.error(error instanceof Error ? error.message : "Gruptan ayrılınamadı");
       setIsLeaving(false);
     }
   }
@@ -120,22 +120,22 @@ export function LeaveGroupButton({
       <AlertDialogTrigger
         render={
           <Button variant="outline" size="sm">
-            Gruptan ayril
+            Gruptan ayrıl
           </Button>
         }
       />
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Gruptan ayrilmak istiyor musun?</AlertDialogTitle>
+          <AlertDialogTitle>Gruptan ayrılmak istiyor musun?</AlertDialogTitle>
           <AlertDialogDescription>
-            Gecmis harcamalarin grupta kalir. Acik bir bakiyen varsa once
-            odesmen gerekir.
+            Geçmiş harcamaların grupta kalır. Açık bir bakiyen varsa önce
+            ödeşmen gerekir.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         {mustTransferOwnership ? (
           <div className="flex flex-col gap-2 py-2">
-            <Label htmlFor="newOwner">Sahipligi kime devrediyorsun?</Label>
+            <Label htmlFor="newOwner">Sahipliği kime devrediyorsun?</Label>
             <select
               id="newOwner"
               className={selectClassName}
@@ -152,11 +152,11 @@ export function LeaveGroupButton({
         ) : null}
 
         <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="outline">Vazgec</Button>} />
+          <AlertDialogCancel render={<Button variant="outline">Vazgeç</Button>} />
           <AlertDialogAction
             render={
               <Button variant="destructive" disabled={isLeaving} onClick={handleLeave}>
-                {isLeaving ? "Ayriliniyor..." : "Ayril"}
+                {isLeaving ? "Ayrılınıyor..." : "Ayrıl"}
               </Button>
             }
           />

@@ -9,19 +9,19 @@ export class AppError extends Error {
 }
 
 export class NotFoundError extends AppError {
-  constructor(message = "Kayit bulunamadi") {
+  constructor(message = "Kayıt bulunamadı") {
     super(message, 404);
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message = "Bu islem icin yetkiniz yok") {
+  constructor(message = "Bu işlem için yetkiniz yok") {
     super(message, 403);
   }
 }
 
 export class ConflictError extends AppError {
-  constructor(message = "Cakisma") {
+  constructor(message = "Çakışma") {
     super(message, 409);
   }
 }

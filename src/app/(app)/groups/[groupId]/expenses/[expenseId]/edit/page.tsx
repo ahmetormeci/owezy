@@ -43,7 +43,7 @@ export default async function EditExpensePage({
         >
           ← {group.name}
         </Link>
-        <h1 className="text-2xl font-semibold">Harcamayi duzenle</h1>
+        <h1 className="text-2xl font-semibold">Harcamayı düzenle</h1>
       </div>
 
       <ExpenseForm

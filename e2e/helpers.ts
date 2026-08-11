@@ -22,8 +22,8 @@ export async function pageAs(browser: Browser, key: E2EUser["key"]): Promise<Pag
 export async function createGroup(page: Page, name: string) {
   await page.goto("/groups");
   await page.getByRole("button", { name: "Yeni grup", exact: true }).click();
-  await page.getByLabel("Grup adi").fill(name);
-  await page.getByRole("button", { name: "Olustur", exact: true }).click();
+  await page.getByLabel("Grup adı").fill(name);
+  await page.getByRole("button", { name: "Oluştur", exact: true }).click();
 
   await expect(page.getByText(name)).toBeVisible();
 }
@@ -49,14 +49,14 @@ type EqualExpenseInput = {
 export async function addEqualExpense(page: Page, input: EqualExpenseInput) {
   await page.getByRole("link", { name: "Harcama ekle" }).click();
 
-  await page.getByLabel("Aciklama").fill(input.description);
+  await page.getByLabel("Açıklama").fill(input.description);
   await page.getByLabel("Tutar").fill(input.amount);
 
   for (const name of input.unselect ?? []) {
     await page.getByRole("checkbox", { name }).uncheck();
   }
 
-  await page.getByRole("button", { name: "Harcamayi kaydet" }).click();
+  await page.getByRole("button", { name: "Harcamayı kaydet" }).click();
 
   // Kaydetme bitince form bizi grup sayfasina geri gonderiyor. Bunu beklemek
   // sart: beklemeden devam edersek sonraki sayfa istegi, hala ucusta olan
@@ -71,8 +71,8 @@ export async function addEqualExpense(page: Page, input: EqualExpenseInput) {
  */
 export async function createInviteLink(page: Page, groupName: string): Promise<string> {
   await openGroup(page, groupName);
-  await page.getByRole("link", { name: "Uyeleri yonet" }).click();
-  await page.getByRole("button", { name: "Davet linki olustur" }).click();
+  await page.getByRole("link", { name: "Üyeleri yönet" }).click();
+  await page.getByRole("button", { name: "Davet linki oluştur" }).click();
 
   const linkInput = page.locator("input[readonly]");
   await expect(linkInput).toBeVisible();
@@ -92,7 +92,7 @@ export async function createInviteLink(page: Page, groupName: string): Promise<s
  */
 export async function joinViaInvite(page: Page, inviteLink: string, groupName: string) {
   await page.goto(inviteLink);
-  await page.getByRole("button", { name: "Gruba katil" }).click();
+  await page.getByRole("button", { name: "Gruba katıl" }).click();
 
   // Katilma basariliysa uygulama bizi grup sayfasina yonlendirir.
   await page.waitForURL(GROUP_PAGE_URL);

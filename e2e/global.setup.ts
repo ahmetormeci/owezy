@@ -107,7 +107,7 @@ setup("test kullanicilarinin oturumlarini hazirla", async ({ browser }) => {
     await page.waitForFunction(() => window.Clerk?.user != null);
 
     await page.goto("/groups");
-    await expect(page.getByRole("heading", { name: "Gruplarim" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Gruplarım" })).toBeVisible();
 
     await context.storageState({ path: user.storageStatePath });
     await context.close();

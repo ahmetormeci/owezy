@@ -200,7 +200,7 @@ describe("markUserDeletedFromClerk", () => {
     const call = mockTx.user.update.mock.calls[0][0];
     expect(call.where).toEqual({ id: USER_ID });
     expect(call.data.email).toBe(`deleted+${USER_ID}@deleted.invalid`);
-    expect(call.data.displayName).toBe("Silinmis kullanici");
+    expect(call.data.displayName).toBe("Silinmiş kullanıcı");
     expect(call.data.avatarUrl).toBeNull();
     expect(call.data.deletedAt).toBeInstanceOf(Date);
     // clerkId'ye dokunulmamali: tekrar gelen silme olayi satiri bulabilmeli.

@@ -107,7 +107,7 @@ describe("getOrCreateCurrentUser", () => {
     );
     mockPrisma.user.findUnique.mockResolvedValue(null);
 
-    await expect(getOrCreateCurrentUser()).rejects.toThrow(/e-posta adresi bulunamadi/);
+    await expect(getOrCreateCurrentUser()).rejects.toThrow(/e-posta adresi bulunamadı/);
     expect(mockPrisma.user.create).not.toHaveBeenCalled();
   });
 

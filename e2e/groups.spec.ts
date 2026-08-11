@@ -19,9 +19,9 @@ test.describe("gruplar", () => {
 
     await page.goto("/groups");
     await page.getByRole("button", { name: "Yeni grup", exact: true }).click();
-    await page.getByRole("button", { name: "Olustur", exact: true }).click();
+    await page.getByRole("button", { name: "Oluştur", exact: true }).click();
 
-    await expect(page.getByText("Grup adi bos olamaz")).toBeVisible();
+    await expect(page.getByText("Grup adı boş olamaz")).toBeVisible();
   });
 
   test("grup sahibi grup adini ve aciklamasini duzenleyebilir", async ({ browser }) => {
@@ -32,9 +32,9 @@ test.describe("gruplar", () => {
     await createGroup(page, name);
     await openGroup(page, name);
 
-    await page.getByRole("button", { name: "Duzenle" }).click();
-    await page.getByLabel("Grup adi").fill(updatedName);
-    await page.getByLabel("Aciklama").fill("Test aciklamasi");
+    await page.getByRole("button", { name: "Düzenle" }).click();
+    await page.getByLabel("Grup adı").fill(updatedName);
+    await page.getByLabel("Açıklama").fill("Test aciklamasi");
     await page.getByRole("button", { name: "Kaydet", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: updatedName })).toBeVisible();

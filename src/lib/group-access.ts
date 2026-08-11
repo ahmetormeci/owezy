@@ -15,7 +15,7 @@ export async function assertActiveMemberOfGroup(groupId: string, userId: string)
     where: { groupId, userId, leftAt: null },
   });
   if (!membership) {
-    throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+    throw new ForbiddenError("Bu grubun üyesi değilsiniz");
   }
 }
 
@@ -39,7 +39,7 @@ export async function assertCanModifyRecord(
     where: { groupId, userId, leftAt: null },
   });
   if (!callerMembership) {
-    throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+    throw new ForbiddenError("Bu grubun üyesi değilsiniz");
   }
 
   if (record.createdById === userId) {
@@ -51,13 +51,13 @@ export async function assertCanModifyRecord(
   });
   if (creatorMembership) {
     throw new ForbiddenError(
-      `Bu ${recordLabel} uzerinde yalnizca onu olusturan kisi islem yapabilir`,
+      `Bu ${recordLabel} üzerinde yalnızca onu oluşturan kişi işlem yapabilir`,
     );
   }
 
   if (callerMembership.role !== "OWNER") {
     throw new ForbiddenError(
-      "Kaydi olusturan kisi gruptan ayrildi; bu kayit uzerinde yalnizca grup sahibi islem yapabilir",
+      "Kaydı oluşturan kişi gruptan ayrıldı; bu kayıt üzerinde yalnızca grup sahibi işlem yapabilir",
     );
   }
 }

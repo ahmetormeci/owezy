@@ -95,7 +95,7 @@ export function simplifyDebts(balances: UserBalance[]): SuggestedTransfer[] {
   if (total !== 0) {
     // Bu bir veri butunlugu hatasidir: bir yerde para "yaratilmis" veya "yok
     // olmus" demektir. Sessizce yanlis transfer uretmektense yuksek sesle patlat.
-    throw new Error(`bakiyelerin toplami sifir olmalidir, bulunan: ${total}`);
+    throw new Error(`bakiyelerin toplamı sıfır olmalıdır, bulunan: ${total}`);
   }
 
   const debtors = balances
@@ -148,7 +148,7 @@ export type GroupBalanceEntry = UserBalance & {
 export async function getGroupBalances(userId: string, groupId: string) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadi");
+    throw new NotFoundError("Grup bulunamadı");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);
@@ -200,7 +200,7 @@ export async function getGroupBalances(userId: string, groupId: string) {
       const membership = membershipByUserId.get(balance.userId);
       return {
         ...balance,
-        displayName: membership?.displayName ?? "Bilinmeyen kullanici",
+        displayName: membership?.displayName ?? "Bilinmeyen kullanıcı",
         avatarUrl: membership?.avatarUrl ?? null,
         hasLeft: membership?.hasLeft ?? true,
       };

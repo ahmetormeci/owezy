@@ -5,12 +5,12 @@ import type { ExpenseCategory } from "@prisma/client";
 // eklenirse TypeScript burayi guncellemedigimizi derleme aninda yakalar.
 export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   FOOD: "Yemek",
-  TRANSPORT: "Ulasim",
+  TRANSPORT: "Ulaşım",
   ACCOMMODATION: "Konaklama",
-  SHOPPING: "Alisveris",
+  SHOPPING: "Alışveriş",
   BILLS: "Faturalar",
-  ENTERTAINMENT: "Eglence",
-  OTHER: "Diger",
+  ENTERTAINMENT: "Eğlence",
+  OTHER: "Diğer",
 };
 
 export const EXPENSE_CATEGORY_OPTIONS = Object.entries(EXPENSE_CATEGORY_LABELS) as [

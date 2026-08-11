@@ -23,7 +23,7 @@ test.describe("kimlik dogrulama", () => {
 
     // Bu kontrol, bilesen agacini cokerten "bos sayfa" hatasini yakalar:
     // sayfa acilmis ama icerik hic render edilmemisse burada patlar.
-    await expect(page.getByRole("heading", { name: "Gruplarim" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Gruplarım" })).toBeVisible();
     await context.close();
   });
 

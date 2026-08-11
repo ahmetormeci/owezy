@@ -59,10 +59,10 @@ export function InviteManager({
       );
 
       setCreatedLink(`${window.location.origin}/join/${data.invite.token}`);
-      toast.success("Davet linki olusturuldu");
+      toast.success("Davet linki oluşturuldu");
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Davet linki olusturulamadi");
+      toast.error(error instanceof Error ? error.message : "Davet linki oluşturulamadı");
     } finally {
       setIsCreating(false);
     }
@@ -84,9 +84,9 @@ export function InviteManager({
     if (!createdLink) return;
     try {
       await navigator.clipboard.writeText(createdLink);
-      toast.success("Link kopyalandi");
+      toast.success("Link kopyalandı");
     } catch {
-      toast.error("Link kopyalanamadi, elle secip kopyalayabilirsin");
+      toast.error("Link kopyalanamadı, elle seçip kopyalayabilirsin");
     }
   }
 
@@ -94,46 +94,46 @@ export function InviteManager({
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="maxUses">Kac kisi kullanabilsin?</Label>
+          <Label htmlFor="maxUses">Kaç kişi kullanabilsin?</Label>
           <select
             id="maxUses"
             className={selectClassName}
             value={maxUses}
             onChange={(event) => setMaxUses(event.target.value)}
           >
-            <option value="1">1 kisi</option>
-            <option value="5">5 kisi</option>
-            <option value="25">25 kisi</option>
+            <option value="1">1 kişi</option>
+            <option value="5">5 kişi</option>
+            <option value="25">25 kişi</option>
           </select>
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="ttlDays">Ne kadar gecerli olsun?</Label>
+          <Label htmlFor="ttlDays">Ne kadar geçerli olsun?</Label>
           <select
             id="ttlDays"
             className={selectClassName}
             value={ttlDays}
             onChange={(event) => setTtlDays(event.target.value)}
           >
-            <option value="1">1 gun</option>
-            <option value="7">7 gun</option>
-            <option value="30">30 gun</option>
+            <option value="1">1 gün</option>
+            <option value="7">7 gün</option>
+            <option value="30">30 gün</option>
           </select>
         </div>
       </div>
 
       <Button onClick={handleCreate} disabled={isCreating} className="self-start">
-        {isCreating ? "Olusturuluyor..." : "Davet linki olustur"}
+        {isCreating ? "Oluşturuluyor..." : "Davet linki oluştur"}
       </Button>
 
       {createdLink ? (
         <Card>
           <CardContent className="flex flex-col gap-3 py-4">
-            <p className="text-sm font-medium">Davet linkin hazir</p>
+            <p className="text-sm font-medium">Davet linkin hazır</p>
             <p className="text-sm text-muted-foreground">
-              Bu link yalnizca simdi gosteriliyor. Sayfayi yenilersen bir daha
-              goremezsin, cunku sunucuda linkin kendisi degil yalnizca sifrelenmis
-              bir ozeti saklaniyor.
+              Bu link yalnızca şimdi gösteriliyor. Sayfayı yenilersen bir daha
+              göremezsin, çünkü sunucuda linkin kendisi değil yalnızca şifrelenmiş
+              bir özeti saklanıyor.
             </p>
             <div className="flex gap-2">
               <Input readOnly value={createdLink} onFocus={(event) => event.target.select()} />
@@ -167,19 +167,19 @@ export function InviteManager({
                     </p>
                     <p className="text-muted-foreground">
                       {dateFormatter.format(new Date(invite.expiresAt))} tarihine kadar ·{" "}
-                      {nameByUserId[invite.invitedById] ?? "Bilinmeyen"} olusturdu
+                      {nameByUserId[invite.invitedById] ?? "Bilinmeyen"} oluşturdu
                     </p>
                   </div>
 
                   {isExhausted ? (
-                    <Badge variant="outline">Tukendi</Badge>
+                    <Badge variant="outline">Tükendi</Badge>
                   ) : (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRevoke(invite.id)}
                     >
-                      Iptal et
+                      İptal et
                     </Button>
                   )}
                 </li>
