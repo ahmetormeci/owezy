@@ -1,4 +1,5 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -8,6 +9,10 @@ import { prisma } from "@/lib/prisma";
  *
  * Tum is mantigi bu fonksiyonun dondurdugu User kaydini (bizim ic id'mizi)
  * kullanmali - Clerk'in clerkId'sini degil.
+ *
+ * Fonksiyon ayni anda birden fazla kez cagrilabilir (bir sayfa acilirken
+ * tarayici genellikle es zamanli istek atar). Bu yuzden "yoksa olustur"
+ * adimi yarisa dayanikli olmak zorunda; asagidaki P2002 yakalamasi bunun icin.
  */
 export async function getOrCreateCurrentUser() {
   const { userId: clerkId } = await auth();
@@ -38,12 +43,29 @@ export async function getOrCreateCurrentUser() {
     [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
     primaryEmail;
 
-  return prisma.user.create({
-    data: {
-      clerkId,
-      email: primaryEmail,
-      displayName,
-      avatarUrl: clerkUser.imageUrl,
-    },
-  });
+  try {
+    return await prisma.user.create({
+      data: {
+        clerkId,
+        email: primaryEmail,
+        displayName,
+        avatarUrl: clerkUser.imageUrl,
+      },
+    });
+  } catch (error) {
+    // P2002 = benzersizlik kisiti ihlali. Buraya dusmemizin tek makul sebebi,
+    // ayni kullanici icin paralel giden baska bir istegin kaydi bizden hemen
+    // once olusturmus olmasi. Bu bir hata degil, yaris; kazananin olusturdugu
+    // kaydi okuyup donuyoruz.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const created = await prisma.user.findUnique({ where: { clerkId } });
+      if (created) {
+        return created;
+      }
+    }
+    throw error;
+  }
 }

@@ -122,6 +122,20 @@ export function ExpenseList({
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // useState'e verilen deger YALNIZCA ilk render'da kullanilir. Bir harcama
+  // silindiginde router.refresh() sunucudan guncel listeyi getiriyor, ama biz
+  // listeyi yerel state'te tuttugumuz icin ekran eski halde kaliyordu: silinen
+  // kayit listede duruyor, kullanici tekrar silmeye calisip hata aliyordu.
+  // Bu yuzden sunucudan yeni bir liste geldiginde state'i onunla esitliyoruz.
+  // ("Daha fazla" ile yuklenmis ek sayfalar bu sirada sifirlanir; dogru olan da
+  // budur, cunku sunucunun gonderdigi liste artik tek gecerli kaynak.)
+  const [serverExpenses, setServerExpenses] = useState(initialExpenses);
+  if (serverExpenses !== initialExpenses) {
+    setServerExpenses(initialExpenses);
+    setExpenses(initialExpenses);
+    setNextCursor(initialNextCursor);
+  }
+
   async function loadMore() {
     if (!nextCursor) return;
 

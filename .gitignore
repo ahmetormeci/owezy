@@ -42,6 +42,12 @@ yarn-error.log*
 # manuel API testleri icin lokal istek govdeleri (dev veritabanina ozgu ID'ler icerir)
 /test-requests/
 
+# playwright: kayitli oturumlar (giris bilgisi icerir) ve calisma ciktilari
+/e2e/.auth/
+/test-results/
+/playwright-report/
+/blob-report/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
