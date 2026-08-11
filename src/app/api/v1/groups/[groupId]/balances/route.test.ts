@@ -63,7 +63,7 @@ describe("GET /api/v1/groups/[groupId]/balances", () => {
 
   it("grup bulunamazsa 404 doner", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
-    mockGetGroupBalances.mockRejectedValue(new NotFoundError("Grup bulunamadi"));
+    mockGetGroupBalances.mockRejectedValue(new NotFoundError("group.not_found"));
 
     const response = await callRoute();
 
@@ -72,12 +72,12 @@ describe("GET /api/v1/groups/[groupId]/balances", () => {
 
   it("uye olmayan kullanici icin 403 doner", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
-    mockGetGroupBalances.mockRejectedValue(new ForbiddenError("Bu grubun uyesi degilsiniz"));
+    mockGetGroupBalances.mockRejectedValue(new ForbiddenError("group.not_member"));
 
     const response = await callRoute();
     const json = await response.json();
 
     expect(response.status).toBe(403);
-    expect(json).toEqual({ ok: false, error: "Bu grubun uyesi degilsiniz" });
+    expect(json).toEqual({ ok: false, code: "group.not_member" });
   });
 });

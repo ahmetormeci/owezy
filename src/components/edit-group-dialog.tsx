@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateGroupSchema } from "@/lib/group-schemas";
 import { apiRequest } from "@/lib/api-client";
+import { translate } from "@/lib/messages";
 
 export function EditGroupDialog({
   groupId,
@@ -44,7 +45,8 @@ export function EditGroupDialog({
     });
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Geçersiz giriş");
+      // Sema mesajlari artik KOD tasiyor; gosterirken cevriliyor.
+      setError(translate(parsed.error.issues[0]?.message ?? "validation.invalid"));
       return;
     }
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { translate } from "@/lib/messages";
 
 export function AcceptInvite({ token }: { token: string }) {
   const router = useRouter();
@@ -23,7 +24,9 @@ export function AcceptInvite({ token }: { token: string }) {
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error ?? "Gruba katılınamadı");
+        // Bu bilesen apiRequest'i kullanmiyor (kendi fetch'i var), o yuzden
+        // kod -> metin cevirisini burada kendisi yapiyor.
+        throw new Error(data.code ? translate(data.code, data.params) : "Gruba katılınamadı");
       }
 
       toast.success("Gruba katıldın");

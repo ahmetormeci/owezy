@@ -60,18 +60,18 @@ describe("POST /api/v1/groups/[groupId]/expenses/[expenseId]/restore", () => {
 
   it("silinmemis harcama icin ConflictError 409'a cevrilir", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
-    mockRestoreExpense.mockRejectedValue(new ConflictError("Harcama zaten silinmemis"));
+    mockRestoreExpense.mockRejectedValue(new ConflictError("expense.not_deleted"));
 
     const response = await callRoute();
     const json = await response.json();
 
     expect(response.status).toBe(409);
-    expect(json).toEqual({ ok: false, error: "Harcama zaten silinmemis" });
+    expect(json).toEqual({ ok: false, code: "expense.not_deleted" });
   });
 
   it("uye olmayan kullanici icin ForbiddenError 403'e cevrilir", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
-    mockRestoreExpense.mockRejectedValue(new ForbiddenError("Bu grubun uyesi degilsiniz"));
+    mockRestoreExpense.mockRejectedValue(new ForbiddenError("group.not_member"));
 
     const response = await callRoute();
 

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getOrCreateCurrentUser();
     if (!user) {
-      return NextResponse.json({ ok: false, error: "not signed in" }, { status: 401 });
+      return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
 
     const { token } = acceptInviteSchema.parse(await request.json());

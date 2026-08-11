@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const user = await getOrCreateCurrentUser();
     if (!user) {
-      return NextResponse.json({ ok: false, error: "not signed in" }, { status: 401 });
+      return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
 
     const groups = await listGroupsForUser(user.id);
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getOrCreateCurrentUser();
     if (!user) {
-      return NextResponse.json({ ok: false, error: "not signed in" }, { status: 401 });
+      return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
 
     const body = createGroupSchema.parse(await request.json());

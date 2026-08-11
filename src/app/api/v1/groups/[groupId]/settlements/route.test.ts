@@ -96,7 +96,7 @@ describe("POST /api/v1/groups/[groupId]/settlements", () => {
   it("servis ForbiddenError firlatirsa 403 doner", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
     mockCreateSettlement.mockRejectedValue(
-      new ForbiddenError("Yalnizca kendi yaptiginiz veya size yapilan odemeleri kaydedebilirsiniz"),
+      new ForbiddenError("settlement.party_only"),
     );
 
     const response = await callPost(validBody);

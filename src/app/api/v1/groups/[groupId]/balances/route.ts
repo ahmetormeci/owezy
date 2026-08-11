@@ -10,7 +10,7 @@ export async function GET(
   try {
     const user = await getOrCreateCurrentUser();
     if (!user) {
-      return NextResponse.json({ ok: false, error: "not signed in" }, { status: 401 });
+      return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
 
     const { groupId } = await params;

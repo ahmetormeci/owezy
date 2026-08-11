@@ -7,7 +7,7 @@ describe("vitest kurulumu", () => {
   });
 
   it("@/ path alias'i ile mevcut proje kodunu import edebiliyor", () => {
-    const error = new AppError("test", 418);
+    const error = new AppError("server.unexpected", 418);
     expect(error).toBeInstanceOf(Error);
     expect(error.status).toBe(418);
   });

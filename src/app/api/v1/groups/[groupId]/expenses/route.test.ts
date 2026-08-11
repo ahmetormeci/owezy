@@ -117,7 +117,7 @@ describe("POST /api/v1/groups/[groupId]/expenses", () => {
 
   it("createExpense bir AppError firlatirsa handleApiError dogru status'e cevirir", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
-    mockCreateExpense.mockRejectedValue(new ForbiddenError("Bu grubun uyesi degilsiniz"));
+    mockCreateExpense.mockRejectedValue(new ForbiddenError("group.not_member"));
 
     const response = await callRoute({
       splitType: "EQUAL",
@@ -129,7 +129,7 @@ describe("POST /api/v1/groups/[groupId]/expenses", () => {
     const json = await response.json();
 
     expect(response.status).toBe(403);
-    expect(json).toEqual({ ok: false, error: "Bu grubun uyesi degilsiniz" });
+    expect(json).toEqual({ ok: false, code: "group.not_member" });
   });
 });
 

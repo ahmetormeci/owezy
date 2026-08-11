@@ -92,13 +92,13 @@ describe("PUT /api/v1/groups/[groupId]/expenses/[expenseId]", () => {
 
   it("updateExpense NotFoundError firlatirsa 404 doner", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
-    mockUpdateExpense.mockRejectedValue(new NotFoundError("Harcama bulunamadi"));
+    mockUpdateExpense.mockRejectedValue(new NotFoundError("expense.not_found"));
 
     const response = await callRoute(validBody);
     const json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json).toEqual({ ok: false, error: "Harcama bulunamadi" });
+    expect(json).toEqual({ ok: false, code: "expense.not_found" });
   });
 });
 
@@ -140,7 +140,7 @@ describe("DELETE /api/v1/groups/[groupId]/expenses/[expenseId]", () => {
 
   it("deleteExpense NotFoundError firlatirsa 404 doner", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
-    mockDeleteExpense.mockRejectedValue(new NotFoundError("Harcama bulunamadi"));
+    mockDeleteExpense.mockRejectedValue(new NotFoundError("expense.not_found"));
 
     const response = await callDeleteRoute();
 

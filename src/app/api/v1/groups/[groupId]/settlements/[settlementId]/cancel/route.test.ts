@@ -61,19 +61,19 @@ describe("POST /api/v1/groups/[groupId]/settlements/[settlementId]/cancel", () =
   it("zaten iptal edilmis kayit icin 409 doner", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
     mockCancelSettlement.mockRejectedValue(
-      new ConflictError("Bu odeme kaydi zaten iptal edilmis"),
+      new ConflictError("settlement.already_cancelled"),
     );
 
     const response = await callRoute();
     const json = await response.json();
 
     expect(response.status).toBe(409);
-    expect(json).toEqual({ ok: false, error: "Bu odeme kaydi zaten iptal edilmis" });
+    expect(json).toEqual({ ok: false, code: "settlement.already_cancelled" });
   });
 
   it("kayit bulunamazsa 404 doner", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
-    mockCancelSettlement.mockRejectedValue(new NotFoundError("Odeme kaydi bulunamadi"));
+    mockCancelSettlement.mockRejectedValue(new NotFoundError("settlement.not_found"));
 
     const response = await callRoute();
 
@@ -83,7 +83,7 @@ describe("POST /api/v1/groups/[groupId]/settlements/[settlementId]/cancel", () =
   it("yetkisiz kullanici icin 403 doner", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
     mockCancelSettlement.mockRejectedValue(
-      new ForbiddenError("Bu odeme kaydi uzerinde yalnizca onu olusturan kisi islem yapabilir"),
+      new ForbiddenError("access.settlement_creator_only"),
     );
 
     const response = await callRoute();

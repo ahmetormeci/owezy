@@ -15,7 +15,7 @@ export async function assertActiveMemberOfGroup(groupId: string, userId: string)
     where: { groupId, userId, leftAt: null },
   });
   if (!membership) {
-    throw new ForbiddenError("Bu grubun üyesi değilsiniz");
+    throw new ForbiddenError("group.not_member");
   }
 }
 
@@ -33,13 +33,15 @@ export async function assertCanModifyRecord(
   groupId: string,
   record: { createdById: string },
   userId: string,
-  recordLabel: string,
+  // Eskiden Turkce bir etiketti ("harcama"). Metin parametresi cevrilemez;
+  // kayit TURUNU geciyoruz, metni sozluk uretiyor.
+  recordKind: "expense" | "settlement",
 ) {
   const callerMembership = await tx.groupMember.findFirst({
     where: { groupId, userId, leftAt: null },
   });
   if (!callerMembership) {
-    throw new ForbiddenError("Bu grubun üyesi değilsiniz");
+    throw new ForbiddenError("group.not_member");
   }
 
   if (record.createdById === userId) {
@@ -51,13 +53,13 @@ export async function assertCanModifyRecord(
   });
   if (creatorMembership) {
     throw new ForbiddenError(
-      `Bu ${recordLabel} üzerinde yalnızca onu oluşturan kişi işlem yapabilir`,
+      recordKind === "expense"
+        ? "access.expense_creator_only"
+        : "access.settlement_creator_only",
     );
   }
 
   if (callerMembership.role !== "OWNER") {
-    throw new ForbiddenError(
-      "Kaydı oluşturan kişi gruptan ayrıldı; bu kayıt üzerinde yalnızca grup sahibi işlem yapabilir",
-    );
+    throw new ForbiddenError("access.creator_left_owner_only");
   }
 }

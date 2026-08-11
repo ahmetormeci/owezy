@@ -1,12 +1,20 @@
 // Istemci tarafindan /api/v1 endpoint'lerini cagirmak icin tek giris noktasi.
 //
 // Tum API'lerimiz ayni sozlesmeyi kullaniyor: basarili cevaplar { ok: true, ... },
-// hatalar { ok: false, error: "..." }. Bu fonksiyon o sozlesmeyi tek yerde
+// hatalar { ok: false, code, params? }. Bu fonksiyon o sozlesmeyi tek yerde
 // yorumluyor ki her form ayni kontrolu tekrar yazmasin.
+//
+// KODU METNE BURADA CEVIRIYORUZ. Boylece cagiran bileşenler degismedi: hepsi
+// hala "catch (e) { e.message }" yapiyor ve okunabilir bir cumle goruyor.
+// Ceviriyi her forma tek tek yaptirmak, 9 ayri yerde ayni hatayi yapma
+// firsati demekti.
+
+import { translate, type MessageParams } from "@/lib/messages";
 
 type ApiErrorBody = {
   ok?: boolean;
-  error?: string;
+  code?: string;
+  params?: MessageParams;
 };
 
 export async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
@@ -22,12 +30,14 @@ export async function apiRequest<T>(url: string, options: RequestInit = {}): Pro
   try {
     body = await response.json();
   } catch {
-    throw new Error("Sunucudan beklenmeyen bir cevap alındı");
+    throw new Error(translate("server.bad_response"));
   }
 
   const parsed = body as ApiErrorBody;
   if (!response.ok || parsed.ok === false) {
-    throw new Error(parsed.error ?? "Beklenmeyen bir hata oluştu");
+    throw new Error(
+      parsed.code ? translate(parsed.code, parsed.params) : translate("server.unexpected"),
+    );
   }
 
   return body as T;

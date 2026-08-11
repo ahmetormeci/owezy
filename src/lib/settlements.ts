@@ -33,11 +33,11 @@ export async function createSettlement(
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadı");
+      throw new NotFoundError("group.not_found");
     }
 
     if (input.fromUserId === input.toUserId) {
-      throw new ValidationError("Bir kullanıcı kendine ödeme kaydı giremez");
+      throw new ValidationError("settlement.self_transfer");
     }
 
     // Islemi yapan kisi grubun AKTIF uyesi olmali.
@@ -45,16 +45,14 @@ export async function createSettlement(
       where: { groupId, userId, leftAt: null },
     });
     if (!callerMembership) {
-      throw new ForbiddenError("Bu grubun üyesi değilsiniz");
+      throw new ForbiddenError("group.not_member");
     }
 
     // ...ve odemenin taraflarindan biri olmali. Ucuncu bir sahsin baskalari
     // arasindaki odemeyi kaydedebilmesi, dogrudan borc silen bir istismar
     // yuzeyi olurdu.
     if (userId !== input.fromUserId && userId !== input.toUserId) {
-      throw new ForbiddenError(
-        "Yalnızca kendi yaptığınız veya size yapılan ödemeleri kaydedebilirsiniz",
-      );
+      throw new ForbiddenError("settlement.party_only");
     }
 
     // Odemenin taraflari grubun uyesi olmali ama AKTIF olmak zorunda degil:
@@ -69,9 +67,9 @@ export async function createSettlement(
       (id) => !partyUserIds.has(id),
     );
     if (missingUserIds.length > 0) {
-      throw new ForbiddenError(
-        `Şu kullanıcılar grubun üyesi değil: ${missingUserIds.join(", ")}`,
-      );
+      throw new ForbiddenError("settlement.users_not_member", {
+        userIds: missingUserIds.join(", "),
+      });
     }
 
     // currency istemciden hic alinmiyor - her zaman grubun currency'sinden gelir.
@@ -114,7 +112,7 @@ export async function listSettlements(
 ) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadı");
+    throw new NotFoundError("group.not_found");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);
@@ -156,20 +154,20 @@ export async function cancelSettlement(
     // groupId eslesmesi burada kontrol ediliyor: baska bir grubun odeme kaydi,
     // kendi grup ID'n uzerinden iptal edilemesin.
     if (!existing || existing.groupId !== groupId) {
-      throw new NotFoundError("Ödeme kaydı bulunamadı");
+      throw new NotFoundError("settlement.not_found");
     }
     // Iptal edilmis kayitlar listelemede hala gorulebildigi icin (includeCancelled)
     // "bulunamadi" demek yaniltici olurdu; durum cakismasi olarak bildiriliyor.
     if (existing.cancelledAt) {
-      throw new ConflictError("Bu ödeme kaydı zaten iptal edilmiş");
+      throw new ConflictError("settlement.already_cancelled");
     }
 
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadı");
+      throw new NotFoundError("group.not_found");
     }
 
-    await assertCanModifyRecord(tx, groupId, existing, userId, "ödeme kaydı");
+    await assertCanModifyRecord(tx, groupId, existing, userId, "settlement");
 
     // Fiziksel silme YOK: cancelledAt/cancelledById isaretleniyor ve kayit
     // bakiye hesabindan (cancelledAt: null filtresi) otomatik dusuyor.

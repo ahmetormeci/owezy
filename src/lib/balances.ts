@@ -148,7 +148,7 @@ export type GroupBalanceEntry = UserBalance & {
 export async function getGroupBalances(userId: string, groupId: string) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadı");
+    throw new NotFoundError("group.not_found");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);

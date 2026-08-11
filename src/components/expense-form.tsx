@@ -17,6 +17,8 @@ import {
 } from "@/lib/money";
 import { splitByPercentage, splitEqually, splitExactly, type SplitShare } from "@/lib/split";
 import { EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
+import { AppError } from "@/lib/errors";
+import { translate } from "@/lib/messages";
 
 type Member = {
   userId: string;
@@ -159,9 +161,13 @@ export function ExpenseForm({
         }),
       };
     } catch (previewError) {
-      return {
-        error: previewError instanceof Error ? previewError.message : "Bölüşüm hesaplanamadı",
-      };
+      // split.ts artik kod firlatiyor; onizlemede gosterilecek metni burada
+      // uretiyoruz. Parametreleri de geciriyoruz, yoksa "paylarin toplami
+      // (...) esit degil" mesajindaki sayilar kaybolurdu.
+      if (previewError instanceof AppError) {
+        return { error: translate(previewError.code, previewError.params) };
+      }
+      return { error: translate("split.failed") };
     }
   }, [amount, selected, splitType]);
 

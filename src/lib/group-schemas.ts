@@ -3,10 +3,17 @@ import { z } from "zod";
 // Bu semalar hem sunucuda (route handler) hem istemcide (form) kullanilir.
 // Ayni kurali iki yerde ayri ayri yazmiyoruz: form ne kabul ediyorsa API de
 // onu kabul eder, mesajlar da tek yerden gelir.
+//
+// Mesaj alanlarinda METIN degil KOD duruyor. Sema paylasildigi icin bu sart:
+// sunucu bir dil bilmiyor, istemci ise kodu kendi diline ceviriyor. Gosteren
+// taraf translate() cagiriyor (bkz. create-group-dialog.tsx).
 export const createGroupSchema = z.object({
-  name: z.string().min(1, "Grup adı boş olamaz").max(100, "Grup adı en fazla 100 karakter olabilir"),
-  description: z.string().max(500, "Açıklama en fazla 500 karakter olabilir").optional(),
-  currency: z.string().length(3, "Para birimi 3 harfli olmalıdır").optional(),
+  name: z
+    .string()
+    .min(1, "validation.group_name_required")
+    .max(100, "validation.group_name_too_long"),
+  description: z.string().max(500, "validation.description_too_long").optional(),
+  currency: z.string().length(3, "validation.currency_length").optional(),
 });
 
 // currency guncellemede yok: mevcut kayitlar kendi currency'lerini saklamis

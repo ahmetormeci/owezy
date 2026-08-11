@@ -1,6 +1,12 @@
 import type { ExpenseCategory, Prisma, SplitType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+import {
+  AppError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "@/lib/errors";
 import { assertActiveMemberOfGroup, assertCanModifyRecord } from "@/lib/group-access";
 import { createNotifications } from "@/lib/notifications";
 import {
@@ -56,7 +62,13 @@ function computeShares(amount: number, input: CreateExpenseInput): SplitShare[] 
         return splitByPercentage({ amount, shares: input.shares });
     }
   } catch (error) {
-    throw new ValidationError(error instanceof Error ? error.message : "Bölüşüm hesaplanamadı");
+    // split.ts artik ValidationError firlatiyor: kodu ve parametreleri
+    // (hangi kullanici, hangi toplam) zaten dogru. Yeniden sarmalarsak
+    // o bilgi kaybolur, o yuzden oldugu gibi geciriyoruz.
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new ValidationError("split.failed");
   }
 }
 
@@ -69,7 +81,7 @@ const assertCanModifyExpense = (
   groupId: string,
   expense: { createdById: string },
   userId: string,
-) => assertCanModifyRecord(tx, groupId, expense, userId, "harcama");
+) => assertCanModifyRecord(tx, groupId, expense, userId, "expense");
 
 // ExpenseEdit.previousData / newData icin kullanilan anlik goruntu.
 // ExpenseParticipant satirlari guncellemede fiziksel olarak silinip yeniden
@@ -141,7 +153,7 @@ export async function listExpenses(
 ) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadı");
+    throw new NotFoundError("group.not_found");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);
@@ -182,7 +194,7 @@ export async function getExpenseForUser(
 ) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadı");
+    throw new NotFoundError("group.not_found");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);
@@ -193,7 +205,7 @@ export async function getExpenseForUser(
   });
 
   if (!expense || expense.deletedAt || expense.groupId !== groupId) {
-    throw new NotFoundError("Harcama bulunamadı");
+    throw new NotFoundError("expense.not_found");
   }
 
   return expense;
@@ -203,7 +215,7 @@ export async function createExpense(userId: string, groupId: string, input: Crea
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadı");
+      throw new NotFoundError("group.not_found");
     }
 
     const participantUserIds = getParticipantUserIds(input);
@@ -217,9 +229,9 @@ export async function createExpense(userId: string, groupId: string, input: Crea
     const missingUserIds = userIdsToCheck.filter((id) => !activeUserIds.has(id));
 
     if (missingUserIds.length > 0) {
-      throw new ForbiddenError(
-        `Şu kullanıcılar grubun aktif üyesi değil: ${missingUserIds.join(", ")}`,
-      );
+      throw new ForbiddenError("expense.participants_not_active", {
+        userIds: missingUserIds.join(", "),
+      });
     }
 
     // currency istemciden hic alinmiyor - her zaman grubun currency'sinden turetilir.
@@ -286,12 +298,12 @@ export async function updateExpense(
     // kontrol ediliyor: baska bir grubun harcamasi, kendi grup ID'n uzerinden
     // duzenlenemesin (varligini sizdirmamak icin 403 degil 404 donuyoruz).
     if (!existing || existing.deletedAt || existing.groupId !== groupId) {
-      throw new NotFoundError("Harcama bulunamadı");
+      throw new NotFoundError("expense.not_found");
     }
 
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadı");
+      throw new NotFoundError("group.not_found");
     }
 
     await assertCanModifyExpense(tx, groupId, existing, userId);
@@ -310,9 +322,9 @@ export async function updateExpense(
     const missingUserIds = userIdsToCheck.filter((id) => !activeUserIds.has(id));
 
     if (missingUserIds.length > 0) {
-      throw new ForbiddenError(
-        `Şu kullanıcılar grubun aktif üyesi değil: ${missingUserIds.join(", ")}`,
-      );
+      throw new ForbiddenError("expense.participants_not_active", {
+        userIds: missingUserIds.join(", "),
+      });
     }
 
     const shares = computeShares(input.amount, input);
@@ -398,12 +410,12 @@ export async function deleteExpense(userId: string, groupId: string, expenseId: 
     // Zaten silinmis bir harcama tekrar silinemez; baska grubun harcamasi da
     // kendi grup ID'n uzerinden silinemez (varligini sizdirmamak icin 404).
     if (!existing || existing.deletedAt || existing.groupId !== groupId) {
-      throw new NotFoundError("Harcama bulunamadı");
+      throw new NotFoundError("expense.not_found");
     }
 
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadı");
+      throw new NotFoundError("group.not_found");
     }
 
     await assertCanModifyExpense(tx, groupId, existing, userId);
@@ -457,16 +469,16 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
     });
 
     if (!existing || existing.groupId !== groupId) {
-      throw new NotFoundError("Harcama bulunamadı");
+      throw new NotFoundError("expense.not_found");
     }
     // Yalnizca soft-delete edilmis bir harcama geri yuklenebilir.
     if (!existing.deletedAt) {
-      throw new ConflictError("Harcama zaten silinmemiş");
+      throw new ConflictError("expense.not_deleted");
     }
 
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadı");
+      throw new NotFoundError("group.not_found");
     }
 
     await assertCanModifyExpense(tx, groupId, existing, userId);

@@ -12,7 +12,7 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 360 | ✅ tümü geçiyor |
+| Birim (Vitest) | 369 | ✅ tümü geçiyor |
 | E2E (Playwright) | 24 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -165,7 +165,10 @@ eşit genişlikli rakamlar.
 | 11.1 | **DONE** | Yazı tipi hatası + koyu tema bağlantısı |
 | 11.2 | **DONE** | Tasarım tokenları (kobalt, alacak/borç, tipografi ölçeği) |
 | 11.3 | **DONE** | Para biçimlendirmesi dile duyarlı hale gelir |
-| 11.4 | TODO | API hata kodları + çeviri altyapısı |
+| 11.4a | **DONE** | API hata kodları (görünür değişiklik yok) |
+| 11.4b | TODO | Arayüzdeki gömülü metinler sözlüğe taşınır |
+| 11.4c | TODO | Dil çerezden okunur, `formatMoney`'e geçirilir, dil düğmesi |
+| 11.4d | TODO | İngilizce sözlük + `User.locale` migration |
 | 11.5 | TODO | Grup sayfası hiyerarşisi |
 | 11.6 | TODO | Karşılama, formlar, boş durumlar, mobil |
 
@@ -193,7 +196,18 @@ Dilin **nereden geldiği** henüz bağlı değil; fonksiyonlar saf, tesisat
 11.4'ün işi. Bugün her çağrı varsayılanı kullandığı için ekran çıktısı
 bit bit aynı.
 
-**Test:** 360 birim / 24 E2E.
+**11.4a'da yapıldı:** 54 `throw` noktası metin yerine kod taşıyor; sözlük
+`src/lib/messages.ts`. `MessageCode` tipi sözlükten türediği için var olmayan
+bir kodu fırlatmak derleme hatası — "çevirisi unutulmuş mesaj" oluşamıyor.
+Çeviri `apiRequest` içinde yapılıyor, o yüzden onu çağıran 9 bileşen
+değişmedi. Çıktı bit bit aynı kaldı, 24 E2E testi değişmeden geçti.
+
+**11.4 neden dörde bölündü:** 11.4a'da ekran çıktısının değişmemesi
+gerekiyordu; bu, 24 E2E testini tam bir regresyon ağına çevirdi. Dil
+tesisatı aynı commit'te olsaydı bir test kırıldığında sebebi iki değişiklik
+arasından aramak gerekirdi.
+
+**Test:** 369 birim / 24 E2E.
 **Commit:** (bkz. CHANGELOG)
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce

@@ -10,6 +10,25 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-11
 
+### API hata kodları (Faz 11.4a)
+- API artık hata **metni** değil **kodu** döndürüyor:
+  `{ ok: false, code: "group.not_found", params? }`. Türkçe metin sunucuda
+  hiç kalmadı.
+- Sözlük `src/lib/messages.ts`. `MessageCode` tipi sözlükten **türetiliyor**,
+  yani sözlükte olmayan bir kodu fırlatmak derleme hatası.
+- Kod → metin çevirisi `apiRequest` içinde tek yerde yapılıyor; onu çağıran
+  9 bileşen hiç değişmedi.
+- Parametreli mesajlar için `params` eklendi (`{total}`, `{userIds}`).
+  ADR-017 bunu öngörmemişti — bazı hatalar çalışma zamanı değeri taşıyor.
+- `assertCanModifyRecord` artık Türkçe etiket değil kayıt **türü** alıyor
+  (`"expense"` / `"settlement"`); metin parametresi çevrilemez.
+- Zod şemalarındaki doğrulama mesajları da kod taşıyor; şemalar paylaşıldığı
+  için çeviri gösterim anında yapılıyor.
+- Çıktı bit bit aynı: 24 E2E testi değişmeden geçti.
+- **Bilerek değişmedi:** `member.has_credit` hâlâ ham kuruş yazıyor
+  ("12000 kuruşluk alacağı var"). Para olarak biçimlemek bir davranış
+  değişikliği; 11.4a'nın işi çıktıyı sabit tutmaktı.
+
 ### Para biçimlendirmesi dile duyarlı (Faz 11.3)
 - `formatMoney` ve `formatBasisPoints` artık dil parametresi alıyor
   (varsayılan `tr`). İngilizce: `$1,234.56` ve `33.33%`; Türkçe: `1.234,56 ₺`
