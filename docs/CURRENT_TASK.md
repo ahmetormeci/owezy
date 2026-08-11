@@ -18,22 +18,30 @@ durumunu dogrula, sonra bu dosyayi duzelt.
 Updated: 2026-08-11
 
 Current task:
-  Yok. Aktif gorev bulunmuyor.
+  Faz 11 — Tasarim yenilemesi + iki dil destegi.
+  Tasarim onerisi onaylandi (kobalt kimlik, bakiye odakli hiyerarsi,
+  defter tipografisi). Alti asamali plan icin PROGRESS.md'ye bak.
 
 Status:
-  IDLE
+  IN_PROGRESS — 11.1 bitti, 11.2 baslamadi.
 
 Completed in this task:
-  - docs/ hafiza sistemi kuruldu (8 dosya)
-  - AGENTS.md okuma sirasi ve guncelleme protokolu ile guncellendi
+  - 11.1 Yazi tipi hatasi duzeltildi (site Times New Roman'da calisiyordu)
+  - 11.1 Koyu tema baglandi (ThemeProvider + tema dugmesi)
+  - Testler: 342 birim, 24 E2E, tsc + lint temiz
 
 Next action:
-  Kullanicidan yeni gorev bekleniyor.
-  PROGRESS.md'deki "siradaki adaylar" listesi bir plan DEGILDIR;
-  kullanici secmeden hicbiri baslatilmaz.
+  11.2 — Tasarim tokenlari: kobalt kimlik rengi, alacak/borc renkleri,
+  tipografi olcegi. Iki tema icin de ayarlanacak.
+  Dosya: src/app/globals.css
 
 Blocked by:
   Yok.
+
+Onaylanmis kararlar (Faz 11 icin):
+  - API hata MESAJI degil KOD dondurecek (11.4)   -> mobil ve iki dil icin
+  - Dil cerezde + hesap tercihinde, URL'de degil  -> mevcut linkler bozulmaz
+  - Para bicimlendirmesi (11.3) ceviriden (11.4) ONCE gelir
 
 Verify with:
   npx tsc --noEmit

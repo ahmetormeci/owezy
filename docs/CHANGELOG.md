@@ -10,6 +10,18 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-11
 
+### Yazı tipi düzeltmesi ve koyu tema (Faz 11.1)
+- **Site arayüz fazından beri Times New Roman'da render ediliyormuş.**
+  `globals.css` içindeki `--font-sans: var(--font-sans)` kendine referans
+  veriyordu; değişken boş çözülünce tarayıcı varsayılan serif'e düşüyordu.
+  Geist yükleniyor ama hiç kullanılmıyordu (`document.fonts` → `unloaded`).
+  Muhtemelen `shadcn init` sırasında oluştu; `--font-mono` doğru kalmıştı.
+- Koyu tema bağlandı: palet ve `next-themes` zaten vardı ama `ThemeProvider`
+  olmadığı için `.dark` sınıfını hiçbir şey uygulamıyordu.
+- Tema düğmesi eklendi. İkon seçimi JavaScript state'i yerine CSS ile
+  yapılıyor (`dark:hidden` / `dark:block`) — hydration uyumsuzluğu ve
+  effect içinde setState sorununu birlikte çözüyor.
+
 ### Bildirimler (Faz 10) — `e26ede0`, `98054f0`
 - Altı olay bildirim üretiyor: harcama eklendi / güncellendi / silindi,
   ödeme kaydedildi / iptal edildi, gruba katılım

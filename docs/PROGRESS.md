@@ -154,6 +154,35 @@ teyit edildi.
 
 ---
 
+## Faz 11 — Tasarım yenilemesi + iki dil · **IN_PROGRESS**
+
+Tasarım yönü onaylandı: kobalt kimlik (yeşil/kırmızı zaten alacak/borç anlamı
+taşıdığı için kimlik rengi onlarla çakışmamalı), bakiye odaklı hiyerarşi,
+eşit genişlikli rakamlar.
+
+| Aşama | Durum | İş |
+|---|---|---|
+| 11.1 | **DONE** | Yazı tipi hatası + koyu tema bağlantısı |
+| 11.2 | TODO | Tasarım tokenları (kobalt, alacak/borç, tipografi ölçeği) |
+| 11.3 | TODO | Para biçimlendirmesi dile duyarlı hale gelir |
+| 11.4 | TODO | API hata kodları + çeviri altyapısı |
+| 11.5 | TODO | Grup sayfası hiyerarşisi |
+| 11.6 | TODO | Karşılama, formlar, boş durumlar, mobil |
+
+**11.1'de yapıldı:** `globals.css`'teki `--font-sans: var(--font-sans)`
+kendine referans veriyordu; site arayüz fazından beri Times New Roman'da
+render ediliyormuş. Tek satırla düzeltildi. Koyu palet zaten yazılıydı ama
+`ThemeProvider` olmadığı için `.dark` sınıfı hiç uygulanmıyordu — bağlandı,
+tema düğmesi eklendi.
+
+**Test:** 342 birim / 24 E2E.
+**Commit:** (bkz. CHANGELOG)
+
+**Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce
+geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahalıdır.
+
+---
+
 ## Faz dışı düzeltmeler
 
 | İş | Commit |

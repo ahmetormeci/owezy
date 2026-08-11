@@ -7,7 +7,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /* Kok layout Geist'i --font-geist-sans olarak tanimliyor. Burasi eskiden
+     "var(--font-sans)" yaziyordu, yani kendini isaret ediyordu: degisken bos
+     cozuluyor ve tarayici varsayilan serif'e (Times New Roman) dusuyordu.
+     --font-mono zaten dogruydu, o yuzden yalnizca sans bozuktu. */
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);

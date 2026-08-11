@@ -5,6 +5,7 @@ import { UserButton } from "@clerk/nextjs";
 import { getOrCreateCurrentUser } from "@/lib/auth";
 import { countUnreadNotifications } from "@/lib/notifications";
 import { NotificationBell } from "@/components/notification-bell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // (app) bir "route group": parantezli klasor adi URL'e yansimaz, yalnizca
 // altindaki sayfalari ortak bir layout altinda toplar.
@@ -37,6 +38,7 @@ export default async function AppLayout({
             SplitApp
           </Link>
           <div className="flex items-center gap-1">
+            <ThemeToggle />
             <NotificationBell initialUnreadCount={unreadCount} />
             <UserButton />
           </div>
