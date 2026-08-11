@@ -1,8 +1,9 @@
 import type { NotificationType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-
-const DEFAULT_NOTIFICATION_PAGE_SIZE = 20;
-const MAX_NOTIFICATION_PAGE_SIZE = 50;
+import {
+  DEFAULT_NOTIFICATION_PAGE_SIZE,
+  MAX_NOTIFICATION_PAGE_SIZE,
+} from "@/lib/notification-schemas";
 
 /**
  * Bildirimin icinde saklanan anlik goruntu.

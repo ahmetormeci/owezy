@@ -2,6 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
+import { getOrCreateCurrentUser } from "@/lib/auth";
+import { countUnreadNotifications } from "@/lib/notifications";
+import { NotificationBell } from "@/components/notification-bell";
 
 // (app) bir "route group": parantezli klasor adi URL'e yansimaz, yalnizca
 // altindaki sayfalari ortak bir layout altinda toplar.
@@ -20,6 +23,12 @@ export default async function AppLayout({
     redirect("/sign-in");
   }
 
+  // Zil rakamini sunucuda hesapliyoruz: sayfa acilir acilmaz dogru sayiyla
+  // geliyor, istemcinin ayrica bir istek atmasi gerekmiyor. Bildirimlerin
+  // KENDISI ise yalnizca menu acildiginda cekiliyor.
+  const user = await getOrCreateCurrentUser();
+  const unreadCount = user ? await countUnreadNotifications(user.id) : 0;
+
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="border-b border-border">
@@ -27,7 +36,10 @@ export default async function AppLayout({
           <Link href="/groups" className="font-semibold">
             SplitApp
           </Link>
-          <UserButton />
+          <div className="flex items-center gap-1">
+            <NotificationBell initialUnreadCount={unreadCount} />
+            <UserButton />
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">{children}</main>
