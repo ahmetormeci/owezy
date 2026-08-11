@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { BrandMark } from "@/components/brand-mark";
 import { formatSignedMoney } from "@/lib/money";
+import { getTranslate } from "@/lib/i18n-server";
 
 // Karsilama sayfasindaki ornek defter. Gercek veri DEGIL - uygulamanin ne
 // yaptigini bir paragraf yazmak yerine gostermek icin duruyor. Ayni
@@ -16,6 +17,7 @@ const SAMPLE_ROWS = [
 
 export default async function HomePage() {
   const { userId } = await auth();
+  const t = await getTranslate();
   if (userId) {
     redirect("/groups");
   }
@@ -25,17 +27,16 @@ export default async function HomePage() {
       <div className="flex flex-col items-center gap-5 text-center">
         <div className="flex items-center gap-3">
           <BrandMark className="size-10 text-brand" />
-          <h1 className="text-display font-semibold">SplitApp</h1>
+          <h1 className="text-display font-semibold">{t("ui.app_name")}</h1>
         </div>
         <p className="max-w-md text-balance text-muted-foreground">
-          Grup harcamalarını kaydet, kimin kime ne kadar borçlu olduğunu tek
-          bakışta gör.
+          {t("ui.tagline")}
         </p>
       </div>
 
       <div className="w-full max-w-sm rounded-xl bg-card p-4 text-sm ring-1 ring-foreground/10">
         <div className="flex items-baseline justify-between gap-4 border-b border-border pb-3">
-          <span className="font-medium">Kahvaltı</span>
+          <span className="font-medium">{t("ui.sample_title")}</span>
           <span className="money text-muted-foreground">360,00 ₺</span>
         </div>
         <ul className="flex flex-col divide-y divide-border">
@@ -53,7 +54,7 @@ export default async function HomePage() {
           ))}
         </ul>
         <p className="pt-3 text-xs text-muted-foreground">
-          Örnek — gerçek bir gruba ait değil
+          {t("ui.sample_note")}
         </p>
       </div>
 
@@ -62,13 +63,13 @@ export default async function HomePage() {
           href="/sign-up"
           className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors outline-none hover:bg-brand-strong focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          Kayıt ol
+          {t("ui.sign_up")}
         </Link>
         <Link
           href="/sign-in"
           className="rounded-lg border border-border bg-card px-5 py-2.5 text-sm font-medium transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          Giriş yap
+          {t("ui.sign_in")}
         </Link>
       </div>
     </div>

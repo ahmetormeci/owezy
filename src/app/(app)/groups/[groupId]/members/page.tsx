@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getOrCreateCurrentUser } from "@/lib/auth";
 import { getGroupForUser, listGroupInvites, listGroupMembers } from "@/lib/groups";
 import { AppError } from "@/lib/errors";
+import { getTranslate } from "@/lib/i18n-server";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InviteManager } from "@/components/invite-manager";
@@ -14,6 +15,7 @@ export default async function GroupMembersPage({
   params: Promise<{ groupId: string }>;
 }) {
   const { groupId } = await params;
+  const t = await getTranslate();
 
   const user = await getOrCreateCurrentUser();
   if (!user) {
@@ -51,12 +53,12 @@ export default async function GroupMembersPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="text-2xl font-semibold">Üyeler ve davetler</h1>
+        <h1 className="text-2xl font-semibold">{t("ui.members_and_invites")}</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Üyeler</CardTitle>
+          <CardTitle>{t("ui.members")}</CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="flex flex-col divide-y divide-border">
@@ -67,8 +69,8 @@ export default async function GroupMembersPage({
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="truncate font-medium">{member.displayName}</span>
-                  {member.role === "OWNER" ? <Badge variant="secondary">Sahip</Badge> : null}
-                  {member.userId === user.id ? <Badge variant="outline">Sen</Badge> : null}
+                  {member.role === "OWNER" ? <Badge variant="secondary">{t("ui.role_owner")}</Badge> : null}
+                  {member.userId === user.id ? <Badge variant="outline">{t("ui.you")}</Badge> : null}
                 </div>
 
                 {isOwner && member.userId !== user.id ? (
@@ -97,7 +99,7 @@ export default async function GroupMembersPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Davet linkleri</CardTitle>
+          <CardTitle>{t("ui.invites")}</CardTitle>
         </CardHeader>
         <CardContent>
           <InviteManager

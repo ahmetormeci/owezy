@@ -12,7 +12,7 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 369 | ✅ tümü geçiyor |
+| Birim (Vitest) | 370 | ✅ tümü geçiyor |
 | E2E (Playwright) | 24 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -166,7 +166,7 @@ eşit genişlikli rakamlar.
 | 11.2 | **DONE** | Tasarım tokenları (kobalt, alacak/borç, tipografi ölçeği) |
 | 11.3 | **DONE** | Para biçimlendirmesi dile duyarlı hale gelir |
 | 11.4a | **DONE** | API hata kodları (görünür değişiklik yok) |
-| 11.4b | TODO | Arayüzdeki gömülü metinler sözlüğe taşınır |
+| 11.4b | **DONE** | Arayüzdeki gömülü metinler sözlüğe taşınır |
 | 11.4c | TODO | Dil çerezden okunur, `formatMoney`'e geçirilir, dil düğmesi |
 | 11.4d | TODO | İngilizce sözlük + `User.locale` migration |
 | 11.5 | TODO | Grup sayfası hiyerarşisi |
@@ -207,7 +207,18 @@ gerekiyordu; bu, 24 E2E testini tam bir regresyon ağına çevirdi. Dil
 tesisatı aynı commit'te olsaydı bir test kırıldığında sebebi iki değişiklik
 arasından aramak gerekirdi.
 
-**Test:** 369 birim / 24 E2E.
+**11.4b'de yapıldı:** 18 dosyadaki ~190 gömülü metin sözlüğe taşındı.
+Erişim iki kapıdan: `useTranslate()` (istemci, hook) ve `getTranslate()`
+(sunucu, async) — Server Component'lar hook kullanamadığı için ikisi ayrı.
+İkisi de şimdilik sabit `tr` döndürüyor; 11.4c yalnızca bu iki fonksiyonun
+içini değiştirecek, ~190 çağrı yeri bir daha açılmayacak.
+
+Mekanik olmayan üç yer: JSX'te birleştirilen **cümle parçaları** bütün
+parametreli cümleye dönüştü (İngilizcede kelime sırası ters), bildirim
+metinleri saf fonksiyon kalsın diye çeviriciyi **varsayılanlı parametre**
+olarak aldı, ve sabit `metadata` nesnesi `generateMetadata`'ya çevrildi.
+
+**Test:** 370 birim / 24 E2E.
 **Commit:** (bkz. CHANGELOG)
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce
@@ -243,5 +254,9 @@ karar vermemiştir.
   paylardan geri hesaplanmıyor)
 - Optimistic locking yok (ADR-010, mobil aşamasına ertelendi)
 - `schema.prisma` başındaki yorum bloğu güncel değil
+- **Üç yazım hatası** (`e5e69dd`'deki Türkçe karakter dönüşümünden kalmış):
+  "kisiden" → kişiden, "cikarilsin" → çıkarılsın, "kullanildi" → kullanıldı.
+  `messages.ts` içinde `DIKKAT` yorumuyla işaretli. 11.4b çıktıyı bilerek
+  değiştirmediği için düzeltilmedi; tek satırlık ayrı bir iş.
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi

@@ -5,6 +5,7 @@ import { getGroupForUser, listGroupMembers } from "@/lib/groups";
 import { getExpenseForUser } from "@/lib/expenses";
 import { AppError } from "@/lib/errors";
 import { ExpenseForm } from "@/components/expense-form";
+import { getTranslate } from "@/lib/i18n-server";
 
 export default async function EditExpensePage({
   params,
@@ -12,6 +13,7 @@ export default async function EditExpensePage({
   params: Promise<{ groupId: string; expenseId: string }>;
 }) {
   const { groupId, expenseId } = await params;
+  const t = await getTranslate();
 
   const user = await getOrCreateCurrentUser();
   if (!user) {
@@ -43,7 +45,7 @@ export default async function EditExpensePage({
         >
           ← {group.name}
         </Link>
-        <h1 className="text-2xl font-semibold">Harcamayı düzenle</h1>
+        <h1 className="text-2xl font-semibold">{t("ui.edit_expense")}</h1>
       </div>
 
       <ExpenseForm

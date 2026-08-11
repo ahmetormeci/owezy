@@ -1,5 +1,12 @@
 import type { NotificationType } from "@prisma/client";
 import { formatMoney } from "@/lib/money";
+import { translate, type MessageCode, type MessageParams } from "@/lib/messages";
+
+// Ceviriciyi disaridan alabiliyoruz ama varsayilani var. Boylece bu saf
+// fonksiyonun testleri React kurmadan calismaya devam ediyor, zil bileseni
+// ise kendi dilini gecirebiliyor.
+type Translator = (code: string, params?: MessageParams) => string;
+const defaultTranslator: Translator = (code, params) => translate(code, params);
 
 /**
  * Bildirim kaydini ekranda gosterilecek metne cevirir.
@@ -46,21 +53,22 @@ function parsePayload(payload: unknown): ParsedPayload {
   };
 }
 
-const TITLES: Record<NotificationType, (actor: string) => string> = {
-  EXPENSE_ADDED: (actor) => `${actor} yeni bir harcama ekledi`,
-  EXPENSE_UPDATED: (actor) => `${actor} bir harcamayı güncelledi`,
-  EXPENSE_DELETED: (actor) => `${actor} bir harcamayı sildi`,
-  SETTLEMENT_RECORDED: (actor) => `${actor} bir ödeme kaydetti`,
-  SETTLEMENT_CANCELLED: (actor) => `${actor} bir ödeme kaydını iptal etti`,
-  MEMBER_JOINED: (actor) => `${actor} gruba katıldı`,
+const TITLE_CODES: Record<NotificationType, MessageCode> = {
+  EXPENSE_ADDED: "ui.notif_expense_added",
+  EXPENSE_UPDATED: "ui.notif_expense_updated",
+  EXPENSE_DELETED: "ui.notif_expense_deleted",
+  SETTLEMENT_RECORDED: "ui.notif_settlement_recorded",
+  SETTLEMENT_CANCELLED: "ui.notif_settlement_cancelled",
+  MEMBER_JOINED: "ui.notif_member_joined",
 };
 
 export function describeNotification(
   type: NotificationType,
   payload: unknown,
+  t: Translator = defaultTranslator,
 ): NotificationView {
   const parsed = parsePayload(payload);
-  const actor = parsed.actorName ?? "Birisi";
+  const actor = parsed.actorName ?? t("ui.someone");
 
   // Tutar her zaman kurus cinsinden tam sayi olarak saklandi; ekrana cikarken
   // tek merkezden (formatMoney) bicimleniyor.
@@ -72,7 +80,7 @@ export function describeNotification(
   const detailParts = [parsed.description, money].filter(Boolean);
 
   return {
-    title: TITLES[type](actor),
+    title: t(TITLE_CODES[type], { actor }),
     detail: detailParts.length > 0 ? detailParts.join(" · ") : null,
     groupName: parsed.groupName ?? null,
     href: parsed.groupId ? `/groups/${parsed.groupId}` : null,
@@ -89,22 +97,26 @@ const DAY = 24 * HOUR;
  * `now` disaridan verilebiliyor: testin gercek saate bagli olmasi, gece yarisi
  * ya da yavas bir makinede kendiliginden kirilan test demektir.
  */
-export function formatRelativeTime(date: Date, now: Date = new Date()): string {
+export function formatRelativeTime(
+  date: Date,
+  now: Date = new Date(),
+  t: Translator = defaultTranslator,
+): string {
   const diff = now.getTime() - date.getTime();
 
   // Saat farki yuzunden gelecekte gorunen kayitlar olabilir; "eksi 2 dakika
   // once" yazmaktansa "az once" demek dogru.
   if (diff < MINUTE) {
-    return "az önce";
+    return t("ui.just_now");
   }
   if (diff < HOUR) {
-    return `${Math.floor(diff / MINUTE)} dakika önce`;
+    return t("ui.minutes_ago", { count: Math.floor(diff / MINUTE) });
   }
   if (diff < DAY) {
-    return `${Math.floor(diff / HOUR)} saat önce`;
+    return t("ui.hours_ago", { count: Math.floor(diff / HOUR) });
   }
   if (diff < 7 * DAY) {
-    return `${Math.floor(diff / DAY)} gün önce`;
+    return t("ui.days_ago", { count: Math.floor(diff / DAY) });
   }
 
   return new Intl.DateTimeFormat("tr-TR", {

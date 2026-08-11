@@ -10,6 +10,26 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-11
 
+### Arayüz metinleri sözlüğe taşındı (Faz 11.4b)
+- 18 dosyadaki ~190 gömülü metin `src/lib/messages.ts`'e taşındı.
+  Kodda gömülü kullanıcı metni kalmadı.
+- İki erişim kapısı: `useTranslate()` (istemci hook) ve `getTranslate()`
+  (sunucu, async). Server Component'lar hook kullanamadığı için ikisi ayrı.
+  `i18n-server.ts` başındaki `import "server-only"`, modülün yanlışlıkla
+  istemciye sızmasını **derleme hatasına** çeviriyor.
+- İkisi de şimdilik sabit `tr` döndürüyor. 11.4c yalnızca bu iki fonksiyonun
+  içini değiştirecek; çağrı yerleri ikinci kez açılmayacak.
+- JSX'te birleştirilen cümle parçaları (`{isim} ödedi`, `senin payın {tutar}`)
+  bütün parametreli cümleye dönüştü — İngilizcede kelime sırası ters.
+- `notification-text.ts` saf fonksiyon kaldı: çeviriciyi varsayılanlı
+  parametre olarak alıyor, mevcut testleri değişmedi.
+- Sabit `metadata` nesnesi `generateMetadata`'ya çevrildi (başlık da dile
+  bağlı ve dil çalışma zamanında okunuyor).
+- **Yeni test:** kaynak koddaki her `ui.*` kodunun sözlükte olduğunu
+  doğruluyor. `translate()` bilerek `string` kabul ettiği için yazım
+  hataları derlemede yakalanmıyordu — bu gerçekten yaşandı.
+- Çıktı bit bit aynı: 24 E2E testi değişmeden geçti.
+
 ### API hata kodları (Faz 11.4a)
 - API artık hata **metni** değil **kodu** döndürüyor:
   `{ ok: false, code: "group.not_found", params? }`. Türkçe metin sunucuda

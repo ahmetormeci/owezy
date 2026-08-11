@@ -14,6 +14,7 @@ import { EditGroupDialog } from "@/components/edit-group-dialog";
 import { ExpenseList } from "@/components/expense-list";
 import { SettlementList } from "@/components/settlement-list";
 import { RecordSettlementDialog } from "@/components/record-settlement-dialog";
+import { getTranslate } from "@/lib/i18n-server";
 
 // Renkler artik dogrudan yazilmiyor (eskiden "text-emerald-600
 // dark:text-emerald-400" idi). Anlam tokenlari kullaniliyor: --credit
@@ -40,6 +41,7 @@ export default async function GroupDetailPage({
   params: Promise<{ groupId: string }>;
 }) {
   const { groupId } = await params;
+  const t = await getTranslate();
 
   const user = await getOrCreateCurrentUser();
   if (!user) {
@@ -79,7 +81,7 @@ export default async function GroupDetailPage({
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <Link href="/groups" className="text-sm text-muted-foreground hover:underline">
-          ← Gruplarım
+          {t("ui.back_to_groups")}
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -114,7 +116,7 @@ export default async function GroupDetailPage({
               href={`/groups/${groupId}/expenses/new`}
               className={buttonVariants()}
             >
-              Harcama ekle
+              {t("ui.add_expense")}
             </Link>
           </div>
         </div>
@@ -122,30 +124,30 @@ export default async function GroupDetailPage({
 
       <Card className={balanceSurfaceClass(myAmount)}>
         <CardHeader>
-          <CardTitle>Senin durumun</CardTitle>
+          <CardTitle>{t("ui.your_status")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className={`money text-figure font-semibold ${balanceToneClass(myAmount)}`}>
-            {myAmount === 0 ? "Ödeştin" : formatSignedMoney(myAmount, currency)}
+            {myAmount === 0 ? t("ui.settled_up") : formatSignedMoney(myAmount, currency)}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             {myAmount > 0
-              ? "Bu tutar sana borçlu"
+              ? t("ui.owed_to_you")
               : myAmount < 0
-                ? "Bu tutarı borçlusun"
-                : "Bu grupta açık hesabın yok"}
+                ? t("ui.you_owe")
+                : t("ui.no_open_balance")}
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Önerilen ödemeler</CardTitle>
+          <CardTitle>{t("ui.suggested_payments")}</CardTitle>
         </CardHeader>
         <CardContent>
           {suggestedTransfers.length === 0 ? (
             <p className="text-muted-foreground">
-              Herkes ödeşmiş durumda, yapılacak bir ödeme yok.
+              {t("ui.everyone_settled")}
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -156,11 +158,11 @@ export default async function GroupDetailPage({
                 >
                   <span>
                     <span className="font-medium">
-                      {nameByUserId.get(transfer.fromUserId) ?? "Bilinmeyen"}
+                      {nameByUserId.get(transfer.fromUserId) ?? t("ui.unknown_user")}
                     </span>
                     {" → "}
                     <span className="font-medium">
-                      {nameByUserId.get(transfer.toUserId) ?? "Bilinmeyen"}
+                      {nameByUserId.get(transfer.toUserId) ?? t("ui.unknown_user")}
                     </span>
                   </span>
                   <span className="money font-medium">
@@ -175,12 +177,12 @@ export default async function GroupDetailPage({
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle>Üyeler ve bakiyeler</CardTitle>
+          <CardTitle>{t("ui.members_and_balances")}</CardTitle>
           <Link
             href={`/groups/${groupId}/members`}
             className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
-            Üyeleri yönet
+            {t("ui.manage_members")}
           </Link>
         </CardHeader>
         <CardContent>
@@ -193,9 +195,9 @@ export default async function GroupDetailPage({
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="truncate font-medium">{balance.displayName}</span>
                   {roleByUserId.get(balance.userId) === "OWNER" ? (
-                    <Badge variant="secondary">Sahip</Badge>
+                    <Badge variant="secondary">{t("ui.role_owner")}</Badge>
                   ) : null}
-                  {balance.hasLeft ? <Badge variant="outline">Ayrıldı</Badge> : null}
+                  {balance.hasLeft ? <Badge variant="outline">{t("ui.member_left")}</Badge> : null}
                 </div>
                 <span
                   className={`money shrink-0 font-medium ${balanceToneClass(balance.amount)}`}
@@ -210,7 +212,7 @@ export default async function GroupDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Harcamalar</CardTitle>
+          <CardTitle>{t("ui.expenses")}</CardTitle>
         </CardHeader>
         <CardContent>
           <ExpenseList
@@ -240,7 +242,7 @@ export default async function GroupDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Kaydedilen ödemeler</CardTitle>
+          <CardTitle>{t("ui.settlements")}</CardTitle>
         </CardHeader>
         <CardContent>
           <SettlementList

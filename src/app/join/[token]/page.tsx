@@ -4,12 +4,14 @@ import { getInviteStatus } from "@/lib/groups";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AcceptInvite } from "@/components/accept-invite";
+import { getTranslate } from "@/lib/i18n-server";
+import type { MessageCode } from "@/lib/messages";
 
-const INVALID_INVITE_MESSAGES: Record<string, string> = {
-  NOT_FOUND: "Bu davet linki geçerli değil.",
-  REVOKED: "Bu davet iptal edilmiş.",
-  EXPIRED: "Bu davetin süresi dolmuş.",
-  EXHAUSTED: "Bu davet linki kullanım limitine ulaşmış.",
+const INVALID_INVITE_CODES: Record<string, MessageCode> = {
+  NOT_FOUND: "ui.invite_notice_invalid",
+  REVOKED: "ui.invite_notice_revoked",
+  EXPIRED: "ui.invite_notice_expired",
+  EXHAUSTED: "ui.invite_notice_exhausted",
 };
 
 // Bu sayfa (app) route group'unun DISINDA: davet linkine tiklayan kisi henuz
@@ -23,6 +25,7 @@ export default async function JoinPage({
 }) {
   const { token } = await params;
   const { userId } = await auth();
+  const t = await getTranslate();
 
   // Davet gecerli mi diye ONCE bakiyoruz: kullanici gecersiz bir link icin
   // once kayit olup sonra hata almasin.
@@ -34,13 +37,12 @@ export default async function JoinPage({
       <div className="flex flex-1 items-center justify-center p-6">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
-            <h1 className="text-xl font-semibold">Davet kullanılamıyor</h1>
+            <h1 className="text-xl font-semibold">{t("ui.invite_unusable")}</h1>
             <p className="text-muted-foreground">
-              {INVALID_INVITE_MESSAGES[status.reason]} Seni davet eden kisiden yeni
-              bir link isteyebilirsin.
+              {t(INVALID_INVITE_CODES[status.reason])} {t("ui.invite_ask_new_link")}
             </p>
             <Link href="/" className={buttonVariants({ variant: "outline" })}>
-              Ana sayfaya dön
+              {t("ui.back_home")}
             </Link>
           </CardContent>
         </Card>
@@ -53,33 +55,33 @@ export default async function JoinPage({
       <Card className="w-full max-w-md">
         <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
           <h1 className="text-xl font-semibold">
-            “{status.groupName}” grubuna davet edildin
+            {t("ui.invited_to_group", { groupName: status.groupName })}
           </h1>
 
           {userId ? (
             <>
               <p className="text-muted-foreground">
-                Katılmak için aşağıdaki butona bas.
+                {t("ui.join_press_button")}
               </p>
               <AcceptInvite token={token} />
             </>
           ) : (
             <>
               <p className="text-muted-foreground">
-                Davete katılmak için önce giriş yapmalısın.
+                {t("ui.join_sign_in_first")}
               </p>
               <div className="flex gap-3">
                 <Link
                   href={`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`}
                   className={buttonVariants({ variant: "outline" })}
                 >
-                  Giriş yap
+                  {t("ui.sign_in")}
                 </Link>
                 <Link
                   href={`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`}
                   className={buttonVariants()}
                 >
-                  Kayıt ol
+                  {t("ui.sign_up")}
                 </Link>
               </div>
             </>

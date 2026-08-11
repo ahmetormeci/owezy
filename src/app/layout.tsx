@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { getTranslate } from "@/lib/i18n-server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,10 +16,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "SplitApp",
-  description: "Grup harcamalarını paylaş, kimin kime ne kadar borçlu olduğunu gör.",
-};
+// Sabit bir "metadata" nesnesi yerine generateMetadata: baslik ve aciklama da
+// dile bagli, ve dil calisma zamaninda okunuyor (11.4c'de cerezden gelecek).
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslate();
+  return {
+    title: t("ui.app_name"),
+    description: t("ui.meta_description"),
+  };
+}
 
 export default function RootLayout({
   children,

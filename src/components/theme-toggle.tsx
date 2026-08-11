@@ -2,6 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
+import { useTranslate } from "@/lib/i18n";
 
 /**
  * Acik/koyu tema dugmesi.
@@ -18,6 +19,7 @@ import { Moon, Sun } from "lucide-react";
  */
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
+  const t = useTranslate();
 
   return (
     <button
@@ -26,7 +28,7 @@ export function ThemeToggle() {
       // Etiket duruma gore degismiyor: sunucuda hangi temada oldugumuzu
       // bilmedigimiz icin durum bildiren bir metin yanlis olabilirdi.
       // "Temayi degistir" her iki durumda da dogru.
-      aria-label="Temayı değiştir"
+      aria-label={t("ui.theme_toggle")}
       className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
     >
       <Moon className="size-5 dark:hidden" />

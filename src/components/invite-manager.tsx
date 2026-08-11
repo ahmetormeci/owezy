@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { apiRequest } from "@/lib/api-client";
+import { useTranslate } from "@/lib/i18n";
 
 export type InviteListItem = {
   id: string;
@@ -37,6 +38,7 @@ export function InviteManager({
   nameByUserId: Record<string, string>;
 }) {
   const router = useRouter();
+  const t = useTranslate();
   const [maxUses, setMaxUses] = useState("1");
   const [ttlDays, setTtlDays] = useState("7");
   const [isCreating, setIsCreating] = useState(false);
@@ -59,10 +61,10 @@ export function InviteManager({
       );
 
       setCreatedLink(`${window.location.origin}/join/${data.invite.token}`);
-      toast.success("Davet linki oluşturuldu");
+      toast.success(t("ui.invite_created"));
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Davet linki oluşturulamadı");
+      toast.error(error instanceof Error ? error.message : t("ui.invite_create_failed"));
     } finally {
       setIsCreating(false);
     }
@@ -73,10 +75,10 @@ export function InviteManager({
       await apiRequest(`/api/v1/groups/${groupId}/invites/${inviteId}/revoke`, {
         method: "POST",
       });
-      toast.success("Davet iptal edildi");
+      toast.success(t("ui.invite_revoked"));
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Davet iptal edilemedi");
+      toast.error(error instanceof Error ? error.message : t("ui.invite_revoke_failed"));
     }
   }
 
@@ -84,9 +86,9 @@ export function InviteManager({
     if (!createdLink) return;
     try {
       await navigator.clipboard.writeText(createdLink);
-      toast.success("Link kopyalandı");
+      toast.success(t("ui.link_copied"));
     } catch {
-      toast.error("Link kopyalanamadı, elle seçip kopyalayabilirsin");
+      toast.error(t("ui.link_copy_failed"));
     }
   }
 
@@ -94,51 +96,49 @@ export function InviteManager({
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="maxUses">Kaç kişi kullanabilsin?</Label>
+          <Label htmlFor="maxUses">{t("ui.invite_uses")}</Label>
           <select
             id="maxUses"
             className={selectClassName}
             value={maxUses}
             onChange={(event) => setMaxUses(event.target.value)}
           >
-            <option value="1">1 kişi</option>
-            <option value="5">5 kişi</option>
-            <option value="25">25 kişi</option>
+            <option value="1">{t("ui.uses_1")}</option>
+            <option value="5">{t("ui.uses_5")}</option>
+            <option value="25">{t("ui.uses_25")}</option>
           </select>
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="ttlDays">Ne kadar geçerli olsun?</Label>
+          <Label htmlFor="ttlDays">{t("ui.invite_validity")}</Label>
           <select
             id="ttlDays"
             className={selectClassName}
             value={ttlDays}
             onChange={(event) => setTtlDays(event.target.value)}
           >
-            <option value="1">1 gün</option>
-            <option value="7">7 gün</option>
-            <option value="30">30 gün</option>
+            <option value="1">{t("ui.days_1")}</option>
+            <option value="7">{t("ui.days_7")}</option>
+            <option value="30">{t("ui.days_30")}</option>
           </select>
         </div>
       </div>
 
       <Button onClick={handleCreate} disabled={isCreating} className="self-start">
-        {isCreating ? "Oluşturuluyor..." : "Davet linki oluştur"}
+        {isCreating ? t("ui.creating") : t("ui.create_invite")}
       </Button>
 
       {createdLink ? (
         <Card>
           <CardContent className="flex flex-col gap-3 py-4">
-            <p className="text-sm font-medium">Davet linkin hazır</p>
+            <p className="text-sm font-medium">{t("ui.invite_ready")}</p>
             <p className="text-sm text-muted-foreground">
-              Bu link yalnızca şimdi gösteriliyor. Sayfayı yenilersen bir daha
-              göremezsin, çünkü sunucuda linkin kendisi değil yalnızca şifrelenmiş
-              bir özeti saklanıyor.
+              {t("ui.invite_once_warning")}
             </p>
             <div className="flex gap-2">
               <Input readOnly value={createdLink} onFocus={(event) => event.target.select()} />
               <Button type="button" variant="outline" onClick={handleCopy}>
-                Kopyala
+                {t("ui.copy")}
               </Button>
             </div>
           </CardContent>
@@ -146,9 +146,9 @@ export function InviteManager({
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium">Aktif davetler</p>
+        <p className="text-sm font-medium">{t("ui.active_invites")}</p>
         {invites.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aktif bir davet linki yok.</p>
+          <p className="text-sm text-muted-foreground">{t("ui.no_active_invite")}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-border">
             {invites.map((invite) => {
@@ -163,23 +163,30 @@ export function InviteManager({
                 >
                   <div className="min-w-0 text-sm">
                     <p>
-                      {invite.useCount}/{invite.maxUses} kullanildi
+                      {t("ui.invite_uses_count", {
+                        used: invite.useCount,
+                        max: invite.maxUses,
+                      })}
                     </p>
                     <p className="text-muted-foreground">
-                      {dateFormatter.format(new Date(invite.expiresAt))} tarihine kadar ·{" "}
-                      {nameByUserId[invite.invitedById] ?? "Bilinmeyen"} oluşturdu
+                      {t("ui.invite_valid_until", {
+                        date: dateFormatter.format(new Date(invite.expiresAt)),
+                      })}{" · "}
+                      {t("ui.invite_created_by", {
+                        name: nameByUserId[invite.invitedById] ?? t("ui.unknown_user"),
+                      })}
                     </p>
                   </div>
 
                   {isExhausted ? (
-                    <Badge variant="outline">Tükendi</Badge>
+                    <Badge variant="outline">{t("ui.invite_exhausted")}</Badge>
                   ) : (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRevoke(invite.id)}
                     >
-                      İptal et
+                      {t("ui.invite_revoke")}
                     </Button>
                   )}
                 </li>

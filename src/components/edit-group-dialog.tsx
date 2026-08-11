@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateGroupSchema } from "@/lib/group-schemas";
 import { apiRequest } from "@/lib/api-client";
-import { translate } from "@/lib/messages";
+import { useTranslate } from "@/lib/i18n";
 
 export function EditGroupDialog({
   groupId,
@@ -29,6 +29,7 @@ export function EditGroupDialog({
   initialDescription: string | null;
 }) {
   const router = useRouter();
+  const t = useTranslate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription ?? "");
@@ -46,7 +47,7 @@ export function EditGroupDialog({
 
     if (!parsed.success) {
       // Sema mesajlari artik KOD tasiyor; gosterirken cevriliyor.
-      setError(translate(parsed.error.issues[0]?.message ?? "validation.invalid"));
+      setError(t(parsed.error.issues[0]?.message ?? "validation.invalid"));
       return;
     }
 
@@ -57,12 +58,12 @@ export function EditGroupDialog({
         body: JSON.stringify(parsed.data),
       });
 
-      toast.success("Grup güncellendi");
+      toast.success(t("ui.group_updated"));
       setOpen(false);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Beklenmeyen bir hata oluştu",
+        submitError instanceof Error ? submitError.message : t("server.unexpected"),
       );
     } finally {
       setIsSubmitting(false);
@@ -74,23 +75,22 @@ export function EditGroupDialog({
       <DialogTrigger
         render={
           <Button variant="ghost" size="sm">
-            Düzenle
+            {t("ui.edit")}
           </Button>
         }
       />
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Grubu düzenle</DialogTitle>
+            <DialogTitle>{t("ui.edit_group")}</DialogTitle>
             <DialogDescription>
-              Grup adını ve açıklamasını değiştirebilirsin. Para birimi, mevcut
-              kayıtlarla tutarlılık için değiştirilemez.
+              {t("ui.edit_group_hint")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="edit-group-name">Grup adı</Label>
+              <Label htmlFor="edit-group-name">{t("ui.group_name")}</Label>
               <Input
                 id="edit-group-name"
                 value={name}
@@ -100,12 +100,12 @@ export function EditGroupDialog({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="edit-group-description">Açıklama (isteğe bağlı)</Label>
+              <Label htmlFor="edit-group-description">{t("ui.group_description")}</Label>
               <Input
                 id="edit-group-description"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
-                placeholder="Kira, faturalar, market"
+                placeholder={t("ui.group_description_placeholder")}
               />
             </div>
 
@@ -114,7 +114,7 @@ export function EditGroupDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Kaydediliyor..." : "Kaydet"}
+              {isSubmitting ? t("ui.saving") : t("ui.save")}
             </Button>
           </DialogFooter>
         </form>

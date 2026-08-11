@@ -7,6 +7,7 @@ import { countUnreadNotifications } from "@/lib/notifications";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandMark } from "@/components/brand-mark";
+import { getTranslate } from "@/lib/i18n-server";
 
 // (app) bir "route group": parantezli klasor adi URL'e yansimaz, yalnizca
 // altindaki sayfalari ortak bir layout altinda toplar.
@@ -21,6 +22,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const { userId } = await auth();
+  const t = await getTranslate();
   if (!userId) {
     redirect("/sign-in");
   }
@@ -44,7 +46,7 @@ export default async function AppLayout({
             className="flex items-center gap-2 rounded-md font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <BrandMark className="size-5 text-brand" />
-            SplitApp
+            {t("ui.app_name")}
           </Link>
           <div className="flex items-center gap-1">
             <ThemeToggle />

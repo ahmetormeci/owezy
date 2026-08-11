@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/api-client";
 import { formatMoney } from "@/lib/money";
-import { EXPENSE_CATEGORY_LABELS } from "@/lib/expense-labels";
+import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
+import { useTranslate } from "@/lib/i18n";
 
 export type ExpenseListItem = {
   id: string;
@@ -48,6 +49,7 @@ function DeleteExpenseButton({
   description: string;
 }) {
   const router = useRouter();
+  const t = useTranslate();
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -57,13 +59,13 @@ function DeleteExpenseButton({
       await apiRequest(`/api/v1/groups/${groupId}/expenses/${expenseId}`, {
         method: "DELETE",
       });
-      toast.success("Harcama silindi");
+      toast.success(t("ui.expense_deleted"));
       // Pencereyi acikca kapatiyoruz: acik kalirsa kullanici islemin
       // basarisiz oldugunu saniyor ve tekrar deneyince "bulunamadi" aliyor.
       setOpen(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Harcama silinemedi");
+      toast.error(error instanceof Error ? error.message : t("ui.expense_delete_failed"));
     } finally {
       setIsDeleting(false);
     }
@@ -74,24 +76,23 @@ function DeleteExpenseButton({
       <AlertDialogTrigger
         render={
           <Button variant="ghost" size="sm">
-            Sil
+            {t("ui.delete")}
           </Button>
         }
       />
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Harcama silinsin mi?</AlertDialogTitle>
+          <AlertDialogTitle>{t("ui.delete_expense_question")}</AlertDialogTitle>
           <AlertDialogDescription>
-            “{description}” kaydı silinecek ve bakiyelerden düşülecek. Kayıt tamamen
-            yok olmaz; gerekirse geri yüklenebilir.
+            {t("ui.delete_expense_hint", { description })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="outline">Vazgeç</Button>} />
+          <AlertDialogCancel render={<Button variant="outline">{t("ui.cancel")}</Button>} />
           <AlertDialogAction
             render={
               <Button variant="destructive" disabled={isDeleting} onClick={handleDelete}>
-                {isDeleting ? "Siliniyor..." : "Sil"}
+                {isDeleting ? t("ui.deleting") : t("ui.delete")}
               </Button>
             }
           />
@@ -116,6 +117,8 @@ export function ExpenseList({
   initialExpenses: ExpenseListItem[];
   initialNextCursor: string | null;
 }) {
+  const t = useTranslate();
+
   // Ilk sayfa sunucudan hazir geliyor; "daha fazla" tiklandiginda ek sayfalar
   // /api/v1 uzerinden cekilip listenin sonuna ekleniyor.
   const [expenses, setExpenses] = useState(initialExpenses);
@@ -149,7 +152,7 @@ export function ExpenseList({
       setExpenses((current) => [...current, ...data.expenses]);
       setNextCursor(data.nextCursor);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Harcamalar yüklenemedi");
+      toast.error(error instanceof Error ? error.message : t("ui.expenses_load_failed"));
     } finally {
       setIsLoadingMore(false);
     }
@@ -158,7 +161,7 @@ export function ExpenseList({
   if (expenses.length === 0) {
     return (
       <p className="text-muted-foreground">
-        Bu grupta henüz harcama yok. İlk harcamanı ekleyerek başlayabilirsin.
+        {t("ui.no_expenses")}
       </p>
     );
   }
@@ -181,8 +184,10 @@ export function ExpenseList({
                   <p className="truncate font-medium">{expense.description}</p>
                   <p className="text-sm text-muted-foreground">
                     {dateFormatter.format(new Date(expense.expenseDate))} ·{" "}
-                    {EXPENSE_CATEGORY_LABELS[expense.category]} ·{" "}
-                    {nameByUserId[expense.paidById] ?? "Bilinmeyen"} ödedi
+                    {t(EXPENSE_CATEGORY_CODES[expense.category])} ·{" "}
+                    {t("ui.paid_by", {
+                      name: nameByUserId[expense.paidById] ?? t("ui.unknown_user"),
+                    })}
                   </p>
                   {canModify ? (
                     <div className="mt-1 flex gap-1">
@@ -190,7 +195,7 @@ export function ExpenseList({
                         href={`/groups/${groupId}/expenses/${expense.id}/edit`}
                         className={buttonVariants({ variant: "ghost", size: "sm" })}
                       >
-                        Düzenle
+                        {t("ui.edit")}
                       </Link>
                       <DeleteExpenseButton
                         groupId={groupId}
@@ -204,7 +209,9 @@ export function ExpenseList({
                   <p className="money font-medium">{formatMoney(expense.amount, currency)}</p>
                   {myShare ? (
                     <p className="money text-sm text-muted-foreground">
-                      senin payın {formatMoney(myShare.shareAmount, currency)}
+                      {t("ui.your_share_amount", {
+                        amount: formatMoney(myShare.shareAmount, currency),
+                      })}
                     </p>
                   ) : null}
                 </div>
@@ -216,7 +223,7 @@ export function ExpenseList({
 
       {nextCursor ? (
         <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>
-          {isLoadingMore ? "Yükleniyor..." : "Daha fazla yükle"}
+          {isLoadingMore ? t("ui.loading") : t("ui.load_more")}
         </Button>
       ) : null}
     </div>

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/api-client";
 import { formatMoney } from "@/lib/money";
+import { useTranslate } from "@/lib/i18n";
 
 export type SettlementListItem = {
   id: string;
@@ -42,6 +43,7 @@ function CancelSettlementButton({
   settlementId: string;
 }) {
   const router = useRouter();
+  const t = useTranslate();
   const [open, setOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -51,11 +53,13 @@ function CancelSettlementButton({
       await apiRequest(`/api/v1/groups/${groupId}/settlements/${settlementId}/cancel`, {
         method: "POST",
       });
-      toast.success("Ödeme kaydı iptal edildi");
+      toast.success(t("ui.settlement_cancelled"));
       setOpen(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Ödeme kaydı iptal edilemedi");
+      toast.error(
+        error instanceof Error ? error.message : t("ui.settlement_cancel_failed"),
+      );
     } finally {
       setIsCancelling(false);
     }
@@ -66,23 +70,23 @@ function CancelSettlementButton({
       <AlertDialogTrigger
         render={
           <Button variant="ghost" size="sm">
-            İptal et
+            {t("ui.cancel_settlement")}
           </Button>
         }
       />
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Ödeme kaydı iptal edilsin mi?</AlertDialogTitle>
+          <AlertDialogTitle>{t("ui.cancel_settlement_question")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Kayıt iptal edilirse bu ödeme bakiyelerden düşülmez ve borç geri döner.
+            {t("ui.cancel_settlement_hint")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="outline">Vazgeç</Button>} />
+          <AlertDialogCancel render={<Button variant="outline">{t("ui.cancel")}</Button>} />
           <AlertDialogAction
             render={
               <Button variant="destructive" disabled={isCancelling} onClick={handleCancel}>
-                {isCancelling ? "İptal ediliyor..." : "İptal et"}
+                {isCancelling ? t("ui.cancelling") : t("ui.cancel_settlement")}
               </Button>
             }
           />
@@ -105,10 +109,12 @@ export function SettlementList({
   nameByUserId: Record<string, string>;
   settlements: SettlementListItem[];
 }) {
+  const t = useTranslate();
+
   if (settlements.length === 0) {
     return (
       <p className="text-muted-foreground">
-        Henüz kaydedilmiş bir ödeme yok. Borç kapatınca buraya ekleyebilirsin.
+        {t("ui.no_settlements")}
       </p>
     );
   }

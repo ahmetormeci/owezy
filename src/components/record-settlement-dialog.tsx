@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-client";
+import { useTranslate } from "@/lib/i18n";
 import { formatMoney, parseMoney } from "@/lib/money";
 
 type Counterparty = {
@@ -46,6 +47,7 @@ export function RecordSettlementDialog({
   suggestedTransfers: SuggestedTransfer[];
 }) {
   const router = useRouter();
+  const t = useTranslate();
   const [open, setOpen] = useState(false);
 
   // Yon secimi, "yalnizca odemenin taraflarindan biri kaydedebilir" kuralini
@@ -77,11 +79,11 @@ export function RecordSettlementDialog({
     setError(null);
 
     if (!counterpartyId) {
-      setError("Karşı tarafı seç");
+      setError(t("ui.settlement_counterparty_required"));
       return;
     }
     if (amount === null || amount <= 0) {
-      setError("Geçerli ve sıfırdan büyük bir tutar gir. Örnek: 120,50");
+      setError(t("ui.amount_required"));
       return;
     }
 
@@ -98,14 +100,14 @@ export function RecordSettlementDialog({
         }),
       });
 
-      toast.success("Ödeme kaydedildi");
+      toast.success(t("ui.settlement_saved"));
       setAmountText("");
       setNote("");
       setOpen(false);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Beklenmeyen bir hata oluştu",
+        submitError instanceof Error ? submitError.message : t("server.unexpected"),
       );
     } finally {
       setIsSubmitting(false);
@@ -118,20 +120,19 @@ export function RecordSettlementDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline">Ödeme kaydet</Button>} />
+      <DialogTrigger render={<Button variant="outline">{t("ui.record_settlement")}</Button>} />
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Ödeme kaydet</DialogTitle>
+            <DialogTitle>{t("ui.record_settlement")}</DialogTitle>
             <DialogDescription>
-              Gerçekleşen bir ödemeyi kaydeder. Uygulama para transferi yapmaz,
-              yalnızca bakiyeleri günceller.
+              {t("ui.settlement_hint")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="direction">İşlem yönü</Label>
+              <Label htmlFor="direction">{t("ui.settlement_direction")}</Label>
               <select
                 id="direction"
                 className={selectClassName}
@@ -140,14 +141,16 @@ export function RecordSettlementDialog({
                   setDirection(event.target.value as "outgoing" | "incoming")
                 }
               >
-                <option value="outgoing">Ben ödedim</option>
-                <option value="incoming">Bana ödendi</option>
+                <option value="outgoing">{t("ui.i_paid")}</option>
+                <option value="incoming">{t("ui.paid_to_me")}</option>
               </select>
             </div>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="counterparty">
-                {direction === "outgoing" ? "Kime ödedin?" : "Kim ödedi?"}
+                {direction === "outgoing"
+                  ? t("ui.settlement_counterparty")
+                  : t("ui.who_paid")}
               </Label>
               <select
                 id="counterparty"
@@ -164,19 +167,19 @@ export function RecordSettlementDialog({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="settlement-amount">Tutar</Label>
+              <Label htmlFor="settlement-amount">{t("ui.amount")}</Label>
               <Input
                 id="settlement-amount"
                 value={amountText}
                 onChange={(event) => setAmountText(event.target.value)}
-                placeholder="120,50"
+                placeholder={t("ui.amount_placeholder")}
                 inputMode="decimal"
               />
               <p className="text-sm text-muted-foreground">
                 {amountText.trim() === ""
-                  ? "Örnek: 120,50"
+                  ? t("ui.amount_example")
                   : amount === null
-                    ? "Tutarı anlayamadım"
+                    ? t("ui.amount_unreadable")
                     : `= ${formatMoney(amount, currency)}`}
               </p>
               {matchingSuggestion ? (
@@ -189,13 +192,15 @@ export function RecordSettlementDialog({
                     )
                   }
                 >
-                  Önerilen tutarı kullan: {formatMoney(matchingSuggestion.amount, currency)}
+                  {t("ui.use_suggested_amount", {
+                    amount: formatMoney(matchingSuggestion.amount, currency),
+                  })}
                 </button>
               ) : null}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="settledAt">Tarih</Label>
+              <Label htmlFor="settledAt">{t("ui.date")}</Label>
               <Input
                 id="settledAt"
                 type="date"
@@ -205,12 +210,12 @@ export function RecordSettlementDialog({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="settlement-note">Not (isteğe bağlı)</Label>
+              <Label htmlFor="settlement-note">{t("ui.settlement_note")}</Label>
               <Input
                 id="settlement-note"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder="Havale ile ödendi"
+                placeholder={t("ui.settlement_note_placeholder")}
               />
             </div>
 
@@ -219,7 +224,7 @@ export function RecordSettlementDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Kaydediliyor..." : "Kaydet"}
+              {isSubmitting ? t("ui.saving") : t("ui.save")}
             </Button>
           </DialogFooter>
         </form>

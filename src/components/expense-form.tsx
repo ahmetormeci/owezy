@@ -18,7 +18,8 @@ import {
 import { splitByPercentage, splitEqually, splitExactly, type SplitShare } from "@/lib/split";
 import { EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
 import { AppError } from "@/lib/errors";
-import { translate } from "@/lib/messages";
+import { useTranslate } from "@/lib/i18n";
+import type { MessageCode } from "@/lib/messages";
 
 type Member = {
   userId: string;
@@ -43,10 +44,10 @@ type ParticipantDraft = {
   percentageText: string;
 };
 
-const SPLIT_TYPE_LABELS: Record<SplitType, string> = {
-  EQUAL: "Eşit böl",
-  EXACT: "Tutar gir",
-  PERCENTAGE: "Yüzde gir",
+const SPLIT_TYPE_CODES: Record<SplitType, MessageCode> = {
+  EQUAL: "ui.split_equal",
+  EXACT: "ui.split_exact",
+  PERCENTAGE: "ui.split_percentage",
 };
 
 // Native <select>, shadcn'in Select bilesenine gore daha az kod ve mobilde
@@ -90,6 +91,7 @@ export function ExpenseForm({
   initialValues?: ExpenseFormInitialValues;
 }) {
   const router = useRouter();
+  const t = useTranslate();
   const isEditing = Boolean(initialValues);
 
   const [description, setDescription] = useState(initialValues?.description ?? "");
@@ -137,7 +139,7 @@ export function ExpenseForm({
           amount: parseMoney(participant.amountText),
         }));
         if (shares.some((share) => share.amount === null)) {
-          return { error: "Her katılımcı için geçerli bir tutar gir" };
+          return { error: t("ui.each_amount_required") };
         }
         return {
           shares: splitExactly({
@@ -152,7 +154,7 @@ export function ExpenseForm({
         basisPoints: parsePercentageToBasisPoints(participant.percentageText),
       }));
       if (shares.some((share) => share.basisPoints === null)) {
-        return { error: "Her katılımcı için geçerli bir yüzde gir" };
+        return { error: t("ui.each_percentage_required") };
       }
       return {
         shares: splitByPercentage({
@@ -165,11 +167,11 @@ export function ExpenseForm({
       // uretiyoruz. Parametreleri de geciriyoruz, yoksa "paylarin toplami
       // (...) esit degil" mesajindaki sayilar kaybolurdu.
       if (previewError instanceof AppError) {
-        return { error: translate(previewError.code, previewError.params) };
+        return { error: t(previewError.code, previewError.params) };
       }
-      return { error: translate("split.failed") };
+      return { error: t("split.failed") };
     }
-  }, [amount, selected, splitType]);
+  }, [amount, selected, splitType, t]);
 
   function updateParticipant(userId: string, changes: Partial<ParticipantDraft>) {
     setParticipants((current) =>
@@ -222,15 +224,15 @@ export function ExpenseForm({
     setError(null);
 
     if (!description.trim()) {
-      setError("Açıklama boş olamaz");
+      setError(t("ui.description_required"));
       return;
     }
     if (amount === null || amount <= 0) {
-      setError("Geçerli ve sıfırdan büyük bir tutar gir. Örnek: 120,50");
+      setError(t("ui.amount_required"));
       return;
     }
     if (selected.length === 0) {
-      setError("En az bir katılımcı seçmelisin");
+      setError(t("ui.participant_required"));
       return;
     }
     if (preview && "error" in preview) {
@@ -249,12 +251,12 @@ export function ExpenseForm({
         body: JSON.stringify(buildRequestBody()),
       });
 
-      toast.success(isEditing ? "Harcama güncellendi" : "Harcama eklendi");
+      toast.success(isEditing ? t("ui.expense_updated") : t("ui.expense_added"));
       router.push(`/groups/${groupId}`);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Beklenmeyen bir hata oluştu",
+        submitError instanceof Error ? submitError.message : t("server.unexpected"),
       );
       setIsSubmitting(false);
     }
@@ -265,37 +267,37 @@ export function ExpenseForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="description">Açıklama</Label>
+        <Label htmlFor="description">{t("ui.description")}</Label>
         <Input
           id="description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder="Market alışverişi"
+          placeholder={t("ui.description_placeholder")}
           autoFocus
         />
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="amount">Tutar</Label>
+        <Label htmlFor="amount">{t("ui.amount")}</Label>
         <Input
           id="amount"
           value={amountText}
           onChange={(event) => setAmountText(event.target.value)}
-          placeholder="120,50"
+          placeholder={t("ui.amount_placeholder")}
           inputMode="decimal"
         />
         <p className="text-sm text-muted-foreground">
           {amountText.trim() === ""
-            ? "Örnek: 120,50"
+            ? t("ui.amount_example")
             : amount === null
-              ? "Tutarı anlayamadım"
+              ? t("ui.amount_unreadable")
               : `= ${formatMoney(amount, currency)}`}
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="paidBy">Kim ödedi?</Label>
+          <Label htmlFor="paidBy">{t("ui.who_paid")}</Label>
           <select
             id="paidBy"
             className={selectClassName}
@@ -311,16 +313,16 @@ export function ExpenseForm({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="category">Kategori</Label>
+          <Label htmlFor="category">{t("ui.category")}</Label>
           <select
             id="category"
             className={selectClassName}
             value={category}
             onChange={(event) => setCategory(event.target.value as ExpenseCategory)}
           >
-            {EXPENSE_CATEGORY_OPTIONS.map(([value, label]) => (
+            {EXPENSE_CATEGORY_OPTIONS.map(([value, code]) => (
               <option key={value} value={value}>
-                {label}
+                {t(code)}
               </option>
             ))}
           </select>
@@ -329,7 +331,7 @@ export function ExpenseForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="expenseDate">Tarih</Label>
+          <Label htmlFor="expenseDate">{t("ui.date")}</Label>
           <Input
             id="expenseDate"
             type="date"
@@ -339,16 +341,16 @@ export function ExpenseForm({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="splitType">Nasıl bölünecek?</Label>
+          <Label htmlFor="splitType">{t("ui.how_to_split")}</Label>
           <select
             id="splitType"
             className={selectClassName}
             value={splitType}
             onChange={(event) => setSplitType(event.target.value as SplitType)}
           >
-            {(Object.keys(SPLIT_TYPE_LABELS) as SplitType[]).map((value) => (
+            {(Object.keys(SPLIT_TYPE_CODES) as SplitType[]).map((value) => (
               <option key={value} value={value}>
-                {SPLIT_TYPE_LABELS[value]}
+                {t(SPLIT_TYPE_CODES[value])}
               </option>
             ))}
           </select>
@@ -356,7 +358,7 @@ export function ExpenseForm({
       </div>
 
       <div className="flex flex-col gap-3">
-        <Label>Katılımcılar</Label>
+        <Label>{t("ui.participants")}</Label>
         <div className="flex flex-col gap-2">
           {participants.map((participant) => (
             <div key={participant.userId} className="flex items-center gap-3">
@@ -383,7 +385,9 @@ export function ExpenseForm({
                   }
                   placeholder="0,00"
                   inputMode="decimal"
-                  aria-label={`${nameByUserId.get(participant.userId)} tutarı`}
+                  aria-label={t("ui.participant_amount_label", {
+                    name: nameByUserId.get(participant.userId) ?? "",
+                  })}
                 />
               ) : null}
 
@@ -398,7 +402,9 @@ export function ExpenseForm({
                   }
                   placeholder="%0"
                   inputMode="decimal"
-                  aria-label={`${nameByUserId.get(participant.userId)} yüzdesi`}
+                  aria-label={t("ui.participant_percentage_label", {
+                    name: nameByUserId.get(participant.userId) ?? "",
+                  })}
                 />
               ) : null}
             </div>
@@ -409,7 +415,7 @@ export function ExpenseForm({
       {preview ? (
         <Card>
           <CardContent className="flex flex-col gap-2 py-4">
-            <p className="text-sm font-medium">Bölüşüm önizlemesi</p>
+            <p className="text-sm font-medium">{t("ui.split_preview")}</p>
             {"error" in preview ? (
               <p className="text-sm text-destructive">{preview.error}</p>
             ) : (
@@ -441,17 +447,17 @@ export function ExpenseForm({
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting
-            ? "Kaydediliyor..."
+            ? t("ui.saving")
             : isEditing
-              ? "Değişiklikleri kaydet"
-              : "Harcamayı kaydet"}
+              ? t("ui.save_changes")
+              : t("ui.save_expense")}
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={() => router.push(`/groups/${groupId}`)}
         >
-          Vazgeç
+          {t("ui.cancel")}
         </Button>
       </div>
     </form>

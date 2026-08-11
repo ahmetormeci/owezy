@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/api-client";
 import { describeNotification, formatRelativeTime } from "@/lib/notification-text";
+import { useTranslate } from "@/lib/i18n";
 
 type NotificationItem = {
   id: string;
@@ -26,6 +27,7 @@ type ListResponse = {
 
 export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: number }) {
   const router = useRouter();
+  const t = useTranslate();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +51,7 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
       setUnreadCount(data.unreadCount);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Bildirimler yüklenemedi",
+        error instanceof Error ? error.message : t("ui.notifications_load_failed"),
       );
     } finally {
       setIsLoading(false);
@@ -102,7 +104,7 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Bildirimler işaretlenemedi",
+        error instanceof Error ? error.message : t("ui.notifications_mark_failed"),
       );
     }
   }
@@ -112,7 +114,9 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
       <PopoverTrigger
         className="relative flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         aria-label={
-          unreadCount > 0 ? `Bildirimler (${unreadCount} okunmamış)` : "Bildirimler"
+          unreadCount > 0
+            ? t("ui.notifications_with_unread", { count: unreadCount })
+            : t("ui.notifications")
         }
       >
         <Bell className="size-5" />
@@ -125,22 +129,22 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
 
       <PopoverContent align="end" className="w-88 gap-0 p-0">
         <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-          <span className="font-medium">Bildirimler</span>
+          <span className="font-medium">{t("ui.notifications")}</span>
           {unreadCount > 0 ? (
             <Button variant="ghost" size="sm" onClick={handleMarkAllRead}>
-              Tümünü okundu işaretle
+              {t("ui.mark_all_read")}
             </Button>
           ) : null}
         </div>
 
         {isLoading && items === null ? (
           <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-            Yükleniyor...
+            {t("ui.loading")}
           </p>
         ) : items && items.length > 0 ? (
           <ul className="max-h-96 divide-y divide-border overflow-y-auto">
             {items.map((item) => {
-              const view = describeNotification(item.type, item.payload);
+              const view = describeNotification(item.type, item.payload, t);
               return (
                 <li key={item.id}>
                   <button
@@ -152,7 +156,7 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
                       {!item.readAt ? (
                         <span
                           className="mt-1.5 size-2 shrink-0 rounded-full bg-primary"
-                          aria-label="Okunmamış"
+                          aria-label={t("ui.unread")}
                         />
                       ) : (
                         <span className="mt-1.5 size-2 shrink-0" />
@@ -165,7 +169,7 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
                       </span>
                     ) : null}
                     <span className="pl-4 text-xs text-muted-foreground">
-                      {[view.groupName, formatRelativeTime(new Date(item.createdAt))]
+                      {[view.groupName, formatRelativeTime(new Date(item.createdAt), undefined, t)]
                         .filter(Boolean)
                         .join(" · ")}
                     </span>
@@ -176,7 +180,7 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
           </ul>
         ) : (
           <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-            Henüz bildirimin yok.
+            {t("ui.no_notifications")}
           </p>
         )}
       </PopoverContent>

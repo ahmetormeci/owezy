@@ -4,12 +4,14 @@ import { listGroupsForUser } from "@/lib/groups";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { CreateGroupDialog } from "@/components/create-group-dialog";
+import { getTranslate } from "@/lib/i18n-server";
 
 // Server Component: veriyi kendi API'mize HTTP istegi atarak degil, dogrudan
 // servis katmanindan okuyoruz. Sayfa zaten sunucuda render ediliyor; ayni
 // makinede kendi kendine HTTP turu atmak gereksiz gecikme olurdu.
 // (Yazma islemleri /api/v1 uzerinden gidecek - mobil de ayni yolu kullanacak.)
 export default async function GroupsPage() {
+  const t = await getTranslate();
   const user = await getOrCreateCurrentUser();
   if (!user) {
     return null;
@@ -20,13 +22,13 @@ export default async function GroupsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Gruplarım</h1>
+        <h1 className="text-2xl font-semibold">{t("ui.my_groups")}</h1>
         <CreateGroupDialog />
       </div>
 
       {groups.length === 0 ? (
         <Card className="p-6 text-muted-foreground">
-          Henüz bir grubun yok. Yeni bir grup oluşturarak başlayabilirsin.
+          {t("ui.no_groups")}
         </Card>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -44,7 +46,7 @@ export default async function GroupsPage() {
                       ) : null}
                     </div>
                     <Badge variant="secondary">
-                      {group.role === "OWNER" ? "Sahip" : "Üye"}
+                      {group.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
                     </Badge>
                   </div>
                 </Card>

@@ -22,9 +22,9 @@ Current task:
   Alti asamali plan icin PROGRESS.md'ye bak.
 
 Status:
-  IN_PROGRESS — 11.1, 11.2, 11.3, 11.4a bitti. 11.4b baslamadi.
-  11.4a COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
-  (11.2 = a125fc3 ve 11.3 = eb861af push edildi.)
+  IN_PROGRESS — 11.1, 11.2, 11.3, 11.4a, 11.4b bitti. 11.4c baslamadi.
+  11.4b COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
+  (11.2 = a125fc3, 11.3 = eb861af, 11.4a = 18abd81 push edildi.)
 
 Completed in this task:
   - 11.1 Yazi tipi hatasi duzeltildi (site Times New Roman'da calisiyordu)
@@ -36,25 +36,30 @@ Completed in this task:
   - 11.3 parseMoney'ye DOKUNULMADI; ADR-017'nin gerekcesi olcume gore duzeltildi
   - 11.4a 54 throw noktasi kod tasiyor; sozluk src/lib/messages.ts
   - 11.4a Cevap sekli { ok:false, code, params? }; Turkce metin sunucuda kalmadi
-  - Testler: 369 birim, 24 E2E, tsc + lint temiz
+  - 11.4b ~190 arayuz metni sozluge tasindi; kodda gomulu metin kalmadi
+  - 11.4b useTranslate() / getTranslate() kapilari kuruldu (ikisi de simdilik tr)
+  - Testler: 370 birim, 24 E2E, tsc + lint temiz
 
 Next action:
-  11.4b — Arayuzdeki gomulu metinler sozluge tasinir.
-  Su an JSX icinde dogrudan yazili: buton etiketleri, baslıklar, bos durum
-  metinleri, toast mesajlari, istemci tarafi dogrulama uyarilari
-  ("Aciklama bos olamaz", "Harcama silinemedi", "Odestin" ...).
-  Halen tek dil (tr) - gorunur degisiklik yine olmayacak.
+  11.4c — Dil degeri gercekten okunur ve her yere gecirilir.
 
-  Bilinen dokunma noktalari:
-    src/components/*.tsx (toast.error fallback metinleri)
-    src/app/(app)/groups/[groupId]/page.tsx (kart basliklari, durum metinleri)
-    src/lib/expense-labels.ts, src/lib/notification-text.ts
+  Yapilacak, SIRASIYLA:
+    1. src/lib/i18n-server.ts icindeki getLocale() cerezi okusun
+       (cookies() -> "locale"; yoksa "tr"). Dosyanin geri kalani degismiyor.
+    2. Kok layout okudugu dili <LocaleProvider locale={...}> ile versin.
+       useTranslate() zaten context'ten okuyor - bilesenler degismeyecek.
+    3. formatMoney / formatBasisPoints cagrilarina dil GECIRILSIN.
+       Bugun hepsi varsayilani kullaniyor; tesisat burada baglaniyor.
+    4. Basliga dil dugmesi. Cerezi yazip router.refresh() cagirmali.
+
+  Dikkat: formatMoney sunucu bileseninde de cagriliyor
+  (groups/[groupId]/page.tsx). Dil hem sunucuda hem istemcide okunabilmeli;
+  cerez bu yuzden secildi (ADR-017).
+
+  Dikkat: cerez okumak sayfayi dinamik hale getirir. Statik render bekleyen
+  bir yer varsa build ciktisinda gorunur.
 
   Sonra:
-    11.4c Dil cerezden okunur ve formatMoney/formatBasisPoints'e GECIRILIR.
-          Dikkat: formatMoney sunucu bileseninde de cagriliyor
-          (groups/[groupId]/page.tsx). Dil hem sunucuda hem istemcide
-          okunabilmeli; cerez bu yuzden secildi (ADR-017).
     11.4d Ingilizce sozluk + User.locale migration (UC veritabanina birden).
 
   Dikkat: varsayilan dil Turkce kaldigi surece 24 E2E testi degismeden
