@@ -41,6 +41,23 @@ et → dokümanları güncelle.** Kullanıcının "hafızayı güncelle" demesin
 Bir karar DECISIONS.md'de yoksa **alınmamış sayılır** — varsayma, sor.
 **Gereksiz yere yeni doküman dosyası oluşturma**; mevcut sekiz dosya yeterli.
 
+## Commit ve push
+
+Commit her zaman kullanıcı istediğinde atılır. Push kuralı commit'in
+içeriğine bağlıdır:
+
+| Commit türü | Kapsam | Push |
+|---|---|---|
+| **Doküman** | Yalnızca `docs/**` ve/veya kök `*.md` (`AGENTS.md`, `README.md`) | **Otomatik at**, sorma |
+| **Kod** | `src/`, `e2e/`, `prisma/`, `package.json`, config dosyaları — biri bile varsa | **Sorma­dan atma** |
+
+Karışık commit (doküman + kod) **kod commit'i sayılır**.
+
+Ayrımın sebebi: push, Vercel'de production deploy tetikler. Doküman
+commit'i çalışan uygulamayı değiştirmez, o yüzden beklemesi anlamsız.
+Kod commit'inde ise commit ile push arasındaki duraklama kullanıcının son
+kez bakma fırsatıdır.
+
 ## Kendiliğinden yapılmayacaklar
 
 - **"Sıradaki adaylardan" birini kullanıcı görev vermeden uygulama.**
