@@ -73,6 +73,12 @@ model User {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
+  // Clerk'teki kaydin son guncellenme zamani (webhook olayindan gelir).
+  // Webhook'lar sirasiz gelebildigi icin, elimizdekinden ESKI bir olayi
+  // uygulamamak adina saklaniyor. Bizim updatedAt'imizden farklidir:
+  // o bizim satirimizin, bu Clerk'teki kaydin zamani.
+  clerkUpdatedAt DateTime?
+
   // Bu kullanicinin olusturdugu gruplar
   createdGroups Group[] @relation("GroupCreatedBy")
 
