@@ -2,6 +2,7 @@ import type { ExpenseCategory, Prisma, SplitType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { assertActiveMemberOfGroup, assertCanModifyRecord } from "@/lib/group-access";
+import { createNotifications } from "@/lib/notifications";
 import {
   DEFAULT_EXPENSE_PAGE_SIZE,
   MAX_EXPENSE_PAGE_SIZE,
@@ -55,7 +56,7 @@ function computeShares(amount: number, input: CreateExpenseInput): SplitShare[] 
         return splitByPercentage({ amount, shares: input.shares });
     }
   } catch (error) {
-    throw new ValidationError(error instanceof Error ? error.message : "Bolusum hesaplanamadi");
+    throw new ValidationError(error instanceof Error ? error.message : "Bölüşüm hesaplanamadı");
   }
 }
 
@@ -140,7 +141,7 @@ export async function listExpenses(
 ) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadi");
+    throw new NotFoundError("Grup bulunamadı");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);
@@ -181,7 +182,7 @@ export async function getExpenseForUser(
 ) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadi");
+    throw new NotFoundError("Grup bulunamadı");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);
@@ -192,7 +193,7 @@ export async function getExpenseForUser(
   });
 
   if (!expense || expense.deletedAt || expense.groupId !== groupId) {
-    throw new NotFoundError("Harcama bulunamadi");
+    throw new NotFoundError("Harcama bulunamadı");
   }
 
   return expense;
@@ -202,7 +203,7 @@ export async function createExpense(userId: string, groupId: string, input: Crea
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
     const participantUserIds = getParticipantUserIds(input);
@@ -217,7 +218,7 @@ export async function createExpense(userId: string, groupId: string, input: Crea
 
     if (missingUserIds.length > 0) {
       throw new ForbiddenError(
-        `Su kullanicilar grubun aktif uyesi degil: ${missingUserIds.join(", ")}`,
+        `Şu kullanıcılar grubun aktif üyesi değil: ${missingUserIds.join(", ")}`,
       );
     }
 
@@ -246,6 +247,22 @@ export async function createExpense(userId: string, groupId: string, input: Crea
       })),
     });
 
+    // Bildirim yalnizca KATILIMCILARA gider, tum gruba degil: harcamaya dahil
+    // olmayan birinin bakiyesi degismiyor, dolayisiyla haber vermek gurultu olur.
+    await createNotifications(tx, {
+      type: "EXPENSE_ADDED",
+      actorId: userId,
+      recipientIds: shares.map((share) => share.userId),
+      payload: {
+        groupId,
+        groupName: group.name,
+        expenseId: expense.id,
+        description: expense.description,
+        amount: expense.amount,
+        currency: expense.currency,
+      },
+    });
+
     return tx.expense.findUniqueOrThrow({
       where: { id: expense.id },
       include: { participants: true },
@@ -269,12 +286,12 @@ export async function updateExpense(
     // kontrol ediliyor: baska bir grubun harcamasi, kendi grup ID'n uzerinden
     // duzenlenemesin (varligini sizdirmamak icin 403 degil 404 donuyoruz).
     if (!existing || existing.deletedAt || existing.groupId !== groupId) {
-      throw new NotFoundError("Harcama bulunamadi");
+      throw new NotFoundError("Harcama bulunamadı");
     }
 
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
     await assertCanModifyExpense(tx, groupId, existing, userId);
@@ -294,7 +311,7 @@ export async function updateExpense(
 
     if (missingUserIds.length > 0) {
       throw new ForbiddenError(
-        `Su kullanicilar grubun aktif uyesi degil: ${missingUserIds.join(", ")}`,
+        `Şu kullanıcılar grubun aktif üyesi değil: ${missingUserIds.join(", ")}`,
       );
     }
 
@@ -345,6 +362,25 @@ export async function updateExpense(
       },
     });
 
+    // Hem YENI hem ESKI katilimcilar haber almali: paylasimdan cikarilan kisinin
+    // borcu da degisti ve bunu yalnizca bu bildirimden ogrenebilir.
+    await createNotifications(tx, {
+      type: "EXPENSE_UPDATED",
+      actorId: userId,
+      recipientIds: [
+        ...shares.map((share) => share.userId),
+        ...existing.participants.map((participant) => participant.userId),
+      ],
+      payload: {
+        groupId,
+        groupName: group.name,
+        expenseId,
+        description: updated.description,
+        amount: updated.amount,
+        currency: updated.currency,
+      },
+    });
+
     return tx.expense.findUniqueOrThrow({
       where: { id: expenseId },
       include: { participants: true },
@@ -362,12 +398,12 @@ export async function deleteExpense(userId: string, groupId: string, expenseId: 
     // Zaten silinmis bir harcama tekrar silinemez; baska grubun harcamasi da
     // kendi grup ID'n uzerinden silinemez (varligini sizdirmamak icin 404).
     if (!existing || existing.deletedAt || existing.groupId !== groupId) {
-      throw new NotFoundError("Harcama bulunamadi");
+      throw new NotFoundError("Harcama bulunamadı");
     }
 
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
     await assertCanModifyExpense(tx, groupId, existing, userId);
@@ -392,6 +428,20 @@ export async function deleteExpense(userId: string, groupId: string, expenseId: 
       },
     });
 
+    await createNotifications(tx, {
+      type: "EXPENSE_DELETED",
+      actorId: userId,
+      recipientIds: existing.participants.map((participant) => participant.userId),
+      payload: {
+        groupId,
+        groupName: group.name,
+        expenseId,
+        description: existing.description,
+        amount: existing.amount,
+        currency: existing.currency,
+      },
+    });
+
     return tx.expense.findUniqueOrThrow({
       where: { id: expenseId },
       include: { participants: true },
@@ -407,16 +457,16 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
     });
 
     if (!existing || existing.groupId !== groupId) {
-      throw new NotFoundError("Harcama bulunamadi");
+      throw new NotFoundError("Harcama bulunamadı");
     }
     // Yalnizca soft-delete edilmis bir harcama geri yuklenebilir.
     if (!existing.deletedAt) {
-      throw new ConflictError("Harcama zaten silinmemis");
+      throw new ConflictError("Harcama zaten silinmemiş");
     }
 
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
     await assertCanModifyExpense(tx, groupId, existing, userId);

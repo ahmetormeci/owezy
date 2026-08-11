@@ -55,8 +55,13 @@ enum ExpenseEditAction {
 
 enum NotificationType {
   EXPENSE_ADDED
-  GROUP_INVITE
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
   SETTLEMENT_RECORDED
+  SETTLEMENT_CANCELLED
+  // Eskiden GROUP_INVITE idi. Bizim davetler link tabanli oldugu icin
+  // "davet edildin" diye bir alici yok; anlamli olan olay katilimin kendisi.
+  MEMBER_JOINED
 }
 
 // ============================================================
@@ -295,5 +300,9 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id], onDelete: Restrict)
 
+  // Okunmamis sayisini bulmak icin (zil ikonundaki rakam).
   @@index([userId, readAt])
+  // Listeyi yeniden eskiye siralamak icin. Bu olmasa her listeleme, kullanicinin
+  // TUM bildirimlerini okuyup bellekte siralamak zorunda kalirdi.
+  @@index([userId, createdAt])
 }

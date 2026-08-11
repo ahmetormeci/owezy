@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { assertActiveMemberOfGroup, assertCanModifyRecord } from "@/lib/group-access";
+import { createNotifications } from "@/lib/notifications";
 import {
   DEFAULT_SETTLEMENT_PAGE_SIZE,
   MAX_SETTLEMENT_PAGE_SIZE,
@@ -32,11 +33,11 @@ export async function createSettlement(
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
     if (input.fromUserId === input.toUserId) {
-      throw new ValidationError("Bir kullanici kendine odeme kaydi giremez");
+      throw new ValidationError("Bir kullanıcı kendine ödeme kaydı giremez");
     }
 
     // Islemi yapan kisi grubun AKTIF uyesi olmali.
@@ -44,7 +45,7 @@ export async function createSettlement(
       where: { groupId, userId, leftAt: null },
     });
     if (!callerMembership) {
-      throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+      throw new ForbiddenError("Bu grubun üyesi değilsiniz");
     }
 
     // ...ve odemenin taraflarindan biri olmali. Ucuncu bir sahsin baskalari
@@ -52,7 +53,7 @@ export async function createSettlement(
     // yuzeyi olurdu.
     if (userId !== input.fromUserId && userId !== input.toUserId) {
       throw new ForbiddenError(
-        "Yalnizca kendi yaptiginiz veya size yapilan odemeleri kaydedebilirsiniz",
+        "Yalnızca kendi yaptığınız veya size yapılan ödemeleri kaydedebilirsiniz",
       );
     }
 
@@ -69,12 +70,12 @@ export async function createSettlement(
     );
     if (missingUserIds.length > 0) {
       throw new ForbiddenError(
-        `Su kullanicilar grubun uyesi degil: ${missingUserIds.join(", ")}`,
+        `Şu kullanıcılar grubun üyesi değil: ${missingUserIds.join(", ")}`,
       );
     }
 
     // currency istemciden hic alinmiyor - her zaman grubun currency'sinden gelir.
-    return tx.settlement.create({
+    const settlement = await tx.settlement.create({
       data: {
         groupId,
         fromUserId: input.fromUserId,
@@ -86,6 +87,23 @@ export async function createSettlement(
         createdById: userId,
       },
     });
+
+    // Odemenin iki tarafi da haber alir; kaydi giren kisi kendi islemi icin
+    // bildirim almaz (createNotifications actorId'yi listeden ayikliyor).
+    await createNotifications(tx, {
+      type: "SETTLEMENT_RECORDED",
+      actorId: userId,
+      recipientIds: [settlement.fromUserId, settlement.toUserId],
+      payload: {
+        groupId,
+        groupName: group.name,
+        settlementId: settlement.id,
+        amount: settlement.amount,
+        currency: settlement.currency,
+      },
+    });
+
+    return settlement;
   });
 }
 
@@ -96,7 +114,7 @@ export async function listSettlements(
 ) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadi");
+    throw new NotFoundError("Grup bulunamadı");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);
@@ -138,26 +156,43 @@ export async function cancelSettlement(
     // groupId eslesmesi burada kontrol ediliyor: baska bir grubun odeme kaydi,
     // kendi grup ID'n uzerinden iptal edilemesin.
     if (!existing || existing.groupId !== groupId) {
-      throw new NotFoundError("Odeme kaydi bulunamadi");
+      throw new NotFoundError("Ödeme kaydı bulunamadı");
     }
     // Iptal edilmis kayitlar listelemede hala gorulebildigi icin (includeCancelled)
     // "bulunamadi" demek yaniltici olurdu; durum cakismasi olarak bildiriliyor.
     if (existing.cancelledAt) {
-      throw new ConflictError("Bu odeme kaydi zaten iptal edilmis");
+      throw new ConflictError("Bu ödeme kaydı zaten iptal edilmiş");
     }
 
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
-    await assertCanModifyRecord(tx, groupId, existing, userId, "odeme kaydi");
+    await assertCanModifyRecord(tx, groupId, existing, userId, "ödeme kaydı");
 
     // Fiziksel silme YOK: cancelledAt/cancelledById isaretleniyor ve kayit
     // bakiye hesabindan (cancelledAt: null filtresi) otomatik dusuyor.
-    return tx.settlement.update({
+    const cancelled = await tx.settlement.update({
       where: { id: settlementId },
       data: { cancelledAt: new Date(), cancelledById: userId },
     });
+
+    // Iptal, kapanmis sanilan bir borcu geri getirir. Karsi tarafin bunu
+    // ogrenmesi, odemenin kendisinden bile daha onemli.
+    await createNotifications(tx, {
+      type: "SETTLEMENT_CANCELLED",
+      actorId: userId,
+      recipientIds: [existing.fromUserId, existing.toUserId],
+      payload: {
+        groupId,
+        groupName: group.name,
+        settlementId,
+        amount: existing.amount,
+        currency: existing.currency,
+      },
+    });
+
+    return cancelled;
   });
 }

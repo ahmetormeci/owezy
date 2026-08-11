@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { NotFoundError, ForbiddenError, ConflictError } from "@/lib/errors";
 import { assertActiveMemberOfGroup } from "@/lib/group-access";
 import { calculateBalances } from "@/lib/balances";
+import { createNotifications } from "@/lib/notifications";
 
 const DEFAULT_INVITE_TTL_DAYS = 7;
 const DEFAULT_INVITE_MAX_USES = 1;
@@ -103,20 +104,20 @@ export async function acceptGroupInvite(userId: string, rawToken: string) {
     const invite = await tx.groupInvite.findUnique({ where: { tokenHash } });
 
     if (!invite || invite.revokedAt) {
-      throw new NotFoundError("Davet linki gecersiz");
+      throw new NotFoundError("Davet linki geçersiz");
     }
     if (invite.expiresAt < new Date()) {
-      throw new ConflictError("Davet linkinin suresi dolmus");
+      throw new ConflictError("Davet linkinin süresi dolmuş");
     }
     if (invite.useCount >= invite.maxUses) {
-      throw new ConflictError("Davet linki kullanim limitine ulasmis");
+      throw new ConflictError("Davet linki kullanım limitine ulaşmış");
     }
 
     const existingMembership = await tx.groupMember.findFirst({
       where: { userId, groupId: invite.groupId, leftAt: null },
     });
     if (existingMembership) {
-      throw new ConflictError("Zaten bu grubun uyesisiniz");
+      throw new ConflictError("Zaten bu grubun üyesisiniz");
     }
 
     const membership = await tx.groupMember.create({
@@ -133,6 +134,25 @@ export async function acceptGroupInvite(userId: string, rawToken: string) {
       data: { useCount: { increment: 1 } },
     });
 
+    // Gruptaki mevcut uyeler yeni katilimi ogrenir. Sorgu katilim SONRASI
+    // calistigi icin listede katilan kisi de var; createNotifications actorId'yi
+    // ayikladigi icin kendine bildirim gitmiyor.
+    const group = await tx.group.findUniqueOrThrow({
+      where: { id: invite.groupId },
+      select: { name: true },
+    });
+    const activeMembers = await tx.groupMember.findMany({
+      where: { groupId: invite.groupId, leftAt: null },
+      select: { userId: true },
+    });
+
+    await createNotifications(tx, {
+      type: "MEMBER_JOINED",
+      actorId: userId,
+      recipientIds: activeMembers.map((member) => member.userId),
+      payload: { groupId: invite.groupId, groupName: group.name },
+    });
+
     return membership;
   });
 }
@@ -142,14 +162,14 @@ export async function acceptGroupInvite(userId: string, rawToken: string) {
 export async function getGroupForUser(userId: string, groupId: string) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadi");
+    throw new NotFoundError("Grup bulunamadı");
   }
 
   const membership = await prisma.groupMember.findFirst({
     where: { groupId, userId, leftAt: null },
   });
   if (!membership) {
-    throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+    throw new ForbiddenError("Bu grubun üyesi değilsiniz");
   }
 
   return {
@@ -182,17 +202,17 @@ export async function updateGroup(
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
     const membership = await tx.groupMember.findFirst({
       where: { groupId, userId, leftAt: null },
     });
     if (!membership) {
-      throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+      throw new ForbiddenError("Bu grubun üyesi değilsiniz");
     }
     if (membership.role !== "OWNER") {
-      throw new ForbiddenError("Grup bilgilerini yalnizca grup sahibi degistirebilir");
+      throw new ForbiddenError("Grup bilgilerini yalnızca grup sahibi değiştirebilir");
     }
 
     return tx.group.update({
@@ -248,7 +268,7 @@ export async function getInviteStatus(rawToken: string): Promise<InviteStatus> {
 export async function listGroupInvites(userId: string, groupId: string) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadi");
+    throw new NotFoundError("Grup bulunamadı");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);
@@ -273,22 +293,22 @@ export async function revokeGroupInvite(userId: string, groupId: string, inviteI
   return prisma.$transaction(async (tx) => {
     const invite = await tx.groupInvite.findUnique({ where: { id: inviteId } });
     if (!invite || invite.groupId !== groupId) {
-      throw new NotFoundError("Davet bulunamadi");
+      throw new NotFoundError("Davet bulunamadı");
     }
     if (invite.revokedAt) {
-      throw new ConflictError("Bu davet zaten iptal edilmis");
+      throw new ConflictError("Bu davet zaten iptal edilmiş");
     }
 
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
     const callerMembership = await tx.groupMember.findFirst({
       where: { groupId, userId, leftAt: null },
     });
     if (!callerMembership) {
-      throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+      throw new ForbiddenError("Bu grubun üyesi değilsiniz");
     }
 
     // Daveti olusturan kisi VEYA grup sahibi iptal edebilir. Harcamalardaki
@@ -297,7 +317,7 @@ export async function revokeGroupInvite(userId: string, groupId: string, inviteI
     // guvenlik nesnesidir - sizan bir linkten herkes etkilenir.
     if (invite.invitedById !== userId && callerMembership.role !== "OWNER") {
       throw new ForbiddenError(
-        "Bu daveti yalnizca olusturan kisi veya grup sahibi iptal edebilir",
+        "Bu daveti yalnızca oluşturan kişi veya grup sahibi iptal edebilir",
       );
     }
 
@@ -311,7 +331,7 @@ export async function revokeGroupInvite(userId: string, groupId: string, inviteI
 export async function listGroupMembers(userId: string, groupId: string) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
-    throw new NotFoundError("Grup bulunamadi");
+    throw new NotFoundError("Grup bulunamadı");
   }
 
   await assertActiveMemberOfGroup(groupId, userId);
@@ -366,8 +386,8 @@ async function assertBalanceIsSettled(
   if (balance && balance.amount !== 0) {
     throw new ConflictError(
       balance.amount > 0
-        ? `Bu uyenin ${balance.amount} kurusluk alacagi var; once odesilmelidir`
-        : `Bu uyenin ${-balance.amount} kurusluk borcu var; once odesilmelidir`,
+        ? `Bu üyenin ${balance.amount} kuruşluk alacağı var; önce ödeşilmelidir`
+        : `Bu üyenin ${-balance.amount} kuruşluk borcu var; önce ödeşilmelidir`,
     );
   }
 }
@@ -376,14 +396,14 @@ export async function leaveGroup(userId: string, groupId: string, newOwnerId?: s
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
     const membership = await tx.groupMember.findFirst({
       where: { groupId, userId, leftAt: null },
     });
     if (!membership) {
-      throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+      throw new ForbiddenError("Bu grubun üyesi değilsiniz");
     }
 
     await assertBalanceIsSettled(tx, groupId, userId);
@@ -398,14 +418,14 @@ export async function leaveGroup(userId: string, groupId: string, newOwnerId?: s
     if (membership.role === "OWNER" && otherActiveMembers.length > 0) {
       if (!newOwnerId) {
         throw new ConflictError(
-          "Grup sahibi ayrilmadan once sahipligi baska bir uyeye devretmelidir",
+          "Grup sahibi ayrılmadan önce sahipliği başka bir üyeye devretmelidir",
         );
       }
       const isActiveMember = otherActiveMembers.some(
         (member) => member.userId === newOwnerId,
       );
       if (!isActiveMember) {
-        throw new ForbiddenError("Sahipligin devredilecegi kisi grubun aktif uyesi degil");
+        throw new ForbiddenError("Sahipliğin devredileceği kişi grubun aktif üyesi değil");
       }
 
       await tx.groupMember.updateMany({
@@ -441,23 +461,23 @@ export async function removeGroupMember(
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.findUnique({ where: { id: groupId } });
     if (!group || group.deletedAt) {
-      throw new NotFoundError("Grup bulunamadi");
+      throw new NotFoundError("Grup bulunamadı");
     }
 
     const callerMembership = await tx.groupMember.findFirst({
       where: { groupId, userId, leftAt: null },
     });
     if (!callerMembership) {
-      throw new ForbiddenError("Bu grubun uyesi degilsiniz");
+      throw new ForbiddenError("Bu grubun üyesi değilsiniz");
     }
     if (callerMembership.role !== "OWNER") {
-      throw new ForbiddenError("Uye cikarma yetkisi yalnizca grup sahibindedir");
+      throw new ForbiddenError("Üye çıkarma yetkisi yalnızca grup sahibindedir");
     }
     // Sahip kendini bu endpoint'le cikaramaz; aksi halde sahiplik devri
     // mantigini atlayip grubu sahipsiz birakabilirdi.
     if (targetUserId === userId) {
       throw new ConflictError(
-        "Grup sahibi kendini cikaramaz; ayrilmak icin gruptan ayrilma islemini kullanin",
+        "Grup sahibi kendini çıkaramaz; ayrılmak için gruptan ayrılma işlemini kullanın",
       );
     }
 
@@ -465,7 +485,7 @@ export async function removeGroupMember(
       where: { groupId, userId: targetUserId, leftAt: null },
     });
     if (!targetMembership) {
-      throw new NotFoundError("Uye bulunamadi");
+      throw new NotFoundError("Üye bulunamadı");
     }
 
     await assertBalanceIsSettled(tx, groupId, targetUserId);

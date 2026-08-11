@@ -20,6 +20,10 @@ const { mockTx } = vi.hoisted(() => ({
     },
     expenseParticipant: { createMany: vi.fn(), deleteMany: vi.fn() },
     expenseEdit: { create: vi.fn() },
+    // Bildirimler harcamayla AYNI transaction'da yaziliyor; createNotifications
+    // islemi yapanin adini okumak icin user.findUnique de cagiriyor.
+    user: { findUnique: vi.fn() },
+    notification: { createMany: vi.fn() },
   },
 }));
 

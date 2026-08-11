@@ -15,6 +15,9 @@ const { mockTx, mockPrisma } = vi.hoisted(() => ({
     group: { findUnique: vi.fn() },
     groupMember: { findFirst: vi.fn(), findMany: vi.fn() },
     settlement: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+    // Bildirimler odemeyle AYNI transaction'da yaziliyor.
+    user: { findUnique: vi.fn() },
+    notification: { createMany: vi.fn() },
   },
   mockPrisma: {
     group: { findUnique: vi.fn() },
