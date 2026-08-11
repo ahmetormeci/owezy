@@ -201,9 +201,9 @@ export function ExpenseList({
                   ) : null}
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="font-medium">{formatMoney(expense.amount, currency)}</p>
+                  <p className="money font-medium">{formatMoney(expense.amount, currency)}</p>
                   {myShare ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="money text-sm text-muted-foreground">
                       senin payın {formatMoney(myShare.shareAmount, currency)}
                     </p>
                   ) : null}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatBasisPoints,
   formatMoney,
+  formatSignedMoney,
   parseMoney,
   parsePercentageToBasisPoints,
 } from "@/lib/money";
@@ -43,6 +44,31 @@ describe("formatMoney", () => {
 
   it("izin verilen en buyuk tutarda tasma yapmaz", () => {
     expect(formatMoney(2_147_483_647)).toBe("21.474.836,47 ₺");
+  });
+});
+
+describe("formatSignedMoney", () => {
+  it("alacagi arti isaretiyle gosterir", () => {
+    expect(formatSignedMoney(12050)).toBe("+120,50 ₺");
+  });
+
+  it("borcu eksi isaretiyle gosterir", () => {
+    expect(formatSignedMoney(-12050)).toBe("−120,50 ₺");
+  });
+
+  it("sifira isaret koymaz", () => {
+    expect(formatSignedMoney(0)).toBe("0,00 ₺");
+  });
+
+  it("eksi icin kisa tire degil U+2212 kullanir", () => {
+    // Kisa tire (U+002D) rakamlardan dar oldugu icin tutarlarin hizasini
+    // bozar. Bu testin varlik sebebi: birisi ileride "-" yazarsa fark edelim.
+    expect(formatSignedMoney(-100).charCodeAt(0)).toBe(0x2212);
+    expect(formatSignedMoney(-100)).not.toContain("-");
+  });
+
+  it("binlik ayracini ve para birimini korur", () => {
+    expect(formatSignedMoney(-123456789, "USD")).toBe("−1.234.567,89 $");
   });
 });
 

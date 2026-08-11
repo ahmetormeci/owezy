@@ -6,6 +6,7 @@ import { getOrCreateCurrentUser } from "@/lib/auth";
 import { countUnreadNotifications } from "@/lib/notifications";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BrandMark } from "@/components/brand-mark";
 
 // (app) bir "route group": parantezli klasor adi URL'e yansimaz, yalnizca
 // altindaki sayfalari ortak bir layout altinda toplar.
@@ -32,9 +33,17 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b border-border">
+      {/* Baslik yapiskan: harcama listesi uzadikca kullanici zile ve gruplara
+          donmek icin basa kadar kaydirmak zorunda kalmasin.
+          Yari saydam zemin + backdrop-blur, altindan gecen icerigin
+          okunmasini engelliyor ama sayfanin devam ettigini de belli ediyor. */}
+      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4">
-          <Link href="/groups" className="font-semibold">
+          <Link
+            href="/groups"
+            className="flex items-center gap-2 rounded-md font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <BrandMark className="size-5 text-brand" />
             SplitApp
           </Link>
           <div className="flex items-center gap-1">

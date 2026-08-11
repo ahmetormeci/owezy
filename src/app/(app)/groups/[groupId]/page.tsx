@@ -6,7 +6,7 @@ import { getGroupForUser, listGroupMembers } from "@/lib/groups";
 import { listExpenses } from "@/lib/expenses";
 import { listSettlements } from "@/lib/settlements";
 import { AppError } from "@/lib/errors";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, formatSignedMoney } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,10 +15,23 @@ import { ExpenseList } from "@/components/expense-list";
 import { SettlementList } from "@/components/settlement-list";
 import { RecordSettlementDialog } from "@/components/record-settlement-dialog";
 
+// Renkler artik dogrudan yazilmiyor (eskiden "text-emerald-600
+// dark:text-emerald-400" idi). Anlam tokenlari kullaniliyor: --credit
+// "alacak", --debt "borc". Iki tema icin ayarlari globals.css'te; burasi
+// yalnizca HANGI ANLAM oldugunu soyluyor, rengin ne oldugunu degil.
 function balanceToneClass(amount: number) {
-  if (amount > 0) return "text-emerald-600 dark:text-emerald-400";
-  if (amount < 0) return "text-red-600 dark:text-red-400";
+  if (amount > 0) return "text-credit";
+  if (amount < 0) return "text-debt";
   return "text-muted-foreground";
+}
+
+// Bakiye kartinin zemini. Tutar yaziyi okumadan once "iyi mi kotu mu"
+// bilgisini veriyor; rakam da ayrica isaretli yaziliyor, yani bilgi renge
+// bagimli degil.
+function balanceSurfaceClass(amount: number) {
+  if (amount > 0) return "bg-credit-soft";
+  if (amount < 0) return "bg-debt-soft";
+  return "bg-muted";
 }
 
 export default async function GroupDetailPage({
@@ -107,13 +120,13 @@ export default async function GroupDetailPage({
         </div>
       </div>
 
-      <Card>
+      <Card className={balanceSurfaceClass(myAmount)}>
         <CardHeader>
           <CardTitle>Senin durumun</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className={`text-3xl font-semibold ${balanceToneClass(myAmount)}`}>
-            {myAmount === 0 ? "Ödeştin" : formatMoney(Math.abs(myAmount), currency)}
+          <p className={`money text-figure font-semibold ${balanceToneClass(myAmount)}`}>
+            {myAmount === 0 ? "Ödeştin" : formatSignedMoney(myAmount, currency)}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             {myAmount > 0
@@ -150,7 +163,9 @@ export default async function GroupDetailPage({
                       {nameByUserId.get(transfer.toUserId) ?? "Bilinmeyen"}
                     </span>
                   </span>
-                  <span className="font-medium">{formatMoney(transfer.amount, currency)}</span>
+                  <span className="money font-medium">
+                    {formatMoney(transfer.amount, currency)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -182,8 +197,10 @@ export default async function GroupDetailPage({
                   ) : null}
                   {balance.hasLeft ? <Badge variant="outline">Ayrıldı</Badge> : null}
                 </div>
-                <span className={`shrink-0 font-medium ${balanceToneClass(balance.amount)}`}>
-                  {balance.amount === 0 ? "—" : formatMoney(balance.amount, currency)}
+                <span
+                  className={`money shrink-0 font-medium ${balanceToneClass(balance.amount)}`}
+                >
+                  {balance.amount === 0 ? "—" : formatSignedMoney(balance.amount, currency)}
                 </span>
               </li>
             ))}

@@ -411,7 +411,7 @@ export function ExpenseForm({
                 {preview.shares.map((share) => (
                   <li key={share.userId} className="flex justify-between gap-4">
                     <span>{nameByUserId.get(share.userId) ?? share.userId}</span>
-                    <span>
+                    <span className="money">
                       {formatMoney(share.amount, currency)}
                       {splitType === "PERCENTAGE" && amount
                         ? ` (${formatBasisPoints(

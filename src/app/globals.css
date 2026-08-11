@@ -4,6 +4,32 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+   TASARIM TOKENLARI
+   ---------------------------------------------------------------------------
+   Buradaki her deger bir KARAR. Bilesenler dogrudan renk yazmaz, bu
+   degiskenleri kullanir; boylece iki temayi tek yerden ayarliyoruz ve
+   "bir yerde emerald-600, baska yerde green-500" dagilmasi olmuyor.
+
+   Uc renk ailesi var ve ucu de FARKLI is yapar:
+
+     --primary  kobalt   -> kimlik. Buton, link, odak halkasi.
+     --credit   yesil    -> "sana borclu" (alacak)
+     --debt     kiremit  -> "borclusun"
+
+   Kimlik renginin kobalt olmasinin sebebi ADR-015: yesil ve kirmizi bu
+   uygulamada zaten ANLAM tasiyor. Kimlik rengi de yesil olsaydi kullanici
+   yesil bir butonu "alacak" sanabilirdi. Kobalt ucuncu bir aile aciyor.
+
+   Renkler oklch cinsinden: oklch(aciklik chroma ton).
+   - aciklik 0..1  -> kontrasti buradan ayarliyoruz
+   - chroma  0..~0.4 -> doygunluk
+   - ton     0..360  -> renk acisi (258 = kobalt, 162 = yesil, 25 = kiremit)
+   Faydasi: aciklik gozle algilanan aciklikla ortusuyor, yani ayni "aciklik"
+   degerindeki iki renk gercekten ayni parlaklikta gorunuyor. HSL'de bu
+   dogru degil (mavi ve sari ayni L'de cok farkli parlar).
+--------------------------------------------------------------------------- */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -14,6 +40,26 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
+
+  /* Tipografi olcegi: buyuk basliklar icin iki basamak. Tailwind'in hazir
+     olcegini DEGISTIRMIYORUZ, uzerine ekliyoruz - mevcut text-sm/text-2xl
+     kullanimlari oldugu gibi calismaya devam ediyor.
+     Buyudukce harf araligi daraliyor (-0.02 / -0.03em): kucuk puntoda
+     ferah duran aralik, buyuk puntoda dagilmis gorunur. */
+  --text-figure: 2.25rem;
+  --text-figure--line-height: 1.1;
+  --text-figure--letter-spacing: -0.02em;
+  --text-display: 3rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.03em;
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-credit: var(--credit);
+  --color-credit-soft: var(--credit-soft);
+  --color-debt: var(--debt);
+  --color-debt-soft: var(--debt-soft);
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -53,72 +99,121 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* Kimlik */
+  --brand: oklch(0.487 0.176 258);
+  --brand-strong: oklch(0.412 0.166 258);
+
+  /* Notrler.
+     Hicbiri tam gri degil: hepsinde 0.004-0.03 arasi bir chroma ve kobaltin
+     tonu (258-262) var. Tek tek bakinca fark edilmez; yan yana gelince sayfa
+     "secilmis" gorunur, tam notr gri ise "varsayilan" gorunur.
+     Kart saf beyaz kaldi: zemin hafif renkli olunca kartlar kendiliginden
+     one cikiyor, golge eklemeye gerek kalmiyor. */
+  --background: oklch(0.985 0.004 258);
+  --foreground: oklch(0.185 0.019 262);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.185 0.019 262);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.185 0.019 262);
+  --primary: var(--brand);
+  --primary-foreground: oklch(0.985 0.008 258);
+  --secondary: oklch(0.955 0.007 258);
+  --secondary-foreground: oklch(0.26 0.028 262);
+  --muted: oklch(0.955 0.007 258);
+  --muted-foreground: oklch(0.505 0.021 262);
+  --accent: oklch(0.945 0.019 258);
+  --accent-foreground: oklch(0.32 0.088 260);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: oklch(0.905 0.009 258);
+  --input: oklch(0.905 0.009 258);
+  --ring: var(--brand);
+
+  /* Anlam renkleri.
+     Borc rengi saf kirmizi DEGIL, kiremit: saf kirmizi --destructive'in
+     (silme butonu) rengi. Borclu olmak bir hata degil, o yuzden "tehlike"
+     gibi gorunmemeli. Ayrimi ton degil doygunluk tasiyor: destructive
+     chroma 0.245, borc 0.15 - biri bagirir, digeri soyler. */
+  --credit: oklch(0.475 0.113 162);
+  --credit-soft: oklch(0.962 0.026 162);
+  --debt: oklch(0.505 0.15 25);
+  --debt-soft: oklch(0.965 0.022 25);
+
+  --chart-1: oklch(0.487 0.176 258);
+  --chart-2: oklch(0.62 0.13 232);
+  --chart-3: oklch(0.7 0.11 196);
+  --chart-4: oklch(0.58 0.15 285);
+  --chart-5: oklch(0.68 0.12 320);
+
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.975 0.006 258);
+  --sidebar-foreground: oklch(0.185 0.019 262);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: oklch(0.985 0.008 258);
+  --sidebar-accent: oklch(0.945 0.019 258);
+  --sidebar-accent-foreground: oklch(0.32 0.088 260);
+  --sidebar-border: oklch(0.905 0.009 258);
+  --sidebar-ring: var(--brand);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Koyu temada ayni renk ISE YARAMAZ: koyu zeminde okunmasi icin her
+     rengin acikligi yukari, doygunlugu bir miktar asagi cekiliyor.
+     Koyu tema "aciktakinin tersi" degil, ayri ayarlanmis ikinci bir palet. */
+  --brand: oklch(0.685 0.152 258);
+  --brand-strong: oklch(0.765 0.128 258);
+
+  /* Zemin notr siyah degil, kobalta calan cok koyu bir lacivert.
+     Saf siyah zeminde beyaz metin fazla sert kontrast yapar ve uzun
+     listelerde goz yorar. */
+  --background: oklch(0.168 0.016 262);
+  --foreground: oklch(0.955 0.006 258);
+  --card: oklch(0.212 0.018 262);
+  --card-foreground: oklch(0.955 0.006 258);
+  --popover: oklch(0.212 0.018 262);
+  --popover-foreground: oklch(0.955 0.006 258);
+  --primary: var(--brand);
+  --primary-foreground: oklch(0.16 0.03 262);
+  --secondary: oklch(0.268 0.019 262);
+  --secondary-foreground: oklch(0.955 0.006 258);
+  --muted: oklch(0.268 0.019 262);
+  --muted-foreground: oklch(0.715 0.021 262);
+  --accent: oklch(0.298 0.038 260);
+  --accent-foreground: oklch(0.93 0.03 258);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: oklch(0.99 0.02 258 / 12%);
+  --input: oklch(0.99 0.02 258 / 16%);
+  --ring: var(--brand);
+
+  --credit: oklch(0.775 0.143 162);
+  --credit-soft: oklch(0.33 0.062 162);
+  --debt: oklch(0.715 0.135 27);
+  --debt-soft: oklch(0.32 0.062 27);
+
+  --chart-1: oklch(0.685 0.152 258);
+  --chart-2: oklch(0.74 0.12 232);
+  --chart-3: oklch(0.8 0.1 196);
+  --chart-4: oklch(0.7 0.14 285);
+  --chart-5: oklch(0.78 0.11 320);
+
+  --sidebar: oklch(0.198 0.017 262);
+  --sidebar-foreground: oklch(0.955 0.006 258);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: oklch(0.16 0.03 262);
+  --sidebar-accent: oklch(0.298 0.038 260);
+  --sidebar-accent-foreground: oklch(0.93 0.03 258);
+  --sidebar-border: oklch(0.99 0.02 258 / 12%);
+  --sidebar-ring: var(--brand);
+}
+
+/* Para her yerde ayni davranir: rakamlar esit genislikte, satir bolunmez.
+   "Esit genislik" (tabular-nums) sut sayilarin alt alta hizalanmasini
+   saglar - 1 rakami 8 rakami kadar yer kaplar. Bir bakiye listesinde
+   virguller ayni sutunda durur, goz tutarlari karsilastirabilir.
+   Varsayilan (orantili) rakamlarda her satir kayar ve liste dagilir. */
+@utility money {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 @layer base {
@@ -130,5 +225,11 @@
   }
   html {
     @apply font-sans;
+  }
+  /* Basliklar buyudukce aralik daralir. */
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tight;
   }
 }

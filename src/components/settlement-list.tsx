@@ -143,7 +143,7 @@ export function SettlementList({
                   </div>
                 ) : null}
               </div>
-              <p className="shrink-0 font-medium">
+              <p className="money shrink-0 font-medium">
                 {formatMoney(settlement.amount, currency)}
               </p>
             </div>

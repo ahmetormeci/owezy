@@ -12,7 +12,7 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 342 | ✅ tümü geçiyor |
+| Birim (Vitest) | 347 | ✅ tümü geçiyor |
 | E2E (Playwright) | 24 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -163,7 +163,7 @@ eşit genişlikli rakamlar.
 | Aşama | Durum | İş |
 |---|---|---|
 | 11.1 | **DONE** | Yazı tipi hatası + koyu tema bağlantısı |
-| 11.2 | TODO | Tasarım tokenları (kobalt, alacak/borç, tipografi ölçeği) |
+| 11.2 | **DONE** | Tasarım tokenları (kobalt, alacak/borç, tipografi ölçeği) |
 | 11.3 | TODO | Para biçimlendirmesi dile duyarlı hale gelir |
 | 11.4 | TODO | API hata kodları + çeviri altyapısı |
 | 11.5 | TODO | Grup sayfası hiyerarşisi |
@@ -175,7 +175,17 @@ render ediliyormuş. Tek satırla düzeltildi. Koyu palet zaten yazılıydı ama
 `ThemeProvider` olmadığı için `.dark` sınıfı hiç uygulanmıyordu — bağlandı,
 tema düğmesi eklendi.
 
-**Test:** 342 birim / 24 E2E.
+**11.2'de yapıldı:** Kobalt kimlik, `--credit` / `--debt` anlam tokenları,
+`oklch()` tabanlı iki ayrı tema paleti, `money` yardımcı sınıfı (eşit
+genişlikli rakamlar), `formatSignedMoney` (renk artık tek başına bilgi
+taşımıyor), tipografi ölçeğine iki basamak, marka işareti. Sayfalardaki
+doğrudan renk sınıfları (`text-emerald-600` vb.) kaldırıldı.
+
+11.6'nın kapsamındaki **karşılama sayfası öne alındı**: kobalt bir uygulamanın
+önünde gri bir karşılama sayfası tutarsız olurdu. Butonların sırası da
+değişti, birincil eylem ("Kayıt ol") öne geçti.
+
+**Test:** 347 birim / 24 E2E.
 **Commit:** (bkz. CHANGELOG)
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce

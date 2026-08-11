@@ -10,6 +10,29 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-11
 
+### Tasarım tokenları (Faz 11.2)
+- **Kimlik rengi kobalt oldu.** Yeşil ve kırmızı bu uygulamada zaten anlam
+  taşıdığı için (alacak / borç) kimlik rengi üçüncü bir renk ailesi açıyor.
+- Renkler `oklch()` cinsinden yazıldı. Açıklık değeri gözle algılanan
+  açıklıkla örtüştüğü için iki temayı dengelemek deneme yanılma olmaktan
+  çıktı.
+- Nötr renkler tam gri değil: hepsinde çok küçük bir chroma ve kobaltın tonu
+  var. Kart saf beyaz kaldı, böylece zeminden gölgesiz ayrılıyor.
+- `--credit` / `--debt` anlam tokenları eklendi. Sayfalardaki
+  `text-emerald-600 dark:text-emerald-400` gibi doğrudan renkler kaldırıldı.
+- Borç rengi saf kırmızı değil kiremit; `--destructive`ten doygunlukla
+  ayrılıyor (0.245'e karşı 0.15). Borçlu olmak bir hata değil.
+- `formatSignedMoney` eklendi: `+120,50 ₺` / `−120,50 ₺`. Renk artık tek
+  başına bilgi taşımıyor. Eksi işareti U+2212 (kısa tire değil) — rakam
+  genişliğinde olduğu için sütun hizasını bozmuyor.
+- `money` yardımcı sınıfı: tüm tutarlarda eşit genişlikli rakamlar, böylece
+  listelerde virgüller aynı sütunda duruyor.
+- Tipografi ölçeğine `text-figure` ve `text-display` eklendi (Tailwind'in
+  hazır ölçeği değiştirilmedi, üzerine eklendi).
+- Marka işareti (`brand-mark.tsx`): eşit olmayan iki parçaya bölünmüş daire.
+- Başlık yapışkan oldu; karşılama sayfası ham `zinc-*` sınıflarından
+  kurtuldu ve ürünü örnek bir defterle gösteriyor.
+
 ### Yazı tipi düzeltmesi ve koyu tema (Faz 11.1)
 - **Site arayüz fazından beri Times New Roman'da render ediliyormuş.**
   `globals.css` içindeki `--font-sans: var(--font-sans)` kendine referans
