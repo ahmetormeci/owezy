@@ -32,7 +32,7 @@ et → dokümanları güncelle.** Kullanıcının "hafızayı güncelle" demesin
 
 | Dosya | Ne yazılır |
 |---|---|
-| `CURRENT_TASK.md` | Yalnızca **aktif** görev ve hemen sonraki adım. Geçmiş anlatmaz; yeni görevde **baştan yazılır**. `Reflects:` satırını güncel commit'e çek. |
+| `CURRENT_TASK.md` | Yalnızca **aktif** görev ve hemen sonraki adım. Geçmiş anlatmaz; yeni görevde **baştan yazılır**. |
 | `PROGRESS.md` | Fazların gerçek durumu |
 | `CHANGELOG.md` | Önemli değişiklikler |
 | `DECISIONS.md` | Yeni mimari/teknik kararlar (ADR) |

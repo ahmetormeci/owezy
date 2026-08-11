@@ -165,8 +165,16 @@ dokümanı düzelt. Dokümanda yazan durumu varsayımla değiştirme.
 dosyasıdır (`Current task` / `Status` / `Completed in this task` /
 `Next action` / `Blocked by`). Yeni görev başlarken **baştan yazılır**,
 alta eklenmez; biten işin ayrıntısı CHANGELOG.md ve PROGRESS.md'ye taşınır.
-Başındaki `Reflects:` satırı dosyanın yazıldığı commit'tir — `git log
---oneline -1` ile tutmuyorsa dosya bayat olabilir, önce repoyu doğrula.
+
+Bayat olup olmadığı dosyanın içindeki bir işaretten değil, **git'ten**
+sorulur — bir dosya kendi commit'inin hash'ini içeremez:
+
+```bash
+git log --oneline $(git log -1 --format=%H -- docs/CURRENT_TASK.md)..HEAD -- src prisma
+```
+
+Çıktı boşsa dosya güncel. Commit listeliyorsa önce repoyu doğrula, sonra
+dosyayı düzelt.
 
 | Dosya | Ne zaman |
 |---|---|

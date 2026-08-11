@@ -4,12 +4,17 @@
 KURAL: Bu dosya gecmisi ANLATMAZ. Yalnizca su anki operasyonel durumu tasir.
 - Yeni gorev basladiginda BASTAN YAZILIR, alta eklenmez.
 - Biten isin ayrintisi CHANGELOG.md ve PROGRESS.md'ye tasinir.
-- "Reflects" satiri, bu dosyanin yazildigi andaki commit'tir. Yeni oturumda
-  `git log --oneline -1` ile karsilastir: tutmuyorsa dosya bayat olabilir,
-  once repository'nin gercek durumunu dogrula.
+
+BAYAT MI? Dosyaya hash yazmiyoruz (bir dosya kendi commit'inin hash'ini
+iceremez). Bunun yerine git'e soruyoruz - bu dosya son guncellendikten sonra
+kod degisti mi:
+
+  git log --oneline $(git log -1 --format=%H -- docs/CURRENT_TASK.md)..HEAD -- src prisma
+
+Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
+durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Reflects: fec69c7
 Updated: 2026-08-11
 
 Current task:
