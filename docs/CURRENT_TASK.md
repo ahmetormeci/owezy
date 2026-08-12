@@ -22,14 +22,17 @@ Current task:
   Alti asamali plan icin PROGRESS.md'ye bak.
 
 Status:
-  IN_PROGRESS — 11.4'UN TAMAMI BITTI (11.4a/b/c/d-1/d-2). Sirada 11.5.
-  11.4d-2 COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
+  IN_PROGRESS — 11.1 ... 11.5 bitti. Geriye yalnizca 11.6 kaldi.
   (11.2 = a125fc3, 11.3 = eb861af, 11.4a = 18abd81, 11.4b = 9b01802,
-   11.4c = 79f1d10, 11.4d-1 = 648b558)
+   11.4c = 79f1d10, 11.4d-1 = 648b558, 11.4d-2 = 2289e0f)
 
-  DIKKAT - PUSH: 11.4d-2 bir migration iceriyor. Push, vercel-build icindeki
+  DIKKAT - PUSH BEKLIYOR: 2289e0f (11.4d-2) commitlendi ama PUSH EDILMEDI.
+  Icinde bir migration var; push, vercel-build icindeki
   "prisma migrate deploy" sayesinde onu PRODUCTION veritabanina uygular.
   Dev ve E2E veritabanlarina zaten uygulandi.
+
+  Ara durum guvenli: production'da calisan surum locale kolonunu hic
+  sormuyor. Push sirasi da dogru - once migrate deploy, sonra build.
 
 Completed in this task:
   - 11.1 Yazi tipi hatasi duzeltildi (site Times New Roman'da calisiyordu)
@@ -54,6 +57,9 @@ Completed in this task:
   - 11.4d-1 Uc yazim hatasi duzeltildi (kisiden / cikarilsin / kullanildi)
   - 11.4d-2 User.locale kolonu (nullable) + PATCH /api/v1/me
   - 11.4d-2 Okuma sirasi cerez -> hesap -> tr; ek sorgu maliyeti sifir
+  - 11.5 Grup sayfasi alti esit bloktan uc kademeli dort bloga indi
+  - 11.5 Oneriler filtrelendi; fiil basliga tasindi (Turkce ek sorunu)
+  - 11.5 Mobilde yatay kayma duzeltildi (grid cocuklarina min-w-0)
   - Testler: 408 birim, 27 E2E, tsc + lint temiz
 
 Faz disi (ayni gunlerde yapildi, Faz 11'in parcasi degil):
@@ -66,25 +72,26 @@ Faz disi (ayni gunlerde yapildi, Faz 11'in parcasi degil):
     sormadigi icin bu temizligin gozlenebilir bir etkisi yok.
 
 Next action:
-  11.5 — Grup sayfasi hiyerarsisi.
+  11.6 — Karsilama, formlar, bos durumlar, mobil.
 
-  Karar ZATEN ALINDI ve yazildi: ADR-016. Uygulanmadi.
-  Ozet: "senin durumun" panelinin gorsel agirligi digerlerinden belirgin
-  buyuk olacak, bakiyenin isareti sayfanin tonunu belirleyecek. Bugun bes
-  ozdes kart var; "Senin durumun" ile "Kaydedilen odemeler" goze esit
-  onemde ve hicbiri duyulmuyor.
+  Faz 11'in son asamasi. Kapsam HENUZ DARALTILMADI; tasarim onerisi once
+  sunulmali. Bilinen adaylar:
 
-  Dosya: src/app/(app)/groups/[groupId]/page.tsx
-
-  Tasarim onerisi ONCE sunulmali - ADR-016 NE yapilacagini soyluyor ama
-  duzenin kendisi (hangi kart nerede, mobilde nasil siralanacak)
-  kararlastirilmadi.
-
-  Sonra: 11.6 Karsilama, formlar, bos durumlar, mobil.
+    - Karsilama sayfasi 11.2'de kismen elden gecti, geri kalani burada.
+    - Formlar (harcama, grup, odeme) hic elden gecmedi.
+    - Bos durumlar: metinleri var ama gorsel olarak duz.
+    - Mobil: 11.5'te grup sayfasi duzeltildi, DIGER sayfalar olculmedi.
+      Ayni yatay kayma baska yerlerde de olabilir - once OLC, sonra duzelt.
+    - PublicControls konumunu fixed ile belirliyor; dar ve kisa ekranda
+      ustteki kartla cakisabilir (PROGRESS.md teknik borc).
 
   Dikkat: E2E testleri Turkce metin ve mevcut secicilere dayaniyor.
-  Grup sayfasi 11 testin ugradigi yer - duzen degisiminde en cok orasi
-  kirilir. Degisiklikten sonra npm run test:e2e sart.
+  Formlara dokunulursa harcama testleri (6 test) en cok etkilenen yer.
+
+  Dikkat: yatay kayma gibi duzen hatalarini E2E YAKALAMAZ - metnin
+  varligina bakiyor, sayfanin kaydigina degil. 11.5'te bu ekran
+  goruntusuyle yakalandi; olcum yontemi belge genisligini viewport
+  genisligiyle karsilastirmak.
 
 Blocked by:
   Yok.

@@ -10,6 +10,34 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-12
 
+### Grup sayfası hiyerarşisi (Faz 11.5)
+- Altı eşit ağırlıklı bloktan **üç kademeli dört bloğa** inildi (ADR-016).
+  Önceki düzende "Senin durumun" ile "Kaydedilen ödemeler" göze eşit
+  önemdeydi; her şey aynı sesle konuşunca hiçbiri duyulmuyordu.
+- **Durum paneli** kart olmaktan çıktı: tam genişlik, `text-display` rakam,
+  işarete göre zemin. "Kime ödeyeceğim" de içine girdi — o, "ne kadar
+  borçluyum"un ikinci yarısı ve ayrı bir kartta eşit ağırlıktaydı.
+- **"Ödeme kaydet" başlıktan panele taşındı.** Başlıkta yalnızca "Harcama
+  ekle" kaldı: gruba her gün yapılan şey o. Ödeşmek bakiyeye bağlı bir eylem.
+- **Öneriler filtreleniyor:** panelde yalnızca beni içerenler. Grubun kalanı
+  ikincil kademede ayrı bir kartta ve **boşsa hiç görünmüyor** — "Önerilen
+  ödemeler: yok" diyen bir kart, olmayan bir işi varmış gibi gösterir.
+- Satır metinlerinde **fiil başlığa taşındı** ("Ödemen gerekenler" /
+  "Sana ödenecekler"), satır yalnızca isim + tutar.
+  `"{name} kişisine {amount} öde"` şablonu Türkçede ek ister ve ek ismin son
+  harfine göre değişir (*Ayşe'ye*, *Mehmet'e*, *Burak'a*) — yer tutucuyla
+  doğru yazılamaz. İngilizcede sorun yok, Türkçede her isimde kumar olurdu.
+- Üçüncü kademe geniş ekranda iki sütun, mobilde tek sütun.
+- **Ekran görüntüsü gerçek bir hata yakaladı:** mobilde sayfa yatay kayıyordu
+  (390 px viewport'ta belge 550 px). Grid çocuklarının varsayılan
+  `min-width: auto` değeri, içeriğin min-content genişliğinin altına inmeyi
+  reddediyor; uzun bir e-posta adresi sütunu zorla genişletiyor ve içerideki
+  `truncate` hiç devreye giremiyor. Önceki düzende bu kartlar flex-column
+  çocuğuydu, o yüzden sorun yoktu — hata `md:grid-cols-2` ile geldi. İki
+  `min-w-0` çözdü. **E2E bunu yakalayamazdı:** testler metnin varlığına
+  bakıyor, sayfanın kaydığına değil.
+- 408 birim / 27 E2E değişmeden geçti (grup sayfası 11 testin uğrağı).
+
 ### Dil tercihi hesapta da saklanıyor (Faz 11.4d-2)
 - `User.locale` kolonu eklendi — **nullable ve varsayılansız**.
   `@default("tr")` mevcut her kullanıcının Türkçe *seçtiğini* iddia ederdi;

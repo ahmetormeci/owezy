@@ -171,7 +171,7 @@ eşit genişlikli rakamlar.
 | 11.4c | **DONE** | Dil çerezden okunur, `formatMoney`'e geçirilir, dil düğmesi |
 | 11.4d-1 | **DONE** | İngilizce sözlük + herkese açık sayfalara dil düğmesi |
 | 11.4d-2 | **DONE** | `User.locale` migration + hesap tercihi + `PATCH /api/v1/me` |
-| 11.5 | TODO | Grup sayfası hiyerarşisi |
+| 11.5 | **DONE** | Grup sayfası hiyerarşisi |
 | 11.6 | TODO | Karşılama, formlar, boş durumlar, mobil |
 
 **11.1'de yapıldı:** `globals.css`'teki `--font-sans: var(--font-sans)`
@@ -267,10 +267,31 @@ maliyet sıfır, çıkış yapmış ziyaretçide hiç sorgu yok.
 kök layout'tan çağrılsaydı karşılama sayfasının render'ı kullanıcı satırı
 üretirdi. Ayrı bir test bunu koruyor.
 
+**11.5'te yapıldı:** Grup sayfası altı eşit bloktan üç kademeli dört bloğa
+indi (ADR-016). Durum paneli kart olmaktan çıkıp sayfanın baskın bloğu oldu;
+"kime ödeyeceğim" de içine girdi — o, "ne kadar borçluyum"un ikinci yarısı ve
+ayrı bir kartta eşit ağırlıktaydı. Harcamalar gövdeye çıktı; üyeler,
+kaydedilen ödemeler ve "grubun geri kalanı" üçüncü kademeye indi.
+
+Öneriler artık filtreleniyor: panelde yalnızca beni içerenler, grubun kalanı
+ikincil kartta (boşsa hiç görünmüyor).
+
+Satır metinleri **fiili başlığa taşıdı** ("Ödemen gerekenler" + isim + tutar).
+`"{name} kişisine {amount} öde"` şablonu Türkçede ek ister ve ek ismin son
+harfine göre değişir (*Ayşe'ye*, *Burak'a*) — yer tutucuyla doğru yazılamaz.
+
+**Ekran görüntüsü gerçek bir hata yakaladı:** mobilde sayfa yatay kayıyordu
+(390 px viewport'ta belge 550 px). Grid çocuklarının varsayılan
+`min-width: auto` değeri içeriğin altına inmeyi reddediyor; uzun isimler
+sütunu genişletiyor ve `truncate` devreye giremiyor. İki `min-w-0` ile
+düzeltildi. E2E bunu yakalayamazdı — testler metnin varlığına bakıyor,
+sayfanın kaydığına değil.
+
 **Test:** 408 birim / 27 E2E.
 **Commit:** `a125fc3` (11.2), `eb861af` (11.3), `18abd81` (11.4a),
 `9b01802` (11.4b), `79f1d10` (11.4c), `648b558` (11.4d-1) — altısı da push
-edildi. 11.4d-2 henüz commitlenmedi.
+edildi. `2289e0f` (11.4d-2) commitlendi ama **push edilmedi**;
+11.5 henüz commitlenmedi.
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce
 geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahalıdır.

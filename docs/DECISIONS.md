@@ -347,6 +347,19 @@ taşımak (sayfa bağlamı kaybolurdu).
 **Sonuç:** Kuruşuna kadar doğru bölüşen bir uygulamada rakamların alt alta
 hizalanması detay değil, ürünün karakteridir.
 
+> **UYGULANDI (2026-08-12, Faz 11.5).** Kararın gerektirdiği ama burada
+> yazmayan iki şey uygulama sırasında karara bağlandı:
+>
+> 1. **Önerilen ödemeler durum panelinin içine girdi ve filtrelendi.**
+>    "Ne kadar borçluyum" ile "kime ödeyeceğim" aynı sorunun iki yarısı;
+>    ayrı kartlarda eşit ağırlıkta durmaları bu ADR'nin şikâyet ettiği
+>    şeyin ta kendisiydi. Panelde yalnızca kullanıcıyı içeren transferler
+>    var; grubun tam takas planı doğru ama ikincil bir bilgi ve üçüncü
+>    kademede, boşken hiç görünmeyen bir kartta duruyor.
+> 2. **"Ödeme kaydet" başlıktan panele indi.** Başlıkta yalnızca "Harcama
+>    ekle" kaldı — rutin eylem o. Ödeşmek bakiyeye bağlı bir eylem ve
+>    yerinin borcun yanı olması daha tutarlı.
+
 ---
 
 ## ADR-017 — İki dil: API kod döndürür, dil çerezde tutulur

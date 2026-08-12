@@ -165,6 +165,13 @@ export const MESSAGES_TR = {
   "ui.you_owe": "Bu tutarı borçlusun",
   "ui.no_open_balance": "Bu grupta açık hesabın yok",
   "ui.suggested_payments": "Önerilen ödemeler",
+  // Fiil BASLIKTA, satirda degil. "{name} kisisine {amount} ode" gibi bir
+  // sablon Turkcede ek istiyor ({name}'e / {name}'a / {name}'ye) ve ek ismin
+  // son harfine gore degisiyor - yer tutucuyla dogru yazilamaz. Basliga
+  // tasiyinca satir yalnizca isim + tutar oluyor ve iki dilde de dogru.
+  "ui.you_should_pay": "Ödemen gerekenler",
+  "ui.will_be_paid_to_you": "Sana ödenecekler",
+  "ui.other_suggested_payments": "Grubun geri kalanı",
   "ui.everyone_settled": "Herkes ödeşmiş durumda, yapılacak bir ödeme yok.",
   "ui.members_and_balances": "Üyeler ve bakiyeler",
   "ui.manage_members": "Üyeleri yönet",
@@ -482,6 +489,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.you_owe": "You owe this much",
   "ui.no_open_balance": "You have no open balance in this group",
   "ui.suggested_payments": "Suggested payments",
+  "ui.you_should_pay": "You should pay",
+  "ui.will_be_paid_to_you": "Owed to you",
+  "ui.other_suggested_payments": "Rest of the group",
   "ui.everyone_settled": "Everyone is settled up, there is nothing to pay.",
   "ui.members_and_balances": "Members and balances",
   "ui.manage_members": "Manage members",
