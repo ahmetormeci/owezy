@@ -291,6 +291,9 @@ sayfanın kaydığına değil.
 deseni `/join/[token]` dışında her yerden kalktı, avatarlar geldi
 (`User.hasImage` kolonu + `PersonAvatar`). Ayrıntı CHANGELOG'da.
 
+**Doğrulandı (canlıda):** `User.locale` ve `User.hasImage` migration'larının
+production veritabanına uygulandığı Vercel build log'undan teyit edildi.
+
 **Test:** 410 birim / 27 E2E.
 **Commit:** `a125fc3` (11.2), `eb861af` (11.3), `18abd81` (11.4a),
 `9b01802` (11.4b), `79f1d10` (11.4c), `648b558` (11.4d-1) — altısı da push
