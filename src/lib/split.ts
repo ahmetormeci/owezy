@@ -165,3 +165,68 @@ export function splitByPercentage({ amount, shares }: PercentageSplitInput): Spl
     amount: share.floor + (extraRecipientIndexes.has(index) ? 1 : 0),
   }));
 }
+
+/**
+ * Kayitli paylardan yuzdeleri geri hesaplar - AMA yalnizca sonuc
+ * ispatlanabildiginde.
+ *
+ * Neden gerekli: ExpenseParticipant.basisPoints kolonu sonradan eklendi.
+ * Ondan onceki yuzdeli harcamalarda kullanicinin girdigi yuzde hicbir yerde
+ * saklanmadi; elimizde yalnizca sonuc paylari var.
+ *
+ * Neden "ispat": yuzde -> pay donusumu kayiplidir. Bu fonksiyon KULLANICININ
+ * YAZDIGI yuzdeyi bulmaz - oyle bir sey mumkun degil. Buldugu sey, kayitli
+ * paylari BIREBIR ureten bir yuzde kumesi. Ikisi ayni olmayabilir: 100 kurus
+ * uce bolundugunde 34/33/33 paylari hem %33,33/%33,33/%33,34'ten hem de
+ * %34/%33/%33'ten cikar, ve bu fonksiyon ikincisini doner.
+ *
+ * Onemli olan garanti su: kullanici formu acip hicbir seye dokunmadan
+ * kaydederse tutarlar DEGISMEZ. Ispat gecmezse null doner ve alan bos kalir -
+ * yani bugunku davranis. Tahmin edip doldurmak, kullanicinin farkina bile
+ * varmadan bir kurusun yer degistirmesi demek olurdu.
+ */
+export function inferBasisPoints({
+  amount,
+  shares,
+}: {
+  amount: number;
+  // Girdi, bir bolusumun CIKTISI: kayitli paylar.
+  shares: SplitShare[];
+}): PercentageShareInput[] | null {
+  if (amount <= 0 || shares.length === 0) {
+    return null;
+  }
+
+  const candidate = shares.map((share) => {
+    // Yakina yuvarlama, float bolmesi olmadan: (pay * 10000) / amount degerinin
+    // tam kismi ve kalani ayri hesaplaniyor. Carpim en fazla 2^31 * 10^4 ~ 2.1e13,
+    // Number.MAX_SAFE_INTEGER'in cok altinda, dolayisiyla tam sayi.
+    const scaled = share.amount * BASIS_POINTS_TOTAL;
+    const whole = Math.floor(scaled / amount);
+    const remainder = scaled - whole * amount;
+    return {
+      userId: share.userId,
+      basisPoints: remainder * 2 >= amount ? whole + 1 : whole,
+    };
+  });
+
+  const total = candidate.reduce((sum, share) => sum + share.basisPoints, 0);
+  if (total !== BASIS_POINTS_TOTAL) {
+    return null;
+  }
+
+  let recomputed: SplitShare[];
+  try {
+    recomputed = splitByPercentage({ amount, shares: candidate });
+  } catch {
+    // Yinelenen katilimci gibi bozuk bir kayit: tahmin uretmektense vazgec.
+    return null;
+  }
+
+  const isExact = recomputed.every(
+    (share, index) =>
+      share.userId === shares[index].userId && share.amount === shares[index].amount,
+  );
+
+  return isExact ? candidate : null;
+}

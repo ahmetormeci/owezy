@@ -226,3 +226,49 @@ export function formatBasisPoints(
 
   return rules.percentFirst ? `%${body}` : `${body}%`;
 }
+
+/**
+ * Duzenleme formunun sayi alanlarini doldurur.
+ *
+ * formatMoney'den iki farki var ve ikisi de zorunlu:
+ *   - Para birimi simgesi ve binlik ayraci YOK. Cikti kullanicinin
+ *     duzenleyecegi ve parseMoney'e geri gidecek metin; "1.234,56 ₺" yazip
+ *     kullaniciya "sil de oyle yaz" dedirtmenin anlami yok.
+ *   - Tam sayida ondalik kismi yazilmaz: 12000 -> "120", "120,00" degil.
+ *
+ * Ondalik ayraci yine de dile bagli: Ingilizce kullanan biri kendi girdigi
+ * tutari "120,50" olarak geri gormemeli. parseMoney iki yazimi da kabul
+ * ettigi icin bu yalnizca gorunumu duzeltir, davranisi degistirmez.
+ */
+export function formatMoneyForInput(
+  minorUnits: number,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
+  const rules = LOCALE_RULES[locale];
+  const sign = minorUnits < 0 ? "-" : "";
+  const absolute = Math.abs(minorUnits);
+
+  // Tam sayi bolme + kalan. Eski hali `String(minorUnits / 100)` idi; float
+  // bolmesi bu buyuklukte pratikte dogru sonuc veriyordu ama parayla float
+  // aritmetigi yapmamak bu projenin degismez kurallarindan biri.
+  const whole = Math.trunc(absolute / 100);
+  const fraction = absolute % 100;
+
+  return fraction === 0
+    ? `${sign}${whole}`
+    : `${sign}${whole}${rules.decimal}${String(fraction).padStart(2, "0")}`;
+}
+
+/**
+ * Yuzde alanini doldurur: 3333 -> "33,33". parsePercentageToBasisPoints'in
+ * tersi. Yuzde isareti YOK - o, kullanicinin yazmadigi ve yazmasi da
+ * beklenmeyen bir karakter; alanin yaninda etiket olarak duruyor.
+ */
+export function formatBasisPointsForInput(
+  basisPoints: number,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
+  // "33,33 lira -> 3333 kurus" ile "%33,33 -> 3333 basis point" ayni islem
+  // oldugu icin (bkz. parsePercentageToBasisPoints) ayni donusum kullaniliyor.
+  return formatMoneyForInput(basisPoints, locale);
+}

@@ -1,5 +1,13 @@
 import { test, expect } from "./fixtures";
-import { addEqualExpense, createGroupAndOpen, pageAs, uniqueGroupName } from "./helpers";
+import {
+  addEqualExpense,
+  createGroupAndOpen,
+  createInviteLink,
+  joinViaInvite,
+  openGroup,
+  pageAs,
+  uniqueGroupName,
+} from "./helpers";
 
 test.describe("harcamalar", () => {
   test("esit bolusumlu harcama eklenir, listede ve bakiyede gorunur", async ({ browser }) => {
@@ -88,5 +96,49 @@ test.describe("harcamalar", () => {
     await page.getByRole("button", { name: "Değişiklikleri kaydet" }).click();
 
     await expect(page.getByText("75,00 ₺").first()).toBeVisible();
+  });
+
+  // Bu testin varlik sebebi bir hata: duzenleme formu yuzde alanlarini BOS
+  // aciyordu, cunku yuzdeler hicbir yerde saklanmiyordu. Kullanici yalnizca
+  // aciklamayi degistirmek istese bile butun yuzdeleri yeniden yazmak
+  // zorunda kaliyordu - ve yaklasik yazarsa paylar sessizce degisiyordu.
+  test("yuzdeli harcama duzenlenirken yuzdeler dolu gelir", async ({ browser }) => {
+    const owner = await pageAs(browser, "owner");
+    const member = await pageAs(browser, "member");
+    const groupName = uniqueGroupName("yuzde-duzenleme");
+
+    await createGroupAndOpen(owner, groupName);
+    const inviteLink = await createInviteLink(owner, groupName);
+    await joinViaInvite(member, inviteLink, groupName);
+
+    await openGroup(owner, groupName);
+    await owner.getByRole("link", { name: "Harcama ekle" }).click();
+    await owner.getByLabel("Açıklama").fill("Yuzdeli harcama");
+    await owner.getByLabel("Tutar").fill("100");
+    await owner.getByLabel("Nasıl bölünecek?").selectOption("PERCENTAGE");
+
+    const percentageInputs = owner.locator('input[aria-label$="yüzdesi"]');
+    await percentageInputs.nth(0).fill("30");
+    await percentageInputs.nth(1).fill("70");
+    await owner.getByRole("button", { name: "Harcamayı kaydet" }).click();
+
+    await expect(owner.getByText("Yuzdeli harcama")).toBeVisible();
+
+    await owner.getByRole("link", { name: "Düzenle" }).first().click();
+
+    // Asil iddia: alanlar dolu geliyor.
+    await expect(owner.locator('input[aria-label$="yüzdesi"]').nth(0)).toHaveValue("30");
+    await expect(owner.locator('input[aria-label$="yüzdesi"]').nth(1)).toHaveValue("70");
+
+    // Ve yuzdelere hic dokunmadan yalnizca aciklamayi degistirip kaydetmek
+    // bolusumu bozmuyor: form tekrar acildiginda ayni yuzdeler duruyor.
+    await owner.getByLabel("Açıklama").fill("Yuzdeli harcama (aciklama degisti)");
+    await owner.getByRole("button", { name: "Değişiklikleri kaydet" }).click();
+
+    await expect(owner.getByText("Yuzdeli harcama (aciklama degisti)")).toBeVisible();
+
+    await owner.getByRole("link", { name: "Düzenle" }).first().click();
+    await expect(owner.locator('input[aria-label$="yüzdesi"]').nth(0)).toHaveValue("30");
+    await expect(owner.locator('input[aria-label$="yüzdesi"]').nth(1)).toHaveValue("70");
   });
 });

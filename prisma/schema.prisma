@@ -219,6 +219,12 @@ model ExpenseParticipant {
   expenseId   String   @db.Uuid
   userId      String   @db.Uuid
   shareAmount Int
+  // Kullanicinin GIRDIGI yuzde (basis point: 10000 = %100). shareAmount bunun
+  // sonucudur, tersi degil - ve yuvarlama yuzunden sonuctan girdiye her zaman
+  // geri donulemez. Yalnizca splitType = PERCENTAGE olan harcamalarda dolu;
+  // EQUAL/EXACT'ta yuzde diye bir sey YOK, o yuzden null (0 degil).
+  // Bu kolondan onceki kayitlarda da null - o satirlar icin yuzde hic saklanmadi.
+  basisPoints Int?
   createdAt   DateTime @default(now())
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Restrict)

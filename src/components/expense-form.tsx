@@ -10,11 +10,20 @@ import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-client";
 import {
   formatBasisPoints,
+  formatBasisPointsForInput,
   formatMoney,
+  formatMoneyForInput,
   parseMoney,
   parsePercentageToBasisPoints,
+  type Locale,
 } from "@/lib/money";
-import { splitByPercentage, splitEqually, splitExactly, type SplitShare } from "@/lib/split";
+import {
+  inferBasisPoints,
+  splitByPercentage,
+  splitEqually,
+  splitExactly,
+  type SplitShare,
+} from "@/lib/split";
 import { EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
 import { AppError } from "@/lib/errors";
 import { useLocale, useTranslate } from "@/lib/i18n";
@@ -33,7 +42,7 @@ export type ExpenseFormInitialValues = {
   category: ExpenseCategory;
   splitType: SplitType;
   expenseDate: string;
-  participants: { userId: string; shareAmount: number }[];
+  participants: { userId: string; shareAmount: number; basisPoints: number | null }[];
 };
 
 type ParticipantDraft = {
@@ -55,23 +64,68 @@ const SPLIT_TYPE_CODES: Record<SplitType, MessageCode> = {
 const selectClassName =
   "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
+// Duzenleme formunun yuzde alanlarini neyle dolduracagini belirler.
+//
+// Iki kaynak var ve sirasi onemli:
+//   1. Kayitli yuzde (basisPoints kolonu) - kullanicinin GERCEKTEN yazdigi sey.
+//   2. Paylardan geri hesaplama - yalnizca kolon eklenmeden onceki kayitlar icin,
+//      ve yalnizca inferBasisPoints ispati gecirirse.
+//
+// PERCENTAGE olmayan harcamalarda bos donuyor: EQUAL bir harcamayi acip
+// PERCENTAGE'a gecen kullaniciya "%50 / %50" gostermek, hic girilmemis bir
+// yuzdeyi girilmis gibi sunmak olurdu.
+function resolveBasisPoints(
+  initial: ExpenseFormInitialValues | undefined,
+): Map<string, number> {
+  const result = new Map<string, number>();
+
+  if (!initial || initial.splitType !== "PERCENTAGE") {
+    return result;
+  }
+
+  if (initial.participants.every((participant) => participant.basisPoints !== null)) {
+    for (const participant of initial.participants) {
+      if (participant.basisPoints !== null) {
+        result.set(participant.userId, participant.basisPoints);
+      }
+    }
+    return result;
+  }
+
+  const inferred = inferBasisPoints({
+    amount: initial.amount,
+    shares: initial.participants.map((participant) => ({
+      userId: participant.userId,
+      amount: participant.shareAmount,
+    })),
+  });
+
+  for (const share of inferred ?? []) {
+    result.set(share.userId, share.basisPoints);
+  }
+
+  return result;
+}
+
 function buildInitialParticipants(
   members: Member[],
   initial: ExpenseFormInitialValues | undefined,
+  locale: Locale,
 ): ParticipantDraft[] {
+  const basisPointsByUser = resolveBasisPoints(initial);
+
   return members.map((member) => {
     const existing = initial?.participants.find(
       (participant) => participant.userId === member.userId,
     );
+    const basisPoints = basisPointsByUser.get(member.userId);
 
-    // Duzenleme modunda yuzdeyi geri hesaplayamayiz (kayitta yalnizca sonuc
-    // tutarlari var), bu yuzden yuzde alani bos baslar; kullanici PERCENTAGE'a
-    // gecerse yeniden girer.
     return {
       userId: member.userId,
       selected: initial ? Boolean(existing) : true,
-      amountText: existing ? String(existing.shareAmount / 100).replace(".", ",") : "",
-      percentageText: "",
+      amountText: existing ? formatMoneyForInput(existing.shareAmount, locale) : "",
+      percentageText:
+        basisPoints === undefined ? "" : formatBasisPointsForInput(basisPoints, locale),
     };
   });
 }
@@ -96,7 +150,7 @@ export function ExpenseForm({
 
   const [description, setDescription] = useState(initialValues?.description ?? "");
   const [amountText, setAmountText] = useState(
-    initialValues ? String(initialValues.amount / 100).replace(".", ",") : "",
+    initialValues ? formatMoneyForInput(initialValues.amount, locale) : "",
   );
   const [paidById, setPaidById] = useState(initialValues?.paidById ?? currentUserId);
   const [category, setCategory] = useState<ExpenseCategory>(
@@ -107,7 +161,7 @@ export function ExpenseForm({
     initialValues?.expenseDate ?? new Date().toISOString().slice(0, 10),
   );
   const [participants, setParticipants] = useState<ParticipantDraft[]>(() =>
-    buildInitialParticipants(members, initialValues),
+    buildInitialParticipants(members, initialValues, locale),
   );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

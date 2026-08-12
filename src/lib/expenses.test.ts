@@ -164,12 +164,44 @@ describe("createExpense", () => {
 
     expect(mockTx.expenseParticipant.createMany).toHaveBeenCalledWith({
       data: [
-        { expenseId: "expense-1", userId: PAYER_ID, shareAmount: 4500 },
-        { expenseId: "expense-1", userId: PARTICIPANT_ID, shareAmount: 4500 },
+        { expenseId: "expense-1", userId: PAYER_ID, shareAmount: 4500, basisPoints: null },
+        { expenseId: "expense-1", userId: PARTICIPANT_ID, shareAmount: 4500, basisPoints: null },
       ],
     });
 
     expect(result).toEqual({ id: "expense-1", participants: [] });
+  });
+
+  // Yuzdeli bolusumde kullanicinin GIRDIGI yuzde saklanmali. Paylardan geri
+  // hesaplamak her zaman mumkun degil (yuvarlama kayipli), o yuzden girdi
+  // kaybolursa duzenleme ekrani kullaniciya yuzdeleri yeniden yazdirir.
+  it("PERCENTAGE bolusumde girilen yuzdeler paylarla birlikte saklanir", async () => {
+    mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
+    mockTx.groupMember.findMany.mockResolvedValue([
+      { userId: CALLER_ID },
+      { userId: PAYER_ID },
+      { userId: PARTICIPANT_ID },
+    ]);
+    mockTx.expense.create.mockResolvedValue({ id: "expense-1" });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: "expense-1", participants: [] });
+
+    await createExpense(CALLER_ID, GROUP_ID, {
+      description: "Yuzdeli",
+      amount: 10000,
+      paidById: PAYER_ID,
+      splitType: "PERCENTAGE",
+      shares: [
+        { userId: PAYER_ID, basisPoints: 3333 },
+        { userId: PARTICIPANT_ID, basisPoints: 6667 },
+      ],
+    });
+
+    expect(mockTx.expenseParticipant.createMany).toHaveBeenCalledWith({
+      data: [
+        { expenseId: "expense-1", userId: PAYER_ID, shareAmount: 3333, basisPoints: 3333 },
+        { expenseId: "expense-1", userId: PARTICIPANT_ID, shareAmount: 6667, basisPoints: 6667 },
+      ],
+    });
   });
 
   it("EXACT bolusumde paylarin toplami tutmazsa ValidationError firlatir ve hicbir kayit olusturulmaz", async () => {
@@ -259,9 +291,10 @@ function existingExpense(overrides: Record<string, unknown> = {}) {
     expenseDate: new Date("2026-08-01T00:00:00.000Z"),
     deletedAt: null,
     deletedById: null,
+    // EQUAL bolusum: yuzde diye bir sey yok, kolon null.
     participants: [
-      { userId: PARTICIPANT_ID, shareAmount: 4500 },
-      { userId: PAYER_ID, shareAmount: 4500 },
+      { userId: PARTICIPANT_ID, shareAmount: 4500, basisPoints: null },
+      { userId: PAYER_ID, shareAmount: 4500, basisPoints: null },
     ],
     ...overrides,
   };
@@ -451,8 +484,8 @@ describe("updateExpense", () => {
     });
     expect(mockTx.expenseParticipant.createMany).toHaveBeenCalledWith({
       data: [
-        { expenseId: EXPENSE_ID, userId: PAYER_ID, shareAmount: 6000 },
-        { expenseId: EXPENSE_ID, userId: PARTICIPANT_ID, shareAmount: 6000 },
+        { expenseId: EXPENSE_ID, userId: PAYER_ID, shareAmount: 6000, basisPoints: null },
+        { expenseId: EXPENSE_ID, userId: PARTICIPANT_ID, shareAmount: 6000, basisPoints: null },
       ],
     });
 
@@ -491,8 +524,8 @@ describe("updateExpense", () => {
       deletedAt: null,
       deletedById: null,
       participants: [
-        { userId: PARTICIPANT_ID, shareAmount: 4500 },
-        { userId: PAYER_ID, shareAmount: 4500 },
+        { userId: PARTICIPANT_ID, shareAmount: 4500, basisPoints: null },
+        { userId: PAYER_ID, shareAmount: 4500, basisPoints: null },
       ].sort((a, b) => a.userId.localeCompare(b.userId)),
     });
 
@@ -503,8 +536,8 @@ describe("updateExpense", () => {
     });
     expect(auditArgs.newData.participants).toEqual(
       [
-        { userId: PAYER_ID, shareAmount: 6000 },
-        { userId: PARTICIPANT_ID, shareAmount: 6000 },
+        { userId: PAYER_ID, shareAmount: 6000, basisPoints: null },
+        { userId: PARTICIPANT_ID, shareAmount: 6000, basisPoints: null },
       ].sort((a, b) => a.userId.localeCompare(b.userId)),
     );
   });
@@ -530,10 +563,47 @@ describe("updateExpense", () => {
     expect(mockTx.expense.update.mock.calls[0][0].data.splitType).toBe("EXACT");
     expect(mockTx.expenseParticipant.createMany).toHaveBeenCalledWith({
       data: [
-        { expenseId: EXPENSE_ID, userId: PAYER_ID, shareAmount: 7000 },
-        { expenseId: EXPENSE_ID, userId: PARTICIPANT_ID, shareAmount: 3000 },
+        { expenseId: EXPENSE_ID, userId: PAYER_ID, shareAmount: 7000, basisPoints: null },
+        { expenseId: EXPENSE_ID, userId: PARTICIPANT_ID, shareAmount: 3000, basisPoints: null },
       ],
     });
+  });
+
+  // Yuzdeli bir harcama EQUAL'a cevrildiginde eski yuzdeler ARTIK GECERSIZ.
+  // Satirda kalirlarsa duzenleme ekrani bir daha acildiginda gecmiste kalmis
+  // bir yuzdeyi bugunun bolusumu gibi gosterirdi.
+  it("PERCENTAGE'dan EQUAL'a gecince eski yuzdeler kaydedilmez", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(
+      existingExpense({
+        splitType: "PERCENTAGE",
+        participants: [
+          { userId: PAYER_ID, shareAmount: 3000, basisPoints: 3333 },
+          { userId: PARTICIPANT_ID, shareAmount: 6000, basisPoints: 6667 },
+        ],
+      }),
+    );
+    mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
+    allMembersActive();
+    mockTx.expense.update.mockResolvedValue(existingExpense({ amount: 12000 }));
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput);
+
+    expect(mockTx.expenseParticipant.createMany).toHaveBeenCalledWith({
+      data: [
+        { expenseId: EXPENSE_ID, userId: PAYER_ID, shareAmount: 6000, basisPoints: null },
+        { expenseId: EXPENSE_ID, userId: PARTICIPANT_ID, shareAmount: 6000, basisPoints: null },
+      ],
+    });
+
+    // Eski yuzdeler tamamen kaybolmuyor: audit kaydinda duruyorlar.
+    const auditArgs = mockTx.expenseEdit.create.mock.calls[0][0].data;
+    expect(auditArgs.previousData.participants).toEqual(
+      [
+        { userId: PAYER_ID, shareAmount: 3000, basisPoints: 3333 },
+        { userId: PARTICIPANT_ID, shareAmount: 6000, basisPoints: 6667 },
+      ].sort((a, b) => a.userId.localeCompare(b.userId)),
+    );
   });
 
   it("paidById degistirilebilir", async () => {

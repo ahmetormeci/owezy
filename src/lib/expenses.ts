@@ -49,6 +49,17 @@ function getParticipantUserIds(input: CreateExpenseInput): string[] {
   }
 }
 
+// Kullanicinin GIRDIGI yuzdeler paylarla birlikte saklanir. split.ts'ten geri
+// almiyoruz cunku orasi "kim ne kadar oder" sorusunu cevapliyor; girdiyi
+// ciktinin icinden gecirmek o fonksiyonlarin isi degil, bu katmanin tesisati.
+// EQUAL/EXACT'ta null doner: o bolusumlerde yuzde diye bir sey yok.
+function getBasisPointsByUser(input: CreateExpenseInput): Map<string, number> | null {
+  if (input.splitType !== "PERCENTAGE") {
+    return null;
+  }
+  return new Map(input.shares.map((share) => [share.userId, share.basisPoints]));
+}
+
 // split.ts fonksiyonlari framework'ten bagimsiz kalmasi icin duz Error firlatir.
 // Burada API katmaninin (handleApiError) anladigi AppError ailesine ceviriyoruz.
 function computeShares(amount: number, input: CreateExpenseInput): SplitShare[] {
@@ -99,7 +110,11 @@ type ExpenseSnapshot = {
   // birbirinden ayirt edilebiliyor.
   deletedAt: string | null;
   deletedById: string | null;
-  participants: { userId: string; shareAmount: number }[];
+  // basisPoints de snapshot'a giriyor: snapshot eski bolusumun tek kalici
+  // kaydi, ve yuzdeli bir harcamada "kim ne kadar odedi" ile "kim yuzde kac
+  // dedi" ayri iki bilgi. Ikincisi disarida kalirsa audit log, artik
+  // saklayabildigimiz bir seyi kaybediyor demektir.
+  participants: { userId: string; shareAmount: number; basisPoints: number | null }[];
 };
 
 type SnapshotExpenseFields = {
@@ -116,7 +131,7 @@ type SnapshotExpenseFields = {
 
 function buildSnapshot(
   expense: SnapshotExpenseFields,
-  participants: { userId: string; shareAmount: number }[],
+  participants: { userId: string; shareAmount: number; basisPoints: number | null }[],
 ): ExpenseSnapshot {
   return {
     description: expense.description,
@@ -135,6 +150,7 @@ function buildSnapshot(
       .map((participant) => ({
         userId: participant.userId,
         shareAmount: participant.shareAmount,
+        basisPoints: participant.basisPoints,
       }))
       .sort((a, b) => a.userId.localeCompare(b.userId)),
   };
@@ -236,6 +252,7 @@ export async function createExpense(userId: string, groupId: string, input: Crea
 
     // currency istemciden hic alinmiyor - her zaman grubun currency'sinden turetilir.
     const shares = computeShares(input.amount, input);
+    const basisPointsByUser = getBasisPointsByUser(input);
 
     const expense = await tx.expense.create({
       data: {
@@ -256,6 +273,7 @@ export async function createExpense(userId: string, groupId: string, input: Crea
         expenseId: expense.id,
         userId: share.userId,
         shareAmount: share.amount,
+        basisPoints: basisPointsByUser?.get(share.userId) ?? null,
       })),
     });
 
@@ -328,6 +346,7 @@ export async function updateExpense(
     }
 
     const shares = computeShares(input.amount, input);
+    const basisPointsByUser = getBasisPointsByUser(input);
 
     // Tam degistirme: eski paylarin tamami silinip yenileri yaziliyor. Bu ayni
     // zamanda "SUM(shareAmount) = amount" trigger'inin her guncellemede
@@ -348,17 +367,24 @@ export async function updateExpense(
       },
     });
 
+    // PERCENTAGE'dan EQUAL'a gecen bir harcamada basisPoints kendiliginden
+    // null oluyor: satirlar silinip yeniden yaziliyor ve yeni girdide yuzde yok.
     await tx.expenseParticipant.createMany({
       data: shares.map((share) => ({
         expenseId,
         userId: share.userId,
         shareAmount: share.amount,
+        basisPoints: basisPointsByUser?.get(share.userId) ?? null,
       })),
     });
 
     const newData = buildSnapshot(
       updated,
-      shares.map((share) => ({ userId: share.userId, shareAmount: share.amount })),
+      shares.map((share) => ({
+        userId: share.userId,
+        shareAmount: share.amount,
+        basisPoints: basisPointsByUser?.get(share.userId) ?? null,
+      })),
     );
 
     // Audit kaydi ayni transaction icinde yaziliyor: transaction geri alinirsa

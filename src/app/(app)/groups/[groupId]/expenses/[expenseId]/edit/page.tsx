@@ -67,6 +67,7 @@ export default async function EditExpensePage({
           participants: expense.participants.map((participant) => ({
             userId: participant.userId,
             shareAmount: participant.shareAmount,
+            basisPoints: participant.basisPoints,
           })),
         }}
       />

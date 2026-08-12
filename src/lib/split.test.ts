@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_SPLIT_AMOUNT,
+  inferBasisPoints,
   splitByPercentage,
   splitEqually,
   splitExactly,
@@ -293,5 +294,118 @@ describe("splitByPercentage", () => {
       ],
     };
     expect(splitByPercentage(input)).toEqual(splitByPercentage(input));
+  });
+});
+
+describe("inferBasisPoints", () => {
+  const A = "user-a";
+  const B = "user-b";
+  const C = "user-c";
+
+  it("yuvarlak yuzdeleri geri bulur (%50 / %50)", () => {
+    expect(
+      inferBasisPoints({
+        amount: 10000,
+        shares: [
+          { userId: A, amount: 5000 },
+          { userId: B, amount: 5000 },
+        ],
+      }),
+    ).toEqual([
+      { userId: A, basisPoints: 5000 },
+      { userId: B, basisPoints: 5000 },
+    ]);
+  });
+
+  it("esit olmayan yuvarlak yuzdeleri geri bulur (%30 / %70)", () => {
+    expect(
+      inferBasisPoints({
+        amount: 10000,
+        shares: [
+          { userId: A, amount: 3000 },
+          { userId: B, amount: 7000 },
+        ],
+      }),
+    ).toEqual([
+      { userId: A, basisPoints: 3000 },
+      { userId: B, basisPoints: 7000 },
+    ]);
+  });
+
+  it("kesirli yuzdeleri de bulur (%33,33 / %33,33 / %33,34)", () => {
+    expect(
+      inferBasisPoints({
+        amount: 10000,
+        shares: [
+          { userId: A, amount: 3333 },
+          { userId: B, amount: 3333 },
+          { userId: C, amount: 3334 },
+        ],
+      }),
+    ).toEqual([
+      { userId: A, basisPoints: 3333 },
+      { userId: B, basisPoints: 3333 },
+      { userId: C, basisPoints: 3334 },
+    ]);
+  });
+
+  // Bu, fonksiyonun ne YAPMADIGINI gosteren test: kullanicinin yazdigi yuzde
+  // %33,33 olsa bile geri hesaplama %34 buluyor. Ikisi de ayni paylari
+  // uretiyor - garanti edilen sey bu, "ayni metni geri getirmek" degil.
+  it("girilen yuzdeyi degil, ayni paylari ureten yuzdeyi bulur", () => {
+    const inferred = inferBasisPoints({
+      amount: 100,
+      shares: [
+        { userId: A, amount: 34 },
+        { userId: B, amount: 33 },
+        { userId: C, amount: 33 },
+      ],
+    });
+
+    expect(inferred).toEqual([
+      { userId: A, basisPoints: 3400 },
+      { userId: B, basisPoints: 3300 },
+      { userId: C, basisPoints: 3300 },
+    ]);
+
+    // Asil onemli olan: bu yuzdeler kayitli paylari birebir geri veriyor.
+    expect(splitByPercentage({ amount: 100, shares: inferred! })).toEqual([
+      { userId: A, amount: 34 },
+      { userId: B, amount: 33 },
+      { userId: C, amount: 33 },
+    ]);
+  });
+
+  it("yuzdeler tam 100'e toplanmiyorsa null doner", () => {
+    // 3 kurus / 3 kisi: her pay %33,33'e yuvarlanir, toplam %99,99.
+    expect(
+      inferBasisPoints({
+        amount: 3,
+        shares: [
+          { userId: A, amount: 1 },
+          { userId: B, amount: 1 },
+          { userId: C, amount: 1 },
+        ],
+      }),
+    ).toBeNull();
+  });
+
+  it("bos katilimci listesi ve gecersiz tutar null doner", () => {
+    expect(inferBasisPoints({ amount: 10000, shares: [] })).toBeNull();
+    expect(
+      inferBasisPoints({ amount: 0, shares: [{ userId: A, amount: 0 }] }),
+    ).toBeNull();
+  });
+
+  it("bozuk kayitta (yinelenen katilimci) null doner, tahmin uretmez", () => {
+    expect(
+      inferBasisPoints({
+        amount: 10000,
+        shares: [
+          { userId: A, amount: 5000 },
+          { userId: A, amount: 5000 },
+        ],
+      }),
+    ).toBeNull();
   });
 });

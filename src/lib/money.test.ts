@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   formatBasisPoints,
+  formatBasisPointsForInput,
   formatMoney,
+  formatMoneyForInput,
   formatSignedMoney,
   parseMoney,
   parsePercentageToBasisPoints,
@@ -270,5 +272,61 @@ describe("formatBasisPoints", () => {
 
   it("sifiri gosterir", () => {
     expect(formatBasisPoints(0)).toBe("%0");
+  });
+});
+
+describe("formatMoneyForInput", () => {
+  it("tam sayida ondalik kismi yazilmaz", () => {
+    expect(formatMoneyForInput(12000)).toBe("120");
+    expect(formatMoneyForInput(0)).toBe("0");
+  });
+
+  it("kurus kismi iki basamakli yazilir", () => {
+    expect(formatMoneyForInput(12050)).toBe("120,50");
+    expect(formatMoneyForInput(12005)).toBe("120,05");
+  });
+
+  it("binlik ayraci ve para birimi simgesi YOK", () => {
+    // formatMoney burada "1.234.567,89 TL" yazardi; bu cikti bir input alanina
+    // gidiyor ve kullanicinin duzenleyecegi metin olmali.
+    expect(formatMoneyForInput(123456789)).toBe("1234567,89");
+  });
+
+  it("ondalik ayraci dile gore degisir", () => {
+    expect(formatMoneyForInput(12050, "tr")).toBe("120,50");
+    expect(formatMoneyForInput(12050, "en")).toBe("120.50");
+  });
+
+  it("negatif tutarda isaret korunur", () => {
+    expect(formatMoneyForInput(-12050)).toBe("-120,50");
+  });
+
+  // Asil sozlesme bu: forma yazilan metin parseMoney'den ayni sayiyla donmeli.
+  // Aksi halde kullanici hicbir seye dokunmadan kaydettiginde tutar degisirdi.
+  it("parseMoney ile gidip gelen deger degismez", () => {
+    for (const minorUnits of [0, 1, 99, 100, 12005, 12050, 123456789]) {
+      expect(parseMoney(formatMoneyForInput(minorUnits, "tr"))).toBe(minorUnits);
+      expect(parseMoney(formatMoneyForInput(minorUnits, "en"))).toBe(minorUnits);
+    }
+  });
+});
+
+describe("formatBasisPointsForInput", () => {
+  it("yuzde isareti YOK (o, alanin etiketinde)", () => {
+    expect(formatBasisPointsForInput(3333)).toBe("33,33");
+    expect(formatBasisPointsForInput(5000)).toBe("50");
+    expect(formatBasisPointsForInput(10000)).toBe("100");
+  });
+
+  it("ondalik ayraci dile gore degisir", () => {
+    expect(formatBasisPointsForInput(3333, "en")).toBe("33.33");
+  });
+
+  it("parsePercentageToBasisPoints ile gidip gelen deger degismez", () => {
+    for (const basisPoints of [0, 1, 3333, 5000, 6667, 10000]) {
+      expect(parsePercentageToBasisPoints(formatBasisPointsForInput(basisPoints))).toBe(
+        basisPoints,
+      );
+    }
   });
 });
