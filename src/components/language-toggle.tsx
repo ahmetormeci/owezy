@@ -31,7 +31,25 @@ const SWITCH_LABEL_CODES: Record<Locale, string> = {
  * geldiginde o gercekten bir kayit olacak ve API ucu orada anlam kazanacak;
  * cerez o zaman da hizli yol ve "cikis yapmis kullanici" yolu olarak kalir.
  */
-export function LanguageToggle() {
+export function LanguageToggle({
+  /**
+   * Sunucu agacini tazelemek yerine sayfayi bastan yukler.
+   *
+   * NEDEN VAR: Clerk'in giris/kayit formu kendi metinlerini tasiyor ve
+   * "localization" ayarini YALNIZCA baslarken okuyor. router.refresh()
+   * sunucudan yeni dili getiriyor, ama zaten mount olmus Clerk arayuzu eski
+   * dilde kaliyor - yani dil dugmesine basan ziyaretci ekranin yarisi Turkce
+   * yarisi Ingilizce bir sayfa goruyor. Olculdu: yenilemeden sonra dogru dil
+   * geliyor, refresh() sonrasi gelmiyor.
+   *
+   * Yalnizca herkese acik sayfalarda kullaniliyor (PublicControls). Uygulama
+   * ici sayfalarda Clerk arayuzu YOK; orada refresh()'in gerekcesi -acik
+   * pencereleri ve form icerigini korumak- hala gecerli.
+   */
+  fullReload = false,
+}: {
+  fullReload?: boolean;
+} = {}) {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslate();
@@ -46,26 +64,36 @@ export function LanguageToggle() {
     // Bir sir tasimıyor ama gereksiz genis kapsam da vermiyoruz.
     document.cookie = `${LOCALE_COOKIE}=${target}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}; samesite=lax${secure}`;
 
+    // Tercihi hesaba da yaz: baska bir cihazda cerez olmayacak.
+    //
+    // BEKLENMIYOR (await yok): gorunen isi cerez zaten yapti. Bunu beklemek
+    // arayuzu bir ag istegi boyunca duraklatirdi. Hata da yutuluyor - cikis
+    // yapmis kullanicida 401 gelmesi normal ve kullanicinin gordugu hicbir sey
+    // bozulmuyor. Sessizce kaybolmasin diye konsola dusuyor.
+    //
+    // keepalive: fullReload durumunda hemen ardindan sayfa bosaltiliyor ve
+    // normalde tarayici ucusta olan istegi iptal ederdi - tercih hesaba hic
+    // yazilmazdi. keepalive istegin sayfa omrunu asmasina izin veriyor.
+    // Istek kucuk (tek alanli JSON), keepalive'in 64 KB sinirinin cok altinda.
+    void fetch("/api/v1/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locale: target }),
+      keepalive: true,
+    }).catch((error) => {
+      console.warn("Dil tercihi hesaba yazilamadi", error);
+    });
+
+    if (fullReload) {
+      window.location.reload();
+      return;
+    }
+
     // Sayfanin yarisi sunucuda render ediliyor (baslik, grup sayfasi, sayfa
     // basligi). refresh() sunucu agacini yeniden cekiyor ve yeni cerez o
     // istekle birlikte gidiyor; istemci state'i (acik pencereler, form
     // icerigi) korunuyor - tam sayfa yenileme bunlari silerdi.
     router.refresh();
-
-    // Tercihi hesaba da yaz: baska bir cihazda cerez olmayacak.
-    //
-    // BEKLENMIYOR (await yok): gorunen isi cerez zaten yapti, refresh() de
-    // basladi. Bunu beklemek arayuzu bir ag istegi boyunca duraklatirdi.
-    // Hata da yutuluyor - cikis yapmis kullanicida 401 gelmesi normal ve
-    // kullanicinin gordugu hicbir sey bozulmuyor. Sessizce kaybolmasin diye
-    // konsola dusuyor.
-    void fetch("/api/v1/me", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ locale: target }),
-    }).catch((error) => {
-      console.warn("Dil tercihi hesaba yazilamadi", error);
-    });
   }
 
   return (

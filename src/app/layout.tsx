@@ -1,11 +1,33 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { trTR } from "@clerk/localizations";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LocaleProvider } from "@/lib/i18n";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
+import type { Locale } from "@/lib/locale";
 import "./globals.css";
+
+// Clerk'in giris/kayit formu KENDI metinlerini tasiyor; bizim sozlugumuz
+// (messages.ts) oraya ulasmiyor. localization verilmedigi surece form
+// Clerk'in varsayilan diliyle, yani Ingilizce render ediliyordu: uygulamanin
+// metni Turkce, formun ici Ingilizce - ve bu kullanicinin gordugu ILK ekran.
+//
+// Burada Partial DOGRU olan (ADR-020'de DICTIONARIES'ten kaldirmistik, cunku
+// orada eksik bir dil sessiz bir bosluk demekti). Buradaysa eksiklik bir
+// bosluk degil, gecerli bir cevap: "Clerk'in varsayilani zaten dogru."
+// Ingilizce icin bilerek hicbir sey gondermiyoruz - enUS gondermek 1444
+// metni bosuna RSC yukune eklerdi.
+// Tip prop'un KENDISINDEN turetiliyor. "@clerk/types" dogrudan bagimlilik
+// degil (Clerk onu kendi icinde tasiyor); oradan import etmek, bizim
+// beyan etmedigimiz bir pakete bel baglamak olurdu. Boyle yazinca Clerk
+// tarafi tipi degistirirse burasi da onunla degisiyor.
+type ClerkLocalization = React.ComponentProps<typeof ClerkProvider>["localization"];
+
+const CLERK_LOCALIZATIONS: Partial<Record<Locale, ClerkLocalization>> = {
+  tr: trTR,
+};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +59,11 @@ export default async function RootLayout({
   const locale = await getLocale();
 
   return (
-    <ClerkProvider>
+    // DIKKAT: Clerk bu ayari yalnizca BASLARKEN okuyor. Prop degistiginde
+    // zaten mount olmus form eski dilde kaliyor - olculdu. Bu yuzden herkese
+    // acik sayfalardaki dil dugmesi sayfayi bastan yukluyor
+    // (PublicControls -> LanguageToggle fullReload).
+    <ClerkProvider localization={CLERK_LOCALIZATIONS[locale]}>
       <html
         // Sabit "tr" degildi bu: ekran okuyucu sayfanin tamamini Turkce
         // telaffuz ederdi, Ingilizce metni de. lang yalnizca bir etiket degil,
