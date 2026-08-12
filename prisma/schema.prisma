@@ -95,6 +95,18 @@ model User {
   // Kolon String cunku dil listesi buyudukce migration gerektirmesin.
   locale String?
 
+  // Kullanici Clerk'e GERCEKTEN bir fotograf yukledi mi?
+  //
+  // NEDEN AYRI BIR ALAN: Clerk, fotograf yuklememis kullaniciya da bir
+  // image_url veriyor - kendi urettigi bas-harf gorseli. avatarUrl'e bakip
+  // "varsa fotografi bas" deseydik, fotografi olanlar gercek yuz, olmayanlar
+  // CLERK'IN tasarimiyla gorunurdu; bizim bas-harf dairelerimizle yan yana
+  // iki ayri gorsel sistem olurdu.
+  //
+  // Nullable: webhook'tan bu alani tasimayan eski bir olay gelirse "bilmiyorum"
+  // diyebilmeliyiz. null, false gibi davraniyor (bas harf gosteriliyor).
+  hasImage Boolean?
+
   // Bu kullanicinin olusturdugu gruplar
   createdGroups Group[] @relation("GroupCreatedBy")
 

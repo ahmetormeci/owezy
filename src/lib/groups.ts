@@ -340,7 +340,7 @@ export async function listGroupMembers(userId: string, groupId: string) {
       userId: true,
       role: true,
       joinedAt: true,
-      user: { select: { displayName: true, avatarUrl: true } },
+      user: { select: { displayName: true, avatarUrl: true, hasImage: true } },
     },
     orderBy: { joinedAt: "asc" },
   });
@@ -351,6 +351,7 @@ export async function listGroupMembers(userId: string, groupId: string) {
     joinedAt: member.joinedAt,
     displayName: member.user.displayName,
     avatarUrl: member.user.avatarUrl,
+    hasImage: member.user.hasImage,
   }));
 }
 

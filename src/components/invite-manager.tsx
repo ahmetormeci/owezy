@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { apiRequest } from "@/lib/api-client";
 import { formatDate } from "@/lib/dates";
 import { useLocale, useTranslate } from "@/lib/i18n";
@@ -125,24 +124,20 @@ export function InviteManager({
       </Button>
 
       {createdLink ? (
-        <Card>
-          <CardContent className="flex flex-col gap-3 py-4">
-            <p className="text-sm font-medium">{t("ui.invite_ready")}</p>
-            <p className="text-sm text-muted-foreground">
-              {t("ui.invite_once_warning")}
-            </p>
-            <div className="flex gap-2">
-              <Input readOnly value={createdLink} onFocus={(event) => event.target.select()} />
-              <Button type="button" variant="outline" onClick={handleCopy}>
-                {t("ui.copy")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-card px-4 py-3.5">
+          <p className="label">{t("ui.invite_ready")}</p>
+          <p className="text-muted-foreground">{t("ui.invite_once_warning")}</p>
+          <div className="flex gap-2">
+            <Input readOnly value={createdLink} onFocus={(event) => event.target.select()} />
+            <Button type="button" variant="outline" onClick={handleCopy}>
+              {t("ui.copy")}
+            </Button>
+          </div>
+        </div>
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium">{t("ui.active_invites")}</p>
+        <p className="label">{t("ui.active_invites")}</p>
         {invites.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("ui.no_active_invite")}</p>
         ) : (
@@ -155,16 +150,16 @@ export function InviteManager({
               return (
                 <li
                   key={invite.id}
-                  className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                  className="flex items-center justify-between gap-4 border-b border-line-soft py-2.5 last:border-b-0"
                 >
-                  <div className="min-w-0 text-sm">
-                    <p>
+                  <div className="min-w-0">
+                    <p className="money">
                       {t("ui.invite_uses_count", {
                         used: invite.useCount,
                         max: invite.maxUses,
                       })}
                     </p>
-                    <p className="text-muted-foreground">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {t("ui.invite_valid_until", {
                         date: formatDate(new Date(invite.expiresAt), locale),
                       })}{" · "}

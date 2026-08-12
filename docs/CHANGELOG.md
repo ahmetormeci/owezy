@@ -10,6 +10,40 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-12
 
+### Görsel dil: kalan sayfalar ve avatarlar (Faz 11.6, ikinci parça)
+- **`Card` deseni tek bir yer dışında kalktı.** Gruplar listesi, üyeler,
+  davet yöneticisi, harcama formu ve karşılama sayfası çizgi desenine geçti.
+  `Card` yalnızca `/join/[token]`'da kaldı — boş bir sayfanın ortasındaki tek
+  odak yüzeyi; orada kutu doğru eleman.
+- `SectionHead` paylaşılan bileşene çıktı: aynı desen artık dört sayfada ve
+  birinde 2px değişirse diğerleri onunla değişmeli.
+- Gruplar listesinde her grup bir kart değil bir **satır**. Boş durum da
+  kutudan çıktı — boş bir liste için kart çizmek, olmayan bir şeye yer
+  ayırmak.
+- Harcama sayfalarının başlıkları (`text-2xl`) yeni ölçeğe indi; ekran
+  görüntüsüne bakınca fark edildi.
+- **Avatarlar geldi** (`PersonAvatar`): fotoğrafı olan gerçek fotoğrafını,
+  olmayan baş harfini görüyor.
+- **Yeni kolon `User.hasImage`** (nullable). Sebebi: Clerk, fotoğraf
+  yüklememiş kullanıcıya da bir `image_url` veriyor — kendi ürettiği baş-harf
+  görseli. `avatarUrl` varsa basmak, fotoğrafı olanları gerçek yüzle,
+  olmayanları **Clerk'in tasarımıyla** gösterirdi. Migration dev ve E2E
+  veritabanlarına uygulandı; production push ile gidecek.
+- `null` = "bilmiyorum": `has_image` taşımayan eski bir webhook olayında
+  `false` yazmak "fotoğrafı yok" demek olurdu. Hesap silinince `avatarUrl`
+  ile birlikte `null`'a çekiliyor — biri silinip diğeri `true` kalsaydı arayüz
+  olmayan bir görüntüyü göstermeye çalışırdı.
+- Avatar rengi **isimden türetiliyor**, veritabanında saklanmıyor: aynı kişi
+  her ekranda aynı rengi alıyor, yeni kolon gerekmiyor. Doygunluk ve açıklık
+  sabit, yalnızca ton değişiyor — daireler birbirinden ayrılıyor ama hiçbiri
+  sayfadaki tek renk olan bakiye işaretiyle yarışmıyor.
+- `next/image` yerine düz `<img>`: `next/image`, `img.clerk.com` için
+  `next.config`'e `remotePatterns` ister; görüntüler küçük ve ölçüleri sabit.
+- 410 birim (2 yeni) / 27 E2E. Dört test nesnenin tamamını karşılaştırdığı
+  için kırılmıştı; düzeltmenin yanına `has_image`'in **üç durumunun**
+  (`true` / `false` / hiç yok) doğru taşındığını doğrulayan testler eklendi.
+- Herkese açık dört sayfa 390 ve 768 px'te ölçüldü: yatay kayma yok.
+
 ### Görsel dil: token'lar ve grup sayfası (Faz 11.6, ilk parça)
 - **Token katmanı ADR-021'e göre yeniden yazıldı.** Nötr kroma 0,004–0,03'ten
   0,001–0,009'a indi (sayfa artık maviye çalmıyor); `--credit`/`--debt`

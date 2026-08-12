@@ -401,7 +401,7 @@ describe("getGroupBalances", () => {
     return {
       userId,
       leftAt,
-      user: { displayName, avatarUrl: null },
+      user: { displayName, avatarUrl: null, hasImage: null },
     };
   }
 
@@ -467,9 +467,9 @@ describe("getGroupBalances", () => {
 
     expect(result.currency).toBe("TRY");
     expect(result.balances).toEqual([
-      { userId: ALI, amount: 15000, displayName: "Ali", avatarUrl: null, hasLeft: false },
-      { userId: BERK, amount: 0, displayName: "Berk", avatarUrl: null, hasLeft: false },
-      { userId: CAN, amount: -15000, displayName: "Can", avatarUrl: null, hasLeft: false },
+      { userId: ALI, amount: 15000, displayName: "Ali", avatarUrl: null, hasImage: null, hasLeft: false },
+      { userId: BERK, amount: 0, displayName: "Berk", avatarUrl: null, hasImage: null, hasLeft: false },
+      { userId: CAN, amount: -15000, displayName: "Can", avatarUrl: null, hasImage: null, hasLeft: false },
     ]);
     expect(result.suggestedTransfers).toEqual([
       { fromUserId: CAN, toUserId: ALI, amount: 15000 },
@@ -485,8 +485,8 @@ describe("getGroupBalances", () => {
     const result = await getGroupBalances(ALI, GROUP_ID);
 
     expect(result.balances).toEqual([
-      { userId: ALI, amount: 0, displayName: "Ali", avatarUrl: null, hasLeft: false },
-      { userId: BERK, amount: 0, displayName: "Berk", avatarUrl: null, hasLeft: false },
+      { userId: ALI, amount: 0, displayName: "Ali", avatarUrl: null, hasImage: null, hasLeft: false },
+      { userId: BERK, amount: 0, displayName: "Berk", avatarUrl: null, hasImage: null, hasLeft: false },
     ]);
   });
 
@@ -513,6 +513,7 @@ describe("getGroupBalances", () => {
       amount: -10000,
       displayName: "Can",
       avatarUrl: null,
+      hasImage: null,
       hasLeft: true,
     });
     // Ayrilmis uyenin borcu hala netlestirmeye dahil - para kaybolmamali.
@@ -548,7 +549,7 @@ describe("getGroupBalances", () => {
     const result = await getGroupBalances(ALI, GROUP_ID);
 
     expect(result.balances).toEqual([
-      { userId: CAN, amount: 0, displayName: "Can", avatarUrl: null, hasLeft: false },
+      { userId: CAN, amount: 0, displayName: "Can", avatarUrl: null, hasImage: null, hasLeft: false },
     ]);
   });
 

@@ -14,6 +14,8 @@ import { EditGroupDialog } from "@/components/edit-group-dialog";
 import { ExpenseList } from "@/components/expense-list";
 import { SettlementList } from "@/components/settlement-list";
 import { RecordSettlementDialog } from "@/components/record-settlement-dialog";
+import { SectionHead } from "@/components/section-head";
+import { PersonAvatar } from "@/components/person-avatar";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
 
 // Renkler artik dogrudan yazilmiyor (eskiden "text-emerald-600
@@ -31,6 +33,9 @@ function balanceToneClass(amount: number) {
 
 type SuggestedTransfer = { fromUserId: string; toUserId: string; amount: number };
 
+/** Ekranda bir kisiyi gostermek icin gereken her sey. */
+type Person = { displayName: string; avatarUrl: string | null; hasImage: boolean | null };
+
 /**
  * Durum panelindeki oneri listesi.
  *
@@ -46,14 +51,14 @@ type SuggestedTransfer = { fromUserId: string; toUserId: string; amount: number 
 function SuggestionGroup({
   title,
   transfers,
-  nameOf,
+  personOf,
   currency,
   locale,
   fallbackName,
 }: {
   title: string;
   transfers: SuggestedTransfer[];
-  nameOf: (transfer: SuggestedTransfer) => string | undefined;
+  personOf: (transfer: SuggestedTransfer) => Person | undefined;
   currency: string;
   locale: Locale;
   fallbackName: string;
@@ -65,48 +70,29 @@ function SuggestionGroup({
   return (
     <div className="flex flex-col gap-2">
       <p className="label">{title}</p>
-      <ul className="flex flex-col gap-1">
-        {transfers.map((transfer) => (
-          <li
-            key={`${transfer.fromUserId}-${transfer.toUserId}`}
-            className="flex items-center justify-between gap-4"
-          >
-            <span className="truncate">{nameOf(transfer) ?? fallbackName}</span>
-            <span className="money shrink-0 font-medium">
-              {formatMoney(transfer.amount, currency, locale)}
-            </span>
-          </li>
-        ))}
+      <ul className="flex flex-col gap-1.5">
+        {transfers.map((transfer) => {
+          const person = personOf(transfer);
+          const name = person?.displayName ?? fallbackName;
+          return (
+            <li
+              key={`${transfer.fromUserId}-${transfer.toUserId}`}
+              className="flex items-center gap-2"
+            >
+              <PersonAvatar
+                displayName={name}
+                avatarUrl={person?.avatarUrl}
+                hasImage={person?.hasImage}
+                size="sm"
+              />
+              <span className="min-w-0 flex-1 truncate">{name}</span>
+              <span className="money shrink-0 font-medium">
+                {formatMoney(transfer.amount, currency, locale)}
+              </span>
+            </li>
+          );
+        })}
       </ul>
-    </div>
-  );
-}
-
-/**
- * Bolum basligi: kucuk etiket + altinda cizgi + istege bagli bir baglanti.
- *
- * ADR-021: bolumleri buyuk baslikla degil, kucuk bir etiketle ayiriyoruz.
- * Kart basliklarinin yerini bu aldi - kutu kalkinca basligin da kutu
- * icinde durmasi gerekmiyor.
- */
-function SectionHead({
-  title,
-  action,
-}: {
-  title: string;
-  action?: { href: string; label: string };
-}) {
-  return (
-    <div className="mb-1 flex items-center justify-between gap-4 border-b border-border pb-2">
-      <span className="label">{title}</span>
-      {action ? (
-        <Link
-          href={action.href}
-          className="text-xs text-muted-foreground transition-colors hover:text-brand"
-        >
-          {action.label} →
-        </Link>
-      ) : null}
     </div>
   );
 }
@@ -150,6 +136,16 @@ export default async function GroupDetailPage({
   const { currency, balances, suggestedTransfers } = balanceData;
   const roleByUserId = new Map(members.map((member) => [member.userId, member.role]));
   const nameByUserId = new Map(balances.map((balance) => [balance.userId, balance.displayName]));
+  const personByUserId = new Map<string, Person>(
+    balances.map((balance) => [
+      balance.userId,
+      {
+        displayName: balance.displayName,
+        avatarUrl: balance.avatarUrl,
+        hasImage: balance.hasImage,
+      },
+    ]),
+  );
 
   const myBalance = balances.find((balance) => balance.userId === user.id);
   const myAmount = myBalance?.amount ?? 0;
@@ -272,7 +268,7 @@ export default async function GroupDetailPage({
                 title={t("ui.you_should_pay")}
                 transfers={iPay}
                 // Odeyen benim; satirda gorulmesi gereken KARSI TARAF.
-                nameOf={(transfer) => nameByUserId.get(transfer.toUserId)}
+                personOf={(transfer) => personByUserId.get(transfer.toUserId)}
                 currency={currency}
                 locale={locale}
                 fallbackName={t("ui.unknown_user")}
@@ -280,7 +276,7 @@ export default async function GroupDetailPage({
               <SuggestionGroup
                 title={t("ui.will_be_paid_to_you")}
                 transfers={iReceive}
-                nameOf={(transfer) => nameByUserId.get(transfer.fromUserId)}
+                personOf={(transfer) => personByUserId.get(transfer.fromUserId)}
                 currency={currency}
                 locale={locale}
                 fallbackName={t("ui.unknown_user")}
@@ -343,6 +339,11 @@ export default async function GroupDetailPage({
                 className="flex items-center justify-between gap-4 border-b border-line-soft py-2.5 last:border-b-0"
               >
                 <div className="flex min-w-0 items-center gap-2">
+                  <PersonAvatar
+                    displayName={balance.displayName}
+                    avatarUrl={balance.avatarUrl}
+                    hasImage={balance.hasImage}
+                  />
                   <span className="truncate">{balance.displayName}</span>
                   {roleByUserId.get(balance.userId) === "OWNER" ? (
                     <Badge variant="secondary">{t("ui.role_owner")}</Badge>

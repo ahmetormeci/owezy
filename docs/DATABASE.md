@@ -31,7 +31,17 @@ varsayılansız**, bilerek: `@default("tr")` mevcut her kullanıcının Türkçe
 *seçtiğini* iddia ederdi, oysa hiçbiri seçmedi. `null` = "tercih belirtmedi"
 ve okuma sırası bunu doğal karşılıyor: çerez → hesap → varsayılan (ADR-019).
 
-Kolon `String`, enum değil — dil listesi büyüdüğünde migration gerektirmesin.
+`hasImage` — kullanıcı Clerk'e **gerçekten** bir fotoğraf yükledi mi?
+Nullable ve bilerek `avatarUrl`'den ayrı: Clerk, fotoğraf yüklememiş
+kullanıcıya da bir `image_url` veriyor (kendi ürettiği baş-harf görseli).
+`avatarUrl`'in varlığına bakıp fotoğraf basmak, fotoğrafı olanları gerçek
+yüzle, olmayanları **Clerk'in tasarımıyla** gösterirdi — aynı listede iki
+ayrı görsel sistem. `null` = "bilmiyorum" (bu alanı taşımayan eski bir
+webhook olayı); arayüzde `false` gibi davranıyor. Hesap silinince
+`avatarUrl` ile birlikte `null`'a çekiliyor.
+
+`locale` kolonu `String`, enum değil — dil listesi büyüdüğünde migration
+gerektirmesin.
 Doğrulama uygulamada: `normalizeLocale()` beyaz liste uyguluyor ve **hem
 çerezden hem veritabanından** gelen değeri aynı kapıdan geçiriyor. Ham değer
 `Intl`'e ulaşırsa `RangeError` fırlatır ve sunucuda render edilen sayfa 500
@@ -139,6 +149,7 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260811074141_add_user_clerk_updated_at` | `User.clerkUpdatedAt` (nullable) |
 | `20260811120730_notification_types` | `NotificationType` 6 değere çıktı, `Notification(userId, createdAt)` index'i |
 | `20260812085643_add_user_locale` | `User.locale` (nullable, varsayılansız). Tek satır: `ALTER TABLE "User" ADD COLUMN "locale" TEXT;` — tablo yeniden yazılmıyor |
+| `20260812170020_add_user_has_image` | `User.hasImage` (nullable boolean). Kullanıcının gerçekten fotoğraf yükleyip yüklemediği; gerekçesi yukarıda |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 [DECISIONS.md](DECISIONS.md) ADR-012.

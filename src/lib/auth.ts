@@ -73,6 +73,9 @@ export async function getOrCreateCurrentUser() {
         email: primaryEmail,
         displayName,
         avatarUrl: clerkUser.imageUrl,
+        // Clerk fotograf yuklememis kullaniciya da bir imageUrl veriyor;
+        // "gercekten yukledi mi" bilgisi yalnizca burada.
+        hasImage: clerkUser.hasImage,
       },
     });
   } catch (error) {

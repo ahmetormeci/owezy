@@ -140,6 +140,7 @@ export function simplifyDebts(balances: UserBalance[]): SuggestedTransfer[] {
 export type GroupBalanceEntry = UserBalance & {
   displayName: string;
   avatarUrl: string | null;
+  hasImage: boolean | null;
   // Gruptan ayrilmis ama bakiyesi kapanmamis uyeler de listede yer alir;
   // arayuz bunlari "Ahmet (ayrildi)" seklinde gosterebilsin diye isaretliyoruz.
   hasLeft: boolean;
@@ -172,7 +173,7 @@ export async function getGroupBalances(userId: string, groupId: string) {
       select: {
         userId: true,
         leftAt: true,
-        user: { select: { displayName: true, avatarUrl: true } },
+        user: { select: { displayName: true, avatarUrl: true, hasImage: true } },
       },
       orderBy: { joinedAt: "asc" },
     }),
@@ -182,7 +183,10 @@ export async function getGroupBalances(userId: string, groupId: string) {
 
   // Bir kullanicinin birden fazla uyelik satiri olabilir (ayrilip tekrar
   // katilmissa). Aktif bir satiri varsa o gecerlidir.
-  const membershipByUserId = new Map<string, { hasLeft: boolean; displayName: string; avatarUrl: string | null }>();
+  const membershipByUserId = new Map<
+    string,
+    { hasLeft: boolean; displayName: string; avatarUrl: string | null; hasImage: boolean | null }
+  >();
   for (const membership of memberships) {
     const existing = membershipByUserId.get(membership.userId);
     const isActive = membership.leftAt === null;
@@ -191,6 +195,7 @@ export async function getGroupBalances(userId: string, groupId: string) {
         hasLeft: !isActive,
         displayName: membership.user.displayName,
         avatarUrl: membership.user.avatarUrl,
+        hasImage: membership.user.hasImage,
       });
     }
   }
@@ -202,6 +207,7 @@ export async function getGroupBalances(userId: string, groupId: string) {
         ...balance,
         displayName: membership?.displayName ?? "Bilinmeyen kullanıcı",
         avatarUrl: membership?.avatarUrl ?? null,
+        hasImage: membership?.hasImage ?? null,
         hasLeft: membership?.hasLeft ?? true,
       };
     })
@@ -218,6 +224,7 @@ export async function getGroupBalances(userId: string, groupId: string) {
         amount: 0,
         displayName: membership.displayName,
         avatarUrl: membership.avatarUrl,
+        hasImage: membership.hasImage,
         hasLeft: false,
       });
     }

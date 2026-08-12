@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getOrCreateCurrentUser } from "@/lib/auth";
 import { listGroupsForUser } from "@/lib/groups";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { CreateGroupDialog } from "@/components/create-group-dialog";
 import { getTranslate } from "@/lib/i18n-server";
 
@@ -20,36 +19,40 @@ export default async function GroupsPage() {
   const groups = await listGroupsForUser(user.id);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">{t("ui.my_groups")}</h1>
+        <h1 className="text-[1.0625rem] font-semibold">{t("ui.my_groups")}</h1>
         <CreateGroupDialog />
       </div>
 
       {groups.length === 0 ? (
-        <Card className="p-6 text-muted-foreground">
+        // Bos durum: kutu degil, cizginin altinda sessiz bir cumle. Bos bir
+        // liste icin kart cizmek, olmayan bir seye yer ayirmak demek.
+        <div className="mt-6 border-t border-border pt-6 text-muted-foreground">
           {t("ui.no_groups")}
-        </Card>
+        </div>
       ) : (
-        <ul className="flex flex-col gap-3">
+        // Her grup bir kart degil, bir SATIR. Kart deseninde uc grup uc ayri
+        // yuzey demekti; liste olarak dizilince goz bir sey ariyorsa
+        // bulabiliyor (ADR-021).
+        <ul className="mt-4 flex flex-col border-t border-border">
           {groups.map((group) => (
             <li key={group.id}>
-              <Link href={`/groups/${group.id}`} className="block">
-                <Card className="p-4 transition-colors hover:bg-accent">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{group.name}</p>
-                      {group.description ? (
-                        <p className="truncate text-sm text-muted-foreground">
-                          {group.description}
-                        </p>
-                      ) : null}
-                    </div>
-                    <Badge variant="secondary">
-                      {group.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
-                    </Badge>
-                  </div>
-                </Card>
+              <Link
+                href={`/groups/${group.id}`}
+                className="-mx-2 flex items-center justify-between gap-4 rounded-md border-b border-line-soft px-2 py-3 transition-colors hover:bg-accent"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{group.name}</p>
+                  {group.description ? (
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {group.description}
+                    </p>
+                  ) : null}
+                </div>
+                <Badge variant="secondary">
+                  {group.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
+                </Badge>
               </Link>
             </li>
           ))}

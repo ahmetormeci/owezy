@@ -13,7 +13,7 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 408 | ✅ tümü geçiyor |
+| Birim (Vitest) | 410 | ✅ tümü geçiyor |
 | E2E (Playwright) | 27 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -172,7 +172,7 @@ eşit genişlikli rakamlar.
 | 11.4d-1 | **DONE** | İngilizce sözlük + herkese açık sayfalara dil düğmesi |
 | 11.4d-2 | **DONE** | `User.locale` migration + hesap tercihi + `PATCH /api/v1/me` |
 | 11.5 | **DONE** | Grup sayfası hiyerarşisi |
-| 11.6 | TODO | Görsel dilin uygulanması (ADR-021) — token'lar, `Card` deseninin terki, avatarlar, boş durumlar, mobil |
+| 11.6 | **DONE** | Görsel dilin uygulanması (ADR-021) — token'lar, `Card` deseninin terki, avatarlar |
 
 **11.1'de yapıldı:** `globals.css`'teki `--font-sans: var(--font-sans)`
 kendine referans veriyordu; site arayüz fazından beri Times New Roman'da
@@ -287,7 +287,11 @@ sütunu genişletiyor ve `truncate` devreye giremiyor. İki `min-w-0` ile
 düzeltildi. E2E bunu yakalayamazdı — testler metnin varlığına bakıyor,
 sayfanın kaydığına değil.
 
-**Test:** 408 birim / 27 E2E.
+**11.6'da yapıldı:** Token katmanı ADR-021'e göre yeniden yazıldı, `Card`
+deseni `/join/[token]` dışında her yerden kalktı, avatarlar geldi
+(`User.hasImage` kolonu + `PersonAvatar`). Ayrıntı CHANGELOG'da.
+
+**Test:** 410 birim / 27 E2E.
 **Commit:** `a125fc3` (11.2), `eb861af` (11.3), `18abd81` (11.4a),
 `9b01802` (11.4b), `79f1d10` (11.4c), `648b558` (11.4d-1) — altısı da push
 edildi. `2289e0f` (11.4d-2) commitlendi ama **push edilmedi**;
@@ -339,8 +343,8 @@ karar vermemiştir.
   diliyle render ediliyor. Uygulamanın kendi metinleri Türkçe, formun içi
   İngilizce — aynı ekranda iki dil. 11.4d-1'de fark edildi.
 - `PublicControls` konumunu `fixed` ile kendisi belirliyor. Dar ve kısa bir
-  ekranda üstteki kartla çakışabilir; 11.6 bu sayfaları elden geçirirken
-  yeniden değerlendirilmeli.
+  ekranda üstteki kartla çakışabilir. **11.6'nın listesindeydi, yapılmadı** —
+  ölçülmedi de; kalan tek 11.6 maddesi bu.
 - `src/components/ui/dialog.tsx` içinde ekran okuyucuya görünen `"Close"`
   metni sözlükte değil. `ui/` altı shadcn'in ürettiği kod; oraya dokunmak
   ayrı bir karar (yeniden üretimde kaybolur).

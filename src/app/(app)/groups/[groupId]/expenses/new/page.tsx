@@ -38,11 +38,11 @@ export default async function NewExpensePage({
       <div className="flex flex-col gap-1">
         <Link
           href={`/groups/${groupId}`}
-          className="text-sm text-muted-foreground hover:underline"
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           ← {group.name}
         </Link>
-        <h1 className="text-2xl font-semibold">{t("ui.add_expense")}</h1>
+        <h1 className="text-[1.0625rem] font-semibold">{t("ui.add_expense")}</h1>
       </div>
 
       <ExpenseForm

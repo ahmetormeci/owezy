@@ -33,26 +33,32 @@ export default async function HomePage() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
       <PublicControls />
-      <div className="flex flex-col items-center gap-5 text-center">
-        <div className="flex items-center gap-3">
-          <BrandMark className="size-10 text-brand" />
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex items-center gap-2.5">
+          <BrandMark className="size-7 text-brand" />
           <h1 className="text-display font-semibold">{t("ui.app_name")}</h1>
         </div>
-        <p className="max-w-md text-balance text-muted-foreground">
+        <p className="max-w-sm text-balance text-muted-foreground">
           {t("ui.tagline")}
         </p>
       </div>
 
-      <div className="w-full max-w-sm rounded-xl bg-card p-4 text-sm ring-1 ring-foreground/10">
-        <div className="flex items-baseline justify-between gap-4 border-b border-border pb-3">
+      {/* Ornek defter: golge ve ring yerine tek bir kenarlik, kucultulmus
+          kose. Uygulamanin icindeki panellerle AYNI malzeme olmali -
+          karsilama sayfasi urunu gosteriyor, baska bir sey degil. */}
+      <div className="w-full max-w-sm rounded-lg border border-border bg-card px-4 py-3.5">
+        <div className="flex items-baseline justify-between gap-4 border-b border-border pb-2.5">
           <span className="font-medium">{t("ui.sample_title")}</span>
           <span className="money text-muted-foreground">
             {formatMoney(SAMPLE_TOTAL, "TRY", locale)}
           </span>
         </div>
-        <ul className="flex flex-col divide-y divide-border">
+        <ul className="flex flex-col">
           {SAMPLE_ROWS.map((row) => (
-            <li key={row.name} className="flex items-center justify-between gap-4 py-2.5">
+            <li
+              key={row.name}
+              className="flex items-center justify-between gap-4 border-b border-line-soft py-2 last:border-b-0"
+            >
               <span>{row.name}</span>
               <span
                 className={`money font-medium ${
@@ -64,21 +70,19 @@ export default async function HomePage() {
             </li>
           ))}
         </ul>
-        <p className="pt-3 text-xs text-muted-foreground">
-          {t("ui.sample_note")}
-        </p>
+        <p className="pt-2.5 text-xs text-muted-foreground">{t("ui.sample_note")}</p>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         <Link
           href="/sign-up"
-          className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors outline-none hover:bg-brand-strong focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors outline-none hover:bg-brand-strong focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           {t("ui.sign_up")}
         </Link>
         <Link
           href="/sign-in"
-          className="rounded-lg border border-border bg-card px-5 py-2.5 text-sm font-medium transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="rounded-md border border-border bg-background px-4 py-2 font-medium transition-colors outline-none hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           {t("ui.sign_in")}
         </Link>

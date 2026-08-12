@@ -14,6 +14,15 @@ export type ClerkUserPayload = {
   first_name: string | null;
   last_name: string | null;
   image_url: string;
+  /**
+   * Kullanici gercekten bir fotograf yukledi mi? Clerk yuklememis olanlara da
+   * bir image_url veriyor (kendi urettigi bas-harf gorseli), bu yuzden
+   * image_url'in varligi "fotografi var" demek DEGIL.
+   *
+   * Optional: Clerk bu alani gondermeyen bir surumden gelirse undefined olur
+   * ve biz de "bilmiyorum" (null) yaziyoruz.
+   */
+  has_image?: boolean;
   /** Clerk'teki kaydin son guncellenme zamani (unix milisaniye). */
   updated_at: number;
 };
@@ -57,6 +66,7 @@ export async function syncUserFromClerk(payload: ClerkUserPayload): Promise<void
     email,
     displayName: buildDisplayName(payload, email),
     avatarUrl: payload.image_url,
+    hasImage: payload.has_image ?? null,
     clerkUpdatedAt,
   };
 
@@ -131,6 +141,10 @@ export async function markUserDeletedFromClerk(clerkId: string): Promise<void> {
         email: `deleted+${user.id}@deleted.invalid`,
         displayName: DELETED_DISPLAY_NAME,
         avatarUrl: null,
+        // Fotograf da anonimlestirmenin parcasi: avatarUrl null'a cekilirken
+        // hasImage true kalsaydi arayuz olmayan bir goruntuyu gostermeye
+        // calisirdi.
+        hasImage: null,
         deletedAt,
       },
     });

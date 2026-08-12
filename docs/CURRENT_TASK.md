@@ -22,11 +22,13 @@ Current task:
   Alti asamali plan icin PROGRESS.md'ye bak.
 
 Status:
-  IN_PROGRESS — 11.1 ... 11.5 bitti. 11.6 BASLADI.
-  11.6'da biten: adim 1 (tokenlar), adim 2 (tipografi olcegi) ve adim 3'un
-  ILK SAYFASI (grup sayfasi + (app) basligi + iki liste bileseni).
-  Kalan: Card deseni hala gruplar listesi, uyeler, davet, harcama formu,
-  odeme penceresi, karsilama ve giris/kayit sayfalarinda duruyor.
+  FAZ 11 BITTI (11.1 ... 11.6). Yeni gorev bekliyor.
+  11.6'nin son parcasi COMMITLENDI ama PUSH EDILMEDI - icinde bir migration
+  var (User.hasImage). Bir onceki migration (User.locale, 2289e0f) zaten
+  push edildi.
+
+  11.6'DAN KALAN TEK MADDE: PublicControls hala "fixed" ile konumlaniyor,
+  dar ve kisa ekranda ustteki kartla cakisabilir. Olculmedi.
 
   BILINEN SAPMA (mockup'tan): tutardaki para birimi sembolu rakamlarla ayni
   boyutta. Mockup'ta ayri ve soluktu. formatSignedMoney tek metin
@@ -82,6 +84,21 @@ Faz disi (ayni gunlerde yapildi, Faz 11'in parcasi degil):
     sormadigi icin bu temizligin gozlenebilir bir etkisi yok.
 
 Next action:
+  YOK. Faz 11 bitti; kullanici yeni gorev vermedi.
+
+  Bekleyen isler (hicbiri planlanmis degil, kullanici secmedi):
+    - npm audit: 10 acik (1 orta, 9 yuksek). Hic incelenmedi.
+    - PublicControls konumu (yukarida).
+    - ClerkProvider'a localization prop'u: giris/kayit formu Turkce modda
+      da Ingilizce.
+    - middleware.ts -> proxy.ts (Next 16 deprecation'i).
+    - Alan adi + Clerk production instance: gercek kullanicilara acmanin
+      onundeki tek engel.
+
+  ------------------------------------------------------------------
+  ASAGISI TAMAMLANMIS 11.6'NIN KAYDI - yeni gorevde silinecek.
+  ------------------------------------------------------------------
+
   11.6 — Gorsel dilin uygulanmasi.
 
   YON ONAYLANDI: ADR-021. Mockup uc denemede bulundu ve ucuncusu kabul

@@ -7,7 +7,6 @@ import type { ExpenseCategory, SplitType } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { apiRequest } from "@/lib/api-client";
 import {
   formatBasisPoints,
@@ -414,17 +413,20 @@ export function ExpenseForm({
       </div>
 
       {preview ? (
-        <Card>
-          <CardContent className="flex flex-col gap-2 py-4">
-            <p className="text-sm font-medium">{t("ui.split_preview")}</p>
-            {"error" in preview ? (
-              <p className="text-sm text-destructive">{preview.error}</p>
-            ) : (
-              <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+        // Onizleme bir kart degil, formun icinde sessiz bir panel: girdiye
+        // gore degisen bir ARA sonuc, ayri bir nesne degil.
+        <div className="flex flex-col gap-2 rounded-lg border border-border bg-card px-4 py-3.5">
+          <p className="label">{t("ui.split_preview")}</p>
+          {"error" in preview ? (
+            <p className="text-destructive">{preview.error}</p>
+          ) : (
+              <ul className="flex flex-col gap-1 text-muted-foreground">
                 {preview.shares.map((share) => (
                   <li key={share.userId} className="flex justify-between gap-4">
-                    <span>{nameByUserId.get(share.userId) ?? share.userId}</span>
-                    <span className="money">
+                    <span className="min-w-0 truncate">
+                      {nameByUserId.get(share.userId) ?? share.userId}
+                    </span>
+                    <span className="money shrink-0">
                       {formatMoney(share.amount, currency, locale)}
                       {splitType === "PERCENTAGE" && amount
                         ? ` (${formatBasisPoints(
@@ -439,9 +441,8 @@ export function ExpenseForm({
                   </li>
                 ))}
               </ul>
-            )}
-          </CardContent>
-        </Card>
+          )}
+        </div>
       ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

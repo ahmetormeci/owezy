@@ -73,9 +73,35 @@ describe("syncUserFromClerk", () => {
         email: "ahmet@example.com",
         displayName: "Ahmet Ormeci",
         avatarUrl: "https://img.example.com/a.png",
+        hasImage: null,
         clerkUpdatedAt: new Date(UPDATED_AT),
       },
     });
+  });
+
+  // NEDEN AYRI BIR ALAN: Clerk, fotograf YUKLEMEMIS kullaniciya da bir
+  // image_url veriyor (kendi urettigi bas-harf gorseli). Yani image_url'in
+  // varligi "fotografi var" demek degil; arayuz bu ayrimi hasImage'den
+  // ogreniyor ve olmayanlara BIZIM bas-harf dairemizi gosteriyor.
+  it("fotograf bilgisini oldugu gibi tasir", async () => {
+    mockPrisma.user.updateMany.mockResolvedValue({ count: 1 });
+
+    await syncUserFromClerk(clerkPayload({ has_image: true }));
+    expect(mockPrisma.user.updateMany.mock.calls[0][0].data.hasImage).toBe(true);
+
+    mockPrisma.user.updateMany.mockClear();
+    await syncUserFromClerk(clerkPayload({ has_image: false }));
+    expect(mockPrisma.user.updateMany.mock.calls[0][0].data.hasImage).toBe(false);
+  });
+
+  it("olay bu alani hic tasimiyorsa 'bilmiyorum' yazar", async () => {
+    // Clerk'in eski bir surumunden gelen olayda has_image olmayabilir.
+    // false yazsaydik "fotografi yok" demis olurduk; null "bilmiyorum".
+    mockPrisma.user.updateMany.mockResolvedValue({ count: 1 });
+
+    await syncUserFromClerk(clerkPayload());
+
+    expect(mockPrisma.user.updateMany.mock.calls[0][0].data.hasImage).toBeNull();
   });
 
   it("kayit varsa gunceller ve olusturmaya calismaz", async () => {
@@ -87,6 +113,7 @@ describe("syncUserFromClerk", () => {
       email: "ahmet@example.com",
       displayName: "Yeni Ad",
       avatarUrl: "https://img.example.com/a.png",
+      hasImage: null,
       clerkUpdatedAt: new Date(UPDATED_AT),
     });
     expect(mockPrisma.user.create).not.toHaveBeenCalled();
@@ -202,6 +229,9 @@ describe("markUserDeletedFromClerk", () => {
     expect(call.data.email).toBe(`deleted+${USER_ID}@deleted.invalid`);
     expect(call.data.displayName).toBe("Silinmiş kullanıcı");
     expect(call.data.avatarUrl).toBeNull();
+    // Fotograf da anonimlestirmenin parcasi: avatarUrl silinip hasImage true
+    // kalsaydi arayuz olmayan bir goruntuyu gostermeye calisirdi.
+    expect(call.data.hasImage).toBeNull();
     expect(call.data.deletedAt).toBeInstanceOf(Date);
     // clerkId'ye dokunulmamali: tekrar gelen silme olayi satiri bulabilmeli.
     expect(call.data).not.toHaveProperty("clerkId");
