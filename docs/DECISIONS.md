@@ -494,6 +494,51 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-021 — Görsel dil kısıtlama üzerine kurulur; renk yalnızca durum taşır
+**Tarih:** 2026-08-12 · **Durum:** Kabul edildi
+
+**Karar:** Arayüzün karakteri renkten değil **yoğunluk, saç teli çizgiler ve
+kesin tipografiden** gelir. Somut kurallar:
+
+1. **Renk yalnızca durum taşır** — tutarın işareti (alacak/borç), doygunluğu
+   düşük (kroma ≈ 0,10). Ödeşmiş durumda ekranda renk kalmaz.
+2. **Kobalt üç yerde:** marka işareti, birincil düğme, bağlantı vurgusu.
+   Zemin ya da geniş alan boyamaz.
+3. **Ölçek küçük ve yoğun:** gövde 14 px, etiket 11 px büyük harf, sayfa
+   başlığı 17 px. Tutar mono yazı tipiyle 38 px — afiş değil, arayüz.
+4. **Kutu yerine çizgi:** `Card` deseni bırakılır. İçerik sayfanın üstünde
+   durur, 1 px çizgilerle ayrılır. Köşe yarıçapı 8 px.
+5. **Hareket 180 ms ve az.** Zıplama, yaylanma yok.
+6. **Sayılar mono.** Rakamlar gövde metniyle aynı sesle konuşmaz.
+
+**Neden:** Faz 11.2'de token sistemi kuruldu ama bileşen katmanına hiç
+dokunulmadı; uygulama kutudan çıktığı gibi (stok shadcn) görünmeye devam
+etti. Kullanıcı bunu "dünyanın en dümdüz sitesi" diye tarif etti ve haklıydı.
+
+Yön üç denemede bulundu; ilk ikisinin **neden reddedildiği** kararın parçası:
+
+| Deneme | Ne yapıldı | Neden reddedildi |
+|---|---|---|
+| 1 | Denge ekseni + bakiye çubukları, solgun renk yıkaması | Borsa terminali gibi durdu. Bakiye "veri" gibi görselleştirilmişti; bu bir arkadaş hesabı, gösterge paneli değil |
+| 2 | Doygun renk alanı, büyük rakam, kişi yüzleri | Renk fazla iddialı geldi. Kişiler ve olgu metinleri **kaldı** |
+| 3 | Kısıtlama: renk yalnızca işarette, küçük ölçek, çizgi deseni | Kabul edildi |
+
+**Alternatifler:** Mevcut shadcn görünümünü korumak (kullanıcı reddetti);
+veri görselleştirmesiyle karakter kazandırmak (deneme 1); doygun renk
+alanıyla iddia kurmak (deneme 2).
+
+**Sonuç:** Kimlik ~40 CSS değişkeninde durduğu için token katmanını
+değiştirmek ucuz; pahalı olan `Card` deseninin sayfa sayfa terk edilmesi.
+Bu, ADR-015'i (kobalt kimlik) **iptal etmiyor** — kobaltı ilk kez gerçekten
+kullanıyor, çünkü o güne kadar yalnızca butonun üstündeydi.
+
+Bir kural da metin için: **arayüz bilmediği şeyi söylemez.** "Tek bir
+ödemeyle kapanıyor" cümlesi tasarım denemesinde yazılmış ve kaldırılmıştır;
+`simplifyDebts` bir öneri üretir, kullanıcının nasıl ödeyeceğini bilemez.
+Öneri bloğunun başlığı bu yüzden "Önerilen ödeme".
+
+---
+
 ## ADR-020 — Eksik çeviri derleme hatasıdır, sessiz bir geri düşüş değil
 **Tarih:** 2026-08-12 · **Durum:** Kabul edildi
 

@@ -172,7 +172,7 @@ eşit genişlikli rakamlar.
 | 11.4d-1 | **DONE** | İngilizce sözlük + herkese açık sayfalara dil düğmesi |
 | 11.4d-2 | **DONE** | `User.locale` migration + hesap tercihi + `PATCH /api/v1/me` |
 | 11.5 | **DONE** | Grup sayfası hiyerarşisi |
-| 11.6 | TODO | Karşılama, formlar, boş durumlar, mobil |
+| 11.6 | TODO | Görsel dilin uygulanması (ADR-021) — token'lar, `Card` deseninin terki, avatarlar, boş durumlar, mobil |
 
 **11.1'de yapıldı:** `globals.css`'teki `--font-sans: var(--font-sans)`
 kendine referans veriyordu; site arayüz fazından beri Times New Roman'da

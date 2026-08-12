@@ -23,6 +23,7 @@ Current task:
 
 Status:
   IN_PROGRESS — 11.1 ... 11.5 bitti. Geriye yalnizca 11.6 kaldi.
+  11.6'nin GORSEL YONU onaylandi (ADR-021), uygulama baslamadi.
   (11.2 = a125fc3, 11.3 = eb861af, 11.4a = 18abd81, 11.4b = 9b01802,
    11.4c = 79f1d10, 11.4d-1 = 648b558, 11.4d-2 = 2289e0f)
 
@@ -72,26 +73,79 @@ Faz disi (ayni gunlerde yapildi, Faz 11'in parcasi degil):
     sormadigi icin bu temizligin gozlenebilir bir etkisi yok.
 
 Next action:
-  11.6 — Karsilama, formlar, bos durumlar, mobil.
+  11.6 — Gorsel dilin uygulanmasi.
 
-  Faz 11'in son asamasi. Kapsam HENUZ DARALTILMADI; tasarim onerisi once
-  sunulmali. Bilinen adaylar:
+  YON ONAYLANDI: ADR-021. Mockup uc denemede bulundu ve ucuncusu kabul
+  edildi. Kurallar ADR'de; burasi SIRAYI tasiyor.
 
-    - Karsilama sayfasi 11.2'de kismen elden gecti, geri kalani burada.
-    - Formlar (harcama, grup, odeme) hic elden gecmedi.
-    - Bos durumlar: metinleri var ama gorsel olarak duz.
-    - Mobil: 11.5'te grup sayfasi duzeltildi, DIGER sayfalar olculmedi.
-      Ayni yatay kayma baska yerlerde de olabilir - once OLC, sonra duzelt.
-    - PublicControls konumunu fixed ile belirliyor; dar ve kisa ekranda
-      ustteki kartla cakisabilir (PROGRESS.md teknik borc).
+  Ozet kural: renk yalnizca tutarin isaretinde ve doygunlugu dusuk; kobalt
+  uc yerde (marka, birincil dugme, baglanti); olcek kucuk ve yogun; kutu
+  yerine 1 px cizgi; kose 8 px; hareket 180 ms; sayilar mono.
+
+  Yapilacak, SIRASIYLA:
+
+    1. TOKEN KATMANI - src/app/globals.css.
+       Notrler neredeyse tam gri (cok hafif mavi meyil), panel katmanlari
+       (--panel / --panel-2), cizgi renkleri (--line / --line-soft),
+       --credit ve --debt doygunlugu ~0,10'a iner, radius olcegi kucultulur.
+       "money" yardimci sinifi mono yazi tipine gecer.
+       Burada hicbir SAYFA degismiyor - yalnizca degiskenler. Once bu
+       commitlenirse, sonraki adimlarda neyin token neyin duzen oldugu
+       ayirt edilebilir kalir.
+
+    2. TIPOGRAFI OLCEGI - gövde 14 px, etiket 11 px buyuk harf + harf
+       araligi, sayfa basligi 17 px, tutar mono 38 px.
+
+    3. CARD DESENININ TERK EDILMESI. En pahali adim.
+       Sirayla: grup sayfasi -> gruplar listesi -> uyeler -> davet ->
+       harcama formu -> odeme penceresi -> karsilama -> giris/kayit.
+       Her sayfadan sonra mobil OLCUMU (asagiya bak).
+
+    4. AVATARLAR - karar gerekiyor, bkz. "Acik karar" asagida.
+
+    5. BOS DURUMLAR - metinleri var, gorsel olarak duz. Sozlukte zaten
+       kayitli; yalnizca sunumlari degisiyor.
+
+    6. PublicControls konumu. Su an "fixed" ile kendi konumunu belirliyor;
+       dar ve kisa ekranda ustteki kartla cakisabilir.
+
+  ACIK KARAR - avatar kaynagi:
+    Tesisat HAZIR. User.avatarUrl kolonu var, Clerk'ten doluyor
+    (auth.ts), webhook guncelliyor (clerk-sync.ts), hesap silinince
+    null'a cekiliyor, ve getGroupBalances + listGroupMembers ikisi de
+    donduruyor. Eksik olan tek sey ekranda <img> basmak.
+
+    SORUN: Clerk, fotograf YUKLEMEMIS kullaniciya da bir imageUrl
+    veriyor - kendi urettigi bas-harf gorseli. Dogrudan basarsak
+    fotografi olanlar gercek yuz, olmayanlar Clerk'in tasarimiyla
+    gorunur; bizim bas-harf dairelerimizle iki ayri gorsel sistem
+    yan yana durur.
+
+    SECENEKLER:
+      a) User.hasImage (nullable boolean) eklenir; fotograf varsa
+         fotograf, yoksa BIZIM dairemiz. Tek satirlik migration, uc
+         veritabani. Gorsel tutarlilik tam.  <- onerilen
+      b) Her zaman Clerk'in imageUrl'i basilir. Migration yok, ama
+         iki ayri gorsel sistem.
+      c) Avatar hic gosterilmez, yalnizca bizim daireler. Var olan
+         veri kullanilmaz.
+
+    Kullanici SECMEDEN bu adima baslanmaz.
+
+    NOT: next/image kullanilacaksa next.config'e img.clerk.com icin
+    remotePatterns eklemek gerekiyor. Duz <img> ile gerek yok.
 
   Dikkat: E2E testleri Turkce metin ve mevcut secicilere dayaniyor.
   Formlara dokunulursa harcama testleri (6 test) en cok etkilenen yer.
+  Grup sayfasi 11 testin ugragi.
 
-  Dikkat: yatay kayma gibi duzen hatalarini E2E YAKALAMAZ - metnin
+  Dikkat: YATAY KAYMA gibi duzen hatalarini E2E YAKALAMAZ - metnin
   varligina bakiyor, sayfanin kaydigina degil. 11.5'te bu ekran
-  goruntusuyle yakalandi; olcum yontemi belge genisligini viewport
-  genisligiyle karsilastirmak.
+  goruntusuyle yakalandi.
+  OLCUM YONTEMI (her sayfa icin, her genislikte):
+    document.documentElement.scrollWidth > window.innerWidth  -> kayma var
+  390 px ve 768 px'te olculmeli. Panel gercek viewport'u kucultmuyorsa
+  olcum bir iframe icinde yapilir (medya sorgulari viewport'a bakar).
 
 Blocked by:
   Yok.
