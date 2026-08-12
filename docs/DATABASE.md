@@ -59,6 +59,11 @@ bu durumda **birden fazla satır** oluşur ve bu istenen davranıştır.
 `amount` ve `shareAmount` **kuruş cinsinden `Int`**. `expenseDate` `@db.Date`
 (saat bilgisi taşımaz). `ExpenseParticipant` üzerinde `@@unique([expenseId, userId])`.
 
+`ExpenseParticipant.basisPoints` (nullable `Int`, 10000 = %100) kullanıcının
+**girdiği** yüzdeyi tutar; `shareAmount` onun sonucudur ve yuvarlama yüzünden
+sonuçtan girdiye her zaman geri dönülemez. Yalnızca `PERCENTAGE` bölüşümde
+dolu; `EQUAL`/`EXACT`'ta ve kolondan önceki kayıtlarda `null` (ADR-022).
+
 `Expense` üç ayrı `User` ilişkisi taşır: `paidById`, `createdById`, `deletedById`.
 
 ### Settlement
@@ -107,6 +112,16 @@ blok (otomatik üretilmedi):
 | 7 | `Expense.currency == Group.currency` | BEFORE INSERT/UPDATE trigger |
 | 7 | `Settlement.currency == Group.currency` | BEFORE INSERT/UPDATE trigger |
 | 8 | `SUM(ExpenseParticipant.shareAmount) == Expense.amount` | **DEFERRABLE INITIALLY DEFERRED** constraint trigger |
+
+Sonradan eklenen kısıtlar (kendi migration'larında):
+
+| # | Kural | Nasıl |
+|---|---|---|
+| 9 | `ExpenseParticipant.basisPoints` NULL ya da 0–10000 arası | CHECK (`20260812214219`) |
+
+9 numaralı kuralın "toplam 10000 olmalı" tarafı burada **yok**: o, çoklu satır
+toplamı gerektirir ve 8 numaralı kuralla aynı sebepten CHECK'e yazılamaz.
+Uygulama katmanında `splitByPercentage` garanti ediyor.
 
 ### 8 numaralı kural neden ertelenmiş (deferred)
 

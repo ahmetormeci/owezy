@@ -500,6 +500,76 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-023 — Herkese açık sayfalarda dil değişimi tam yeniden yükleme yapar
+**Tarih:** 2026-08-13 · **Durum:** Kabul edildi
+
+**Karar:** `LanguageToggle` iki davranış taşır. Uygulama içi sayfalarda
+`router.refresh()` (bugünkü davranış korunuyor), herkese açık sayfalarda
+(`PublicControls`: karşılama, giriş, kayıt, davet) `window.location.reload()`.
+
+Hesaba yazan `PATCH /api/v1/me` isteği `keepalive: true` taşır — aksi halde
+yeniden yükleme uçuştaki isteği iptal ederdi ve tercih hesaba hiç yazılmazdı.
+
+**Neden:** Clerk'in giriş/kayıt formu kendi metinlerini taşıyor ve
+`localization` ayarını **yalnızca başlarken** okuyor. `router.refresh()`
+sunucu ağacını tazeliyor, `<html lang>` ve bizim metinlerimiz değişiyor, ama
+zaten mount olmuş Clerk arayüzü eski dilde kalıyor. Sonuç, 12.2'nin
+düzeltmeye çalıştığı hatanın aynısı: aynı ekranda iki dil.
+
+Ölçüldü, tahmin edilmedi: `router.refresh()` sonrası form Türkçe kalıyordu,
+tam yeniden yüklemede doğru dil geliyordu. Düzeltmeden sonra iki yön de
+tarayıcıda doğrulandı.
+
+**Neden her yerde değil:** `router.refresh()` istemci state'ini koruyor —
+açık pencereler, yarım kalmış harcama formu. Uygulama içi sayfalarda Clerk
+arayüzü **yok**, dolayısıyla o gerekçe orada hâlâ geçerli ve bozmaya sebep
+yok. Herkese açık sayfalarda korunacak state de yok; oradaki tek form
+Clerk'in kendi formu.
+
+**Alternatif (reddedildi):** `ClerkProvider`'a `key={locale}` verip dil
+değişince yeniden mount etmek. Kök layout tüm uygulamayı sarmalıyor, yani
+uygulama içinde dil değiştiren kullanıcı bütün istemci state'ini kaybederdi —
+yeniden yüklemenin bedelini ödeyip ekstra bir Clerk kurulumu da eklerdi.
+
+---
+
+## ADR-022 — Kullanıcının girdiği yüzde saklanır; geri hesaplama ancak ispatlanırsa kullanılır
+**Tarih:** 2026-08-13 · **Durum:** Kabul edildi
+
+**Karar:** `ExpenseParticipant` yeni bir **nullable** `basisPoints` kolonu
+taşır. `PERCENTAGE` bölüşümde kullanıcının girdiği yüzde buraya yazılır;
+`EQUAL` / `EXACT` bölüşümde `null` kalır. Yüzde audit snapshot'ına da girer.
+
+Kolon eklenmeden önceki kayıtlar için yüzde **paylardan geri hesaplanabilir**,
+ama yalnızca `inferBasisPoints` şu ispatı geçerse: aday yüzdeler
+`splitByPercentage`'a geri verildiğinde **kayıtlı payların birebir aynısı**
+çıkmalı. Çıkmıyorsa alan boş kalır.
+
+**Neden kolon:** Düzenleme formu yüzde alanlarını boş açıyordu, çünkü yüzde
+hiçbir yerde saklanmıyordu — elde yalnızca sonuç payları vardı. Yalnızca
+açıklamayı düzeltmek isteyen kullanıcı bütün yüzdeleri yeniden yazmak zorunda
+kalıyordu ve yaklaşık yazarsa paylar sessizce değişiyordu. Para kaydında bu
+kabul edilemez.
+
+**Neden nullable:** `EQUAL` bölüşümde yüzde diye bir şey yok. `0` yazmak
+"yüzdesi sıfır" demek olurdu; doğru cevap "böyle bir bilgi yok". Eski
+kayıtlarda da yüzde hiç saklanmadı — orada da `null` dürüst olan.
+
+**Neden ispat, neden tahmin değil:** Yüzde → pay dönüşümü kayıplıdır. 100
+kuruşun 34/33/33 bölünmesi hem `%33,33/%33,33/%33,34`'ten hem
+`%34/%33/%33`'ten çıkar. `inferBasisPoints` **kullanıcının yazdığını
+bulmaz** — kayıtlı payları birebir üreten *bir* yüzde kümesi bulur. Garanti
+ettiği tek şey şu: **kullanıcı formu açıp hiçbir şeye dokunmadan kaydederse
+tutarlar değişmez.** İspatı geçmeyen durumda alan boş kalır, yani bugünkü
+davranış. Uydurup doldurmak, ADR-021'in "arayüz bilmediği şeyi söylemez"
+kuralının para tarafındaki karşılığını çiğnerdi.
+
+**Alternatif (reddedildi):** Kolon eklemeden her seferinde paylardan geri
+hesaplamak. Yuvarlanmış yüzdeler tam `%100`'e toplanmayabilir; kullanıcı
+formu açıp kaydete bastığında bir kuruş yer değiştirebilirdi.
+
+---
+
 ## ADR-021 — Görsel dil kısıtlama üzerine kurulur; renk yalnızca durum taşır
 **Tarih:** 2026-08-12 · **Durum:** Kabul edildi
 

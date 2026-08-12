@@ -8,6 +8,45 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-13
+
+### Clerk'in giriş/kayıt formu artık Türkçe (Faz 12.2)
+- **`@clerk/localizations` (4.15.1) eklendi**, `ClerkProvider` Türkçe modda
+  `trTR` alıyor. İngilizce için bilerek hiçbir şey gönderilmiyor: Clerk'in
+  yerleşik varsayılanı zaten İngilizce, `enUS` göndermek 1444 metni boşuna
+  RSC yüküne eklerdi. Tip `React.ComponentProps` ile prop'un kendisinden
+  türetiliyor — `@clerk/types` doğrudan bağımlılık değil.
+- **Doğrulama gerçek bir hata buldu:** Clerk `localization`'ı yalnızca
+  başlarken okuyor, prop değişince mount olmuş formu güncellemiyordu. Dil
+  düğmesine basan ziyaretçi yarısı Türkçe yarısı İngilizce bir ekran
+  görüyordu. Herkese açık sayfalarda dil düğmesi artık tam yeniden yükleme
+  yapıyor (ADR-023); uygulama içinde `router.refresh()` korunuyor, çünkü orada
+  Clerk arayüzü yok ve açık pencereler/form içeriği korunmalı.
+- Hesaba yazan `PATCH /api/v1/me` isteği `keepalive: true` aldı — yeniden
+  yükleme uçuştaki isteği iptal ederdi ve tercih hesaba hiç yazılmazdı.
+
+### Yüzdeli harcamayı düzenlemek artık yüzdeleri silmiyor (Faz 12.1)
+- **`ExpenseParticipant.basisPoints` kolonu** (nullable) geldi: `PERCENTAGE`
+  bölüşümde kullanıcının **girdiği** yüzde artık saklanıyor. Önceden yalnızca
+  sonuç payları kaydediliyordu; düzenleme formu yüzde alanlarını boş açıyor ve
+  sadece açıklamayı düzeltmek isteyen kullanıcıya bütün yüzdeleri yeniden
+  yazdırıyordu — yaklaşık yazarsa paylar sessizce değişiyordu.
+- **Kolondan önceki kayıtlar için `inferBasisPoints`:** paylardan yüzde geri
+  hesaplanıyor, ama yalnızca aday yüzdeler `splitByPercentage`'a verildiğinde
+  kayıtlı payların **birebir aynısını** üretiyorsa. İspat geçmezse alan boş
+  kalıyor. Gerekçe ADR-022'de: fonksiyon kullanıcının yazdığını bulmaz,
+  aynı payları üreten bir yüzde kümesi bulur — garanti ettiği tek şey
+  "dokunmadan kaydedersen tutar değişmez".
+- Yüzde **audit snapshot'ına** da girdi. `PERCENTAGE`'dan `EQUAL`'a geçen bir
+  harcamada satırdaki yüzde temizleniyor ama `previousData`'da duruyor.
+- `formatMoneyForInput` / `formatBasisPointsForInput`: form alanlarını
+  dolduran metin artık **tam sayı aritmetiğiyle** üretiliyor (eskisi
+  `String(amount / 100)` idi — para üzerinde float bölmesi) ve ondalık ayracı
+  dile göre değişiyor. İngilizce kullanan biri kendi girdiği tutarı `120,50`
+  olarak geri görmüyor.
+- Kırılan dört birim testi düzeltildi (bütün nesneyi karşılaştırıyorlardı) ve
+  yeni davranışın testleri eklendi. **428 birim / 28 E2E.**
+
 ## 2026-08-12
 
 ### Görsel dil: kalan sayfalar ve avatarlar (Faz 11.6, ikinci parça)

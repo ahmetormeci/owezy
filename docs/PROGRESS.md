@@ -8,13 +8,13 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 10 faz tamamlandı, Faz 11 devam ediyor. Uygulama canlıda ve
+**Özet:** 11 faz tamamlandı, Faz 12 devam ediyor. Uygulama canlıda ve
 `main`'e giden her değişiklik CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 410 | ✅ tümü geçiyor |
-| E2E (Playwright) | 27 | ✅ tümü geçiyor |
+| Birim (Vitest) | 428 | ✅ tümü geçiyor |
+| E2E (Playwright) | 28 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -155,7 +155,7 @@ teyit edildi.
 
 ---
 
-## Faz 11 — Tasarım yenilemesi + iki dil · **IN_PROGRESS**
+## Faz 11 — Tasarım yenilemesi + iki dil · **DONE**
 
 Tasarım yönü onaylandı: kobalt kimlik (yeşil/kırmızı zaten alacak/borç anlamı
 taşıdığı için kimlik rengi onlarla çakışmamalı), bakiye odaklı hiyerarşi,
@@ -296,12 +296,99 @@ production veritabanına uygulandığı Vercel build log'undan teyit edildi.
 
 **Test:** 410 birim / 27 E2E.
 **Commit:** `a125fc3` (11.2), `eb861af` (11.3), `18abd81` (11.4a),
-`9b01802` (11.4b), `79f1d10` (11.4c), `648b558` (11.4d-1) — altısı da push
-edildi. `2289e0f` (11.4d-2) commitlendi ama **push edilmedi**;
-11.5 henüz commitlenmedi.
+`9b01802` (11.4b), `79f1d10` (11.4c), `648b558` (11.4d-1), `2289e0f` (11.4d-2),
+`af3299e` (11.5), `dfab327` + `9632123` (11.6) — hepsi push edildi.
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce
 geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahalıdır.
+
+---
+
+## Faz 12 — Açılış öncesi düzeltmeler · **IN_PROGRESS**
+
+Gerçek kullanıcı gelmeden kapatılması gereken dört küçük iş. Ortak noktaları
+yeni yetenek getirmemeleri: dördü de **bugün yanlış olan bir şeyi** düzeltiyor.
+
+| Aşama | Durum | İş |
+|---|---|---|
+| 12.1 | **DONE** | Yüzdeli harcamayı düzenlemek yüzdeleri siliyor |
+| 12.2 | **DONE** | Clerk giriş/kayıt formu Türkçe modda İngilizce |
+| 12.3 | TODO | `createGroupSchema` desteklenmeyen para birimini kabul ediyor |
+| 12.4 | TODO | `middleware.ts` → `proxy.ts` (Next 16 deprecation'ı) |
+
+**Sıra neden böyle:** 12.1 tek veri bütünlüğü hatası — kullanıcının girdiği
+tutarı sessizce değiştirebiliyor. Diğer üçü yanlış ama zararsız.
+
+**12.1'de yapıldı:** `ExpenseParticipant.basisPoints` kolonu (nullable) ve
+eski kayıtlar için ispata bağlı geri hesaplama (ADR-022). Yüzde audit
+snapshot'ına da girdi. Form alanlarını dolduran metin `String(amount / 100)`
+float bölmesinden `formatMoneyForInput`'un tam sayı aritmetiğine geçti ve
+ondalık ayracı dile duyarlı oldu.
+
+Kırılan dört birim testi bütün nesneyi karşılaştırdığı için kırılmıştı;
+düzeltmenin yanına yeni davranışın testleri de yazıldı. **Yeni E2E testi:**
+yüzdeli harcama düzenlenirken alanların dolu geldiği ve dokunmadan
+kaydetmenin bölüşümü bozmadığı uçtan uca doğrulanıyor.
+
+**12.2'de yapıldı:** `@clerk/localizations` (4.15.1) eklendi ve `ClerkProvider`
+Türkçe modda `trTR` alıyor. İngilizcede **bilerek hiçbir şey gönderilmiyor** —
+Clerk'in yerleşik varsayılanı zaten İngilizce, `enUS` göndermek 1444 metni
+boşuna RSC yüküne eklerdi.
+
+Doğrulama sırasında **gerçek bir hata çıktı:** Clerk `localization`'ı yalnızca
+başlarken okuyor. `router.refresh()` sunucudan yeni dili getiriyor ama zaten
+mount olmuş form eski dilde kalıyordu — dil düğmesine basan ziyaretçi yarısı
+Türkçe yarısı İngilizce bir ekran görüyordu, yani düzeltilen hatanın aynısı.
+Çözüm ADR-023'te: herkese açık sayfalarda dil düğmesi tam yeniden yükleme
+yapıyor. Tarayıcıda iki yönde de ölçüldü.
+
+**Test:** 428 birim / 28 E2E.
+**Commit:** `3578386` (12.1), `d18997f` (12.2) — ikisi de **push edilmedi**.
+
+---
+
+## Faz 13 — Grup sayfası 100 harcamada · **PLANLANDI**
+
+Yön onaylandı (mockup üzerinden), kapsam henüz kesinleşmedi. Sorun: sayfa
+2 harcamada iyi çalışıyor, 100 harcamada üç ayrı şey bozuluyor — **yön**
+(ay sınırı yok), **anlam** ("nereye gitti" sorusunun cevabı hiçbir yerde yok)
+ve **bulma** (arama/filtre yok). Grafik yalnızca ikincisine cevap veriyor.
+
+| Aşama | İş |
+|---|---|
+| 13.1 | Ay başlıkları + ay toplamı (grafik değil; en ucuz, en çok kazandıran) |
+| 13.2 | Özet bloğu: bakiyenin açıklaması + kategori/ay kırılımı |
+| 13.3 | Arama + filtre ("yalnızca beni ilgilendirenler" dahil) |
+
+### Uygulamadan önce dikkat edilecekler
+
+- **Özet, ekrandaki 20 harcamadan hesaplanamaz.** Sayfa `listExpenses`'ten
+  yalnızca ilk 20 kaydı alıyor; toplam onlardan çıkarılırsa **yanlış sayı**
+  gösterilir.
+- **Ama yeni bir sorgu da gerekmiyor.** `getGroupBalances` bugün grubun
+  **bütün** silinmemiş harcamalarını zaten belleğe çekiyor (`balances.ts`,
+  `findMany`'de `take` yok). Özet aynı veriden hesaplanabilir; `select`'e
+  yalnızca `category` ve `expenseDate` eklenir. Ayrı bir toplama sorgusu
+  fazladan gidiş-dönüş olurdu.
+- **Bunun bedeli var ve ayrı bir borç:** o sorgu sınırsız. 1000 harcamalı bir
+  grupta her sayfa görüntülemesi bin satır çekiyor. Doğru çözüm bakiyeyi de
+  özeti de SQL'de toplamak (`SUM`/`GROUP BY`); ikisi tek işte düzeltilmeli.
+  13.2 bu profili **kötüleştirmiyor**, ama düzeltmiyor da.
+- **Aylık kırılım Prisma `groupBy` ile yapılamaz** (tarihi aya indiremiyor).
+  Bellekte gruplanır ya da `date_trunc` ile ham sorgu yazılır.
+- **Para tam sayı olduğu için toplama tam.** Yüzde hesabında (kategori payı)
+  float'a düşülmemeli; `basisPoints` deseni burada da geçerli.
+- **Silinmiş harcamalar ve iptal edilmiş ödemeler özete girmez** — bakiyede
+  olduğu gibi.
+- **Ürün riski:** `category` varsayılanı `OTHER`. Kimse dokunmazsa kategori
+  kırılımı tek çubuk "Diğer" olur. Grafik gelecekse formdaki kategori
+  seçiminin görünürlüğü artmalı.
+- **Renk kararı:** kategori kırılımı **tek renk** (kobalt, uzunlukla
+  karşılaştırma). Çok renkli palet ADR-021'i çiğner — renk bu uygulamada
+  yalnızca alacak/borç taşır. `globals.css`'teki `--chart-1..5` shadcn'den
+  kalma ve hiçbir yerde kullanılmıyor; bu iş yapılırken kaldırılmalı.
+- **Özet `/api/v1` altında olmalı**, sayfada değil: mobil istemci aynı ucu
+  çağıracak.
 
 ---
 
@@ -313,6 +400,7 @@ geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahal�
 | Arayüz metinlerinin Türkçe karakterlerle yazılması | `e5e69dd` |
 | Migration'ların havuzsuz bağlantıya alınması (PgBouncer'da asılı kalan advisory lock) | `1f68d5c` |
 | GitHub Actions CI: `main`'e giden her değişiklikte tip kontrolü, lint ve birim testleri (E2E hariç, gerekçesi ADR-018) | `09d0e91` |
+| Talimat dosyalarındaki tekrarların temizlenmesi, PROJECT.md'deki bayat bilgiler (tek dil, eski test sayıları) ve hedefli E2E koşusu tarifi | `f700fbe` |
 
 ---
 
@@ -323,28 +411,29 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Alan adı + Clerk production instance** | Gerçek kullanıcılara açmanın önündeki tek engel |
-| **`middleware.ts` → `proxy.ts`** | Next.js 16 deprecation'ı; tek dosyalık iş |
+| **Alan adı + Clerk production instance** | Gerçek kullanıcılara açmanın önündeki tek engel (kullanıcı üstlendi) |
 | **Bildirim saklama politikası** | Kayıtlar sonsuza kadar birikiyor |
+| **`createGroup` / `acceptGroupInvite` birim testleri** | İkisi de yalnızca E2E'nin dolaylı kapsamında; davet kabulü bir güvenlik sınırı |
+| **`npm audit fix`** | 10'un 5'i sürüm aralığı içinde kapanıyor; `package-lock.json` yazma izni gerekiyor |
 
 ## Bilinen teknik borç
 
 - `createGroup` ve `acceptGroupInvite` için birim testi yok (E2E dolaylı kapsıyor)
-- PERCENTAGE düzenleme formunda yüzdeler boş başlıyor (yüzdeler saklanmıyor,
-  paylardan geri hesaplanmıyor)
 - Optimistic locking yok (ADR-010, mobil aşamasına ertelendi)
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi
-- **`npm audit`: 10 açık (1 orta, 9 yüksek).** Temiz bir `npm ci` sırasında
-  görüldü. Henüz incelenmedi; kullanıcı bilerek erteledi. Hangi paketten
-  geldiği ve gerçekten çalışma zamanına ulaşıp ulaşmadığı belirsiz —
-  `npm audit fix --force` çalıştırmadan önce bakılmalı, çünkü `--force`
-  büyük sürüm atlayabilir.
-- **Clerk'in giriş/kayıt formu Türkçe modda da İngilizce.** `ClerkProvider`
-  bir `localization` prop'u kabul ediyor; verilmediği için Clerk varsayılan
-  diliyle render ediliyor. Uygulamanın kendi metinleri Türkçe, formun içi
-  İngilizce — aynı ekranda iki dil. 11.4d-1'de fark edildi.
+- **`npm audit`: 10 açık (1 orta, 9 yüksek).** **İncelendi:** hiçbiri çalışan
+  uygulamaya ulaşmıyor — hepsi derleme veya geliştirme aracında. `sharp`
+  yalnızca `next/image` üzerinden çağrılıyor, `next/image` hiç kullanılmıyor;
+  `postcss` derleme zamanında çalışıyor. `npm audit fix` 5 tanesini sürüm
+  aralığı içinde kapatıyor; kalan ikisi `--force` ve Next 16.2.11 → 16.3.0
+  yükseltmesi istiyor, o ayrı bir iş olmalı. **Yapılmadı:**
+  `package-lock.json` `.claude/settings.json` ile yazmaya kapalı.
+- Dil düğmesi `/api/v1/me`'ye **çıkış yapmışken de** PATCH atıyor; herkese
+  açık sayfalarda bu her zaman 401 dönüyor ve tarayıcı konsoluna hata
+  düşüyor. Zararsız (kod bunu bekliyor ve yutuyor) ama gereksiz istek ve
+  gürültü. Clerk'in `useAuth().isSignedIn` değeriyle atlanabilir.
 - **`createGroupSchema` desteklenmeyen para birimini kabul ediyor.**
   `currency: z.string().length(3)` üç harfli **her** kodu geçiriyor ve
   `POST /api/v1/groups` onu doğrudan `createGroup`'a veriyor. Oysa
