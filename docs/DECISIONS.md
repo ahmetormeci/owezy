@@ -404,3 +404,41 @@ alınca Türkçe mesaj görürdü).
 **Sonuç:** Mevcut ~40 hata mesajı koda dönüşecek ve onları kontrol eden
 testler güncellenecek. Varsayılan dil Türkçe kaldığı için E2E testleri
 değişmeden geçmeye devam etmeli.
+
+---
+
+## ADR-018 — CI tip kontrolü, lint ve birim testlerini koşar; E2E dışarıda kalır
+**Tarih:** 2026-08-12 · **Durum:** Kabul edildi
+
+**Karar:** `main`'e giden her değişiklik GitHub Actions'ta
+`npm ci` → `prisma generate` → `tsc --noEmit` → `eslint` → `vitest run`
+adımlarından geçer. **Playwright E2E koşusu CI'a alınmaz**; yerelde
+`npm run test:e2e` ile çalışmaya devam eder.
+
+**Neden:**
+
+1. `main`'e push, Vercel'de **production deploy** tetikliyor. Bu dosyadan
+   önce o yolun önünde otomatik hiçbir kapı yoktu — her doğrulama elle
+   yapılıyordu ve elle yapılan doğrulama er geç atlanır.
+2. E2E'yi CI'a taşımak, üç şeyi yeni bir ortama kopyalamak demek: gerçek
+   Clerk test kullanıcılarının parolaları, ayrı bir Neon veritabanının
+   bağlantı dizesi ve Clerk'in test anahtarları. Bu sırların bir kısmı
+   **üretim dışı ama gerçek**; bir CI ortamına kopyalanmaları, korunacak
+   yüzeyi genişletir. Kazandığı şey, elle koşturulan ve zaten koşturulan
+   bir doğrulama.
+3. Süre de sebebin bir parçası: E2E ~5,5 dakika sürüyor ve gerçek bir dev
+   sunucusu ayağa kaldırıyor. Her push'ta ödenen bu maliyet, hızlı geri
+   bildirim veren üç adımı da yavaşlatırdı.
+
+**Alternatifler:** E2E'yi de CI'a almak (yukarıdaki sır yüzeyi); CI'ı hiç
+kurmayıp elle doğrulamaya devam etmek (mevcut durum — atlanabilir olduğu
+için terk edildi); E2E'yi yalnızca gecelik koşmak (yine aynı sırları
+istiyor, ertelemekten başka bir şey çözmüyor).
+
+**Sonuç:** CI **kırmızıysa deploy edilmez** kuralı henüz teknik olarak
+zorlanmıyor — Vercel deploy'u CI sonucundan bağımsız. Dal koruma kuralı
+(branch protection) bunu zorlayabilir; henüz açılmadı, ayrı bir karar.
+
+E2E'nin CI dışında kalması, **E2E'yi koşturma sorumluluğunun kişide
+kaldığı** anlamına gelir. Arayüzü ilgilendiren bir değişiklikte
+`npm run test:e2e` atlanırsa, CI bunu yakalamaz.

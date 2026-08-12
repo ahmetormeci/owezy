@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-11
+Updated: 2026-08-12
 
 Current task:
   Faz 11 — Tasarim yenilemesi + iki dil destegi.
@@ -23,8 +23,8 @@ Current task:
 
 Status:
   IN_PROGRESS — 11.1, 11.2, 11.3, 11.4a, 11.4b bitti. 11.4c baslamadi.
-  11.4b COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
-  (11.2 = a125fc3, 11.3 = eb861af, 11.4a = 18abd81 push edildi.)
+  Hepsi commitlendi ve push edildi, calisma agaci temiz.
+  (11.2 = a125fc3, 11.3 = eb861af, 11.4a = 18abd81, 11.4b = 9b01802)
 
 Completed in this task:
   - 11.1 Yazi tipi hatasi duzeltildi (site Times New Roman'da calisiyordu)
@@ -39,6 +39,15 @@ Completed in this task:
   - 11.4b ~190 arayuz metni sozluge tasindi; kodda gomulu metin kalmadi
   - 11.4b useTranslate() / getTranslate() kapilari kuruldu (ikisi de simdilik tr)
   - Testler: 370 birim, 24 E2E, tsc + lint temiz
+
+Faz disi (ayni gunlerde yapildi, Faz 11'in parcasi degil):
+  - GitHub Actions CI kuruldu (09d0e91): tsc + lint + birim testleri.
+    E2E bilerek disarida. Ilk kosu yesil.
+  - .claude/settings.json ile .env.local ve package-lock.json yazmaya
+    kapatildi. Bu dosya gitignore'da, yani yeni bir klonda YOKTUR.
+  - .claude/settings.local.json'dan iki riskli izin kaldirildi
+    (git push, python -c). Bilinen sinir: mevcut izin kipi zaten hic
+    sormadigi icin bu temizligin gozlenebilir bir etkisi yok.
 
 Next action:
   11.4c — Dil degeri gercekten okunur ve her yere gecirilir.
@@ -77,7 +86,7 @@ Onaylanmis kararlar (Faz 11 icin):
 Verify with:
   npx tsc --noEmit
   npm run lint
-  npm test          # beklenen: 347
+  npm test          # beklenen: 370
   npm run test:e2e  # beklenen: 24, ~5 dk, kosarken dosyalara dokunma
 
   E2E notu: ~5 dk'dan cok daha uzun suren bir kosuda hatalara guvenme.

@@ -8,7 +8,8 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 10 faz tamamlandı, 0 faz devam ediyor. Uygulama canlıda.
+**Özet:** 10 faz tamamlandı, Faz 11 devam ediyor. Uygulama canlıda ve
+`main`'e giden her değişiklik CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
@@ -219,7 +220,8 @@ metinleri saf fonksiyon kalsın diye çeviriciyi **varsayılanlı parametre**
 olarak aldı, ve sabit `metadata` nesnesi `generateMetadata`'ya çevrildi.
 
 **Test:** 370 birim / 24 E2E.
-**Commit:** (bkz. CHANGELOG)
+**Commit:** `a125fc3` (11.2), `eb861af` (11.3), `18abd81` (11.4a),
+`9b01802` (11.4b) — dördü de push edildi.
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce
 geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahalıdır.
@@ -233,6 +235,7 @@ geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahal�
 | Playwright E2E altyapısı + bulduğu iki gerçek hata (kullanıcı oluşturmada yarış durumu, silinen harcamanın ekranda kalması) | `0248d4d` |
 | Arayüz metinlerinin Türkçe karakterlerle yazılması | `e5e69dd` |
 | Migration'ların havuzsuz bağlantıya alınması (PgBouncer'da asılı kalan advisory lock) | `1f68d5c` |
+| GitHub Actions CI: `main`'e giden her değişiklikte tip kontrolü, lint ve birim testleri (E2E hariç, gerekçesi ADR-018) | `09d0e91` |
 
 ---
 
@@ -260,3 +263,11 @@ karar vermemiştir.
   değiştirmediği için düzeltilmedi; tek satırlık ayrı bir iş.
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi
+- **`npm audit`: 10 açık (1 orta, 9 yüksek).** Temiz bir `npm ci` sırasında
+  görüldü. Henüz incelenmedi; kullanıcı bilerek erteledi. Hangi paketten
+  geldiği ve gerçekten çalışma zamanına ulaşıp ulaşmadığı belirsiz —
+  `npm audit fix --force` çalıştırmadan önce bakılmalı, çünkü `--force`
+  büyük sürüm atlayabilir.
+- `.claude/settings.json` (`.env.local` ve `package-lock.json` yazma koruması)
+  **git'te değil** — `.claude/` gitignore'da. Yeni bir klonda bu koruma
+  bulunmaz; elle yeniden oluşturulması gerekir.

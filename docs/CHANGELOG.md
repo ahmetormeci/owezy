@@ -8,6 +8,38 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-12
+
+### GitHub Actions CI — `09d0e91`
+- `main`'e her push'ta ve her pull request'te çalışıyor:
+  `npm ci` → `prisma generate` → `tsc --noEmit` → `eslint` → `vitest run`.
+- **`prisma generate` zorunlu bir adım.** Prisma 7'de `@prisma/client`'ın
+  postinstall betiği yok; `npm ci` tek başına client'ı üretmiyor ve üretilmeden
+  `tsc` bütün projeyi derleyemiyor. Yerelde görünmüyor çünkü client bir kez
+  üretilip `node_modules` içinde duruyor.
+- `DATABASE_URL` olarak açıkça sahte bir değer veriliyor
+  (`postgresql://ci:ci@localhost:5432/ci_not_a_real_database`).
+  `prisma.config.ts` tanımsızsa hata fırlatıyor ama `generate` hiçbir
+  sunucuya bağlanmıyor — bu yüzden CI'a gerçek bir bağlantı dizesi
+  koymak gerekmedi. Workflow'da hiçbir gerçek secret yok.
+- **E2E bilerek dışarıda** (ADR-018). Yerelde çalışmaya devam ediyor.
+- `permissions: contents: read` ve `concurrency` + `cancel-in-progress`.
+- Commit'ten önce CI ortamı yerelde taklit edilerek doğrulandı: depo temiz
+  bir dizine klonlandı (`.env.local` ve `node_modules` gelmeden), aynı adımlar
+  aynı sırayla koşturuldu, beşi de 0 ile çıktı.
+
+### Claude Code araç izinleri sıkılaştırıldı
+- `.claude/settings.json` eklendi: `.env.local` ve `package-lock.json`
+  `Edit`/`Write` ile değiştirilemiyor. Yalnızca bu iki dosya kapsandı.
+- `.claude/settings.local.json`'dan iki riskli izin kaldırıldı:
+  `Bash(git push *)` ve `Bash(python -c ' *)` (37 → 35 kural).
+- **Bilinen sınır:** `allow` listesi yalnızca soran bir izin kipinde
+  anlamlı. Mevcut kipte `git push` hâlâ sormadan çalışıyor; ölçüldü.
+  `deny` ise kipten bağımsız uygulanıyor — koruma bu yüzden çalışıyor.
+- Her iki dosya da `.claude/` gitignore'da olduğu için **git'te değil**.
+
+---
+
 ## 2026-08-11
 
 ### Arayüz metinleri sözlüğe taşındı (Faz 11.4b)
