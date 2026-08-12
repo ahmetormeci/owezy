@@ -10,6 +10,38 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-12
 
+### Dil tercihi hesapta da saklanıyor (Faz 11.4d-2)
+- `User.locale` kolonu eklendi — **nullable ve varsayılansız**.
+  `@default("tr")` mevcut her kullanıcının Türkçe *seçtiğini* iddia ederdi;
+  `null` = "tercih belirtmedi" ve bu gerçek bir bilgi.
+  Migration tek satır, tablo yeniden yazılmıyor.
+- `PATCH /api/v1/me` — gövde `{ locale }`, Zod ile doğrulanıyor. Desteklenen
+  diller `SUPPORTED_LOCALES`'ten okunuyor, şemaya elle yazılmıyor: üçüncü dil
+  eklendiğinde şema sessizce eski kalırdı.
+- Okuma sırası **çerez → hesap → `tr`**. Çerez "bu cihazda, şu an" cevabı;
+  hesap önce gelseydi kullanıcının o cihazda yaptığı seçim her yenilemede
+  geri alınırdı.
+- **Sorgu maliyeti sıfırlandı.** Naif uygulama her isteğe bir sorgu eklerdi:
+  çerezi olmayan giriş yapmış kullanıcı = düğmeye hiç basmamış herkes.
+  `getOrCreateCurrentUser`'ın okuma adımı `cache()` ile sarılı
+  `findCurrentUser()`'a taşındı; `getLocale()` ile `(app)` layout aynı
+  istekte aynı satırı tek sorguda paylaşıyor.
+- **`getLocale()` kullanıcı kaydı OLUŞTURMAZ.** `getOrCreateCurrentUser()`
+  yan etkili; kök layout her istekte çalıştığı için onu çağırmak karşılama
+  sayfasının render'ının kullanıcı satırı üretmesi demek olurdu. Ayrı bir
+  test bunu koruyor.
+- Hesaptan gelen değer de `normalizeLocale()`'den geçiyor: kolon `String` ve
+  veritabanına elle bir şey yazılmış olabilir.
+- Düğme çerezi yazıp `router.refresh()` çağırdıktan **sonra** PATCH'i arkada
+  gönderiyor; beklemek arayüzü bir ağ isteği boyunca duraklatırdı. Hata
+  yutuluyor (çıkışta 401 normal), konsola düşüyor.
+- **Yeni E2E testi asıl boşluğu kapatıyor:** birim testleri hesabı yalnızca
+  mock'la gösterebiliyor. Test giriş yapmış kullanıcıda dili değiştiriyor,
+  **yalnızca `locale` çerezini** siliyor (hepsi silinse Clerk oturumu da
+  giderdi) ve sayfanın hâlâ İngilizce geldiğini doğruluyor — o bilgi artık
+  yalnızca veritabanından gelebilir.
+- 408 birim / 27 E2E.
+
 ### İngilizce sözlük (Faz 11.4d-1)
 - 231 kodun İngilizcesi yazıldı (185 `ui.*` + 46 hata kodu). Uygulama artık
   gerçekten iki dilli.

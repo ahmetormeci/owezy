@@ -22,15 +22,14 @@ Current task:
   Alti asamali plan icin PROGRESS.md'ye bak.
 
 Status:
-  IN_PROGRESS — 11.1 ... 11.4c ve 11.4d-1 bitti. 11.4d-2 baslamadi.
-  11.4d-1 COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
+  IN_PROGRESS — 11.4'UN TAMAMI BITTI (11.4a/b/c/d-1/d-2). Sirada 11.5.
+  11.4d-2 COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
   (11.2 = a125fc3, 11.3 = eb861af, 11.4a = 18abd81, 11.4b = 9b01802,
-   11.4c = 79f1d10)
+   11.4c = 79f1d10, 11.4d-1 = 648b558)
 
-  11.4d NEDEN IKIYE BOLUNDU: tek commit olsaydi 231 metin cevirisi + bir
-  veritabani migration'i + yeni bir API metodu ayni pakette olurdu. Bir test
-  kirildiginda sebebi ucunun arasinda aramak gerekirdi. 11.4'un dorde
-  bolunme gerekcesiyle ayni.
+  DIKKAT - PUSH: 11.4d-2 bir migration iceriyor. Push, vercel-build icindeki
+  "prisma migrate deploy" sayesinde onu PRODUCTION veritabanina uygular.
+  Dev ve E2E veritabanlarina zaten uygulandi.
 
 Completed in this task:
   - 11.1 Yazi tipi hatasi duzeltildi (site Times New Roman'da calisiyordu)
@@ -53,7 +52,9 @@ Completed in this task:
   - 11.4d-1 Goreli zamanlar Intl.RelativeTimeFormat'a devredildi (cogul eki)
   - 11.4d-1 Dil + tema dugmeleri herkese acik dort sayfaya eklendi
   - 11.4d-1 Uc yazim hatasi duzeltildi (kisiden / cikarilsin / kullanildi)
-  - Testler: 396 birim, 26 E2E, tsc + lint temiz
+  - 11.4d-2 User.locale kolonu (nullable) + PATCH /api/v1/me
+  - 11.4d-2 Okuma sirasi cerez -> hesap -> tr; ek sorgu maliyeti sifir
+  - Testler: 408 birim, 27 E2E, tsc + lint temiz
 
 Faz disi (ayni gunlerde yapildi, Faz 11'in parcasi degil):
   - GitHub Actions CI kuruldu (09d0e91): tsc + lint + birim testleri.
@@ -65,33 +66,25 @@ Faz disi (ayni gunlerde yapildi, Faz 11'in parcasi degil):
     sormadigi icin bu temizligin gozlenebilir bir etkisi yok.
 
 Next action:
-  11.4d-2 — Dil tercihi hesapta da saklanir.
+  11.5 — Grup sayfasi hiyerarsisi.
 
-  Yapilacak, SIRASIYLA:
-    1. User.locale kolonu: String? (NULLABLE, varsayilansiz).
-       @default("tr") YAZMA - mevcut her kullanicinin Turkce SECTIGINI iddia
-       ederdi. Tercihin yoklugu gercek bir bilgi.
-    2. Migration UC veritabanina:
-         dev        -> npx prisma migrate dev --name add_user_locale
-         e2e        -> npm run db:migrate:e2e
-         production -> OTOMATIK, vercel-build icinde "prisma migrate deploy"
-       Yani elle iki komut; ucuncusu push ile kendiliginden gidiyor.
-    3. getLocale(): cerez yoksa hesap tercihine bak. Sira cerez -> hesap -> tr.
+  Karar ZATEN ALINDI ve yazildi: ADR-016. Uygulanmadi.
+  Ozet: "senin durumun" panelinin gorsel agirligi digerlerinden belirgin
+  buyuk olacak, bakiyenin isareti sayfanin tonunu belirleyecek. Bugun bes
+  ozdes kart var; "Senin durumun" ile "Kaydedilen odemeler" goze esit
+  onemde ve hicbiri duyulmuyor.
 
-       TEHLIKE: getOrCreateCurrentUser() KAYIT OLUSTURUYOR. Kok layout'tan
-       cagrilirsa karsilama sayfasinin render'i kullanici satiri yaratir.
-       Salt-okuma sorgusu kullan: auth() -> clerkId -> findUnique, yalnizca
-       locale alani. Ve YALNIZCA cerez yoksa - cikis yapmis ziyaretcide
-       hic sorgu olmamali.
-    4. PATCH /api/v1/me - govde { locale: "tr" | "en" }, Zod ile dogrulanir.
-       Dil dugmesi once cerezi yazar (aninda calisir, cikista da calisir),
-       sonra bu ucu cagirir. Uc basarisiz olursa gorunur bir sey bozulmaz;
-       hata yutulur, toast gosterilmez (bkz. ADR-019).
+  Dosya: src/app/(app)/groups/[groupId]/page.tsx
 
-  Dikkat: E2E testleri Turkce metin bekliyor. Varsayilan Turkce kaldigi
-  surece 26 test degismeden gecmeli.
+  Tasarim onerisi ONCE sunulmali - ADR-016 NE yapilacagini soyluyor ama
+  duzenin kendisi (hangi kart nerede, mobilde nasil siralanacak)
+  kararlastirilmadi.
 
-  Dikkat: E2E_DATABASE_URL ile DATABASE_URL asla ayni olmamali.
+  Sonra: 11.6 Karsilama, formlar, bos durumlar, mobil.
+
+  Dikkat: E2E testleri Turkce metin ve mevcut secicilere dayaniyor.
+  Grup sayfasi 11 testin ugradigi yer - duzen degisiminde en cok orasi
+  kirilir. Degisiklikten sonra npm run test:e2e sart.
 
 Blocked by:
   Yok.
@@ -105,8 +98,8 @@ Onaylanmis kararlar (Faz 11 icin):
 Verify with:
   npx tsc --noEmit
   npm run lint
-  npm test          # beklenen: 396
-  npm run test:e2e  # beklenen: 26, ~5 dk, kosarken dosyalara dokunma
+  npm test          # beklenen: 408
+  npm run test:e2e  # beklenen: 27, ~5 dk, kosarken dosyalara dokunma
 
   E2E notu: ~5 dk'dan cok daha uzun suren bir kosuda hatalara guvenme.
   net::ERR_NETWORK_IO_SUSPENDED gibi isletim sistemi seviyesi hatalar makine

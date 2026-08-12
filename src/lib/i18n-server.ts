@@ -9,25 +9,40 @@ import "server-only";
 import { cookies } from "next/headers";
 import { translate, type MessageParams } from "@/lib/messages";
 import { LOCALE_COOKIE, normalizeLocale, type Locale } from "@/lib/locale";
+import { findCurrentUser } from "@/lib/auth";
 import type { Translator } from "@/lib/i18n";
 
 /**
- * Istegin dili.
+ * Istegin dili. Sira: CEREZ -> HESAP TERCIHI -> varsayilan.
  *
- * Cerezden okunuyor; URL'de dil segmenti yok (ADR-017). Bu, sunucunun da
- * istemcinin de ayni degeri gorebilecegi tek yer: localStorage sunucuya
- * ulasmaz, Accept-Language ise kullanicinin SECIMI degil tarayici ayaridir.
+ * Neden cerez once: cerez "bu cihazda, su an" cevabidir. Kullanici bir
+ * cihazda dili degistirdiginde o cihaz oyle kalmali; hesap tercihi ONCE
+ * gelseydi cerezin hicbir anlami olmazdi. Hesap, cerezi olmayan YENI bir
+ * cihaz icin yedek.
  *
- * Gelen deger normalizeLocale'den geciyor - cerez kullanicinin kontrolunde
- * ve ham hali bicimlendiricilere verilemez (gerekcesi locale.ts'te).
+ * URL'de dil segmenti yok (ADR-017): cerez, sunucunun da istemcinin de ayni
+ * degeri gorebilecegi tek yer. localStorage sunucuya ulasmaz, Accept-Language
+ * ise kullanicinin SECIMI degil tarayici ayaridir.
  *
- * NOT: cookies() bir "request-time API"; okuyan rota dinamik render'a gecer.
- * Bu projede zaten her rota dinamik (Clerk her istegi sunucuda calistiriyor),
- * yani olculebilir bir kaybi yok - build ciktisiyla dogrulandi.
+ * MALIYET: hesap sorgusu yalnizca cerez YOKKEN yapiliyor, ve findCurrentUser
+ * cache()'li - ayni istekte (app) layout da ayni satiri istedigi icin net ek
+ * sorgu sayisi sifir. Cikis yapmis ziyaretcide auth() bos donuyor, sorgu hic
+ * calismiyor.
+ *
+ * KAYIT OLUSTURMAZ. Burada getOrCreateCurrentUser() cagrilamaz: o fonksiyon
+ * yan etkili ve karsilama sayfasinin render'i kullanici satiri uretirdi.
  */
 export async function getLocale(): Promise<Locale> {
   const store = await cookies();
-  return normalizeLocale(store.get(LOCALE_COOKIE)?.value);
+  const fromCookie = store.get(LOCALE_COOKIE)?.value;
+  if (fromCookie) {
+    return normalizeLocale(fromCookie);
+  }
+
+  const user = await findCurrentUser();
+  // Hesaptaki deger de dogrulamadan geciyor: kolon String ve veritabanina
+  // elle yazilmis bir deger olabilir.
+  return normalizeLocale(user?.locale);
 }
 
 export async function getTranslate(): Promise<Translator> {

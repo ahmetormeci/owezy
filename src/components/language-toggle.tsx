@@ -51,6 +51,21 @@ export function LanguageToggle() {
     // istekle birlikte gidiyor; istemci state'i (acik pencereler, form
     // icerigi) korunuyor - tam sayfa yenileme bunlari silerdi.
     router.refresh();
+
+    // Tercihi hesaba da yaz: baska bir cihazda cerez olmayacak.
+    //
+    // BEKLENMIYOR (await yok): gorunen isi cerez zaten yapti, refresh() de
+    // basladi. Bunu beklemek arayuzu bir ag istegi boyunca duraklatirdi.
+    // Hata da yutuluyor - cikis yapmis kullanicida 401 gelmesi normal ve
+    // kullanicinin gordugu hicbir sey bozulmuyor. Sessizce kaybolmasin diye
+    // konsola dusuyor.
+    void fetch("/api/v1/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locale: target }),
+    }).catch((error) => {
+      console.warn("Dil tercihi hesaba yazilamadi", error);
+    });
   }
 
   return (

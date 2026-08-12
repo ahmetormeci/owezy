@@ -14,7 +14,9 @@
  * her zaman ayni ciktiyi verir. Boylece test edilebilir kaliyorlar ve hem
  * sunucuda hem istemcide ayni sonucu uretiyorlar.
  */
-export type Locale = "tr" | "en";
+export const SUPPORTED_LOCALES = ["tr", "en"] as const;
+
+export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
 export const DEFAULT_LOCALE: Locale = "tr";
 
@@ -33,5 +35,5 @@ export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
  * olurdu. Beyaz liste disindaki her sey varsayilana duser.
  */
 export function normalizeLocale(value: string | null | undefined): Locale {
-  return value === "en" ? "en" : DEFAULT_LOCALE;
+  return SUPPORTED_LOCALES.includes(value as Locale) ? (value as Locale) : DEFAULT_LOCALE;
 }

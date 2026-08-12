@@ -84,6 +84,17 @@ model User {
   // o bizim satirimizin, bu Clerk'teki kaydin zamani.
   clerkUpdatedAt DateTime?
 
+  // Arayuz dili tercihi ("tr" / "en").
+  //
+  // NULLABLE ve VARSAYILANSIZ, bilerek: @default("tr") olsaydi mevcut her
+  // kullanicinin Turkce SECTIGINI iddia ederdi, oysa hicbiri secmedi.
+  // null = "tercih belirtmedi" ve bu gercek bir bilgi - okuma sirasi
+  // cerez -> hesap -> varsayilan (ADR-019), null olan hesap sirayi bozmuyor.
+  //
+  // Degerin dogrulanmasi uygulamada: normalizeLocale() beyaz liste uyguluyor.
+  // Kolon String cunku dil listesi buyudukce migration gerektirmesin.
+  locale String?
+
   // Bu kullanicinin olusturdugu gruplar
   createdGroups Group[] @relation("GroupCreatedBy")
 

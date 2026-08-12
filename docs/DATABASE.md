@@ -26,6 +26,17 @@ indexli (UNIQUE **değil** — hesap silmede anonimleştirme çakışma yaratmas
 webhook olaylarında eski veriyle üzerine yazmayı engeller. Bizim `updatedAt`
 alanımızdan farklıdır (o bizim satırımızın zamanı).
 
+`locale` — arayüz dili tercihi (`"tr"` / `"en"`). **Nullable ve
+varsayılansız**, bilerek: `@default("tr")` mevcut her kullanıcının Türkçe
+*seçtiğini* iddia ederdi, oysa hiçbiri seçmedi. `null` = "tercih belirtmedi"
+ve okuma sırası bunu doğal karşılıyor: çerez → hesap → varsayılan (ADR-019).
+
+Kolon `String`, enum değil — dil listesi büyüdüğünde migration gerektirmesin.
+Doğrulama uygulamada: `normalizeLocale()` beyaz liste uyguluyor ve **hem
+çerezden hem veritabanından** gelen değeri aynı kapıdan geçiriyor. Ham değer
+`Intl`'e ulaşırsa `RangeError` fırlatır ve sunucuda render edilen sayfa 500
+verir.
+
 ### Group
 Tek para birimi taşır (`@db.Char(3)`). Oluşturulduktan sonra
 **değiştirilemez** — mevcut harcama ve ödeme kayıtlarıyla tutarlılık için.
@@ -127,6 +138,7 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260722161707_init` | 9 tablo, 5 enum, tüm index'ler + elle yazılmış kısıt/trigger bloğu |
 | `20260811074141_add_user_clerk_updated_at` | `User.clerkUpdatedAt` (nullable) |
 | `20260811120730_notification_types` | `NotificationType` 6 değere çıktı, `Notification(userId, createdAt)` index'i |
+| `20260812085643_add_user_locale` | `User.locale` (nullable, varsayılansız). Tek satır: `ALTER TABLE "User" ADD COLUMN "locale" TEXT;` — tablo yeniden yazılmıyor |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 [DECISIONS.md](DECISIONS.md) ADR-012.

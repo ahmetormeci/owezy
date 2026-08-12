@@ -13,8 +13,8 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 396 | ✅ tümü geçiyor |
-| E2E (Playwright) | 26 | ✅ tümü geçiyor |
+| Birim (Vitest) | 408 | ✅ tümü geçiyor |
+| E2E (Playwright) | 27 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -170,7 +170,7 @@ eşit genişlikli rakamlar.
 | 11.4b | **DONE** | Arayüzdeki gömülü metinler sözlüğe taşınır |
 | 11.4c | **DONE** | Dil çerezden okunur, `formatMoney`'e geçirilir, dil düğmesi |
 | 11.4d-1 | **DONE** | İngilizce sözlük + herkese açık sayfalara dil düğmesi |
-| 11.4d-2 | TODO | `User.locale` migration + hesap tercihi + `PATCH /api/v1/me` |
+| 11.4d-2 | **DONE** | `User.locale` migration + hesap tercihi + `PATCH /api/v1/me` |
 | 11.5 | TODO | Grup sayfası hiyerarşisi |
 | 11.6 | TODO | Karşılama, formlar, boş durumlar, mobil |
 
@@ -253,10 +253,24 @@ yapmamış ziyaretçi dili değiştiremez hale gelirdi.
 
 Üç yazım hatası düzeltildi (`kisiden`, `cikarilsin`, `kullanildi`).
 
-**Test:** 396 birim / 26 E2E.
+**11.4d-2'de yapıldı:** `User.locale` kolonu (nullable, varsayılansız) ve
+`PATCH /api/v1/me`. Okuma sırası çerez → hesap → `tr`; çerez "bu cihazda, şu
+an" cevabı, hesap yeni bir cihaz için yedek.
+
+Naif uygulama her isteğe bir sorgu eklerdi: çerezi olmayan giriş yapmış
+kullanıcı = düğmeye hiç basmamış herkes. `getOrCreateCurrentUser`'ın okuma
+adımı `cache()` ile sarılı `findCurrentUser()`'a taşındı; `getLocale()` ile
+`(app)` layout aynı istekte aynı satırı **tek sorguda** paylaşıyor. Net ek
+maliyet sıfır, çıkış yapmış ziyaretçide hiç sorgu yok.
+
+`getLocale()` **kayıt oluşturmaz** — `getOrCreateCurrentUser()` yan etkili ve
+kök layout'tan çağrılsaydı karşılama sayfasının render'ı kullanıcı satırı
+üretirdi. Ayrı bir test bunu koruyor.
+
+**Test:** 408 birim / 27 E2E.
 **Commit:** `a125fc3` (11.2), `eb861af` (11.3), `18abd81` (11.4a),
-`9b01802` (11.4b), `79f1d10` (11.4c) — beşi de push edildi.
-11.4d-1 henüz commitlenmedi.
+`9b01802` (11.4b), `79f1d10` (11.4c), `648b558` (11.4d-1) — altısı da push
+edildi. 11.4d-2 henüz commitlenmedi.
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce
 geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahalıdır.

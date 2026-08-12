@@ -1,6 +1,27 @@
+import { cache } from "react";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+
+/**
+ * Oturumdaki kullanicinin kaydini OKUR. Yoksa null doner - OLUSTURMAZ.
+ *
+ * NEDEN AYRI: getOrCreateCurrentUser() yan etkili, kayit yaratabiliyor.
+ * Yalnizca "bu kullanicinin dil tercihi ne" diye soran bir yerin kayit
+ * yaratmasi kabul edilemez; kok layout her istekte calisiyor ve karsilama
+ * sayfasinin render'i kullanici satiri uretirdi.
+ *
+ * cache() ile sarili: React ayni istek icinde ikinci cagriyi veritabanina
+ * goturmuyor. Bu sayede getLocale() ile (app) layout ayni istekte ayni
+ * satiri iki kez cekmiyor - dil tercihini okumanin net maliyeti sifir.
+ */
+export const findCurrentUser = cache(async () => {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) {
+    return null;
+  }
+  return prisma.user.findUnique({ where: { clerkId } });
+});
 
 /**
  * Clerk oturumundaki kullaniciyi bizim User tablomuza baglar.
@@ -20,7 +41,9 @@ export async function getOrCreateCurrentUser() {
     return null;
   }
 
-  const existing = await prisma.user.findUnique({ where: { clerkId } });
+  // Okuma adimi findCurrentUser'a devredildi: ayni istekte getLocale() de
+  // ayni satiri istiyorsa iki sorgu degil bir sorgu oluyor.
+  const existing = await findCurrentUser();
   if (existing) {
     return existing;
   }
