@@ -63,7 +63,6 @@ kez bakma fırsatıdır.
 - **"Sıradaki adaylardan" birini kullanıcı görev vermeden uygulama.**
   PROGRESS.md'deki aday listesi bir plan değil, seçenek listesidir.
 - **Mevcut bir mimari kararı değiştirecek bir şey yapmadan önce sor.**
-- Kullanıcıdan geçmişi özetlemesini isteme.
 
 ## Çalışma ritmi
 
@@ -72,8 +71,13 @@ Kullanıcı bu sırayı bekliyor; atlanması istenmiyor:
 1. **Önce tasarım.** Ne yapılacağını, seçenekleri ve gerekçeleri yaz.
 2. **Onay bekle.** Onay almadan kod yazma.
 3. **Uygula.**
-4. **Doğrula:** `npx tsc --noEmit`, `npm run lint`, `npm test`
-   (E2E'yi ilgilendiren değişiklikte `npm run test:e2e`).
+4. **Doğrula:** `npx tsc --noEmit`, `npm run lint`, `npm test`.
+   E2E'yi ilgilendiren değişiklikte **commit öncesi tam koşu şart**:
+   `npm run test:e2e`. Geliştirme turlarında daraltabilirsin —
+   `npx playwright test e2e/expenses.spec.ts` ya da
+   `npx playwright test -g "yuzdeli harcama"`; `setup` projesi yine çalışır,
+   yalnızca kapsam daralır. Şema değiştiyse önce `npm run db:migrate:e2e`.
+   **Şüphe varsa tam koşu.**
 5. **Commit** — yalnızca kullanıcı isteyince.
 
 Kullanıcı beginner seviyesinde bir geliştirici; **neden** öyle yapıldığını
@@ -98,5 +102,9 @@ Bunlar tartışılmış ve karara bağlanmıştır (gerekçeler DECISIONS.md'de)
 - Üç ayrı veritabanı: geliştirme, E2E, production. `E2E_DATABASE_URL` ile
   `DATABASE_URL` **asla** aynı olmamalı — `e2e/db-cleanup.ts` aynıysa
   çalışmayı reddeder.
-- E2E koşusu ~5 dakika sürer ve gerçek bir dev sunucusu başlatır.
+- Tam E2E koşusu ~5–6 dakika sürer ve gerçek bir dev sunucusu başlatır (3100).
   **Koşu sürerken proje dosyalarına dokunma.**
+- E2E çıktısındaki `[WebServer]` satırları dev sunucusunun stderr'i: Clerk'in
+  "development keys" uyarısı ve tarayıcı kapanınca çıkan `ECONNRESET` /
+  `Error: aborted` gürültüdür. Playwright'ta `stdout` zaten kapalı; `stderr`
+  **bilerek açık** çünkü gerçek sunucu hataları da oradan geliyor.

@@ -147,34 +147,11 @@ Kurallar:
 
 ## Dokümantasyon güncelleme kuralı
 
-Her önemli feature/bug/faz tamamlandığında, **commit ile aynı turda**:
+Hafıza hiyerarşisi (kod > doküman > konuşma), `CURRENT_TASK.md`'nin baştan
+yazılma kuralı ve "kullanıcının demesini bekleme" [AGENTS.md](../AGENTS.md)'de.
+Bayatlık kontrolü komutu `CURRENT_TASK.md`'nin kendi başlık yorumunda.
 
-**Hafıza hiyerarşisi** — çelişki halinde aşağıdaki her satır bir üsttekini
-geçersiz kılar:
-
-```
-Konuşma geçmişi   →  yardımcı, kaybolabilir
-docs/*.md         →  asıl hafıza
-Repository + git  →  GERÇEK DURUM
-```
-
-Bir doküman kodla çelişiyorsa **kod doğrudur**: önce repoyu doğrula, sonra
-dokümanı düzelt. Dokümanda yazan durumu varsayımla değiştirme.
-
-`CURRENT_TASK.md` **geçmişi anlatmaz.** Sabit, kısa bir operasyonel durum
-dosyasıdır (`Current task` / `Status` / `Completed in this task` /
-`Next action` / `Blocked by`). Yeni görev başlarken **baştan yazılır**,
-alta eklenmez; biten işin ayrıntısı CHANGELOG.md ve PROGRESS.md'ye taşınır.
-
-Bayat olup olmadığı dosyanın içindeki bir işaretten değil, **git'ten**
-sorulur — bir dosya kendi commit'inin hash'ini içeremez:
-
-```bash
-git log --oneline $(git log -1 --format=%H -- docs/CURRENT_TASK.md)..HEAD -- src prisma
-```
-
-Çıktı boşsa dosya güncel. Commit listeliyorsa önce repoyu doğrula, sonra
-dosyayı düzelt.
+Burada yalnızca hangi değişikliğin hangi dosyaya dokunduğu var:
 
 | Dosya | Ne zaman |
 |---|---|
@@ -185,5 +162,3 @@ dosyayı düzelt.
 | [DATABASE.md](DATABASE.md) | Şema/migration değişince |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Katman/akış değişince |
 | [CONVENTIONS.md](CONVENTIONS.md) | Yeni bir kural benimsenince |
-
-Kullanıcının "dokümanı güncelle" demesi beklenmez.

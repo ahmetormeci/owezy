@@ -8,7 +8,8 @@
 
 Grup içindeki ortak harcamaları kaydeden, kimin kime ne kadar borçlu olduğunu
 hesaplayan ve borçların kapatılmasını takip eden bir web uygulaması
-(Splitwise benzeri). Arayüz dili Türkçe.
+(Splitwise benzeri). Arayüz **Türkçe ve İngilizce**; dil çerezden, o yoksa
+hesaptan okunur (`User.locale`).
 
 **Canlı:** https://split-app-mauve.vercel.app
 
@@ -26,6 +27,7 @@ hesaplayan ve borçların kapatılmasını takip eden bir web uygulaması
 | Bildirimler (6 olay, zil menüsü) | ✅ |
 | Clerk webhook ile kullanıcı senkronizasyonu | ✅ |
 | Hesap silme (anonimleştirme) | ✅ |
+| İki dil (TR/EN), açık/koyu tema, avatarlar | ✅ |
 
 ## Teknoloji stack'i
 
@@ -38,8 +40,8 @@ hesaplayan ve borçların kapatılmasını takip eden bir web uygulaması
 | ORM | Prisma 7.9.0 + `@prisma/adapter-neon` | |
 | Kimlik doğrulama | Clerk 7.5.22 | |
 | Doğrulama | Zod 4.4.3 | sunucu ve istemci aynı şemayı paylaşır |
-| Birim test | Vitest | 342 test |
-| E2E test | Playwright | 24 test, 3 gerçek kullanıcı |
+| Birim test | Vitest | sayı: PROGRESS.md |
+| E2E test | Playwright | 3 gerçek Clerk kullanıcısı; sayı: PROGRESS.md |
 | Hata takibi | Sentry (`@sentry/nextjs` 10.70) | |
 | Hosting | Vercel | |
 
