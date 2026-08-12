@@ -345,6 +345,16 @@ karar vermemiştir.
   bir `localization` prop'u kabul ediyor; verilmediği için Clerk varsayılan
   diliyle render ediliyor. Uygulamanın kendi metinleri Türkçe, formun içi
   İngilizce — aynı ekranda iki dil. 11.4d-1'de fark edildi.
+- **`createGroupSchema` desteklenmeyen para birimini kabul ediyor.**
+  `currency: z.string().length(3)` üç harfli **her** kodu geçiriyor ve
+  `POST /api/v1/groups` onu doğrudan `createGroup`'a veriyor. Oysa
+  `formatMoney` / `parseMoney` her para biriminin **iki ondalık basamağı**
+  olduğunu varsayıyor (`/100`, `% 100`). TRY ve USD için doğru — ürünün
+  kapsamı da bu ikisi — ama API'den `JPY` (sıfır ondalık) ile grup
+  oluşturulabiliyor ve o grupta tutarlar **100 kat küçük** görünür.
+  Arayüzden ulaşılamıyor (form `currency` göndermiyor), API'den ulaşılabiliyor.
+  Çözüm şemayı desteklenen listeye daraltmak; ISO 4217 exponent tablosu
+  **gereksiz**, kapsam iki para birimi.
 - `PublicControls` konumunu `fixed` ile kendisi belirliyor. Dar ve kısa bir
   ekranda üstteki kartla çakışabilir. **11.6'nın listesindeydi, yapılmadı** —
   ölçülmedi de; kalan tek 11.6 maddesi bu.
