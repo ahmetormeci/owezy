@@ -10,7 +10,6 @@ import { formatMoney, formatSignedMoney } from "@/lib/money";
 import type { Locale } from "@/lib/locale";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EditGroupDialog } from "@/components/edit-group-dialog";
 import { ExpenseList } from "@/components/expense-list";
 import { SettlementList } from "@/components/settlement-list";
@@ -21,19 +20,13 @@ import { getLocale, getTranslate } from "@/lib/i18n-server";
 // dark:text-emerald-400" idi). Anlam tokenlari kullaniliyor: --credit
 // "alacak", --debt "borc". Iki tema icin ayarlari globals.css'te; burasi
 // yalnizca HANGI ANLAM oldugunu soyluyor, rengin ne oldugunu degil.
+//
+// ADR-021: odesmis durumda RENK YOK. Tutar notr griye duser - sayfadaki tek
+// renk kaynagi bakiyenin isareti oldugu icin, isaret yoksa renk de yok.
 function balanceToneClass(amount: number) {
   if (amount > 0) return "text-credit";
   if (amount < 0) return "text-debt";
   return "text-muted-foreground";
-}
-
-// Bakiye kartinin zemini. Tutar yaziyi okumadan once "iyi mi kotu mu"
-// bilgisini veriyor; rakam da ayrica isaretli yaziliyor, yani bilgi renge
-// bagimli degil.
-function balanceSurfaceClass(amount: number) {
-  if (amount > 0) return "bg-credit-soft";
-  if (amount < 0) return "bg-debt-soft";
-  return "bg-muted";
 }
 
 type SuggestedTransfer = { fromUserId: string; toUserId: string; amount: number };
@@ -70,23 +63,50 @@ function SuggestionGroup({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {title}
-      </p>
-      <ul className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
+      <p className="label">{title}</p>
+      <ul className="flex flex-col gap-1">
         {transfers.map((transfer) => (
           <li
             key={`${transfer.fromUserId}-${transfer.toUserId}`}
-            className="flex items-center justify-between gap-4 text-sm"
+            className="flex items-center justify-between gap-4"
           >
-            <span className="truncate font-medium">{nameOf(transfer) ?? fallbackName}</span>
+            <span className="truncate">{nameOf(transfer) ?? fallbackName}</span>
             <span className="money shrink-0 font-medium">
               {formatMoney(transfer.amount, currency, locale)}
             </span>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/**
+ * Bolum basligi: kucuk etiket + altinda cizgi + istege bagli bir baglanti.
+ *
+ * ADR-021: bolumleri buyuk baslikla degil, kucuk bir etiketle ayiriyoruz.
+ * Kart basliklarinin yerini bu aldi - kutu kalkinca basligin da kutu
+ * icinde durmasi gerekmiyor.
+ */
+function SectionHead({
+  title,
+  action,
+}: {
+  title: string;
+  action?: { href: string; label: string };
+}) {
+  return (
+    <div className="mb-1 flex items-center justify-between gap-4 border-b border-border pb-2">
+      <span className="label">{title}</span>
+      {action ? (
+        <Link
+          href={action.href}
+          className="text-xs text-muted-foreground transition-colors hover:text-brand"
+        >
+          {action.label} →
+        </Link>
+      ) : null}
     </div>
   );
 }
@@ -150,15 +170,18 @@ export default async function GroupDetailPage({
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col">
       <div className="flex flex-col gap-1">
-        <Link href="/groups" className="text-sm text-muted-foreground hover:underline">
+        <Link
+          href="/groups"
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
           {t("ui.back_to_groups")}
         </Link>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold">{group.name}</h1>
+              <h1 className="text-[1.0625rem] font-semibold">{group.name}</h1>
               {group.role === "OWNER" ? (
                 <EditGroupDialog
                   groupId={groupId}
@@ -168,17 +191,29 @@ export default async function GroupDetailPage({
               ) : null}
             </div>
             {group.description ? (
-              <p className="text-muted-foreground">{group.description}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{group.description}</p>
             ) : null}
           </div>
-          {/* Baslikta yalnizca "Harcama ekle" kaldi: gruba her gun yapilan
-              sey bu. "Odeme kaydet" durum panelinin icine tasindi - odesmek
-              bakiyeye bagli bir eylem ve yerinin borcun yani olmasi daha
-              tutarli. */}
+          {/* Eylemler TEK YERDE toplandi. 11.5'te "Odeme kaydet" durum
+              panelinin icindeydi; onaylanan tasarimda (ADR-021) panel
+              yalnizca bilgi tasiyor, eylemler baslikta duruyor. Yogun bir
+              duzende dagilmis butonlar araniyor. */}
           <div className="flex shrink-0 gap-2">
+            <RecordSettlementDialog
+              groupId={groupId}
+              currency={currency}
+              currentUserId={user.id}
+              counterparties={balances
+                .filter((balance) => balance.userId !== user.id)
+                .map((balance) => ({
+                  userId: balance.userId,
+                  displayName: balance.displayName,
+                }))}
+              suggestedTransfers={suggestedTransfers}
+            />
             <Link
               href={`/groups/${groupId}/expenses/new`}
-              className={buttonVariants()}
+              className={buttonVariants({ size: "sm" })}
             >
               {t("ui.add_expense")}
             </Link>
@@ -186,85 +221,82 @@ export default async function GroupDetailPage({
         </div>
       </div>
 
-      {/* KADEME 1 - Durum paneli.
+      {/* Durum paneli.
           Kullanici bu sayfaya tek soruyla geliyor: alacakli miyim, borclu
-          muyum, ne kadar? (ADR-016). Bu yuzden bir kart degil, sayfanin
-          baskin blogu: tam genislik, text-display rakam, isarete gore zemin.
-          "Kime odeyecegim" de icinde - o, ayni sorunun ikinci yarisi ve
-          bugun ayri bir kartta esit agirliktaydi. */}
-      <section
-        className={`flex flex-col gap-5 rounded-xl p-6 ${balanceSurfaceClass(myAmount)}`}
-      >
+          muyum, ne kadar? (ADR-016). Panel bunu cevapliyor ve yaninda
+          "kime odeyecegim"i tasiyor - o, ayni sorunun ikinci yarisi.
+
+          ADR-021: dolu renk alani DEGIL. Zemin bir tik kalkiyor, ayrimi
+          1 px kenarlik yapiyor. Sayfadaki tek renk tutarin isaretinde ve
+          odesmis durumda o da griye dusuyor. */}
+      <section className="mt-4 grid gap-5 rounded-lg border border-border bg-card p-5 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-9 sm:p-6">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">
-            {t("ui.your_status")}
-          </p>
+          <p className="label">{t("ui.your_status")}</p>
           <p
-            className={`money text-display font-semibold ${balanceToneClass(myAmount)}`}
+            className={`money text-figure mt-1.5 font-medium ${balanceToneClass(myAmount)}`}
           >
             {myAmount === 0
-              ? t("ui.settled_up")
+              ? formatMoney(0, currency, locale)
               : formatSignedMoney(myAmount, currency, locale)}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          {/* Odesmis durumda rakam artik "0,00 ₺" yaziyor (once "Odestin"
+              kelimesi yazardi) - sayi uc durumda da kahraman kaliyor.
+              "Odestin" alt satira indi; hem daha dogru bir yer hem de o
+              kelimeyi iki E2E testi ariyor. */}
+          <p className="mt-1.5 text-muted-foreground">
             {myAmount > 0
               ? t("ui.owed_to_you")
               : myAmount < 0
                 ? t("ui.you_owe")
-                : t("ui.no_open_balance")}
+                : t("ui.settled_up")}
           </p>
         </div>
 
-        {iPay.length === 0 && iReceive.length === 0 ? (
-          suggestedTransfers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("ui.everyone_settled")}</p>
-          ) : null
-        ) : (
-          <div className="flex flex-col gap-4">
-            <SuggestionGroup
-              title={t("ui.you_should_pay")}
-              transfers={iPay}
-              // Odeyen benim; satirda gorulmesi gereken KARSI TARAF.
-              nameOf={(transfer) => nameByUserId.get(transfer.toUserId)}
-              currency={currency}
-              locale={locale}
-              fallbackName={t("ui.unknown_user")}
-            />
-            <SuggestionGroup
-              title={t("ui.will_be_paid_to_you")}
-              transfers={iReceive}
-              nameOf={(transfer) => nameByUserId.get(transfer.fromUserId)}
-              currency={currency}
-              locale={locale}
-              fallbackName={t("ui.unknown_user")}
-            />
-          </div>
-        )}
-
-        <div>
-          <RecordSettlementDialog
-            groupId={groupId}
-            currency={currency}
-            currentUserId={user.id}
-            counterparties={balances
-              .filter((balance) => balance.userId !== user.id)
-              .map((balance) => ({
-                userId: balance.userId,
-                displayName: balance.displayName,
-              }))}
-            suggestedTransfers={suggestedTransfers}
-          />
+        {/* Genis ekranda dikey cizgiyle ayriliyor, darda yataya doner.
+            min-w-0 SART: grid cocuklari varsayilan olarak icerigin altina
+            inmeyi reddediyor ve uzun bir isim sutunu tasirir (11.5'te bu
+            hata yasandi). */}
+        <div className="min-w-0 border-t border-line-soft pt-4 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-9">
+          {iPay.length === 0 && iReceive.length === 0 ? (
+            // Bu ayrim onemli: benim odemem kalmamis olabilir ama GRUPTA
+            // baskalarinin borcu duruyor olabilir. O durumda "herkes
+            // odesmis" demek duz yalan olur.
+            suggestedTransfers.length === 0 ? (
+              <p className="text-muted-foreground">{t("ui.everyone_settled")}</p>
+            ) : (
+              <p className="text-muted-foreground">{t("ui.no_open_balance")}</p>
+            )
+          ) : (
+            <div className="flex flex-col gap-4">
+              <SuggestionGroup
+                title={t("ui.you_should_pay")}
+                transfers={iPay}
+                // Odeyen benim; satirda gorulmesi gereken KARSI TARAF.
+                nameOf={(transfer) => nameByUserId.get(transfer.toUserId)}
+                currency={currency}
+                locale={locale}
+                fallbackName={t("ui.unknown_user")}
+              />
+              <SuggestionGroup
+                title={t("ui.will_be_paid_to_you")}
+                transfers={iReceive}
+                nameOf={(transfer) => nameByUserId.get(transfer.fromUserId)}
+                currency={currency}
+                locale={locale}
+                fallbackName={t("ui.unknown_user")}
+              />
+            </div>
+          )}
         </div>
       </section>
 
       {/* KADEME 2 - Sayfanin govdesi. Gruba gelmenin ikinci sebebi:
           "ne harcandi". */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("ui.expenses")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ExpenseList
+      {/* Sayfanin govdesi. Kart kalkti: bolumu artik kucuk bir etiket ve
+          altindaki cizgi ayiriyor (ADR-021). */}
+      <section className="mt-8">
+        <SectionHead title={t("ui.expenses")} />
+        <ExpenseList
             groupId={groupId}
             currency={currency}
             currentUserId={user.id}
@@ -285,40 +317,33 @@ export default async function GroupDetailPage({
                 shareAmount: participant.shareAmount,
               })),
             }))}
-          />
-        </CardContent>
-      </Card>
+        />
+      </section>
 
-      {/* KADEME 3 - Referans bilgisi, gunluk akisin parcasi degil.
+      {/* Referans bilgisi, gunluk akisin parcasi degil.
           Genis ekranda yan yana: sayfa kisaliyor ve goz ikincil bolgeye
           gectigini anliyor. items-start olmasa iki sutun birbirinin boyuna
-          uzardi. */}
-      <div className="grid gap-6 md:grid-cols-2 md:items-start">
-      {/* min-w-0 SART. Grid cocuklarinin varsayilan min-width degeri "auto",
+          uzardi.
+
+          min-w-0 SART. Grid cocuklarinin varsayilan min-width degeri "auto",
           yani icerigin min-content genisliginin altina inmeyi reddediyorlar.
           Uzun bir isim (ornegin e-posta adresi) sutunu zorla genisletiyor ve
           icerideki truncate hic devreye giremiyor - sayfa yatay kayiyor.
-          Onceki duzende bu kartlar flex-column cocuguydu, o yuzden sorun
-          gorunmuyordu. Mobil ekran goruntusunde yakalandi. */}
-      <Card className="min-w-0">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle>{t("ui.members_and_balances")}</CardTitle>
-          <Link
-            href={`/groups/${groupId}/members`}
-            className={buttonVariants({ variant: "ghost", size: "sm" })}
-          >
-            {t("ui.manage_members")}
-          </Link>
-        </CardHeader>
-        <CardContent>
-          <ul className="flex flex-col divide-y divide-border">
+          Mobil ekran goruntusunde yakalandi (11.5). */}
+      <div className="mt-8 grid gap-8 md:grid-cols-2 md:items-start">
+      <section className="min-w-0">
+        <SectionHead
+          title={t("ui.members_and_balances")}
+          action={{ href: `/groups/${groupId}/members`, label: t("ui.manage_members") }}
+        />
+          <ul className="flex flex-col">
             {balances.map((balance) => (
               <li
                 key={balance.userId}
-                className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                className="flex items-center justify-between gap-4 border-b border-line-soft py-2.5 last:border-b-0"
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="truncate font-medium">{balance.displayName}</span>
+                  <span className="truncate">{balance.displayName}</span>
                   {roleByUserId.get(balance.userId) === "OWNER" ? (
                     <Badge variant="secondary">{t("ui.role_owner")}</Badge>
                   ) : null}
@@ -334,68 +359,55 @@ export default async function GroupDetailPage({
               </li>
             ))}
           </ul>
-        </CardContent>
-      </Card>
+      </section>
 
-        <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-8">
           {/* Beni ilgilendirmeyen transferler. Panelde degiller cunku sayfa
               "senin durumun" sorusuna cevap veriyor; ama grubun takas plani
               dogru bir bilgi ve bir yerde durmali. Bos oldugunda hic
-              gorunmuyor - "Onerilen odemeler: yok" diyen bir kart, olmayan
+              gorunmuyor - "Onerilen odemeler: yok" diyen bir bolum, olmayan
               bir isi varmis gibi gosterirdi. */}
           {otherTransfers.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("ui.other_suggested_payments")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="flex flex-col gap-2">
-                  {otherTransfers.map((transfer) => (
-                    <li
-                      key={`${transfer.fromUserId}-${transfer.toUserId}`}
-                      className="flex items-center justify-between gap-4 text-sm"
-                    >
-                      <span className="min-w-0 truncate">
-                        <span className="font-medium">
-                          {nameByUserId.get(transfer.fromUserId) ?? t("ui.unknown_user")}
-                        </span>
-                        {" → "}
-                        <span className="font-medium">
-                          {nameByUserId.get(transfer.toUserId) ?? t("ui.unknown_user")}
-                        </span>
-                      </span>
-                      <span className="money shrink-0 font-medium">
-                        {formatMoney(transfer.amount, currency, locale)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <section className="min-w-0">
+              <SectionHead title={t("ui.other_suggested_payments")} />
+              <ul className="flex flex-col">
+                {otherTransfers.map((transfer) => (
+                  <li
+                    key={`${transfer.fromUserId}-${transfer.toUserId}`}
+                    className="flex items-center justify-between gap-4 border-b border-line-soft py-2.5 last:border-b-0"
+                  >
+                    <span className="min-w-0 truncate">
+                      {nameByUserId.get(transfer.fromUserId) ?? t("ui.unknown_user")}
+                      {" → "}
+                      {nameByUserId.get(transfer.toUserId) ?? t("ui.unknown_user")}
+                    </span>
+                    <span className="money shrink-0 font-medium">
+                      {formatMoney(transfer.amount, currency, locale)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ) : null}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("ui.settlements")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SettlementList
-                groupId={groupId}
-                currency={currency}
-                currentUserId={user.id}
-                nameByUserId={Object.fromEntries(nameByUserId)}
-                settlements={settlementData.settlements.map((settlement) => ({
-                  id: settlement.id,
-                  fromUserId: settlement.fromUserId,
-                  toUserId: settlement.toUserId,
-                  amount: settlement.amount,
-                  note: settlement.note,
-                  settledAt: settlement.settledAt.toISOString(),
-                  createdById: settlement.createdById,
-                }))}
-              />
-            </CardContent>
-          </Card>
+          <section className="min-w-0">
+            <SectionHead title={t("ui.settlements")} />
+            <SettlementList
+              groupId={groupId}
+              currency={currency}
+              currentUserId={user.id}
+              nameByUserId={Object.fromEntries(nameByUserId)}
+              settlements={settlementData.settlements.map((settlement) => ({
+                id: settlement.id,
+                fromUserId: settlement.fromUserId,
+                toUserId: settlement.toUserId,
+                amount: settlement.amount,
+                note: settlement.note,
+                settledAt: settlement.settledAt.toISOString(),
+                createdById: settlement.createdById,
+              }))}
+            />
+          </section>
         </div>
       </div>
     </div>

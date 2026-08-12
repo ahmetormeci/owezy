@@ -40,13 +40,13 @@ export default async function AppLayout({
           donmek icin basa kadar kaydirmak zorunda kalmasin.
           Yari saydam zemin + backdrop-blur, altindan gecen icerigin
           okunmasini engelliyor ama sayfanin devam ettigini de belli ediyor. */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4">
+      <header className="sticky top-0 z-30 border-b border-line-soft bg-background/85 backdrop-blur">
+        <div className="mx-auto flex h-12 w-full max-w-4xl items-center justify-between px-4">
           <Link
             href="/groups"
-            className="flex items-center gap-2 rounded-md font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="flex items-center gap-2 rounded-md text-[0.8125rem] font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            <BrandMark className="size-5 text-brand" />
+            <BrandMark className="size-4 text-brand" />
             {t("ui.app_name")}
           </Link>
           <div className="flex items-center gap-1">
@@ -57,7 +57,7 @@ export default async function AppLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">{children}</main>
     </div>
   );
 }

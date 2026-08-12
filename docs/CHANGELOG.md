@@ -10,6 +10,36 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-12
 
+### Görsel dil: token'lar ve grup sayfası (Faz 11.6, ilk parça)
+- **Token katmanı ADR-021'e göre yeniden yazıldı.** Nötr kroma 0,004–0,03'ten
+  0,001–0,009'a indi (sayfa artık maviye çalmıyor); `--credit`/`--debt`
+  doygunluğu 0,113/0,15 → 0,085/0,105; `--radius` 10px → 8px; gövde metni
+  16px → 14px.
+- **Zemin/panel ilişkisi tersine döndü.** Eskiden zemin renkli, kart saf
+  beyazdı ve kart öne çıkıyordu. Şimdi zemin neredeyse beyaz, panel bir tık
+  koyu ve ayrımı gölge değil **1 px kenarlık** taşıyor.
+- **`money` artık mono.** Bu bir para uygulaması ve tutarlar bugüne kadar
+  açıklama metniyle aynı yazı tipinde duruyordu. Geist Mono zaten paketteydi,
+  ek maliyeti yok.
+- Yeni `label` utility'si (bölüm başlıklarının tek biçimi) ve `--line-soft`
+  token'ı. İkincisinin sebebi: liste satırlarını ayıran çizgi bölüm
+  sınırlarıyla aynı ağırlıkta olursa liste bir tabloya dönüşüyor.
+- Gövde boyutu `html` yerine **`body`**'de değişti; kök ölçeği değiştirmek
+  rem tabanlı bütün boşlukları da kaydırırdı.
+- **Grup sayfasından `Card` kalktı.** Bölümler küçük bir etiket ve altındaki
+  çizgiyle ayrılıyor. Durum paneli ince kenarlıklı bir panel: geniş ekranda
+  solda tutar, sağda öneriler, arada dikey çizgi.
+- Ödeşmiş durumda rakam artık `0,00 ₺` yazıyor; "Ödeştin" alt satıra indi.
+  Sayı üç durumda da kahraman kalıyor.
+- **Düzeltilen mantık hatası:** öneri sütunu "Herkes ödeşmiş durumda" diyordu.
+  Ama kullanıcının ödemesi bitmiş olup **grupta başkalarının borcu duruyor**
+  olabilir. Artık ayrım var: grupta hiç transfer yoksa "herkes ödeşmiş",
+  varsa "bu grupta açık hesabın yok".
+- 408 birim / 27 E2E değişmeden geçti.
+- **Bilinen sapma:** tutardaki para birimi sembolü rakamlarla aynı boyutta;
+  onaylanan mockup'ta ayrı ve soluktu. `formatSignedMoney` tek metin
+  döndürdüğü için sembol ayrı biçimlendirilemiyor.
+
 ### Grup sayfası hiyerarşisi (Faz 11.5)
 - Altı eşit ağırlıklı bloktan **üç kademeli dört bloğa** inildi (ADR-016).
   Önceki düzende "Senin durumun" ile "Kaydedilen ödemeler" göze eşit

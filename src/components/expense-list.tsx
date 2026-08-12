@@ -164,7 +164,7 @@ export function ExpenseList({
 
   return (
     <div className="flex flex-col gap-4">
-      <ul className="flex flex-col divide-y divide-border">
+      <ul className="flex flex-col">
         {expenses.map((expense) => {
           const myShare = expense.participants.find(
             (participant) => participant.userId === currentUserId,
@@ -174,11 +174,14 @@ export function ExpenseList({
           const canModify = expense.createdById === currentUserId;
 
           return (
-            <li key={expense.id} className="py-3 first:pt-0 last:pb-0">
+            <li
+              key={expense.id}
+              className="border-b border-line-soft py-2.5 last:border-b-0"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{expense.description}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     {formatDate(new Date(expense.expenseDate), locale)} ·{" "}
                     {t(EXPENSE_CATEGORY_CODES[expense.category])} ·{" "}
                     {t("ui.paid_by", {
@@ -186,7 +189,7 @@ export function ExpenseList({
                     })}
                   </p>
                   {canModify ? (
-                    <div className="mt-1 flex gap-1">
+                    <div className="-ml-2 mt-0.5 flex gap-0.5">
                       <Link
                         href={`/groups/${groupId}/expenses/${expense.id}/edit`}
                         className={buttonVariants({ variant: "ghost", size: "sm" })}
@@ -206,7 +209,7 @@ export function ExpenseList({
                     {formatMoney(expense.amount, currency, locale)}
                   </p>
                   {myShare ? (
-                    <p className="money text-sm text-muted-foreground">
+                    <p className="money mt-0.5 text-xs text-muted-foreground">
                       {t("ui.your_share_amount", {
                         amount: formatMoney(myShare.shareAmount, currency, locale),
                       })}

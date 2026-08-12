@@ -116,17 +116,20 @@ export function SettlementList({
   }
 
   return (
-    <ul className="flex flex-col divide-y divide-border">
+    <ul className="flex flex-col">
       {settlements.map((settlement) => {
         // Iptal yetkisi kaydi olusturan kisidedir (harcamalardaki kuralla ayni).
         // Buton da buna gore gosteriliyor; asil kontrol her zaman sunucuda.
         const canCancel = settlement.createdById === currentUserId;
 
         return (
-          <li key={settlement.id} className="py-3 first:pt-0 last:pb-0">
+          <li
+            key={settlement.id}
+            className="border-b border-line-soft py-2.5 last:border-b-0"
+          >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="truncate text-sm">
+                <p className="truncate">
                   <span className="font-medium">
                     {nameByUserId[settlement.fromUserId] ?? t("ui.unknown_user")}
                   </span>
@@ -135,12 +138,12 @@ export function SettlementList({
                     {nameByUserId[settlement.toUserId] ?? t("ui.unknown_user")}
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {formatDate(new Date(settlement.settledAt), locale)}
                   {settlement.note ? ` · ${settlement.note}` : ""}
                 </p>
                 {canCancel ? (
-                  <div className="mt-1">
+                  <div className="-ml-2 mt-0.5">
                     <CancelSettlementButton groupId={groupId} settlementId={settlement.id} />
                   </div>
                 ) : null}

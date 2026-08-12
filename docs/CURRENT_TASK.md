@@ -22,8 +22,17 @@ Current task:
   Alti asamali plan icin PROGRESS.md'ye bak.
 
 Status:
-  IN_PROGRESS — 11.1 ... 11.5 bitti. Geriye yalnizca 11.6 kaldi.
-  11.6'nin GORSEL YONU onaylandi (ADR-021), uygulama baslamadi.
+  IN_PROGRESS — 11.1 ... 11.5 bitti. 11.6 BASLADI.
+  11.6'da biten: adim 1 (tokenlar), adim 2 (tipografi olcegi) ve adim 3'un
+  ILK SAYFASI (grup sayfasi + (app) basligi + iki liste bileseni).
+  Kalan: Card deseni hala gruplar listesi, uyeler, davet, harcama formu,
+  odeme penceresi, karsilama ve giris/kayit sayfalarinda duruyor.
+
+  BILINEN SAPMA (mockup'tan): tutardaki para birimi sembolu rakamlarla ayni
+  boyutta. Mockup'ta ayri ve soluktu. formatSignedMoney tek metin
+  donduruyor, sembol ayri bicimlendirilemiyor. Duzeltmek money.ts'in
+  imzasini degistirmek demek - o dosya bu projenin en hassas yeri (40+ test)
+  ve kullanici karari olmadan dokunulmadi.
   (11.2 = a125fc3, 11.3 = eb861af, 11.4a = 18abd81, 11.4b = 9b01802,
    11.4c = 79f1d10, 11.4d-1 = 648b558, 11.4d-2 = 2289e0f)
 

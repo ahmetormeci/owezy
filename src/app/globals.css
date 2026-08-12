@@ -13,7 +13,8 @@
 
    Uc renk ailesi var ve ucu de FARKLI is yapar:
 
-     --primary  kobalt   -> kimlik. Buton, link, odak halkasi.
+     --primary  kobalt   -> kimlik. Buton, link, odak halkasi. BASKA HICBIR
+                            YER: zemin boyamaz, genis alan kaplamaz.
      --credit   yesil    -> "sana borclu" (alacak)
      --debt     kiremit  -> "borclusun"
 
@@ -21,10 +22,25 @@
    uygulamada zaten ANLAM tasiyor. Kimlik rengi de yesil olsaydi kullanici
    yesil bir butonu "alacak" sanabilirdi. Kobalt ucuncu bir aile aciyor.
 
+   ADR-021 (Faz 11.6): ARAYUZUN KARAKTERI RENKTEN GELMIYOR.
+   Yogunluktan, sac teli cizgilerden ve kesin tipografiden geliyor. Bunun
+   tokenlara yansimasi:
+
+     - Notrler neredeyse tam gri. Eskiden 0.004-0.03 arasi chroma vardi ve
+       sayfa maviye caliyordu; simdi 0.001-0.009. Meyil hala kobalt tonunda
+       (265) ama gozle secilmiyor.
+     - --credit ve --debt DOYGUNLUGU DUSTU (0.113/0.15 -> ~0.09/0.105).
+       Renk hala anlam tasiyor, ama bagirmiyor. Odesmis durumda ekranda
+       renk kalmiyor - o zaman tutar --muted-foreground'a duser.
+     - --card artik SAF BEYAZ DEGIL. Eskiden zemin hafif renkliydi ve kart
+       beyaz olarak one cikiyordu; simdi tam tersi: zemin neredeyse beyaz,
+       panel bir tik koyu. Golge degil KENARLIK ayiriyor.
+     - --radius 0.625rem -> 0.5rem. Yastik gibi degil, kesin koseler.
+
    Renkler oklch cinsinden: oklch(aciklik chroma ton).
    - aciklik 0..1  -> kontrasti buradan ayarliyoruz
    - chroma  0..~0.4 -> doygunluk
-   - ton     0..360  -> renk acisi (258 = kobalt, 162 = yesil, 25 = kiremit)
+   - ton     0..360  -> renk acisi (258-265 = kobalt, 165 = yesil, 27 = kiremit)
    Faydasi: aciklik gozle algilanan aciklikla ortusuyor, yani ayni "aciklik"
    degerindeki iki renk gercekten ayni parlaklikta gorunuyor. HSL'de bu
    dogru degil (mavi ve sari ayni L'de cok farkli parlar).
@@ -44,14 +60,18 @@
   /* Tipografi olcegi: buyuk basliklar icin iki basamak. Tailwind'in hazir
      olcegini DEGISTIRMIYORUZ, uzerine ekliyoruz - mevcut text-sm/text-2xl
      kullanimlari oldugu gibi calismaya devam ediyor.
-     Buyudukce harf araligi daraliyor (-0.02 / -0.03em): kucuk puntoda
-     ferah duran aralik, buyuk puntoda dagilmis gorunur. */
-  --text-figure: 2.25rem;
-  --text-figure--line-height: 1.1;
-  --text-figure--letter-spacing: -0.02em;
-  --text-display: 3rem;
+     Buyudukce harf araligi daraliyor: kucuk puntoda ferah duran aralik,
+     buyuk puntoda dagilmis gorunur.
+
+     ADR-021 ile ikisi de KUCULDU. Bakiye 2.25rem -> 2.375rem gibi duruyor
+     ama asil degisiklik display'de: 3rem (48px) bir afis olcegiydi.
+     Bir arayuzde en buyuk sey bir rakam olabilir, ama afis olmamali. */
+  --text-figure: 2.375rem;
+  --text-figure--line-height: 1;
+  --text-figure--letter-spacing: -0.045em;
+  --text-display: 2.75rem;
   --text-display--line-height: 1.05;
-  --text-display--letter-spacing: -0.03em;
+  --text-display--letter-spacing: -0.035em;
 
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
@@ -59,6 +79,12 @@
   --color-credit-soft: var(--credit-soft);
   --color-debt: var(--debt);
   --color-debt-soft: var(--debt-soft);
+  /* Iki ayri cizgi agirligi. --border bolumleri ayirir, --line-soft ise
+     liste satirlarini: bir listede her satirin arasindaki cizgi, bolum
+     sinirlariyla ayni agirlikta olursa liste bir tabloya donusuyor. */
+  --color-line-soft: var(--line-soft);
+  --color-panel: var(--panel);
+  --color-panel-strong: var(--panel-strong);
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -104,39 +130,52 @@
   --brand-strong: oklch(0.412 0.166 258);
 
   /* Notrler.
-     Hicbiri tam gri degil: hepsinde 0.004-0.03 arasi bir chroma ve kobaltin
-     tonu (258-262) var. Tek tek bakinca fark edilmez; yan yana gelince sayfa
-     "secilmis" gorunur, tam notr gri ise "varsayilan" gorunur.
-     Kart saf beyaz kaldi: zemin hafif renkli olunca kartlar kendiliginden
-     one cikiyor, golge eklemeye gerek kalmiyor. */
-  --background: oklch(0.985 0.004 258);
-  --foreground: oklch(0.185 0.019 262);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.185 0.019 262);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.185 0.019 262);
+     Neredeyse tam gri, cok hafif kobalt meyilli (ton 265, chroma 0.001-0.009).
+     Meyil gozle secilmiyor ama tam notr grinin "varsayilan" hissini de
+     vermiyor.
+
+     ZEMIN/PANEL ILISKISI TERSINE DONDU. Eskiden zemin hafif renkli, kart saf
+     beyazdi - kart one cikiyordu. Simdi zemin neredeyse beyaz, panel bir tik
+     koyu ve ayrimi 1 px kenarlik tasiyor. Sebep ADR-021: kutu degil cizgi. */
+  --background: oklch(0.995 0.001 265);
+  --foreground: oklch(0.255 0.008 265);
+  --card: oklch(0.981 0.002 265);
+  --card-foreground: oklch(0.255 0.008 265);
+  --popover: oklch(0.995 0.001 265);
+  --popover-foreground: oklch(0.255 0.008 265);
   --primary: var(--brand);
-  --primary-foreground: oklch(0.985 0.008 258);
-  --secondary: oklch(0.955 0.007 258);
-  --secondary-foreground: oklch(0.26 0.028 262);
-  --muted: oklch(0.955 0.007 258);
-  --muted-foreground: oklch(0.505 0.021 262);
-  --accent: oklch(0.945 0.019 258);
-  --accent-foreground: oklch(0.32 0.088 260);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.968 0.003 265);
+  --secondary-foreground: oklch(0.255 0.008 265);
+  --muted: oklch(0.968 0.003 265);
+  --muted-foreground: oklch(0.545 0.008 265);
+  /* Vurgu (hover zemini) artik kobalta calmiyor: notr bir kalkma.
+     Kobaltin isi kimlik, hover degil. */
+  --accent: oklch(0.968 0.003 265);
+  --accent-foreground: oklch(0.255 0.008 265);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.905 0.009 258);
-  --input: oklch(0.905 0.009 258);
+  --border: oklch(0.918 0.004 265);
+  --input: oklch(0.918 0.004 265);
   --ring: var(--brand);
+
+  --panel: oklch(0.981 0.002 265);
+  --panel-strong: oklch(0.968 0.003 265);
+  --line-soft: oklch(0.949 0.003 265);
 
   /* Anlam renkleri.
      Borc rengi saf kirmizi DEGIL, kiremit: saf kirmizi --destructive'in
      (silme butonu) rengi. Borclu olmak bir hata degil, o yuzden "tehlike"
      gibi gorunmemeli. Ayrimi ton degil doygunluk tasiyor: destructive
-     chroma 0.245, borc 0.15 - biri bagirir, digeri soyler. */
-  --credit: oklch(0.475 0.113 162);
-  --credit-soft: oklch(0.962 0.026 162);
-  --debt: oklch(0.505 0.15 25);
-  --debt-soft: oklch(0.965 0.022 25);
+     chroma 0.245, borc 0.105 - biri bagirir, digeri soyler.
+
+     ADR-021 ile doygunluk bir kademe daha dustu (0.113/0.15 -> 0.085/0.105).
+     Renk sayfadaki TEK renk oldugu icin artik daha az doygunlukla da
+     seciliyor; eski degerler yan yana gelince ekran alarm paneline
+     donuyordu. */
+  --credit: oklch(0.545 0.085 165);
+  --credit-soft: oklch(0.965 0.018 165);
+  --debt: oklch(0.545 0.105 27);
+  --debt-soft: oklch(0.968 0.016 27);
 
   --chart-1: oklch(0.487 0.176 258);
   --chart-2: oklch(0.62 0.13 232);
@@ -144,14 +183,16 @@
   --chart-4: oklch(0.58 0.15 285);
   --chart-5: oklch(0.68 0.12 320);
 
-  --radius: 0.625rem;
-  --sidebar: oklch(0.975 0.006 258);
-  --sidebar-foreground: oklch(0.185 0.019 262);
+  /* 0.625rem (10px) -> 0.5rem (8px). Kucuk bir sayi ama sayfanin
+     tamamindaki his degisiyor: 10px yastik, 8px kesin. */
+  --radius: 0.5rem;
+  --sidebar: oklch(0.981 0.002 265);
+  --sidebar-foreground: oklch(0.255 0.008 265);
   --sidebar-primary: var(--brand);
-  --sidebar-primary-foreground: oklch(0.985 0.008 258);
-  --sidebar-accent: oklch(0.945 0.019 258);
-  --sidebar-accent-foreground: oklch(0.32 0.088 260);
-  --sidebar-border: oklch(0.905 0.009 258);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.968 0.003 265);
+  --sidebar-accent-foreground: oklch(0.255 0.008 265);
+  --sidebar-border: oklch(0.918 0.004 265);
   --sidebar-ring: var(--brand);
 }
 
@@ -164,30 +205,38 @@
 
   /* Zemin notr siyah degil, kobalta calan cok koyu bir lacivert.
      Saf siyah zeminde beyaz metin fazla sert kontrast yapar ve uzun
-     listelerde goz yorar. */
-  --background: oklch(0.168 0.016 262);
-  --foreground: oklch(0.955 0.006 258);
-  --card: oklch(0.212 0.018 262);
-  --card-foreground: oklch(0.955 0.006 258);
-  --popover: oklch(0.212 0.018 262);
-  --popover-foreground: oklch(0.955 0.006 258);
+     listelerde goz yorar.
+     Katmanlar: zemin 0.148 -> panel 0.176 -> vurgu 0.205. Ucu de birbirine
+     yakin; koyu temada ayirimi kontrast degil, KENARLIK yapiyor. */
+  --background: oklch(0.148 0.006 265);
+  --foreground: oklch(0.945 0.003 265);
+  --card: oklch(0.176 0.007 265);
+  --card-foreground: oklch(0.945 0.003 265);
+  --popover: oklch(0.176 0.007 265);
+  --popover-foreground: oklch(0.945 0.003 265);
   --primary: var(--brand);
-  --primary-foreground: oklch(0.16 0.03 262);
-  --secondary: oklch(0.268 0.019 262);
-  --secondary-foreground: oklch(0.955 0.006 258);
-  --muted: oklch(0.268 0.019 262);
-  --muted-foreground: oklch(0.715 0.021 262);
-  --accent: oklch(0.298 0.038 260);
-  --accent-foreground: oklch(0.93 0.03 258);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.205 0.008 265);
+  --secondary-foreground: oklch(0.945 0.003 265);
+  --muted: oklch(0.205 0.008 265);
+  --muted-foreground: oklch(0.695 0.008 265);
+  --accent: oklch(0.205 0.008 265);
+  --accent-foreground: oklch(0.945 0.003 265);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.99 0.02 258 / 12%);
-  --input: oklch(0.99 0.02 258 / 16%);
+  /* Yari saydam degil DUZ renk: saydam kenarlik ust uste binen yuzeylerde
+     (panel icinde panel) koyulasip kendini belli ediyordu. */
+  --border: oklch(0.258 0.009 265);
+  --input: oklch(0.258 0.009 265);
   --ring: var(--brand);
 
-  --credit: oklch(0.775 0.143 162);
-  --credit-soft: oklch(0.33 0.062 162);
-  --debt: oklch(0.715 0.135 27);
-  --debt-soft: oklch(0.32 0.062 27);
+  --panel: oklch(0.176 0.007 265);
+  --panel-strong: oklch(0.205 0.008 265);
+  --line-soft: oklch(0.212 0.008 265);
+
+  --credit: oklch(0.735 0.095 165);
+  --credit-soft: oklch(0.255 0.042 165);
+  --debt: oklch(0.705 0.105 27);
+  --debt-soft: oklch(0.252 0.045 27);
 
   --chart-1: oklch(0.685 0.152 258);
   --chart-2: oklch(0.74 0.12 232);
@@ -195,13 +244,13 @@
   --chart-4: oklch(0.7 0.14 285);
   --chart-5: oklch(0.78 0.11 320);
 
-  --sidebar: oklch(0.198 0.017 262);
-  --sidebar-foreground: oklch(0.955 0.006 258);
+  --sidebar: oklch(0.176 0.007 265);
+  --sidebar-foreground: oklch(0.945 0.003 265);
   --sidebar-primary: var(--brand);
-  --sidebar-primary-foreground: oklch(0.16 0.03 262);
-  --sidebar-accent: oklch(0.298 0.038 260);
-  --sidebar-accent-foreground: oklch(0.93 0.03 258);
-  --sidebar-border: oklch(0.99 0.02 258 / 12%);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.205 0.008 265);
+  --sidebar-accent-foreground: oklch(0.945 0.003 265);
+  --sidebar-border: oklch(0.258 0.009 265);
   --sidebar-ring: var(--brand);
 }
 
@@ -211,9 +260,25 @@
    virguller ayni sutunda durur, goz tutarlari karsilastirabilir.
    Varsayilan (orantili) rakamlarda her satir kayar ve liste dagilir. */
 @utility money {
+  /* ADR-021: sayilar MONO. Bu bir para uygulamasi ve tutarlar bugune kadar
+     aciklama metniyle ayni yazi tipinde, ayni sesle konusuyordu. Geist Mono
+     zaten pakette (kok layout yukluyor), yani bu satirin ek maliyeti yok. */
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   white-space: nowrap;
+}
+
+/* Bolum basliklarinin tek bicimi: kucuk, buyuk harf, aralikli, sessiz.
+   ADR-021'in "yogunluk" kurali burada yasiyor - bolumleri buyuk baslikla
+   degil, kucuk bir etiketle ve altindaki cizgiyle ayiriyoruz. Utility
+   olmasinin sebebi 11.6'da her sayfada tekrarlanacak olmasi. */
+@utility label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 @layer base {
@@ -222,6 +287,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Govde 14px. Tailwind'in kok olcegini (16px) DEGISTIRMIYORUZ - onu
+       degistirmek rem tabanli tum bosluklari da kaydirirdi. Yalnizca
+       varsayilan metin boyutu iniyor; text-* sinifi tasiyan her sey kendi
+       boyutunda kaliyor. */
+    font-size: 0.875rem;
   }
   html {
     @apply font-sans;

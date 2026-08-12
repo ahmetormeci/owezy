@@ -359,6 +359,12 @@ hizalanması detay değil, ürünün karakteridir.
 > 2. **"Ödeme kaydet" başlıktan panele indi.** Başlıkta yalnızca "Harcama
 >    ekle" kaldı — rutin eylem o. Ödeşmek bakiyeye bağlı bir eylem ve
 >    yerinin borcun yanı olması daha tutarlı.
+>
+> **DÜZELTME (Faz 11.6).** İkinci madde geri alındı: "Ödeme kaydet" yeniden
+> başlıkta, "Harcama ekle"nin yanında. Sebebi ADR-021'in getirdiği yoğun
+> düzen — panel artık yalnızca bilgi taşıyor ve eylemler tek yerde duruyor.
+> Dağılmış butonlar sıkışık bir arayüzde aranıyor. Birinci madde (önerilerin
+> panele girip filtrelenmesi) **ayakta**.
 
 ---
 
