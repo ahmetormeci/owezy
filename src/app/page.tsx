@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { BrandMark } from "@/components/brand-mark";
+import { PublicControls } from "@/components/public-controls";
 import { formatMoney, formatSignedMoney } from "@/lib/money";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
 
@@ -31,6 +32,7 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
+      <PublicControls />
       <div className="flex flex-col items-center gap-5 text-center">
         <div className="flex items-center gap-3">
           <BrandMark className="size-10 text-brand" />

@@ -13,8 +13,8 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 389 | ✅ tümü geçiyor |
-| E2E (Playwright) | 24 | ✅ tümü geçiyor |
+| Birim (Vitest) | 396 | ✅ tümü geçiyor |
+| E2E (Playwright) | 26 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -169,7 +169,8 @@ eşit genişlikli rakamlar.
 | 11.4a | **DONE** | API hata kodları (görünür değişiklik yok) |
 | 11.4b | **DONE** | Arayüzdeki gömülü metinler sözlüğe taşınır |
 | 11.4c | **DONE** | Dil çerezden okunur, `formatMoney`'e geçirilir, dil düğmesi |
-| 11.4d | TODO | İngilizce sözlük + `User.locale` migration |
+| 11.4d-1 | **DONE** | İngilizce sözlük + herkese açık sayfalara dil düğmesi |
+| 11.4d-2 | TODO | `User.locale` migration + hesap tercihi + `PATCH /api/v1/me` |
 | 11.5 | TODO | Grup sayfası hiyerarşisi |
 | 11.6 | TODO | Karşılama, formlar, boş durumlar, mobil |
 
@@ -238,9 +239,24 @@ fonksiyona indirdi.
 `?? "Bilinmeyen"` ve karşılama sayfasında sabit `360,00 ₺`. Üçü de Türkçe
 karakter içermediği için 11.4b'nin taramasına takılmamıştı.
 
-**Test:** 389 birim / 24 E2E.
+**11.4d-1'de yapıldı:** 231 kodun İngilizcesi yazıldı. `DICTIONARIES` tipinden
+`Partial` **kaldırıldı** — eksik bir çeviri artık derleme hatası (ADR-020).
+
+Göreli zamanlar (`3 dakika önce`) sözlükten çıkıp `Intl.RelativeTimeFormat`'a
+geçti: `{count} dakika önce` şablonu İngilizcede `1 minutes ago` yazardı.
+Türkçede çoğul eki olmadığı için şablon çalışıyordu. `numeric: "always"` ile
+Türkçe çıktı birebir aynı kaldı — mevcut testler değişmeden geçti.
+
+Dil ve tema düğmeleri herkese açık dört sayfaya eklendi (`PublicControls`).
+11.4c'nin bilerek bıraktığı boşluk buydu: İngilizce metin geldiği anda giriş
+yapmamış ziyaretçi dili değiştiremez hale gelirdi.
+
+Üç yazım hatası düzeltildi (`kisiden`, `cikarilsin`, `kullanildi`).
+
+**Test:** 396 birim / 26 E2E.
 **Commit:** `a125fc3` (11.2), `eb861af` (11.3), `18abd81` (11.4a),
-`9b01802` (11.4b) — dördü de push edildi. 11.4c henüz commitlenmedi.
+`9b01802` (11.4b), `79f1d10` (11.4c) — beşi de push edildi.
+11.4d-1 henüz commitlenmedi.
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce
 geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahalıdır.
@@ -276,10 +292,6 @@ karar vermemiştir.
   paylardan geri hesaplanmıyor)
 - Optimistic locking yok (ADR-010, mobil aşamasına ertelendi)
 - `schema.prisma` başındaki yorum bloğu güncel değil
-- **Üç yazım hatası** (`e5e69dd`'deki Türkçe karakter dönüşümünden kalmış):
-  "kisiden" → kişiden, "cikarilsin" → çıkarılsın, "kullanildi" → kullanıldı.
-  `messages.ts` içinde `DIKKAT` yorumuyla işaretli. 11.4b çıktıyı bilerek
-  değiştirmediği için düzeltilmedi; tek satırlık ayrı bir iş.
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi
 - **`npm audit`: 10 açık (1 orta, 9 yüksek).** Temiz bir `npm ci` sırasında
@@ -287,11 +299,13 @@ karar vermemiştir.
   geldiği ve gerçekten çalışma zamanına ulaşıp ulaşmadığı belirsiz —
   `npm audit fix --force` çalıştırmadan önce bakılmalı, çünkü `--force`
   büyük sürüm atlayabilir.
-- **Dil düğmesi yalnızca `(app)` başlığında.** Karşılama, giriş ve kayıt
-  sayfalarında yok — o sayfaların başlığı da yok (tema düğmesi de orada değil).
-  İki sözlük de Türkçe olduğu sürece zararsız; 11.4d İngilizce metni getirdiği
-  anda giriş yapmamış kullanıcı dili değiştiremez hale gelir. 11.4d'den önce
-  kapatılmalı.
+- **Clerk'in giriş/kayıt formu Türkçe modda da İngilizce.** `ClerkProvider`
+  bir `localization` prop'u kabul ediyor; verilmediği için Clerk varsayılan
+  diliyle render ediliyor. Uygulamanın kendi metinleri Türkçe, formun içi
+  İngilizce — aynı ekranda iki dil. 11.4d-1'de fark edildi.
+- `PublicControls` konumunu `fixed` ile kendisi belirliyor. Dar ve kısa bir
+  ekranda üstteki kartla çakışabilir; 11.6 bu sayfaları elden geçirirken
+  yeniden değerlendirilmeli.
 - `src/components/ui/dialog.tsx` içinde ekran okuyucuya görünen `"Close"`
   metni sözlükte değil. `ui/` altı shadcn'in ürettiği kod; oraya dokunmak
   ayrı bir karar (yeniden üretimde kaybolur).

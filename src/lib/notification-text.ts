@@ -94,6 +94,28 @@ const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
+const INTL_LOCALES: Record<Locale, string> = { tr: "tr-TR", en: "en-US" };
+const relativeFormatters: Partial<Record<Locale, Intl.RelativeTimeFormat>> = {};
+
+/**
+ * "3 dakika once" / "3 minutes ago".
+ *
+ * NEDEN SOZLUKTE DEGIL: sablon olarak yazilsaydi Ingilizce "1 minutes ago"
+ * derdi. Turkcede cogul eki olmadigi icin "{count} dakika once" her sayi
+ * icin dogruydu; Ingilizcede sayiya gore degisiyor. Intl.RelativeTimeFormat
+ * bu kurali her dil icin kendisi biliyor.
+ *
+ * numeric: "always" bilerek. "auto" olsaydi Turkcede "1 gun once" yerine
+ * "dun", "2 gun once" yerine "evvelsi gun" yazardi - mevcut cikti degisirdi.
+ */
+function relative(locale: Locale, count: number, unit: Intl.RelativeTimeFormatUnit): string {
+  const formatter = (relativeFormatters[locale] ??= new Intl.RelativeTimeFormat(
+    INTL_LOCALES[locale],
+    { numeric: "always" },
+  ));
+  return formatter.format(-count, unit);
+}
+
 /**
  * "3 dakika once" gibi goreli zaman.
  *
@@ -114,13 +136,13 @@ export function formatRelativeTime(
     return t("ui.just_now");
   }
   if (diff < HOUR) {
-    return t("ui.minutes_ago", { count: Math.floor(diff / MINUTE) });
+    return relative(locale, Math.floor(diff / MINUTE), "minute");
   }
   if (diff < DAY) {
-    return t("ui.hours_ago", { count: Math.floor(diff / HOUR) });
+    return relative(locale, Math.floor(diff / HOUR), "hour");
   }
   if (diff < 7 * DAY) {
-    return t("ui.days_ago", { count: Math.floor(diff / DAY) });
+    return relative(locale, Math.floor(diff / DAY), "day");
   }
 
   // Bir haftadan eskisi icin goreli zaman ("38 gun once") okunmuyor; tarihin

@@ -478,3 +478,38 @@ sayfası 500 verirdi.
 11.4d'de `User.locale` geldiğinde durum değişir: o **gerçekten** bir kayıt
 olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 "çıkış yapmış kullanıcı" yolu olarak kalır; okuma sırası çerez → hesap → `tr`.
+
+---
+
+## ADR-020 — Eksik çeviri derleme hatasıdır, sessiz bir geri düşüş değil
+**Tarih:** 2026-08-12 · **Durum:** Kabul edildi
+
+**Karar:** `DICTIONARIES` tipi `Record<Locale, Record<MessageCode, string>>`.
+`Partial` **kullanılmaz**. Yeni bir metin eklerken her iki dilin karşılığı
+aynı anda yazılır; yazılmazsa `tsc` patlar.
+
+**Neden:** Sözlük bir haritadır ve haritanın en kolay bozulma biçimi
+**eksilmedir**. `Partial` ile, unutulan bir kod çalışma zamanında Türkçeye
+düşerdi: İngilizce bir ekranın ortasında tek bir Türkçe cümle, konsola bir
+uyarı bile düşmeden. Bunu yakalayan tek şey, o ekranı İngilizce açan bir
+insanın gözü olurdu.
+
+Bu, 11.4a'daki fikrin aynısı: `MessageCode` sözlükten **türetildiği** için
+var olmayan bir kodu fırlatmak zaten derleme hatası. Aynı korumayı ikinci
+dile de uyguluyoruz.
+
+**Alternatifler:** `Partial` + eksikleri sayan bir test (test yazılmazsa ya
+da unutulursa koruma yok; tip sistemi bedava ve unutulamaz); eksik çeviride
+konsola uyarı basmak (uyarıyı kimse görmez); İngilizceyi kısmi bırakıp
+zamanla tamamlamak (yarı çevrilmiş bir arayüz, hiç çevrilmemiş olandan daha
+kırık görünür).
+
+**Sonuç:** Bedeli gerçek: yeni bir Türkçe metin eklemek artık İngilizcesini
+de yazmayı zorunlu kılıyor, ve "sonra çeviririm" diye bırakmak mümkün değil.
+Kabul edilen bedel bu.
+
+Tipin garanti **etmediği** bir şey var: yer tutucular. `"{amount} kuruşluk
+alacağı var"` cümlesini `"has a credit"` diye çevirmek derlenir, testler
+geçer ve ekranda tutar kaybolur — cümle hâlâ anlamlı olduğu için fark
+edilmez. `messages.test.ts` içindeki "yer tutucuları iki dilde aynı" testi
+bu boşluğu kapatıyor.

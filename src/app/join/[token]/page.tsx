@@ -4,6 +4,7 @@ import { getInviteStatus } from "@/lib/groups";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AcceptInvite } from "@/components/accept-invite";
+import { PublicControls } from "@/components/public-controls";
 import { getTranslate } from "@/lib/i18n-server";
 import type { MessageCode } from "@/lib/messages";
 
@@ -35,6 +36,7 @@ export default async function JoinPage({
   if (!status.valid) {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
+        <PublicControls />
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
             <h1 className="text-xl font-semibold">{t("ui.invite_unusable")}</h1>
@@ -52,6 +54,7 @@ export default async function JoinPage({
 
   return (
     <div className="flex flex-1 items-center justify-center p-6">
+      <PublicControls />
       <Card className="w-full max-w-md">
         <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
           <h1 className="text-xl font-semibold">

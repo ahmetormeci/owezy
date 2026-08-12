@@ -10,6 +10,36 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-12
 
+### İngilizce sözlük (Faz 11.4d-1)
+- 231 kodun İngilizcesi yazıldı (185 `ui.*` + 46 hata kodu). Uygulama artık
+  gerçekten iki dilli.
+- **`DICTIONARIES` tipinden `Partial` kaldırıldı.** Eksik bir çeviri artık
+  derleme hatası. Öncesinde unutulan bir kod sessizce Türkçeye düşerdi:
+  İngilizce ekranın ortasında tek bir Türkçe cümle, hiçbir uyarı yok
+  (ADR-020).
+- **Göreli zamanlar sözlükten çıktı**, `Intl.RelativeTimeFormat`'a geçti.
+  `{count} dakika önce` şablonu İngilizcede `1 minutes ago` yazardı; Türkçede
+  çoğul eki olmadığı için sorun görünmüyordu. `numeric: "always"` seçildi —
+  `"auto"` olsaydı Türkçede `1 gün önce` yerine `dün` yazardı ve mevcut çıktı
+  değişirdi. Ölçüldü: Türkçe birebir aynı, üç sözlük kodu eksildi.
+- **Dil ve tema düğmeleri herkese açık dört sayfaya eklendi**
+  (`/`, `/sign-in`, `/sign-up`, `/join/[token]`). 11.4c'nin bilerek bıraktığı
+  boşluk buydu: İngilizce metin geldiği anda, giriş yapmamış bir ziyaretçi
+  İngilizce ekranı görüp dili değiştiremez hale gelirdi.
+- **Üç yazım hatası düzeltildi:** "kisiden" → kişiden, "cikarilsin mi" →
+  çıkarılsın mı, "kullanildi" → kullanıldı. `e5e69dd`'deki Türkçe karakter
+  dönüşümünden kalmıştı; 11.4b çıktıyı sabit tutmak için dokunmamıştı.
+- **Yeni test — yer tutucu eşliği.** `tsc` sözlüğün eksiksiz olduğunu
+  garantiliyor ama yer tutucuları garantilemiyor: `"{amount} kuruşluk alacağı
+  var"` cümlesini `"has a credit"` diye çevirmek derlenir, testler geçer ve
+  **ekranda tutar kaybolur** — cümle hâlâ anlamlı olduğu için kimse fark
+  etmez. Test iki dildeki `{...}` kümelerini karşılaştırıyor.
+- **İlk dil E2E testi.** Bugüne kadar dil değiştirmek gözlemlenemiyordu (iki
+  sözlük de Türkçeydi). Artık sınanabilir: karşılama sayfasında TR→EN→TR,
+  yenilemede kalıcılık, ve bozuk çerezin 200 döndürmesi. Giriş gerektirmediği
+  için ikisi toplam 2,4 saniye.
+- 396 birim / 26 E2E.
+
 ### Dil gerçekten okunuyor (Faz 11.4c)
 - `getLocale()` artık `locale` çerezini okuyor. Çerez adı, ömrü (1 yıl),
   `Locale` tipi ve doğrulaması `src/lib/locale.ts`'te — çerezi **istemci**

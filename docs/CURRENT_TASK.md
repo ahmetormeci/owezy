@@ -22,9 +22,15 @@ Current task:
   Alti asamali plan icin PROGRESS.md'ye bak.
 
 Status:
-  IN_PROGRESS — 11.1, 11.2, 11.3, 11.4a, 11.4b, 11.4c bitti. 11.4d baslamadi.
-  11.4c COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
-  (11.2 = a125fc3, 11.3 = eb861af, 11.4a = 18abd81, 11.4b = 9b01802)
+  IN_PROGRESS — 11.1 ... 11.4c ve 11.4d-1 bitti. 11.4d-2 baslamadi.
+  11.4d-1 COMMITLENMEDI: calisma agacinda duruyor, kullanici onayi bekliyor.
+  (11.2 = a125fc3, 11.3 = eb861af, 11.4a = 18abd81, 11.4b = 9b01802,
+   11.4c = 79f1d10)
+
+  11.4d NEDEN IKIYE BOLUNDU: tek commit olsaydi 231 metin cevirisi + bir
+  veritabani migration'i + yeni bir API metodu ayni pakette olurdu. Bir test
+  kirildiginda sebebi ucunun arasinda aramak gerekirdi. 11.4'un dorde
+  bolunme gerekcesiyle ayni.
 
 Completed in this task:
   - 11.1 Yazi tipi hatasi duzeltildi (site Times New Roman'da calisiyordu)
@@ -43,7 +49,11 @@ Completed in this task:
   - 11.4c Tarihler de dile duyarli oldu (dates.ts) - dort yerde "tr-TR" sabitti
   - 11.4c Basliga dil dugmesi; <html lang> artik gercek dili soyluyor
   - 11.4c 11.4b'den kacan uc gomulu metin bulundu ve sozluge tasindi
-  - Testler: 389 birim, 24 E2E, tsc + lint temiz
+  - 11.4d-1 231 kodun Ingilizcesi yazildi; eksik ceviri artik derleme hatasi
+  - 11.4d-1 Goreli zamanlar Intl.RelativeTimeFormat'a devredildi (cogul eki)
+  - 11.4d-1 Dil + tema dugmeleri herkese acik dort sayfaya eklendi
+  - 11.4d-1 Uc yazim hatasi duzeltildi (kisiden / cikarilsin / kullanildi)
+  - Testler: 396 birim, 26 E2E, tsc + lint temiz
 
 Faz disi (ayni gunlerde yapildi, Faz 11'in parcasi degil):
   - GitHub Actions CI kuruldu (09d0e91): tsc + lint + birim testleri.
@@ -55,31 +65,33 @@ Faz disi (ayni gunlerde yapildi, Faz 11'in parcasi degil):
     sormadigi icin bu temizligin gozlenebilir bir etkisi yok.
 
 Next action:
-  11.4d — Ingilizce sozluk + hesap tercihi.
+  11.4d-2 — Dil tercihi hesapta da saklanir.
 
   Yapilacak, SIRASIYLA:
-    1. MESSAGES_EN sozlugu (src/lib/messages.ts). ~190 ui.* + ~48 hata kodu.
-       DICTIONARIES.en su an MESSAGES_TR'yi gosteriyor; orasi degisecek.
-       Tip zaten hazir: eksik birakilan kod derlemede gorunmez ama
-       Partial<Record<...>> oldugu icin calisma zamaninda Turkceye duser.
-    2. User.locale migration - UC veritabanina birden (dev, e2e, production).
-    3. getLocale(): cerez yoksa hesap tercihine bak. Sira: cerez -> hesap -> tr.
-    4. Dil degisince /api/v1/me'ye yazilsin ki cihaz degisince tercih kalsin.
-       Cerez hizli yol olarak kalir (ADR-019).
-    5. Karsilama sayfasina dil dugmesi - AsAGIDAKI BOSLUK bunu gerektiriyor.
+    1. User.locale kolonu: String? (NULLABLE, varsayilansiz).
+       @default("tr") YAZMA - mevcut her kullanicinin Turkce SECTIGINI iddia
+       ederdi. Tercihin yoklugu gercek bir bilgi.
+    2. Migration UC veritabanina:
+         dev        -> npx prisma migrate dev --name add_user_locale
+         e2e        -> npm run db:migrate:e2e
+         production -> OTOMATIK, vercel-build icinde "prisma migrate deploy"
+       Yani elle iki komut; ucuncusu push ile kendiliginden gidiyor.
+    3. getLocale(): cerez yoksa hesap tercihine bak. Sira cerez -> hesap -> tr.
 
-  BOSLUK (11.4c'den kalan, bilerek): dil dugmesi yalnizca (app) basliginda.
-  Karsilama, giris ve kayit sayfalarinda YOK - o sayfalarin basligi da yok
-  ve tema dugmesi de orada degil. Bugun zararsiz cunku iki sozluk de Turkce;
-  11.4d Ingilizce metni getirdigi anda, giris yapmamis bir kullanici
-  Ingilizce ekrani gorup dili degistiremez hale gelir. 11.4d'den once
-  kapatilmali.
+       TEHLIKE: getOrCreateCurrentUser() KAYIT OLUSTURUYOR. Kok layout'tan
+       cagrilirsa karsilama sayfasinin render'i kullanici satiri yaratir.
+       Salt-okuma sorgusu kullan: auth() -> clerkId -> findUnique, yalnizca
+       locale alani. Ve YALNIZCA cerez yoksa - cikis yapmis ziyaretcide
+       hic sorgu olmamali.
+    4. PATCH /api/v1/me - govde { locale: "tr" | "en" }, Zod ile dogrulanir.
+       Dil dugmesi once cerezi yazar (aninda calisir, cikista da calisir),
+       sonra bu ucu cagirir. Uc basarisiz olursa gorunur bir sey bozulmaz;
+       hata yutulur, toast gosterilmez (bkz. ADR-019).
 
-  Dikkat: E2E testleri Turkce metin bekliyor. Varsayilan dil Turkce kaldigi
-  surece 24 test degismeden gecmeli - 11.4c'de gecti.
+  Dikkat: E2E testleri Turkce metin bekliyor. Varsayilan Turkce kaldigi
+  surece 26 test degismeden gecmeli.
 
-  Dikkat: migration UC veritabanina uygulanacak. E2E_DATABASE_URL ile
-  DATABASE_URL asla ayni olmamali.
+  Dikkat: E2E_DATABASE_URL ile DATABASE_URL asla ayni olmamali.
 
 Blocked by:
   Yok.
@@ -93,8 +105,8 @@ Onaylanmis kararlar (Faz 11 icin):
 Verify with:
   npx tsc --noEmit
   npm run lint
-  npm test          # beklenen: 389
-  npm run test:e2e  # beklenen: 24, ~5 dk, kosarken dosyalara dokunma
+  npm test          # beklenen: 396
+  npm run test:e2e  # beklenen: 26, ~5 dk, kosarken dosyalara dokunma
 
   E2E notu: ~5 dk'dan cok daha uzun suren bir kosuda hatalara guvenme.
   net::ERR_NETWORK_IO_SUSPENDED gibi isletim sistemi seviyesi hatalar makine

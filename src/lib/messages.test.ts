@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { MESSAGES_TR, translate } from "@/lib/messages";
+import { MESSAGES_EN, MESSAGES_TR, translate } from "@/lib/messages";
 
 describe("translate", () => {
   it("kodu metne cevirir", () => {
@@ -100,5 +100,65 @@ describe("sozluk butunlugu", () => {
       const closes = (text.match(/\}/g) ?? []).length;
       expect(opens, `${code} yer tutucu parantezleri eslesmiyor`).toBe(closes);
     }
+  });
+});
+
+describe("Ingilizce sozluk", () => {
+  it("kodu Ingilizce metne cevirir", () => {
+    expect(translate("group.not_found", undefined, "en")).toBe("Group not found");
+  });
+
+  it("Ingilizcede de yer tutuculari doldurur", () => {
+    expect(translate("ui.paid_by", { name: "Ayse" }, "en")).toBe("paid by Ayse");
+  });
+
+  it("dil verilmezse Turkce kalir", () => {
+    // Varsayilanin Turkce olmasi 24 E2E testinin dayandigi sey.
+    expect(translate("group.not_found")).toBe("Grup bulunamadı");
+  });
+
+  // ASIL TEST BU. Sozlugun EKSIKSIZ olmasini tsc garantiliyor
+  // (Record<MessageCode, string>), ama yer tutuculari garantilemiyor:
+  // "{amount} kurusluk alacagi var" cumlesini "has a credit" diye cevirmek
+  // derlenir, testler gecer, ve ekranda TUTAR KAYBOLUR. Sayinin dustugunu
+  // kimse fark etmez cunku cumle hala anlamlidir.
+  it("her kodun yer tutuculari iki dilde ayni", () => {
+    const placeholders = (text: string) =>
+      [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
+
+    const mismatched: string[] = [];
+    for (const code of Object.keys(MESSAGES_TR) as (keyof typeof MESSAGES_TR)[]) {
+      const tr = placeholders(MESSAGES_TR[code]);
+      const en = placeholders(MESSAGES_EN[code]);
+      if (tr.join(",") !== en.join(",")) {
+        mismatched.push(`${code}: tr={${tr.join(",")}} en={${en.join(",")}}`);
+      }
+    }
+
+    expect(mismatched, `yer tutucular uyusmuyor:\n${mismatched.join("\n")}`).toEqual([]);
+  });
+
+  it("hicbir Ingilizce metin bos degil", () => {
+    for (const [code, text] of Object.entries(MESSAGES_EN)) {
+      expect(text.trim(), `${code} bos`).not.toBe("");
+    }
+  });
+
+  it("hicbir Ingilizce metin kod gibi gorunmuyor", () => {
+    for (const [code, text] of Object.entries(MESSAGES_EN)) {
+      expect(text, `${code} deger yerine kod iceriyor`).not.toMatch(/^[a-z]+\.[a-z_]+$/);
+    }
+  });
+
+  // Kopyala-yapistir kalintisi: Ingilizce sozluge Turkce metin birakmak.
+  // Turkce'ye ozgu harfler bunun en ucuz kanitidir.
+  it("Ingilizce sozlukte Turkce harf kalmamis", () => {
+    const leftovers: string[] = [];
+    for (const [code, text] of Object.entries(MESSAGES_EN)) {
+      if (/[çğışöüÇĞİŞÖÜ]/.test(text)) {
+        leftovers.push(`${code}: ${text}`);
+      }
+    }
+    expect(leftovers, `Turkce metin kalmis:\n${leftovers.join("\n")}`).toEqual([]);
   });
 });
