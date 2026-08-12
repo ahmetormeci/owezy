@@ -2,8 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { BrandMark } from "@/components/brand-mark";
-import { formatSignedMoney } from "@/lib/money";
-import { getTranslate } from "@/lib/i18n-server";
+import { formatMoney, formatSignedMoney } from "@/lib/money";
+import { getLocale, getTranslate } from "@/lib/i18n-server";
 
 // Karsilama sayfasindaki ornek defter. Gercek veri DEGIL - uygulamanin ne
 // yaptigini bir paragraf yazmak yerine gostermek icin duruyor. Ayni
@@ -15,9 +15,16 @@ const SAMPLE_ROWS = [
   { name: "Zeynep", amount: -12000 },
 ];
 
+// Ornek harcamanin toplami, kurus cinsinden. Ekranda "360,00 ₺" olarak
+// SABIT yaziliydi: Ingilizce arayuzde satirlar "$240.00" olurken baslik
+// "360,00 ₺" kalirdi. Yukaridaki yorum bu defterin gercek kod yolundan
+// gectigini soyluyor; toplam da artik gercekten oradan geciyor.
+const SAMPLE_TOTAL = 36000;
+
 export default async function HomePage() {
   const { userId } = await auth();
   const t = await getTranslate();
+  const locale = await getLocale();
   if (userId) {
     redirect("/groups");
   }
@@ -37,7 +44,9 @@ export default async function HomePage() {
       <div className="w-full max-w-sm rounded-xl bg-card p-4 text-sm ring-1 ring-foreground/10">
         <div className="flex items-baseline justify-between gap-4 border-b border-border pb-3">
           <span className="font-medium">{t("ui.sample_title")}</span>
-          <span className="money text-muted-foreground">360,00 ₺</span>
+          <span className="money text-muted-foreground">
+            {formatMoney(SAMPLE_TOTAL, "TRY", locale)}
+          </span>
         </div>
         <ul className="flex flex-col divide-y divide-border">
           {SAMPLE_ROWS.map((row) => (
@@ -48,7 +57,7 @@ export default async function HomePage() {
                   row.amount > 0 ? "text-credit" : "text-debt"
                 }`}
               >
-                {formatSignedMoney(row.amount)}
+                {formatSignedMoney(row.amount, "TRY", locale)}
               </span>
             </li>
           ))}

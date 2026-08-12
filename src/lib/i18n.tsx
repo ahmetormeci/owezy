@@ -3,10 +3,10 @@
 // Metne erisimin TEK sekli. Bilesenler translate()'i dogrudan cagirmiyor,
 // buradan geciyor.
 //
-// NEDEN: su an dil her yerde "tr". 11.4c'de dil cerezden gelecek. Eger
-// bilesenler translate()'i dogrudan cagirsaydi, o asamada 120 cagri yerini
-// tekrar acip dil parametresi eklemek gerekirdi. Buradaki iki fonksiyonun
-// ICI degisecek, cagiran taraf degismeyecek.
+// NEDEN: dil cerezden geliyor ve kok layout'ta okunuyor. Eger bilesenler
+// translate()'i dogrudan cagirsaydi, ~190 cagri yerinin her birine dil
+// parametresi eklemek gerekirdi. Bu iki fonksiyonun ICI degisti, cagiran
+// taraf hic acilmadi.
 //
 // NEDEN IKI TANE: React'in kendi siniri. Server Component'lar hook
 // kullanamaz - grup sayfasi sunucuda render ediliyor, harcama formu
@@ -17,13 +17,14 @@
 
 import { createContext, useContext, useMemo } from "react";
 import { translate, type MessageParams } from "@/lib/messages";
-import type { Locale } from "@/lib/money";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/locale";
 
 export type Translator = (code: string, params?: MessageParams) => string;
 
-// Varsayilan "tr": saglayici olmadan render edilen bir bilesen bos metin
-// yerine dogru Turkce metni gosterir. 11.4c'de saglayici gercek dili verecek.
-const LocaleContext = createContext<Locale>("tr");
+// Varsayilan deger: saglayici olmadan render edilen bir bilesen (ornegin bir
+// birim testinde) bos metin yerine dogru Turkce metni gosterir. Uygulamada
+// saglayici her zaman kok layout'ta ve gercek dili veriyor.
+const LocaleContext = createContext<Locale>(DEFAULT_LOCALE);
 
 export function LocaleProvider({
   locale,

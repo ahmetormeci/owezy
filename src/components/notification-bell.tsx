@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/api-client";
 import { describeNotification, formatRelativeTime } from "@/lib/notification-text";
-import { useTranslate } from "@/lib/i18n";
+import { useLocale, useTranslate } from "@/lib/i18n";
 
 type NotificationItem = {
   id: string;
@@ -28,6 +28,7 @@ type ListResponse = {
 export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: number }) {
   const router = useRouter();
   const t = useTranslate();
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -144,7 +145,7 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
         ) : items && items.length > 0 ? (
           <ul className="max-h-96 divide-y divide-border overflow-y-auto">
             {items.map((item) => {
-              const view = describeNotification(item.type, item.payload, t);
+              const view = describeNotification(item.type, item.payload, t, locale);
               return (
                 <li key={item.id}>
                   <button
@@ -169,7 +170,10 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
                       </span>
                     ) : null}
                     <span className="pl-4 text-xs text-muted-foreground">
-                      {[view.groupName, formatRelativeTime(new Date(item.createdAt), undefined, t)]
+                      {[
+                        view.groupName,
+                        formatRelativeTime(new Date(item.createdAt), undefined, t, locale),
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </span>

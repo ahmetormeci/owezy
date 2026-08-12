@@ -15,13 +15,11 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   GBP: "£",
 };
 
-/**
- * Desteklenen diller. Dil DEGERININ nereden geldigi (cerez, hesap tercihi)
- * bu dosyanin isi degil - buradaki fonksiyonlar saf: ayni girdi + ayni dil
- * her zaman ayni ciktiyi verir. Boylece test edilebilir kaliyorlar ve hem
- * sunucuda hem istemcide ayni sonucu uretiyorlar.
- */
-export type Locale = "tr" | "en";
+// Dil tipi artik locale.ts'te: cerez adi ve dogrulamasiyla ayni yerde durmasi
+// gerekiyordu (bkz. o dosyanin bas yorumu). Buradan yeniden disa aktariliyor,
+// boylece "@/lib/money"den Locale alan mevcut importlar oldugu gibi calisiyor.
+export type { Locale } from "@/lib/locale";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/locale";
 
 const LOCALE_RULES: Record<
   Locale,
@@ -53,7 +51,7 @@ function groupingFormatter(locale: Locale): Intl.NumberFormat {
 export function formatMoney(
   minorUnits: number,
   currency = "TRY",
-  locale: Locale = "tr",
+  locale: Locale = DEFAULT_LOCALE,
 ): string {
   const rules = LOCALE_RULES[locale];
   const isNegative = minorUnits < 0;
@@ -100,7 +98,7 @@ export function formatMoney(
 export function formatSignedMoney(
   minorUnits: number,
   currency = "TRY",
-  locale: Locale = "tr",
+  locale: Locale = DEFAULT_LOCALE,
 ): string {
   const formatted = formatMoney(Math.abs(minorUnits), currency, locale);
   if (minorUnits > 0) {
@@ -213,7 +211,10 @@ export function parsePercentageToBasisPoints(input: string): number | null {
  * ("%33"), Ingilizce ARKAYA ("33%"). Ikisi de dogru; birbirinin yerine
  * kullanilinca yanlis.
  */
-export function formatBasisPoints(basisPoints: number, locale: Locale = "tr"): string {
+export function formatBasisPoints(
+  basisPoints: number,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
   const rules = LOCALE_RULES[locale];
   const whole = Math.trunc(basisPoints / 100);
   const fraction = basisPoints % 100;

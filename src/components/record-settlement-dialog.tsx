@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-client";
-import { useTranslate } from "@/lib/i18n";
+import { useLocale, useTranslate } from "@/lib/i18n";
 import { formatMoney, parseMoney } from "@/lib/money";
 
 type Counterparty = {
@@ -48,6 +48,7 @@ export function RecordSettlementDialog({
 }) {
   const router = useRouter();
   const t = useTranslate();
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
 
   // Yon secimi, "yalnizca odemenin taraflarindan biri kaydedebilir" kuralini
@@ -180,7 +181,7 @@ export function RecordSettlementDialog({
                   ? t("ui.amount_example")
                   : amount === null
                     ? t("ui.amount_unreadable")
-                    : `= ${formatMoney(amount, currency)}`}
+                    : `= ${formatMoney(amount, currency, locale)}`}
               </p>
               {matchingSuggestion ? (
                 <button
@@ -193,7 +194,7 @@ export function RecordSettlementDialog({
                   }
                 >
                   {t("ui.use_suggested_amount", {
-                    amount: formatMoney(matchingSuggestion.amount, currency),
+                    amount: formatMoney(matchingSuggestion.amount, currency, locale),
                   })}
                 </button>
               ) : null}

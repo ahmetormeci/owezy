@@ -19,8 +19,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/api-client";
 import { formatMoney } from "@/lib/money";
+import { formatDate } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
-import { useTranslate } from "@/lib/i18n";
+import { useLocale, useTranslate } from "@/lib/i18n";
 
 export type ExpenseListItem = {
   id: string;
@@ -32,12 +33,6 @@ export type ExpenseListItem = {
   createdById: string;
   participants: { userId: string; shareAmount: number }[];
 };
-
-const dateFormatter = new Intl.DateTimeFormat("tr-TR", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
 
 function DeleteExpenseButton({
   groupId,
@@ -118,6 +113,7 @@ export function ExpenseList({
   initialNextCursor: string | null;
 }) {
   const t = useTranslate();
+  const locale = useLocale();
 
   // Ilk sayfa sunucudan hazir geliyor; "daha fazla" tiklandiginda ek sayfalar
   // /api/v1 uzerinden cekilip listenin sonuna ekleniyor.
@@ -183,7 +179,7 @@ export function ExpenseList({
                 <div className="min-w-0">
                   <p className="truncate font-medium">{expense.description}</p>
                   <p className="text-sm text-muted-foreground">
-                    {dateFormatter.format(new Date(expense.expenseDate))} ·{" "}
+                    {formatDate(new Date(expense.expenseDate), locale)} ·{" "}
                     {t(EXPENSE_CATEGORY_CODES[expense.category])} ·{" "}
                     {t("ui.paid_by", {
                       name: nameByUserId[expense.paidById] ?? t("ui.unknown_user"),
@@ -206,11 +202,13 @@ export function ExpenseList({
                   ) : null}
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="money font-medium">{formatMoney(expense.amount, currency)}</p>
+                  <p className="money font-medium">
+                    {formatMoney(expense.amount, currency, locale)}
+                  </p>
                   {myShare ? (
                     <p className="money text-sm text-muted-foreground">
                       {t("ui.your_share_amount", {
-                        amount: formatMoney(myShare.shareAmount, currency),
+                        amount: formatMoney(myShare.shareAmount, currency, locale),
                       })}
                     </p>
                   ) : null}

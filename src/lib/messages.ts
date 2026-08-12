@@ -14,7 +14,7 @@
 // (12000) ..."). Sablonda {ad} yaziyoruz, translate() yerine koyuyor. Kodun
 // tek basina yeterli olmadigi yer burasi - ADR-017 bunu ongormemisti.
 
-import type { Locale } from "@/lib/money";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/locale";
 
 export const MESSAGES_TR = {
   // --- Grup ---
@@ -127,6 +127,15 @@ export const MESSAGES_TR = {
   "ui.sample_note": "Örnek — gerçek bir gruba ait değil",
   "ui.sample_title": "Kahvaltı",
   "ui.theme_toggle": "Temayı değiştir",
+  // Dil dugmesi. Kisa etiketler ("TR" / "EN") her dilde ayni yazilir ama yine
+  // de sozlukte: kodda gomulu kullanici metni birakmama kurali istisnasiz.
+  "ui.language_short_tr": "TR",
+  "ui.language_short_en": "EN",
+  // Tema dugmesinin aksine burada durumu BILIYORUZ - dil sunucuda okunuyor,
+  // yani hangi dilde oldugumuz ilk render'da bellidir. O yuzden etiket
+  // "dili degistir" degil, ne olacagini soyleyebiliyor.
+  "ui.switch_to_tr": "Türkçeye geç",
+  "ui.switch_to_en": "İngilizceye geç",
 
   // --- Gruplar ---
   "ui.my_groups": "Gruplarım",
@@ -355,7 +364,7 @@ const DICTIONARIES: Record<Locale, Partial<Record<MessageCode, string>>> = {
 export function translate(
   code: string,
   params?: MessageParams,
-  locale: Locale = "tr",
+  locale: Locale = DEFAULT_LOCALE,
 ): string {
   const template = DICTIONARIES[locale][code as MessageCode] ?? MESSAGES_TR[code as MessageCode];
   if (template === undefined) {

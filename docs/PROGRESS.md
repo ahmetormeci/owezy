@@ -13,7 +13,7 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 370 | ✅ tümü geçiyor |
+| Birim (Vitest) | 389 | ✅ tümü geçiyor |
 | E2E (Playwright) | 24 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -168,7 +168,7 @@ eşit genişlikli rakamlar.
 | 11.3 | **DONE** | Para biçimlendirmesi dile duyarlı hale gelir |
 | 11.4a | **DONE** | API hata kodları (görünür değişiklik yok) |
 | 11.4b | **DONE** | Arayüzdeki gömülü metinler sözlüğe taşınır |
-| 11.4c | TODO | Dil çerezden okunur, `formatMoney`'e geçirilir, dil düğmesi |
+| 11.4c | **DONE** | Dil çerezden okunur, `formatMoney`'e geçirilir, dil düğmesi |
 | 11.4d | TODO | İngilizce sözlük + `User.locale` migration |
 | 11.5 | TODO | Grup sayfası hiyerarşisi |
 | 11.6 | TODO | Karşılama, formlar, boş durumlar, mobil |
@@ -219,9 +219,28 @@ parametreli cümleye dönüştü (İngilizcede kelime sırası ters), bildirim
 metinleri saf fonksiyon kalsın diye çeviriciyi **varsayılanlı parametre**
 olarak aldı, ve sabit `metadata` nesnesi `generateMetadata`'ya çevrildi.
 
-**Test:** 370 birim / 24 E2E.
+**11.4c'de yapıldı:** Dil artık gerçekten okunuyor. Çerez adı, doğrulaması ve
+`Locale` tipi `locale.ts`'te tek yerde: çerezi **istemci** yazıyor, **sunucu**
+okuyor ve ikisinin ortak bir eve ihtiyacı vardı (`i18n-server.ts` server-only,
+`i18n.tsx` "use client" — ikisi de bu işi yapamazdı).
+
+Çerezden gelen değer beyaz listeden geçiyor. Ham değer `Intl`'e gitseydi
+`RangeError` fırlar ve sunucuda render edilen sayfa 500 verirdi — tarayıcı
+konsolundan `document.cookie` yazarak uygulamayı çökertmek mümkün olurdu.
+Gerçek sunucuda denendi: `locale=zz-ZZ` → sayfa 200, Türkçeye düşüyor.
+
+**Kapsam tarifin ötesine geçti:** dört yerde `Intl.DateTimeFormat("tr-TR")`
+sabit yazılıydı. İngilizce kullanıcı tutarları doğru, tarihleri Türkçe
+görürdü — 11.3'ün düzelttiği hatanın aynısı. `dates.ts` bu dördünü tek
+fonksiyona indirdi.
+
+**11.4b'den kaçan üç gömülü metin bulundu:** `settlement-list.tsx`'te iki
+`?? "Bilinmeyen"` ve karşılama sayfasında sabit `360,00 ₺`. Üçü de Türkçe
+karakter içermediği için 11.4b'nin taramasına takılmamıştı.
+
+**Test:** 389 birim / 24 E2E.
 **Commit:** `a125fc3` (11.2), `eb861af` (11.3), `18abd81` (11.4a),
-`9b01802` (11.4b) — dördü de push edildi.
+`9b01802` (11.4b) — dördü de push edildi. 11.4c henüz commitlenmedi.
 
 **Sıra neden böyle:** Para biçimlendirmesi (11.3) çeviriden (11.4) önce
 geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahalıdır.
@@ -268,6 +287,14 @@ karar vermemiştir.
   geldiği ve gerçekten çalışma zamanına ulaşıp ulaşmadığı belirsiz —
   `npm audit fix --force` çalıştırmadan önce bakılmalı, çünkü `--force`
   büyük sürüm atlayabilir.
+- **Dil düğmesi yalnızca `(app)` başlığında.** Karşılama, giriş ve kayıt
+  sayfalarında yok — o sayfaların başlığı da yok (tema düğmesi de orada değil).
+  İki sözlük de Türkçe olduğu sürece zararsız; 11.4d İngilizce metni getirdiği
+  anda giriş yapmamış kullanıcı dili değiştiremez hale gelir. 11.4d'den önce
+  kapatılmalı.
+- `src/components/ui/dialog.tsx` içinde ekran okuyucuya görünen `"Close"`
+  metni sözlükte değil. `ui/` altı shadcn'in ürettiği kod; oraya dokunmak
+  ayrı bir karar (yeniden üretimde kaybolur).
 - `.claude/settings.json` (`.env.local` ve `package-lock.json` yazma koruması)
   **git'te değil** — `.claude/` gitignore'da. Yeni bir klonda bu koruma
   bulunmaz; elle yeniden oluşturulması gerekir.

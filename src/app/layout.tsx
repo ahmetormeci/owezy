@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { getTranslate } from "@/lib/i18n-server";
+import { LocaleProvider } from "@/lib/i18n";
+import { getLocale, getTranslate } from "@/lib/i18n-server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 // Sabit bir "metadata" nesnesi yerine generateMetadata: baslik ve aciklama da
-// dile bagli, ve dil calisma zamaninda okunuyor (11.4c'de cerezden gelecek).
+// dile bagli, ve dil calisma zamaninda cerezden okunuyor.
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslate();
   return {
@@ -26,15 +27,22 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Dil TEK yerde okunuyor ve buradan iki yone dagiliyor: <html lang> ile
+  // tarayiciya/ekran okuyucuya, LocaleProvider ile istemci bilesenlerine.
+  const locale = await getLocale();
+
   return (
     <ClerkProvider>
       <html
-        lang="tr"
+        // Sabit "tr" degildi bu: ekran okuyucu sayfanin tamamini Turkce
+        // telaffuz ederdi, Ingilizce metni de. lang yalnizca bir etiket degil,
+        // sesletim ve tireleme kurallarini secen sey.
+        lang={locale}
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
         // next-themes ".dark" sinifini tarayicida ekliyor; sunucudan gelen
         // HTML'de o sinif yok. suppressHydrationWarning olmadan React bunu
@@ -42,10 +50,15 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <body className="flex min-h-full flex-col bg-background text-foreground">
-          <ThemeProvider>
-            {children}
-            <Toaster />
-          </ThemeProvider>
+          {/* Sunucuda okunan dil, istemci bilesenlerine buradan geciyor.
+              useTranslate() ve useLocale() bu saglayicidan okuyor - yani
+              ~190 cagri yerinin hicbiri dil parametresi tasimiyor. */}
+          <LocaleProvider locale={locale}>
+            <ThemeProvider>
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </LocaleProvider>
         </body>
       </html>
     </ClerkProvider>

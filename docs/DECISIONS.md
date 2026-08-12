@@ -442,3 +442,39 @@ zorlanmıyor — Vercel deploy'u CI sonucundan bağımsız. Dal koruma kuralı
 E2E'nin CI dışında kalması, **E2E'yi koşturma sorumluluğunun kişide
 kaldığı** anlamına gelir. Arayüzü ilgilendiren bir değişiklikte
 `npm run test:e2e` atlanırsa, CI bunu yakalamaz.
+
+---
+
+## ADR-019 — Dil çerezini istemci yazar, bir API ucu değil
+**Tarih:** 2026-08-12 · **Durum:** Kabul edildi
+
+**Karar:** Dil düğmesi çerezi tarayıcıda `document.cookie` ile yazar ve
+`router.refresh()` çağırır. `/api/v1` altında dil için bir uç **açılmadı**.
+
+**Neden:**
+
+1. Next 16'da çerez **yazmak** yalnızca Server Function ya da Route Handler
+   içinde mümkün (`cookies()` dokümantasyonu bunu açıkça söylüyor). Server
+   Function `"use server"` demek — bu projede yasak (ADR-002).
+2. Geriye Route Handler kalıyordu, ama `/api/v1` altındaki uçlar **iş
+   mantığı**: mobil istemcinin de çağıracağı, veritabanına dokunan uçlar.
+   Dil tercihi bugün hiçbir yere kaydedilmiyor; temaya benzeyen bir gösterim
+   tercihi. Kayıt olmayan bir şey için uç açmak, `/api/v1`'in ne olduğunu
+   bulanıklaştırırdı.
+3. Çerezi istemcinin yazması, **çıkış yapmış kullanıcıda da çalışır**.
+   Karşılama sayfası herkese açık ve dil oradan da değişebilmeli.
+
+**Alternatifler:** Server Action (yasak); `POST /api/v1/preferences/locale`
+(ucu kimlik doğrulamasız açmak gerekirdi — çıkış yapmış kullanıcı da dil
+değiştirebilmeli — ve bugün yazacağı bir kayıt yok); `localStorage`
+(sunucuya ulaşmaz, sayfanın yarısı sunucuda render ediliyor).
+
+**Sonuç:** Çerez `httpOnly` **değil** — istemcinin yazabilmesi gerekiyor. Bir
+sır taşımadığı için bu bir bilgi sızıntısı değil, ama şu kuralı doğuruyor:
+**çerezden gelen değere hiçbir zaman güvenilmez.** `normalizeLocale()` beyaz
+liste uyguluyor; ham değer `Intl`'e gitseydi `RangeError` fırlatır ve sunucu
+sayfası 500 verirdi.
+
+11.4d'de `User.locale` geldiğinde durum değişir: o **gerçekten** bir kayıt
+olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
+"çıkış yapmış kullanıcı" yolu olarak kalır; okuma sırası çerez → hesap → `tr`.

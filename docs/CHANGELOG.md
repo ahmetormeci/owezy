@@ -10,6 +10,39 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-12
 
+### Dil gerçekten okunuyor (Faz 11.4c)
+- `getLocale()` artık `locale` çerezini okuyor. Çerez adı, ömrü (1 yıl),
+  `Locale` tipi ve doğrulaması `src/lib/locale.ts`'te — çerezi **istemci**
+  yazıyor, **sunucu** okuyor, ikisinin ortak bir eve ihtiyacı vardı:
+  `i18n-server.ts` `server-only`, `i18n.tsx` ise `"use client"`.
+- **Çerezdeki değere güvenilmiyor.** Beyaz liste dışındaki her şey Türkçeye
+  düşüyor. Ham değer `Intl.NumberFormat`'a gitseydi `RangeError` fırlatır ve
+  sunucuda render edilen sayfa 500 verirdi — konsoldan `document.cookie`
+  yazarak uygulamayı çökertmek mümkün olurdu. Gerçek sunucuda denendi:
+  `locale=zz-ZZ` → 200, Türkçe.
+- Kök layout dili tek yerde okuyup iki yöne dağıtıyor: `<html lang>` ve
+  `LocaleProvider`. `lang` sabit `"tr"` idi; ekran okuyucu İngilizce metni de
+  Türkçe telaffuz ederdi.
+- `formatMoney` / `formatBasisPoints` / `formatSignedMoney` çağrılarının
+  tamamına dil geçirildi (4 istemci bileşeni + 2 sunucu sayfası).
+- **Tarihler de kapsama alındı.** Dört yerde `Intl.DateTimeFormat("tr-TR")`
+  sabit yazılıydı; `src/lib/dates.ts` bunları tek `formatDate`'e indirdi.
+  İngilizce kullanıcı tutarları doğru, tarihleri Türkçe görüyordu.
+- **Tek bilinçli çıktı değişikliği:** bildirimlerdeki 7 günden eski tarih
+  `5 Ağu` yerine `05 Ağu` — listelerdeki biçimin aynısı. Aynı tarihin
+  uygulamanın iki yerinde farklı görünmesi için sebep yoktu.
+- Başlığa dil düğmesi. Çerezi yazıp `router.refresh()` çağırıyor: sayfanın
+  yarısı sunucuda render ediliyor, tam yenileme ise açık pencereleri ve form
+  içeriğini silerdi. Çerezi neden istemcinin yazdığı ADR-019'da.
+- **11.4b'den kaçan üç gömülü metin bulundu:** `settlement-list.tsx`'te iki
+  `?? "Bilinmeyen"`, karşılama sayfasında sabit `360,00 ₺`. Üçü de Türkçe
+  karakter içermediği için 11.4b'nin taramasına takılmamıştı — aynı kör nokta
+  ikinci kez. `"Bilinmeyen"` sözlükteki değerle birebir aynı, çıktı değişmedi.
+- Build'de tek fark: `/_not-found` statikten dinamiğe geçti. Diğer rotaların
+  hepsi zaten dinamikti (Clerk her isteği sunucuda çalıştırıyor), yani çerez
+  okumanın ölçülebilir bir maliyeti olmadı.
+- 19 yeni birim testi (389 toplam). 24 E2E değişmeden geçti.
+
 ### GitHub Actions CI — `09d0e91`
 - `main`'e her push'ta ve her pull request'te çalışıyor:
   `npm ci` → `prisma generate` → `tsc --noEmit` → `eslint` → `vitest run`.

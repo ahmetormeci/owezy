@@ -6,6 +6,7 @@ import { getOrCreateCurrentUser } from "@/lib/auth";
 import { countUnreadNotifications } from "@/lib/notifications";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
 import { BrandMark } from "@/components/brand-mark";
 import { getTranslate } from "@/lib/i18n-server";
 
@@ -49,6 +50,7 @@ export default async function AppLayout({
             {t("ui.app_name")}
           </Link>
           <div className="flex items-center gap-1">
+            <LanguageToggle />
             <ThemeToggle />
             <NotificationBell initialUnreadCount={unreadCount} />
             <UserButton />

@@ -14,7 +14,7 @@ import { EditGroupDialog } from "@/components/edit-group-dialog";
 import { ExpenseList } from "@/components/expense-list";
 import { SettlementList } from "@/components/settlement-list";
 import { RecordSettlementDialog } from "@/components/record-settlement-dialog";
-import { getTranslate } from "@/lib/i18n-server";
+import { getLocale, getTranslate } from "@/lib/i18n-server";
 
 // Renkler artik dogrudan yazilmiyor (eskiden "text-emerald-600
 // dark:text-emerald-400" idi). Anlam tokenlari kullaniliyor: --credit
@@ -42,6 +42,7 @@ export default async function GroupDetailPage({
 }) {
   const { groupId } = await params;
   const t = await getTranslate();
+  const locale = await getLocale();
 
   const user = await getOrCreateCurrentUser();
   if (!user) {
@@ -128,7 +129,9 @@ export default async function GroupDetailPage({
         </CardHeader>
         <CardContent>
           <p className={`money text-figure font-semibold ${balanceToneClass(myAmount)}`}>
-            {myAmount === 0 ? t("ui.settled_up") : formatSignedMoney(myAmount, currency)}
+            {myAmount === 0
+              ? t("ui.settled_up")
+              : formatSignedMoney(myAmount, currency, locale)}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             {myAmount > 0
@@ -166,7 +169,7 @@ export default async function GroupDetailPage({
                     </span>
                   </span>
                   <span className="money font-medium">
-                    {formatMoney(transfer.amount, currency)}
+                    {formatMoney(transfer.amount, currency, locale)}
                   </span>
                 </li>
               ))}
@@ -202,7 +205,9 @@ export default async function GroupDetailPage({
                 <span
                   className={`money shrink-0 font-medium ${balanceToneClass(balance.amount)}`}
                 >
-                  {balance.amount === 0 ? "—" : formatSignedMoney(balance.amount, currency)}
+                  {balance.amount === 0
+                    ? "—"
+                    : formatSignedMoney(balance.amount, currency, locale)}
                 </span>
               </li>
             ))}

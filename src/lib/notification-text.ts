@@ -1,10 +1,12 @@
 import type { NotificationType } from "@prisma/client";
 import { formatMoney } from "@/lib/money";
+import { formatDate } from "@/lib/dates";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/locale";
 import { translate, type MessageCode, type MessageParams } from "@/lib/messages";
 
-// Ceviriciyi disaridan alabiliyoruz ama varsayilani var. Boylece bu saf
-// fonksiyonun testleri React kurmadan calismaya devam ediyor, zil bileseni
-// ise kendi dilini gecirebiliyor.
+// Ceviriciyi ve dili disaridan alabiliyoruz ama ikisinin de varsayilani var.
+// Boylece bu saf fonksiyonun testleri React kurmadan calismaya devam ediyor,
+// zil bileseni ise kendi dilini gecirebiliyor.
 type Translator = (code: string, params?: MessageParams) => string;
 const defaultTranslator: Translator = (code, params) => translate(code, params);
 
@@ -66,6 +68,7 @@ export function describeNotification(
   type: NotificationType,
   payload: unknown,
   t: Translator = defaultTranslator,
+  locale: Locale = DEFAULT_LOCALE,
 ): NotificationView {
   const parsed = parsePayload(payload);
   const actor = parsed.actorName ?? t("ui.someone");
@@ -74,7 +77,7 @@ export function describeNotification(
   // tek merkezden (formatMoney) bicimleniyor.
   const money =
     parsed.amount !== undefined && parsed.currency
-      ? formatMoney(parsed.amount, parsed.currency)
+      ? formatMoney(parsed.amount, parsed.currency, locale)
       : null;
 
   const detailParts = [parsed.description, money].filter(Boolean);
@@ -101,6 +104,7 @@ export function formatRelativeTime(
   date: Date,
   now: Date = new Date(),
   t: Translator = defaultTranslator,
+  locale: Locale = DEFAULT_LOCALE,
 ): string {
   const diff = now.getTime() - date.getTime();
 
@@ -119,9 +123,9 @@ export function formatRelativeTime(
     return t("ui.days_ago", { count: Math.floor(diff / DAY) });
   }
 
-  return new Intl.DateTimeFormat("tr-TR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+  // Bir haftadan eskisi icin goreli zaman ("38 gun once") okunmuyor; tarihin
+  // kendisi daha bilgilendirici. Bicim listelerdekiyle AYNI (dates.ts):
+  // burada gun tek basamakliydi ("5 Agu"), listelerde iki ("05 Agu"). Ayni
+  // tarihin uygulamanin iki yerinde farkli gorunmesi icin bir sebep yoktu.
+  return formatDate(date, locale);
 }

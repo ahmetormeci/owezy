@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/api-client";
 import { formatMoney } from "@/lib/money";
-import { useTranslate } from "@/lib/i18n";
+import { formatDate } from "@/lib/dates";
+import { useLocale, useTranslate } from "@/lib/i18n";
 
 export type SettlementListItem = {
   id: string;
@@ -28,12 +29,6 @@ export type SettlementListItem = {
   settledAt: string;
   createdById: string;
 };
-
-const dateFormatter = new Intl.DateTimeFormat("tr-TR", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
 
 function CancelSettlementButton({
   groupId,
@@ -110,6 +105,7 @@ export function SettlementList({
   settlements: SettlementListItem[];
 }) {
   const t = useTranslate();
+  const locale = useLocale();
 
   if (settlements.length === 0) {
     return (
@@ -132,15 +128,15 @@ export function SettlementList({
               <div className="min-w-0">
                 <p className="truncate text-sm">
                   <span className="font-medium">
-                    {nameByUserId[settlement.fromUserId] ?? "Bilinmeyen"}
+                    {nameByUserId[settlement.fromUserId] ?? t("ui.unknown_user")}
                   </span>
                   {" → "}
                   <span className="font-medium">
-                    {nameByUserId[settlement.toUserId] ?? "Bilinmeyen"}
+                    {nameByUserId[settlement.toUserId] ?? t("ui.unknown_user")}
                   </span>
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {dateFormatter.format(new Date(settlement.settledAt))}
+                  {formatDate(new Date(settlement.settledAt), locale)}
                   {settlement.note ? ` · ${settlement.note}` : ""}
                 </p>
                 {canCancel ? (
@@ -150,7 +146,7 @@ export function SettlementList({
                 ) : null}
               </div>
               <p className="money shrink-0 font-medium">
-                {formatMoney(settlement.amount, currency)}
+                {formatMoney(settlement.amount, currency, locale)}
               </p>
             </div>
           </li>

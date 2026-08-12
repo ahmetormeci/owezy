@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { apiRequest } from "@/lib/api-client";
-import { useTranslate } from "@/lib/i18n";
+import { formatDate } from "@/lib/dates";
+import { useLocale, useTranslate } from "@/lib/i18n";
 
 export type InviteListItem = {
   id: string;
@@ -18,12 +19,6 @@ export type InviteListItem = {
   maxUses: number;
   useCount: number;
 };
-
-const dateFormatter = new Intl.DateTimeFormat("tr-TR", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
 
 const selectClassName =
   "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
@@ -39,6 +34,7 @@ export function InviteManager({
 }) {
   const router = useRouter();
   const t = useTranslate();
+  const locale = useLocale();
   const [maxUses, setMaxUses] = useState("1");
   const [ttlDays, setTtlDays] = useState("7");
   const [isCreating, setIsCreating] = useState(false);
@@ -170,7 +166,7 @@ export function InviteManager({
                     </p>
                     <p className="text-muted-foreground">
                       {t("ui.invite_valid_until", {
-                        date: dateFormatter.format(new Date(invite.expiresAt)),
+                        date: formatDate(new Date(invite.expiresAt), locale),
                       })}{" · "}
                       {t("ui.invite_created_by", {
                         name: nameByUserId[invite.invitedById] ?? t("ui.unknown_user"),

@@ -18,7 +18,7 @@ import {
 import { splitByPercentage, splitEqually, splitExactly, type SplitShare } from "@/lib/split";
 import { EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
 import { AppError } from "@/lib/errors";
-import { useTranslate } from "@/lib/i18n";
+import { useLocale, useTranslate } from "@/lib/i18n";
 import type { MessageCode } from "@/lib/messages";
 
 type Member = {
@@ -92,6 +92,7 @@ export function ExpenseForm({
 }) {
   const router = useRouter();
   const t = useTranslate();
+  const locale = useLocale();
   const isEditing = Boolean(initialValues);
 
   const [description, setDescription] = useState(initialValues?.description ?? "");
@@ -291,7 +292,7 @@ export function ExpenseForm({
             ? t("ui.amount_example")
             : amount === null
               ? t("ui.amount_unreadable")
-              : `= ${formatMoney(amount, currency)}`}
+              : `= ${formatMoney(amount, currency, locale)}`}
         </p>
       </div>
 
@@ -424,13 +425,14 @@ export function ExpenseForm({
                   <li key={share.userId} className="flex justify-between gap-4">
                     <span>{nameByUserId.get(share.userId) ?? share.userId}</span>
                     <span className="money">
-                      {formatMoney(share.amount, currency)}
+                      {formatMoney(share.amount, currency, locale)}
                       {splitType === "PERCENTAGE" && amount
                         ? ` (${formatBasisPoints(
                             parsePercentageToBasisPoints(
                               participants.find((p) => p.userId === share.userId)
                                 ?.percentageText ?? "",
                             ) ?? 0,
+                            locale,
                           )})`
                         : ""}
                     </span>
