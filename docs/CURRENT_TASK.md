@@ -35,11 +35,16 @@ Status:
   Faz 12 tamam ve PUSH EDILDI (`fea2fb9`'a kadar).
   Production migration dogrulandi.
 
-  Calisma agaci temiz. PUSH EDILMEMIS commitler:
-    b301e85  13.1+13.2  ozet blogu + ay basliklari
-    3012a7c  dokuman
-    7bfd57f  13.3a      arama + filtre
-  Push Vercel'de production deploy tetikliyor; kullanicinin onayi bekleniyor.
+  Calisma agaci temiz, push edilmemis commit yok.
+  Faz 13'un tamami canlida: `b301e85` (13.1+13.2), `7bfd57f` (13.3a).
+
+  Faz 13'te MIGRATION YOK - ozet salt okuma, filtreler sorgu degisikligi.
+  Yani 12.1'deki gibi bir veritabani dogrulamasi gerekmiyor.
+
+  CANLIDA GOZLE BAKILACAK (kod dogru ama gercek veriyle gorulmedi): ozet
+  blogu ve ay basliklari yalnizca E2E'nin urettigi kucuk gruplarda test
+  edildi. Gercek bir grupta cok aylik grafik ve yedi kategorili kirilim ilk
+  kez orada gorunecek.
 
   Testler: 454 birim / 30 E2E, tsc + lint temiz, tam E2E kosusu yapildi.
 
