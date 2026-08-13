@@ -18,21 +18,45 @@ durumunu dogrula, sonra bu dosyayi duzelt.
 Updated: 2026-08-13
 
 Current task:
-  YOK. Faz 13 (grup sayfasi 100 harcamada) bitti, uc asama da tamam.
-  Kullanici yeni gorev vermedi.
+  Faz 14 (acilis oncesi borc kapatma) BITTI - alti asama da tamam.
+  Commitlenmedi; kullanici "toplu commitleriz" dedi.
 
 Hemen sonraki adim:
-  Kullanicinin secmesi bekleniyor. Adaylar PROGRESS.md'de "Sıradaki adaylar"
-  ve "Faz 13'ten kalan borç" basliklari altinda.
+  14.1-14.6 commitlenir, push ayrica sorulur.
+  Sonrasi icin verilmis bir gorev YOK.
+
+  FOTOGRAF EKLEME: kullanici Cloudflare'e gecene kadar ASKIDA. Karar
+  verildiginde fotograf VERITABANINA KONMAYACAK - nesne deposu (Vercel Blob
+  ya da Cloudflare R2), veritabani yalnizca anahtar/boyut/tip tutar
+  (~100 bayt/fotograf). Gerekce ve sayilar konusuldu; bytea'ya koymak
+  yedekleri ve baglanti limitini vurur.
 
 Status:
-  Faz 12 ve Faz 13'un 13.1-13.3a kismi canlida (`b75322d`'ye kadar).
-  PUSH EDILMEMIS: `35c7fee` (13.3b CSV) ve bu dokuman commit'i.
+  Faz 13'e kadar her sey canlida (`8475783`'e kadar push edildi).
+  Faz 14 commitlendi ama PUSH EDILMEDI:
+    671e7d4  14.1 + 14.6  zil davranisi + bildirim saklama
+    020955e  14.3         createGroup / acceptGroupInvite testleri
+    ea48316  14.2         --chart-1..5 kaldirildi
+    948f93c  14.5         toplama SQL'e tasindi
+    257912c  14.4         Turkce arama katlamasi (MIGRATION ICERIR)
 
-  Testler: 465 birim / 31 E2E, tsc + lint temiz, tam E2E kosusu yapildi.
+  Testler: 493 birim / 32 E2E, tsc + lint temiz, tam E2E kosusu yapildi.
 
-  Faz 13'te MIGRATION YOK - ozet salt okuma, filtre ve disa aktarma sorgu
-  isi. 12.1'deki gibi bir veritabani dogrulamasi gerekmiyor.
+  IZLENECEK - ARALIKLI E2E HATASI: Faz 14 sonrasi ardarda uc tam kosudan
+  BIRINDE bir test "toBeVisible" ile dustu; digerlerinde 32/32 gecti.
+  Hangi test oldugu belirlenemedi, cunku sonraki kosu test-results'i
+  temizliyor. Iki muhtemel sebep var ve ikisi de tahmin:
+    1. Neon'a ag gecikmesi (her zaman vardi; expect varsayilani 5 sn)
+    2. 14.5 ile sayfa basina paralel sorgu sayisi 2'den 4'e cikti
+  Tekrarlarsa: kosuyu dosyaya alip (npm run test:e2e > out.txt) hangi test
+  oldugunu bul, sonra ya o iddiayi daha kesin bir sinyale bagla ya da
+  timeout'u yalnizca orada yukselt. Suite'in tamamina timeout eklemek
+  gercek yavaslamalari gizler.
+
+  MIGRATION VAR: 20260813120000_add_expense_description_fold
+  (Expense.descriptionFold, GENERATED ALWAYS). Gelistirme ve E2E
+  veritabanlarina UYGULANDI. Push edilince production'a vercel-build ile
+  gidecek - Vercel deploy log'undan teyit edilmeli.
 
   CANLIDA GOZLE BAKILMADI: ozet blogu ve ay basliklari yalnizca E2E'nin
   urettigi 2-3 harcamalik gruplarda gorundu. Gercek bir grupta cok aylik
@@ -63,8 +87,8 @@ Blocked by:
 Verify with:
   npx tsc --noEmit
   npm run lint
-  npm test          # beklenen: 465
-  npm run test:e2e  # beklenen: 31, ~6-7 dk, kosarken dosyalara dokunma
+  npm test          # beklenen: 493
+  npm run test:e2e  # beklenen: 32, ~7-8 dk, kosarken dosyalara dokunma
 
   Prisma 7'de postinstall YOK: sema degistiginde "npx prisma generate"
   calistirilmadan tsc eski tipleri gorur ve var olmayan hatalar uretir.

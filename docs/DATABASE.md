@@ -59,6 +59,13 @@ bu durumda **birden fazla satır** oluşur ve bu istenen davranıştır.
 `amount` ve `shareAmount` **kuruş cinsinden `Int`**. `expenseDate` `@db.Date`
 (saat bilgisi taşımaz). `ExpenseParticipant` üzerinde `@@unique([expenseId, userId])`.
 
+`Expense.descriptionFold` aramada karşılaştırılan katlanmış biçim ("Işık" →
+"isik"). **`GENERATED ALWAYS ... STORED`** — değeri Postgres üretir, uygulama
+hiçbir zaman yazmaz. Bu yüzden Prisma şemasında **nullable**: zorunlu olsaydı
+Prisma `create`'te değer isterdi ve üretilmiş kolona yazmak hata verirdi.
+Katlama tablosu `src/lib/search-fold.ts` ile birebir aynı olmak zorunda
+(ADR-024).
+
 `ExpenseParticipant.basisPoints` (nullable `Int`, 10000 = %100) kullanıcının
 **girdiği** yüzdeyi tutar; `shareAmount` onun sonucudur ve yuvarlama yüzünden
 sonuçtan girdiye her zaman geri dönülemez. Yalnızca `PERCENTAGE` bölüşümde
@@ -118,6 +125,7 @@ Sonradan eklenen kısıtlar (kendi migration'larında):
 | # | Kural | Nasıl |
 |---|---|---|
 | 9 | `ExpenseParticipant.basisPoints` NULL ya da 0–10000 arası | CHECK (`20260812214219`) |
+| 10 | `Expense.descriptionFold` her zaman açıklamanın katlanmış hâli | `GENERATED ALWAYS ... STORED` (`20260813120000`) |
 
 9 numaralı kuralın "toplam 10000 olmalı" tarafı burada **yok**: o, çoklu satır
 toplamı gerektirir ve 8 numaralı kuralla aynı sebepten CHECK'e yazılamaz.

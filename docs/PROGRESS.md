@@ -8,13 +8,13 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 13 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
+**Özet:** 14 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 465 | ✅ tümü geçiyor |
-| E2E (Playwright) | 31 | ✅ tümü geçiyor |
+| Birim (Vitest) | 493 | ✅ tümü geçiyor |
+| E2E (Playwright) | 32 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -483,23 +483,67 @@ filtreliyken satır sayısının düşmesi.
 
 ### Faz 13'ten kalan borç
 
-- **Sınırsız okuma borcu duruyor.** `loadGroupFinancials` grubun bütün
-  harcamalarını çekiyor (`take` yok). 1000 harcamalı grupta her sayfa
-  görüntülemesi bin satır demek. Doğru çözüm bakiyeyi de özeti de SQL'de
-  toplamak (`SUM`/`GROUP BY`); ikisi tek işte düzeltilmeli. 13.1+13.2 bu
-  profili **kötüleştirmedi** (okuma zaten vardı, `cache()` ile paylaşıldı)
-  ama düzeltmedi de.
 - **Ürün riski:** `category` varsayılanı `OTHER`. Kimse dokunmazsa kategori
   kırılımı tek çubuk "Diğer" olur. Formdaki kategori seçiminin görünürlüğü
   artmalı.
-- **`globals.css`'teki `--chart-1..5`** shadcn'den kalma beş renk; hiçbir
-  yerde kullanılmıyor ve ADR-021 ile çelişiyor (kategori kırılımı tek renk).
-  Kaldırılmalı.
-- **Dışa aktarmada da limit yok** (`listExpensesForExport`). Aynı borcun
-  parçası; kırpmak yerine bilerek sınırsız bırakıldı, çünkü eksik bir mali
-  dosya hiçbir yerde belli olmaz.
-- **Türkçe arama `ı`/`I` tuzağı** (13.3a'da ölçüldü) duruyor. Çözümü Türkçe
-  katlama yapan üretilmiş bir kolon + index.
+- **Dışa aktarmada limit yok** (`listExpensesForExport`). Bilerek: kırpılmış
+  bir mali dosyanın eksik olduğu hiçbir yerde belli olmaz. Grup sayfasındaki
+  toplamalar 14.5'te SQL'e taşındığı için limitsiz kalan tek okuma bu ve
+  yalnızca kullanıcı dosyayı indirdiğinde çalışıyor.
+- **Arama index'i yok.** `%metin%` kalıbını ancak `pg_trgm` + GIN
+  hızlandırır; gerçek ihtiyaç doğmadan uzantı bağımlılığı alınmadı (ADR-024).
+
+---
+
+## Faz 14 — Açılış öncesi borç kapatma · **DONE**
+
+Kullanıcı alan adını almadan önce aday listesindeki borçların kapatılmasını
+istedi. Hiçbiri yeni yetenek değil.
+
+| # | Durum | İş |
+|---|---|---|
+| 14.1 | **DONE** | Zile tıklayınca bildirimler okundu sayılıyor |
+| 14.2 | **DONE** | `--chart-1..5` kaldırıldı |
+| 14.3 | **DONE** | `createGroup` / `acceptGroupInvite` birim testleri |
+| 14.4 | **DONE** | Türkçe arama katlaması (ADR-024) |
+| 14.5 | **DONE** | Bakiye/özet toplaması SQL'e taşındı (ADR-025) |
+| 14.6 | **DONE** | Bildirim saklama politikası (60 gün) |
+
+**14.1:** Menüyü açmak artık bildirimleri okundu sayıyor; elle basılan "tümünü
+okundu işaretle" düğmesi kalktı (açılışta sayı zaten sıfırlanacağı için hiç
+görünmezdi). **İncelik:** rozet anında sıfırlanıyor ama listedeki `readAt`'e
+dokunulmuyor — mavi noktalar menü açık kaldığı sürece duruyor, kullanıcı
+hangisinin yeni olduğunu okurken görebiliyor. Okundu işaretleme listeden
+**sonra** gidiyor: istek başarısız olursa bildirimler okunmamış kalıyor.
+
+**14.2:** Beş renk hiçbir yerde kullanılmıyordu ve ADR-021 ile çelişiyordu.
+`globals.css`'in token açıklamasına **neden palet olmadığı** yazıldı — yoksa
+biri "grafik rengi yok" deyip geri ekler.
+
+**14.3:** İkisi de yalnızca E2E'nin dolaylı kapsamındaydı. 13 yeni test;
+aralarında bir güvenlik iddiası var: davet **ham token'la değil hash'iyle**
+aranıyor ve ham token hiçbir sorgu argümanında geçmiyor.
+
+**14.4:** Ayrıntı ADR-024'te. Ölçüldü: SQL `translate()` ile JS
+`foldForSearch()` 10 zor örnekte ve mevcut 12 kayıtta **sıfır fark**.
+
+**14.5:** Ayrıntı ADR-025'te. Dürüst not: bugünkü veri boyutunda ölçülebilir
+bir kazanç yok, kazanç ölçekte başlıyor.
+
+**14.6:** Bildirimler **60 gün** saklanıyor (kullanıcı 45–60 dedi, güvenli uç
+alındı). Temizlik **okuma sırasında**: cron yok ve kullanıcı zaten orada.
+Silme `deleteMany` ile ve `where`'de `userId` var — hem başkasının kaydına
+dokunmuyor hem de mevcut `(userId, createdAt)` index'i tam bu sorguyu
+karşılıyor, yani eski kayıt yoksa maliyeti bir index taraması. Liste
+sorgusuyla **paralel** gidiyor, gecikme eklemiyor.
+
+**Bu, "finansal kayıtlar silinmez" kuralını çiğnemiyor:** bildirim finansal
+kayıt değil, olan biteni haber veren geçici bir işaret; payload'ı zaten bir
+anlık görüntü. Harcama, ödeme ve audit log'a dokunulmuyor.
+
+**Test:** 493 birim / 32 E2E.
+**Commit:** `671e7d4` (14.1+14.6), `020955e` (14.3), `ea48316` (14.2),
+`948f93c` (14.5), `257912c` (14.4) — hiçbiri **push edilmedi**.
 
 ---
 

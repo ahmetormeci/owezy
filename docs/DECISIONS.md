@@ -500,6 +500,78 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-025 — Para toplaması veritabanında, para kuralı saf fonksiyonda
+**Tarih:** 2026-08-13 · **Durum:** Kabul edildi
+
+**Karar:** Bakiye ve özet hesabı ikiye ayrıldı:
+
+- **Toplama** veritabanında (`GROUP BY` + `SUM`). `loadGroupTotals` kişi başına
+  dört sayı döndürüyor: ödediği, payı, yaptığı ödemeler, aldığı ödemeler.
+- **Kural** saf fonksiyonda. `calculateBalancesFromTotals` ve
+  `buildGroupSummary` bu toplanmış girdiyi alıp sonucu üretiyor.
+
+`calculateBalances(expenses, settlements)` ve `calculateGroupSummary(...)`
+**kaldırılmadı**: toplamayı bellekte yapıp aynı saf fonksiyona veriyorlar.
+
+**Neden:** `getGroupBalances` grubun bütün harcamalarını katılımcılarıyla
+birlikte çekiyordu ve üstünde limit yoktu. 1000 harcamalı, 3 katılımcılı bir
+grupta bu 4000 nesne demekti — her sayfa görüntülemesinde. Artık dönen satır
+sayısı harcama sayısına değil **üye sayısına** bağlı.
+
+**Neden eski fonksiyonlar duruyor:** Para kuralının 35 testi onların üzerinden
+yazılmıştı. Kuralı SQL'e taşımak o güvenceyi kaybettirirdi — SQL'de yazılmış
+bir aritmetik hatası birim testiyle yakalanamaz. Şimdi kural tek yerde ve iki
+farklı yoldan (bellek ve SQL) beslenebiliyor; bir test iki yolun **aynı
+sonucu** verdiğini koruyor.
+
+**Neden ham SQL yok:** Aylık kırılım için `date_trunc` gerekiyordu. Onun
+yerine Prisma `groupBy` ile **gün** bazında toplanıp aya katlama bellekte
+yapılıyor. Dönen satır sayısı farklı gün sayısı kadar — harcama sayısı kadar
+değil — ve kod tipli kalıyor.
+
+**Dürüst sınır:** Bugünkü veri boyutunda (12 harcama) bu değişiklik ölçülebilir
+bir kazanç sağlamıyor; dört paralel sorgu, tek okumadan daha hızlı değil.
+Kazanç ölçek büyüdüğünde başlıyor. Yapılma sebebi alan adı alınmadan borcun
+kapatılmak istenmesi.
+
+---
+
+## ADR-024 — Arama katlaması veritabanının ürettiği bir kolonda
+**Tarih:** 2026-08-13 · **Durum:** Kabul edildi
+
+**Karar:** `Expense.descriptionFold` kolonu **`GENERATED ALWAYS ... STORED`**.
+Türkçe harfler ASCII karşılığına iniyor ve metin küçültülüyor. Arama hem kaydı
+hem aranan metni aynı şekilde katlıyor (`src/lib/search-fold.ts`).
+
+**Neden katlama gerekiyordu:** 13.3a'da ölçüldü — veritabanı collation'ı
+`C.UTF-8` ve büyük `I` küçültülünce `i` oluyor, `ı` değil. "Isik" yazan bir
+harcama "ışık" aramasıyla bulunmuyordu.
+
+**Neden üretilmiş kolon, uygulamanın yazdığı bir kolon değil:**
+
+1. **Tek kaynak.** Katlama kuralı SQL'de; `createExpense`/`updateExpense`'in
+   hatırlaması gereken bir şey yok, unutulamaz.
+2. **Backfill yok.** Mevcut satırların değeri kolon eklenirken hesaplandı —
+   ayrı bir betik ve üç veritabanında ayrı bir adım gerekmedi. Ölçüldü:
+   12 mevcut kayıt kendiliğinden doldu, JS katlamasıyla sıfır fark.
+
+**Neden index yok:** Arama `%metin%` kalıbı kullanıyor; onu ancak `pg_trgm`
+uzantısıyla bir GIN index hızlandırır. Bugünkü veri boyutunda sequential scan
+yeterli ve gerçek bir ihtiyaç doğmadan uzantı bağımlılığı almak doğru değil.
+
+**Yan etki (istenen):** Arama aksana da duyarsız oldu — "kahvalti" artık
+"kahvaltı"yı buluyor. Bir arama kutusunda fazla eşleşmek, hiç eşleşmemekten
+iyidir.
+
+**Reddedilen alternatif:** Aranan metinde `ı`→`i` çevirmek. "ısı" ile "isi"yi
+eşleştirip **yanlış** sonuç üretirdi ve kayıt tarafını hiç düzeltmezdi.
+
+**Dikkat:** `search-fold.ts`'teki tablo ile migration'daki `translate()`
+çağrısı birebir aynı olmak zorunda. Bir test tabloların aynı uzunlukta
+olduğunu koruyor — farklı olsalardı `translate()` sessizce karakter düşürürdü.
+
+---
+
 ## ADR-023 — Herkese açık sayfalarda dil değişimi tam yeniden yükleme yapar
 **Tarih:** 2026-08-13 · **Durum:** Kabul edildi
 

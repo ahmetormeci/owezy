@@ -10,6 +10,32 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-13
 
+### Açılış öncesi borç kapatma (Faz 14.1–14.5)
+- **Zile tıklamak bildirimleri okundu sayıyor.** Elle basılan "tümünü okundu
+  işaretle" düğmesi kalktı. Rozet anında sıfırlanıyor ama **mavi noktalar menü
+  kapanana kadar duruyor** — okurken hangisinin yeni olduğunu görebiliyorsun.
+  Okundu işaretleme listeden sonra gidiyor: istek patlarsa bildirimler
+  okunmamış kalıyor ve bir dahaki açılışta yine görünüyorlar.
+- **Türkçe arama düzeldi (ADR-024).** "Işık" yazan bir harcama artık "ışık"
+  aramasıyla bulunuyor. Katlamayı veritabanı üretiyor
+  (`Expense.descriptionFold`, `GENERATED ALWAYS`), yani kural tek yerde ve
+  mevcut kayıtlar için backfill gerekmedi. Yan etki olarak arama **aksana da
+  duyarsız**: "kahvalti" artık "kahvaltı"yı buluyor.
+- **Bakiye ve özet toplaması SQL'e taşındı (ADR-025).** Grup sayfası artık
+  grubun bütün harcamalarını okumuyor; dönen satır sayısı harcama sayısına
+  değil **üye sayısına** bağlı. Para kuralı saf fonksiyonda kaldı — bir test
+  SQL yolu ile bellek yolunun **aynı sonucu** verdiğini koruyor.
+- `createGroup` ve `acceptGroupInvite` birim testleri geldi (13 test).
+  Aralarında bir güvenlik iddiası var: davet ham token'la değil **hash'iyle**
+  aranıyor.
+- `globals.css`'ten kullanılmayan `--chart-1..5` paleti kaldırıldı ve **neden
+  palet olmadığı** yazıldı.
+- **Bildirimler 60 gün saklanıyor.** Önceden sonsuza kadar birikiyordu.
+  Temizlik bildirim listesi okunurken yapılıyor (cron yok) ve `where`'de
+  `userId` var — hem başkasının kaydına dokunmuyor hem de mevcut index'i
+  kullanıyor. Bu, "finansal kayıtlar silinmez" kuralını çiğnemiyor: bildirim
+  finansal kayıt değil, geçici bir işaret.
+
 ### CSV dışa aktarma (Faz 13.3b)
 - Filtre çubuğunda **"Dışa aktar"** bağlantısı. Hedef "doğru CSV" değil,
   **Excel'de düzgün açılan CSV** — kullanıcının dosyayla yapacağı ilk şey onu
