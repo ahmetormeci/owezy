@@ -176,6 +176,22 @@ export const MESSAGES_TR = {
   "ui.members_and_balances": "Üyeler ve bakiyeler",
   "ui.manage_members": "Üyeleri yönet",
 
+  // --- Özet ---
+  "ui.summary_total": "Toplam",
+  "ui.summary_your_share": "Payın",
+  "ui.summary_expense_count": "Harcama",
+  "ui.summary_by_month": "Aylara göre",
+  "ui.summary_by_category": "Nereye gitti",
+  "ui.summary_how_balance": "Bakiyen nasıl oluştu",
+  "ui.summary_you_paid": "Ödediğin",
+  "ui.summary_settlements": "Ödemeler",
+  "ui.summary_balance": "Bakiyen",
+  // Türkçede çoğul eki yok, İngilizcede var: tek kayıt "1 expense", digerleri
+  // "2 expenses". Sablonu tek tutsaydik Ingilizce "1 expenses" yazardi -
+  // 11.4d-1'de goreli zamanlarda yasanan hatanin aynisi.
+  "ui.month_expense_count_one": "{count} harcama",
+  "ui.month_expense_count_other": "{count} harcama",
+
   // --- Harcama ---
   "ui.expenses": "Harcamalar",
   "ui.add_expense": "Harcama ekle",
@@ -493,6 +509,18 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.will_be_paid_to_you": "Owed to you",
   "ui.other_suggested_payments": "Rest of the group",
   "ui.everyone_settled": "Everyone is settled up, there is nothing to pay.",
+  "ui.summary_total": "Total",
+  "ui.summary_your_share": "Your share",
+  "ui.summary_expense_count": "Expenses",
+  "ui.summary_by_month": "By month",
+  "ui.summary_by_category": "Where it went",
+  "ui.summary_how_balance": "How your balance adds up",
+  "ui.summary_you_paid": "You paid",
+  "ui.summary_settlements": "Settlements",
+  "ui.summary_balance": "Your balance",
+  "ui.month_expense_count_one": "{count} expense",
+  "ui.month_expense_count_other": "{count} expenses",
+
   "ui.members_and_balances": "Members and balances",
   "ui.manage_members": "Manage members",
 

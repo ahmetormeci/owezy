@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/api-client";
 import { formatMoney } from "@/lib/money";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { useLocale, useTranslate } from "@/lib/i18n";
 
@@ -33,6 +33,36 @@ export type ExpenseListItem = {
   createdById: string;
   participants: { userId: string; shareAmount: number }[];
 };
+
+/** Ozetten gelen ay toplamlari. Grubun TAMAMINI kapsar, ekrandakini degil. */
+export type MonthTotal = { month: string; amount: number; count: number };
+
+/**
+ * Yuklenmis harcamalari aya boler.
+ *
+ * expenseDate ISO metni ve sunucudaki monthKey ile AYNI dilim aliniyor
+ * (ilk 7 karakter, UTC). Date'e cevirip getMonth() kullansaydik, UTC'nin
+ * gerisindeki bir saat diliminde ayin ilk gunu bir onceki basligin altina
+ * duserdi ve o ayin toplami satirlariyla celisirdi.
+ *
+ * Liste zaten tarihe gore azalan sirali geldigi icin tek gecis yetiyor.
+ */
+function groupByMonth(expenses: ExpenseListItem[]) {
+  const groups: { month: string; expenses: ExpenseListItem[] }[] = [];
+
+  for (const expense of expenses) {
+    const month = expense.expenseDate.slice(0, 7);
+    const current = groups[groups.length - 1];
+
+    if (current?.month === month) {
+      current.expenses.push(expense);
+    } else {
+      groups.push({ month, expenses: [expense] });
+    }
+  }
+
+  return groups;
+}
 
 function DeleteExpenseButton({
   groupId,
@@ -102,6 +132,7 @@ export function ExpenseList({
   currency,
   currentUserId,
   nameByUserId,
+  monthTotals,
   initialExpenses,
   initialNextCursor,
 }: {
@@ -109,6 +140,7 @@ export function ExpenseList({
   currency: string;
   currentUserId: string;
   nameByUserId: Record<string, string>;
+  monthTotals: MonthTotal[];
   initialExpenses: ExpenseListItem[];
   initialNextCursor: string | null;
 }) {
@@ -162,22 +194,47 @@ export function ExpenseList({
     );
   }
 
+  const totalByMonth = new Map(monthTotals.map((slice) => [slice.month, slice]));
+
   return (
     <div className="flex flex-col gap-4">
-      <ul className="flex flex-col">
-        {expenses.map((expense) => {
-          const myShare = expense.participants.find(
-            (participant) => participant.userId === currentUserId,
-          );
-          // Yalnizca kaydi olusturan kisi duzenleyip silebilir; buton da bu
-          // kurala gore gosteriliyor. (Asil kontrol her zaman sunucuda.)
-          const canModify = expense.createdById === currentUserId;
+      {groupByMonth(expenses).map((group) => {
+        const total = totalByMonth.get(group.month);
 
-          return (
-            <li
-              key={expense.id}
-              className="border-b border-line-soft py-2.5 last:border-b-0"
-            >
+        return (
+          <section key={group.month}>
+            {/* Baslik ayin TAMAMINI ozetliyor, ekrandaki satirlari degil.
+                Ozette karsiligi bulunamazsa tutar hic yazilmiyor - yanlis bir
+                toplam gostermektense hic gostermemek dogru. */}
+            <div className="flex items-baseline justify-between gap-4 border-b border-line-soft pt-3 pb-1.5">
+              <span className="label">{formatMonth(group.month, locale)}</span>
+              {total ? (
+                <span className="money text-xs text-muted-foreground">
+                  {formatMoney(total.amount, currency, locale)} ·{" "}
+                  {t(
+                    total.count === 1
+                      ? "ui.month_expense_count_one"
+                      : "ui.month_expense_count_other",
+                    { count: total.count },
+                  )}
+                </span>
+              ) : null}
+            </div>
+
+            <ul className="flex flex-col">
+              {group.expenses.map((expense) => {
+                const myShare = expense.participants.find(
+                  (participant) => participant.userId === currentUserId,
+                );
+                // Yalnizca kaydi olusturan kisi duzenleyip silebilir; buton da bu
+                // kurala gore gosteriliyor. (Asil kontrol her zaman sunucuda.)
+                const canModify = expense.createdById === currentUserId;
+
+                return (
+                  <li
+                    key={expense.id}
+                    className="border-b border-line-soft py-2.5 last:border-b-0"
+                  >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{expense.description}</p>
@@ -215,12 +272,15 @@ export function ExpenseList({
                       })}
                     </p>
                   ) : null}
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })}
 
       {nextCursor ? (
         <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>

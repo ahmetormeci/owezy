@@ -8,6 +8,7 @@
 // Dosyanin sonundaki getGroupBalances ise servis katmanidir: veriyi ceker ve
 // bu saf fonksiyonlara verir.
 
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 import { assertActiveMemberOfGroup } from "@/lib/group-access";
@@ -146,6 +147,44 @@ export type GroupBalanceEntry = UserBalance & {
   hasLeft: boolean;
 };
 
+/**
+ * Grubun butun para hareketleri: silinmemis harcamalar + iptal edilmemis
+ * odemeler. Bakiye de ozet de AYNI veriyi istiyor.
+ *
+ * cache() ile sarili (auth.ts'teki findCurrentUser ile ayni kalip): grup
+ * sayfasi hem getGroupBalances hem getGroupSummary cagiriyor ve ikisi ayni
+ * istekte TEK sorgu paylasiyor. Sarilmasaydi sayfa grubun butun harcamalarini
+ * iki kez okurdu.
+ *
+ * select, iki cagiranin BIRLESIMI: expenseDate ve category yalnizca ozetin
+ * isine yariyor, ama iki ayri okuma acmaktansa iki kolon fazladan cekmek
+ * ucuz.
+ *
+ * BILINEN SINIR: bu sorgunun ustunde limit YOK. 1000 harcamali bir grupta her
+ * sayfa goruntulemesi bin satir cekiyor. Dogru cozum bakiyeyi de ozeti de
+ * SQL'de toplamak; ikisi tek iste duzeltilmeli (PROGRESS.md teknik borc).
+ */
+export const loadGroupFinancials = cache(async (groupId: string) => {
+  const [expenses, settlements] = await Promise.all([
+    prisma.expense.findMany({
+      where: { groupId, deletedAt: null },
+      select: {
+        paidById: true,
+        amount: true,
+        expenseDate: true,
+        category: true,
+        participants: { select: { userId: true, shareAmount: true } },
+      },
+    }),
+    prisma.settlement.findMany({
+      where: { groupId, cancelledAt: null },
+      select: { fromUserId: true, toUserId: true, amount: true },
+    }),
+  ]);
+
+  return { expenses, settlements };
+});
+
 export async function getGroupBalances(userId: string, groupId: string) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.deletedAt) {
@@ -154,20 +193,8 @@ export async function getGroupBalances(userId: string, groupId: string) {
 
   await assertActiveMemberOfGroup(groupId, userId);
 
-  // Yalnizca silinmemis harcamalar ve iptal edilmemis odemeler hesaba katilir.
-  const [expenses, settlements, memberships] = await Promise.all([
-    prisma.expense.findMany({
-      where: { groupId, deletedAt: null },
-      select: {
-        paidById: true,
-        amount: true,
-        participants: { select: { userId: true, shareAmount: true } },
-      },
-    }),
-    prisma.settlement.findMany({
-      where: { groupId, cancelledAt: null },
-      select: { fromUserId: true, toUserId: true, amount: true },
-    }),
+  const [{ expenses, settlements }, memberships] = await Promise.all([
+    loadGroupFinancials(groupId),
     prisma.groupMember.findMany({
       where: { groupId },
       select: {

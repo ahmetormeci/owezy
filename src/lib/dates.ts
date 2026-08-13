@@ -36,3 +36,28 @@ function formatter(locale: Locale): Intl.DateTimeFormat {
 export function formatDate(date: Date, locale: Locale = DEFAULT_LOCALE): string {
   return formatter(locale).format(date);
 }
+
+const monthFormatters: Partial<Record<Locale, Intl.DateTimeFormat>> = {};
+
+function monthFormatter(locale: Locale): Intl.DateTimeFormat {
+  return (monthFormatters[locale] ??= new Intl.DateTimeFormat(INTL_LOCALES[locale], {
+    month: "long",
+    year: "numeric",
+    // UTC SART: asagida ayin ilk gunu UTC olarak kuruluyor. Bicimlendirici
+    // yerel saat dilimini kullansaydi, UTC'nin gerisindeki bir dilimde
+    // "2026-08" bir onceki ayin son gunune kayar ve "Temmuz 2026" yazardi.
+    timeZone: "UTC",
+  }));
+}
+
+/**
+ * Ay anahtarini baslik metnine cevirir: "2026-08" -> "Agustos 2026" /
+ * "August 2026".
+ *
+ * Girdi summary.ts'in urettigi anahtar; Date degil, cunku ay bir AN degil bir
+ * aralik ve araya saat dilimi sokmanin anlami yok.
+ */
+export function formatMonth(month: string, locale: Locale = DEFAULT_LOCALE): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return monthFormatter(locale).format(new Date(Date.UTC(year, monthNumber - 1, 1)));
+}

@@ -5,6 +5,7 @@ import { getGroupBalances } from "@/lib/balances";
 import { getGroupForUser, listGroupMembers } from "@/lib/groups";
 import { listExpenses } from "@/lib/expenses";
 import { listSettlements } from "@/lib/settlements";
+import { getGroupSummary } from "@/lib/summary";
 import { AppError } from "@/lib/errors";
 import { formatMoney, formatSignedMoney } from "@/lib/money";
 import type { Locale } from "@/lib/locale";
@@ -16,6 +17,7 @@ import { SettlementList } from "@/components/settlement-list";
 import { RecordSettlementDialog } from "@/components/record-settlement-dialog";
 import { SectionHead } from "@/components/section-head";
 import { PersonAvatar } from "@/components/person-avatar";
+import { GroupSummary } from "@/components/group-summary";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
 
 // Renkler artik dogrudan yazilmiyor (eskiden "text-emerald-600
@@ -118,13 +120,18 @@ export default async function GroupDetailPage({
   let members: Awaited<ReturnType<typeof listGroupMembers>>;
   let expenseData: Awaited<ReturnType<typeof listExpenses>>;
   let settlementData: Awaited<ReturnType<typeof listSettlements>>;
+  let summary: Awaited<ReturnType<typeof getGroupSummary>>;
   try {
-    [group, balanceData, members, expenseData, settlementData] = await Promise.all([
+    // getGroupSummary ve getGroupBalances ayni veriyi istiyor; ikisi de
+    // loadGroupFinancials'i cagiriyor ve cache() sayesinde bu istekte
+    // veritabanina TEK sorgu gidiyor.
+    [group, balanceData, members, expenseData, settlementData, summary] = await Promise.all([
       getGroupForUser(user.id, groupId),
       getGroupBalances(user.id, groupId),
       listGroupMembers(user.id, groupId),
       listExpenses(user.id, groupId, { limit: 20 }),
       listSettlements(user.id, groupId, { limit: 20 }),
+      getGroupSummary(user.id, groupId),
     ]);
   } catch (error) {
     if (error instanceof AppError) {
@@ -286,6 +293,10 @@ export default async function GroupDetailPage({
         </div>
       </section>
 
+      {/* Bakiyenin ACIKLAMASI ve grubun harcama dagilimi. Durum paneli "ne
+          kadar" diyor, bu blok "neden" diyor. */}
+      <GroupSummary summary={summary} currency={currency} />
+
       {/* KADEME 2 - Sayfanin govdesi. Gruba gelmenin ikinci sebebi:
           "ne harcandi". */}
       {/* Sayfanin govdesi. Kart kalkti: bolumu artik kucuk bir etiket ve
@@ -297,6 +308,10 @@ export default async function GroupDetailPage({
             currency={currency}
             currentUserId={user.id}
             nameByUserId={Object.fromEntries(nameByUserId)}
+            // Ay toplamlari ozetten geliyor, listeden DEGIL: liste yalnizca ilk
+            // 20 kaydi tasiyor ve bir ay sayfa sinirini astiginda yuklenmis
+            // satirlardan hesaplanan toplam sessizce yanlis olurdu.
+            monthTotals={summary.byMonth}
             initialNextCursor={expenseData.nextCursor}
             initialExpenses={expenseData.expenses.map((expense) => ({
               id: expense.id,

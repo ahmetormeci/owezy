@@ -141,4 +141,73 @@ test.describe("harcamalar", () => {
     await expect(owner.locator('input[aria-label$="yüzdesi"]').nth(0)).toHaveValue("30");
     await expect(owner.locator('input[aria-label$="yüzdesi"]').nth(1)).toHaveValue("70");
   });
+
+  // Ozet ve ay basliklari (Faz 13). Buradaki asil iddia toplamlarin DOGRU
+  // olmasi: ay basligindaki tutar ekrandaki satirlardan degil, grubun
+  // tamamindan geliyor.
+  test("ozet blogu ve ay basliklari dogru tutarlari gosterir", async ({ browser }) => {
+    const page = await pageAs(browser, "owner");
+    await createGroupAndOpen(page, uniqueGroupName("ozet"));
+
+    async function addExpense(input: {
+      description: string;
+      amount: string;
+      date: string;
+      category: string;
+    }) {
+      await page.getByRole("link", { name: "Harcama ekle" }).click();
+      await page.getByLabel("Açıklama").fill(input.description);
+      await page.getByLabel("Tutar").fill(input.amount);
+      await page.getByLabel("Kategori").selectOption({ label: input.category });
+      await page.getByLabel("Tarih").fill(input.date);
+      await page.getByRole("button", { name: "Harcamayı kaydet" }).click();
+      await expect(page.getByText(input.description)).toBeVisible();
+    }
+
+    await addExpense({
+      description: "Villa kirasi",
+      amount: "3000",
+      date: "2026-08-10",
+      category: "Konaklama",
+    });
+    await addExpense({
+      description: "Aksam yemegi",
+      amount: "1000",
+      date: "2026-07-15",
+      category: "Yemek",
+    });
+
+    // Ozet: toplam ve kategori kirilimi.
+    await expect(page.getByText("4.000,00 ₺").first()).toBeVisible();
+    await expect(page.getByText("3.000,00 ₺ · %75")).toBeVisible();
+    await expect(page.getByText("1.000,00 ₺ · %25")).toBeVisible();
+
+    // Ay adi IKI yerde geciyor: ozetteki aylik sutunun etiketinde ve listenin
+    // ay basliginda. Baslik ".label" tasiyor (SectionHead ile ayni bicim),
+    // sutun etiketi tasimiyor - iddiayi ona cipaliyoruz ki dogru olani
+    // olctugumuzden emin olalim.
+    await expect(page.locator(".label", { hasText: "Ağustos 2026" })).toBeVisible();
+    await expect(page.locator(".label", { hasText: "Temmuz 2026" })).toBeVisible();
+
+    // Ay toplami ve tekil/cogul. Bu metin yalnizca ay basliginda var.
+    await expect(page.getByText("3.000,00 ₺ · 1 harcama")).toBeVisible();
+    await expect(page.getByText("1.000,00 ₺ · 1 harcama")).toBeVisible();
+
+    // Bakiyenin acilimi: tek kisilik grupta odedigin = payin, bakiye sifir.
+    await expect(page.getByText("Bakiyen nasıl oluştu")).toBeVisible();
+
+    await page.screenshot({ path: "test-results/faz13-ozet.png", fullPage: true });
+
+    // Duzen hatalari normalde E2E'den kaciyor: testler metnin VARLIGINA
+    // bakiyor, sayfanin kaydigina degil. 11.5'te mobilde yatay kayma tam da
+    // bu yuzden ancak ekran goruntusuyle yakalanmisti. Ozet blogu yeni bir
+    // grid ve sabit genislikli cubuklar getirdigi icin olcumu buraya aliyoruz.
+    for (const width of [390, 768]) {
+      await page.setViewportSize({ width, height: 800 });
+      const overflows = await page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      );
+      expect(overflows, `${width}px genisliginde sayfa yatay kayiyor`).toBe(false);
+    }
+  });
 });
