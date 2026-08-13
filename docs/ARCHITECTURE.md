@@ -24,7 +24,7 @@ src/
 ├─ lib/                         SERVİS KATMANI + saf mantık
 ├─ instrumentation.ts           Sentry (sunucu)
 ├─ instrumentation-client.ts    Sentry (tarayıcı)
-└─ middleware.ts                clerkMiddleware() — koruma YAPMAZ, bkz. auth
+└─ proxy.ts                     clerkMiddleware() — koruma YAPMAZ, bkz. auth
 
 e2e/                            Playwright
 prisma/                         schema.prisma + migrations
@@ -102,16 +102,19 @@ içindeki `apiRequest<T>()`.
 
 ```
 İstek
- └─► middleware.ts — clerkMiddleware()
+ └─► proxy.ts — clerkMiddleware()
       Yalnızca oturum bilgisini isteğe ekler. HİÇBİR ROUTE'U KORUMAZ.
  └─► (app)/layout.tsx — auth() → userId yoksa redirect("/sign-in")
  └─► Sayfa/route — getOrCreateCurrentUser() → bizim User kaydımız
 ```
 
-**Koruma neden middleware'de değil:** Middleware yol eşleştirmesine dayanır ve
-Next.js'in gerçek yönlendirmesinden sapabilir; bu, korunması gereken bir
-sayfanın açıkta kalmasına yol açabilir. Clerk'in kendi dokümantasyonu da
-korumayı sayfada yapmayı önerir. (`createRouteMatcher` deprecated'dır.)
+**Koruma neden proxy'de değil:** Proxy yol eşleştirmesine dayanır ve Next.js'in
+gerçek yönlendirmesinden sapabilir; bu, korunması gereken bir sayfanın açıkta
+kalmasına yol açabilir. Clerk'in kendi dokümantasyonu da korumayı sayfada
+yapmayı önerir. (`createRouteMatcher` deprecated'dır.)
+
+Dosya Next 16'ya kadar `middleware.ts` adını taşıyordu; özellik aynı, yalnızca
+dosya kuralı yeniden adlandırıldı (bkz. sürüm tuzakları).
 
 ### `getOrCreateCurrentUser()` (`src/lib/auth.ts`)
 
@@ -212,7 +215,7 @@ take: limit + 1,                                  // "daha var mı" için
 | Prisma 7 | `datasource.url` **schema'da yasak**; bağlantı `prisma.config.ts`'te. `@prisma/client`'ta **postinstall yok** → build'de `prisma generate` şart. Migration'lar **havuzsuz** bağlantı ister (`prisma-url.ts`). |
 | Clerk 7 | `SignedIn`/`SignedOut` yok → `<Show when="signed-in">`. `createRouteMatcher` deprecated. Webhook doğrulaması `standardwebhooks` ile (ek paket gerekmez). |
 | Base UI (shadcn) | Radix değil. `Button render={<Link/>}` **çalışmaz** — bileşen native `<button>` bekler, aksi halde React ağacı çöker ve sayfa boş kalır. Link için `buttonVariants({...})` sınıfları doğrudan `<Link>` üzerine verilir. `sentry.client.config.ts` Turbopack ile çalışmaz → `instrumentation-client.ts`. |
-| Next.js 16 | `middleware.ts` deprecated (`proxy.ts` isteniyor) — **TODO**, henüz yapılmadı. |
+| Next.js 16 | `middleware.ts` → **`proxy.ts`** (Faz 12.4'te taşındı). Özellik aynı, isim değişti. Proxy **Node.js runtime'ında** çalışır ve `runtime` config seçeneği burada **kullanılamaz** — verilirse Next hata fırlatır. Dosya `app/` ile aynı seviyede olmak zorunda (`src/proxy.ts`). |
 
 ## Veritabanları
 

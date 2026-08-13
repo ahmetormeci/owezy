@@ -18,37 +18,33 @@ durumunu dogrula, sonra bu dosyayi duzelt.
 Updated: 2026-08-13
 
 Current task:
-  Faz 12 - Acilis oncesi duzeltmeler. Dort kucuk is; hicbiri yeni yetenek
-  getirmiyor, dordu de bugun yanlis olan bir seyi duzeltiyor.
-
-    12.1  DONE          Yuzdeli harcamayi duzenlemek yuzdeleri siliyordu
-    12.2  DONE          Clerk giris/kayit formu Turkce modda Ingilizce
-    12.3  SIRADAKI      createGroupSchema desteklenmeyen para birimini kabul ediyor
-    12.4  BEKLIYOR      middleware.ts -> proxy.ts (Next 16 deprecation'i)
-
-  Faz 12'den sonra Faz 13 (grup sayfasi 100 harcamada) geliyor; yonu
-  onaylandi, uygulamadan once okunacak notlar PROGRESS.md'de.
+  Faz 12 (acilis oncesi duzeltmeler) BITTI - dort asama da tamam.
+  Commit bekleniyor: kullanici 12.3 ve 12.4'u birlikte commitlemek istedi.
 
 Hemen sonraki adim:
-  12.3 - createGroupSchema'daki "currency: z.string().length(3)" desteklenen
-  listeye daraltilir (TRY, USD). Bugun API'den JPY ile grup acilabiliyor ve o
-  grupta tutarlar 100 kat kucuk gorunuyor, cunku formatMoney/parseMoney her
-  para biriminin iki ondalik basamagi oldugunu varsayiyor. ISO 4217 exponent
-  tablosu GEREKSIZ - urunun kapsami iki para birimi.
-  Dikkat: mevcut gruplarda desteklenmeyen bir currency varsa (elle ya da eski
-  istekle olusmus olabilir) daraltma onlari OKUNAMAZ yapmamali - once
-  veritabanindaki dagilim kontrol edilmeli.
+  1. 12.3 + 12.4 commitlenir (kullanici istedi), push ayrica sorulur.
+  2. Sonra Faz 13: grup sayfasi 100 harcamada. Yonu MOCKUP UZERINDEN
+     ONAYLANDI. Kapsam: 13.1 ay basliklari + ay toplami, 13.2 ozet blogu
+     (bakiyenin aciklamasi + kategori/ay kirilimi), 13.3 arama + filtre
+     ("yalnizca beni ilgilendirenler" dahil) + CSV.
+     UYGULAMADAN ONCE PROGRESS.md'deki "Faz 13" bolumu okunmali - orada
+     olculmus mühendislik notlari var (ozellikle: ozet ekrandaki 20
+     harcamadan hesaplanamaz ama yeni sorgu da gerekmiyor).
 
 Status:
-  12.1 (`3578386`) ve 12.2 (`d18997f`) commitlendi ama **PUSH EDILMEDI** -
-  push Vercel'de production deploy tetikliyor, kullanicinin onayi bekleniyor.
-  Ikisi birlikte gidecek.
+  Calisma agaci temiz. PUSH EDILMEMIS 3 commit var:
+    90fb6b5  12.3  para birimi daraltmasi
+    07a8e7d  12.4  saf rename (middleware.ts -> proxy.ts, %100)
+    40a6095  12.4  bayat yorumun duzeltilmesi
+  Push Vercel'de production deploy tetikliyor; kullanicinin onayi bekleniyor.
 
-  Push edilince DOGRULANACAK: 12.1'in migration'i
-  (add_expense_participant_basis_points) production veritabanina vercel-build
-  ile uygulanir; Vercel build log'undan teyit edilmeli.
+  12.1 (`3578386`) ve 12.2 (`d18997f`) push edildi.
+  DOGRULANDI (canlida): 12.1'in migration'i
+  (add_expense_participant_basis_points) production veritabanina uygulandi -
+  Vercel deploy log'unda "All migrations have been successfully applied".
 
-  Testler: 428 birim / 28 E2E, tsc + lint temiz.
+  Testler: 434 birim / 28 E2E, tsc + lint temiz.
+  12.3 ve 12.4 sonrasi tam E2E kosulari yapildi, ikisi de 28/28.
 
   Migration 20260812214219_add_expense_participant_basis_points gelistirme ve
   E2E veritabanlarina UYGULANDI. Production'a push aninda vercel-build ile

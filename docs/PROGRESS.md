@@ -13,7 +13,7 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 428 | ✅ tümü geçiyor |
+| Birim (Vitest) | 434 | ✅ tümü geçiyor |
 | E2E (Playwright) | 28 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -304,7 +304,7 @@ geliyor — yanlış okunan bir tutar, yanlış çevrilmiş bir etiketten pahal�
 
 ---
 
-## Faz 12 — Açılış öncesi düzeltmeler · **IN_PROGRESS**
+## Faz 12 — Açılış öncesi düzeltmeler · **DONE**
 
 Gerçek kullanıcı gelmeden kapatılması gereken dört küçük iş. Ortak noktaları
 yeni yetenek getirmemeleri: dördü de **bugün yanlış olan bir şeyi** düzeltiyor.
@@ -313,8 +313,8 @@ yeni yetenek getirmemeleri: dördü de **bugün yanlış olan bir şeyi** düzel
 |---|---|---|
 | 12.1 | **DONE** | Yüzdeli harcamayı düzenlemek yüzdeleri siliyor |
 | 12.2 | **DONE** | Clerk giriş/kayıt formu Türkçe modda İngilizce |
-| 12.3 | TODO | `createGroupSchema` desteklenmeyen para birimini kabul ediyor |
-| 12.4 | TODO | `middleware.ts` → `proxy.ts` (Next 16 deprecation'ı) |
+| 12.3 | **DONE** | `createGroupSchema` desteklenmeyen para birimini kabul ediyor |
+| 12.4 | **DONE** | `middleware.ts` → `proxy.ts` (Next 16 deprecation'ı) |
 
 **Sıra neden böyle:** 12.1 tek veri bütünlüğü hatası — kullanıcının girdiği
 tutarı sessizce değiştirebiliyor. Diğer üçü yanlış ama zararsız.
@@ -342,8 +342,48 @@ Türkçe yarısı İngilizce bir ekran görüyordu, yani düzeltilen hatanın ay
 Çözüm ADR-023'te: herkese açık sayfalarda dil düğmesi tam yeniden yükleme
 yapıyor. Tarayıcıda iki yönde de ölçüldü.
 
-**Test:** 428 birim / 28 E2E.
-**Commit:** `3578386` (12.1), `d18997f` (12.2) — ikisi de **push edilmedi**.
+**12.3'te yapıldı:** `currency` artık `z.string().length(3)` değil,
+`z.enum(SUPPORTED_CURRENCIES)`. Liste `money.ts`'te duruyor — kısıtın sebebi
+orada yaşıyor: `formatMoney`/`parseMoney` her para biriminin **iki ondalık
+basamağı** olduğunu varsayıyor, `JPY` (sıfır ondalık) ile açılan bir grupta
+tutarlar 100 kat küçük görünürdü.
+
+`formatMoney`'nin `currency` parametresi **bilerek daraltılmadı**: o,
+veritabanında ne yazıyorsa onu göstermek zorunda. Daraltmak eski ya da elle
+oluşturulmuş bir kaydı okunamaz yapardı. `createGroup`'un girdi tipi ise
+daraldı — şema çalışma zamanında, tip derleme zamanında eliyor.
+
+Ölçüldü: dev ve E2E veritabanlarında yalnızca `TRY` var, yani daraltma hiçbir
+mevcut kaydı etkilemiyor. Arayüz zaten `currency` göndermiyor; açık yalnızca
+API'den ulaşılabilirdi.
+
+EUR ve GBP de iki ondalıklı, yani teknik olarak güvenli; listede
+olmamalarının sebebi ürün kapsamı, hesaplama değil.
+
+**12.4'te yapıldı:** `src/middleware.ts` → `src/proxy.ts` (`git mv`, geçmiş
+korundu). Next 16 dosya kuralını yeniden adlandırdı; **özellik aynı**.
+
+Belgelerde iki nokta çıktı, ikisi de sadece yeniden adlandırma olmadığını
+gösteriyor: **Proxy Node.js runtime'ında** çalışıyor ve `runtime` config
+seçeneği burada **kullanılamıyor** (verilirse Next hata fırlatıyor). Dosyamız
+runtime belirtmediği için etkilenmedi.
+
+Ölçüldü, varsayılmadı: dev sunucusu artık zamanlama dökümünde `proxy.ts`
+yazıyor (`middleware` deprecation uyarısı yok), giriş yapmamış istek
+`/groups` → 307 → `/sign-in` ile yönleniyor, tam E2E koşusunda üç auth testi
+dahil 28 test geçiyor.
+
+Dosyanın kendi yorumu da düzeltildi: "hangi route'ların giriş zorunlu
+kılacağını burada netleştireceğiz" yazıyordu — o karar alındı ve **tersi**
+yönde (koruma `(app)/layout.tsx`'te, ADR gerekçesi ARCHITECTURE.md'de).
+
+**Test:** 434 birim / 28 E2E.
+**Commit:** `3578386` (12.1), `d18997f` (12.2) — push edildi.
+`90fb6b5` (12.3), `07a8e7d` + `40a6095` (12.4) — **push edilmedi**.
+
+12.4 ikiye bölündü çünkü tek commit'te yorum da değişince git dosyayı
+%100 rename saymıyor ve `git log --follow` zinciri kopuyordu. Şimdi saf
+rename ayrı: dosyanın geçmişi `f2adb48`'e (Faz 2) kadar takip ediliyor.
 
 ---
 
@@ -434,16 +474,6 @@ karar vermemiştir.
   açık sayfalarda bu her zaman 401 dönüyor ve tarayıcı konsoluna hata
   düşüyor. Zararsız (kod bunu bekliyor ve yutuyor) ama gereksiz istek ve
   gürültü. Clerk'in `useAuth().isSignedIn` değeriyle atlanabilir.
-- **`createGroupSchema` desteklenmeyen para birimini kabul ediyor.**
-  `currency: z.string().length(3)` üç harfli **her** kodu geçiriyor ve
-  `POST /api/v1/groups` onu doğrudan `createGroup`'a veriyor. Oysa
-  `formatMoney` / `parseMoney` her para biriminin **iki ondalık basamağı**
-  olduğunu varsayıyor (`/100`, `% 100`). TRY ve USD için doğru — ürünün
-  kapsamı da bu ikisi — ama API'den `JPY` (sıfır ondalık) ile grup
-  oluşturulabiliyor ve o grupta tutarlar **100 kat küçük** görünür.
-  Arayüzden ulaşılamıyor (form `currency` göndermiyor), API'den ulaşılabiliyor.
-  Çözüm şemayı desteklenen listeye daraltmak; ISO 4217 exponent tablosu
-  **gereksiz**, kapsam iki para birimi.
 - `PublicControls` konumunu `fixed` ile kendisi belirliyor. Dar ve kısa bir
   ekranda üstteki kartla çakışabilir. **11.6'nın listesindeydi, yapılmadı** —
   ölçülmedi de; kalan tek 11.6 maddesi bu.

@@ -10,6 +10,32 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-13
 
+### `middleware.ts` → `proxy.ts` (Faz 12.4)
+- Next.js 16 dosya kuralını yeniden adlandırdı; **özellik aynı**. `git mv` ile
+  taşındı, dosya geçmişi korundu.
+- Belgede iki nokta çıktı: **Proxy Node.js runtime'ında** çalışıyor ve
+  `runtime` config seçeneği burada **kullanılamıyor** (verilirse Next hata
+  fırlatıyor). Dosyamız runtime belirtmediği için etkilenmedi.
+- Dosyanın yorumu da düzeltildi. "Hangi route'ların giriş zorunlu kılacağını
+  burada netleştireceğiz" yazıyordu; o karar alındı ve **tersi** yönde —
+  koruma sayfada (`(app)/layout.tsx`), proxy hiçbir route'u korumuyor.
+- Ölçüldü: dev sunucusu zamanlama dökümünde artık `proxy.ts` yazıyor,
+  korumalı sayfa yönlendirmesi çalışıyor, tam E2E koşusu 28/28.
+
+### Grup para birimi desteklenen listeye daraltıldı (Faz 12.3)
+- `createGroupSchema`'daki `currency` artık `z.string().length(3)` değil,
+  `z.enum(SUPPORTED_CURRENCIES)` (**TRY, USD**). Önceden API'den `JPY` ile
+  grup açılabiliyordu; `JPY` sıfır ondalıklı olduğu için o gruptaki bütün
+  tutarlar **100 kat küçük** görünürdü ve arayüz bunu hiçbir yerde belli
+  etmezdi. Arayüzden ulaşılamıyordu (form `currency` göndermiyor).
+- Liste `money.ts`'te, çünkü kısıtın sebebi orada: `formatMoney`/`parseMoney`
+  iki ondalık basamak varsayıyor. **`formatMoney`'nin parametresi bilerek
+  daraltılmadı** — veritabanında ne yazıyorsa onu göstermeli.
+- `createGroup`'un girdi tipi de daraldı: şema çalışma zamanında, tip derleme
+  zamanında eliyor.
+- Yeni `group-schemas.test.ts` (6 test). Ölçüldü: dev ve E2E veritabanlarında
+  yalnızca `TRY` var — daraltma hiçbir mevcut kaydı etkilemiyor.
+
 ### Clerk'in giriş/kayıt formu artık Türkçe (Faz 12.2)
 - **`@clerk/localizations` (4.15.1) eklendi**, `ClerkProvider` Türkçe modda
   `trTR` alıyor. İngilizce için bilerek hiçbir şey gönderilmiyor: Clerk'in
