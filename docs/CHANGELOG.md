@@ -10,6 +10,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-13
 
+### CSV dışa aktarma (Faz 13.3b)
+- Filtre çubuğunda **"Dışa aktar"** bağlantısı. Hedef "doğru CSV" değil,
+  **Excel'de düzgün açılan CSV** — kullanıcının dosyayla yapacağı ilk şey onu
+  Excel'de açmak.
+- **UTF-8 BOM**, **dile bağlı ayraç** (`tr` → `;`, `en` → `,`) ve ayraçla
+  **birlikte değişen ondalık ayracı**. İkisi ayrışırsa `120,50` değeri iki
+  hücreye bölünür ya da Türkçe Excel tutarı metin sanar.
+- **Para birimi başlıkta, hücrede değil** (`Tutar (TRY)`): simgeli bir hücre
+  Excel'de sayı olmaz, toplanamaz. Tarihler ISO — belirsizlik yok, metin
+  olarak sıralandığında kronolojik.
+- **Dışa aktarma filtreyi izler, sayfayı izlemez:** eşleşen her kayıt iner,
+  ekrandaki 20 değil. Sessizce kırpılmış bir mali dosya, yanlış bir toplamdan
+  daha kötüdür. Filtre koşulu listelemeyle aynı fonksiyondan geliyor.
+- E2E dosyanın indiğini değil **içeriğini** doğruluyor: BOM, başlık, ayraç ve
+  noktalı virgül içeren bir açıklamanın tırnaklanması.
+
 ### Harcamalarda arama ve filtre (Faz 13.3a)
 - Arama kutusu, kategori seçici ve **"yalnızca beni ilgilendirenler"**.
   Filtreleme **sunucuda**: ekrandaki 20 satırı süzmek, aranan kayıt sonraki

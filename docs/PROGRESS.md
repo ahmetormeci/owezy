@@ -8,13 +8,13 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 11 faz tamamlandı, Faz 12 devam ediyor. Uygulama canlıda ve
-`main`'e giden her değişiklik CI'dan geçiyor.
+**Özet:** 13 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
+CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 454 | ✅ tümü geçiyor |
-| E2E (Playwright) | 30 | ✅ tümü geçiyor |
+| Birim (Vitest) | 465 | ✅ tümü geçiyor |
+| E2E (Playwright) | 31 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -387,7 +387,7 @@ rename ayrı: dosyanın geçmişi `f2adb48`'e (Faz 2) kadar takip ediliyor.
 
 ---
 
-## Faz 13 — Grup sayfası 100 harcamada · **IN_PROGRESS**
+## Faz 13 — Grup sayfası 100 harcamada · **DONE**
 
 Sayfa 2 harcamada iyi çalışıyor, 100 harcamada üç ayrı şey bozuluyor — **yön**
 (ay sınırı yok), **anlam** ("nereye gitti" sorusunun cevabı hiçbir yerde yok)
@@ -397,7 +397,7 @@ ve **bulma** (arama/filtre yok). Grafik yalnızca ikincisine cevap veriyor.
 |---|---|---|
 | 13.1 + 13.2 | **DONE** | Ay başlıkları + özet bloğu (bakiyenin açıklaması + kategori/ay kırılımı) |
 | 13.3a | **DONE** | Arama + kategori + "yalnızca beni ilgilendirenler" + sonuç satırı |
-| 13.3b | TODO | CSV dışa aktarma |
+| 13.3b | **DONE** | CSV dışa aktarma |
 
 **13.1 ve 13.2 neden birleşti:** Ay başlığındaki toplam ekrandaki 20 kayıttan
 hesaplanamaz — bir ay sayfa sınırını aştığında sessizce yanlış olurdu. Doğru
@@ -429,8 +429,6 @@ anlatmıyor.
 `scrollWidth > innerWidth` ölçülüyor. 11.5'teki yatay kayma ancak ekran
 görüntüsüyle yakalanmıştı; bu ölçüm o boşluğu kapatıyor.
 
-**Commit:** `b301e85` (13.1+13.2), `7bfd57f` (13.3a) — **push edilmedi**.
-
 **13.3a'da yapıldı:** `listExpenses` artık `q`, `category` ve `mine`
 alıyor; filtre **sunucuda**. Ekrandaki 20 satırı süzmek, aranan kayıt sonraki
 sayfadayken "sonuç yok" demek olurdu.
@@ -452,16 +450,39 @@ aramasıyla **bulunmuyor**. Diğer Türkçe harflerde sorun yok, "İstanbul" da
 kolon + index; kendi başına bir iş. Aranan metinde `ı`→`i` çevirmek **çözüm
 değil**, "ısı" ile "isi"yi eşleştirip yanlış sonuç üretir.
 
-**Test:** 454 birim / 30 E2E.
+**13.3b'de yapıldı:** `GET /api/v1/groups/[groupId]/expenses/export`, `csv.ts`
+(saf) ve filtre çubuğundaki dışa aktarma bağlantısı.
 
-### 13.3b öncesi dikkat edilecekler
+Kullanıcının isteği "Excel'de açabileyim"di, o yüzden hedef **doğru CSV**
+değil **Excel'de düzgün açılan CSV**:
 
-- **CSV filtreden etkilenmeli mi?** Ekranda süzülmüş bir liste dururken
-  "dışa aktar" butonunun bütün grubu vermesi şaşırtır. Aynı `where`'i
-  kullanan bir uç doğrusu; karar verilmedi.
-- **CSV'de Türkçe karakter ve Excel:** BOM'suz UTF-8 CSV'yi Excel Türkçe
-  Windows'ta bozuk gösterir. Ayraç da sorun: Türkçe yerelde Excel `;`
-  bekler, `,` değil.
+- **UTF-8 BOM** — onsuz Türkçe Windows'ta Excel dosyayı yerel kod sayfasıyla
+  okuyor ve Türkçe harfler bozuluyor.
+- **Ayraç dile bağlı** (`tr` → `;`, `en` → `,`) ve **ondalık ayracıyla
+  birlikte** değişiyor. İkisi ayrışırsa `120,50` değeri virgüllü ayraçla iki
+  hücreye bölünür ya da Türkçe Excel tutarı metin sanır.
+- **Para birimi başlıkta, hücrede değil** — `120,50 ₺` yazan bir hücre Excel'de
+  sayı değil metin olur ve toplanamaz.
+- **ISO tarih** (`2026-08-13`) — belirsizlik yok ve metin olarak sıralandığında
+  kronolojik kalıyor.
+- Açıklama kullanıcıdan geldiği için RFC 4180 kaçışı şart: ayraç, tırnak ya da
+  satır sonu içeren değer tırnaklanıyor, iç tırnaklar ikiye katlanıyor.
+
+**Dışa aktarma filtreyi izliyor ama sayfayı izlemiyor:** eşleşen her kayıt
+iniyor, ekrandaki 20 değil. Sessizce kırpılmış bir mali dosya, yanlış bir
+toplamdan daha kötü — eksik olduğu hiçbir yerde belli olmaz. Filtre koşulu
+listelemeyle **aynı** fonksiyondan geliyor (`buildExpenseWhere`).
+
+E2E dosyanın indiğini değil **içeriğini** doğruluyor: BOM, başlık satırı,
+noktalı virgül ayraç, noktalı virgül içeren bir açıklamanın tırnaklanması ve
+filtreliyken satır sayısının düşmesi.
+
+**Test:** 465 birim / 31 E2E.
+**Commit:** `b301e85` (13.1+13.2), `7bfd57f` (13.3a) — push edildi.
+`35c7fee` (13.3b) — **push edilmedi**.
+
+### Faz 13'ten kalan borç
+
 - **Sınırsız okuma borcu duruyor.** `loadGroupFinancials` grubun bütün
   harcamalarını çekiyor (`take` yok). 1000 harcamalı grupta her sayfa
   görüntülemesi bin satır demek. Doğru çözüm bakiyeyi de özeti de SQL'de
@@ -474,6 +495,11 @@ değil**, "ısı" ile "isi"yi eşleştirip yanlış sonuç üretir.
 - **`globals.css`'teki `--chart-1..5`** shadcn'den kalma beş renk; hiçbir
   yerde kullanılmıyor ve ADR-021 ile çelişiyor (kategori kırılımı tek renk).
   Kaldırılmalı.
+- **Dışa aktarmada da limit yok** (`listExpensesForExport`). Aynı borcun
+  parçası; kırpmak yerine bilerek sınırsız bırakıldı, çünkü eksik bir mali
+  dosya hiçbir yerde belli olmaz.
+- **Türkçe arama `ı`/`I` tuzağı** (13.3a'da ölçüldü) duruyor. Çözümü Türkçe
+  katlama yapan üretilmiş bir kolon + index.
 
 ---
 
