@@ -18,12 +18,17 @@ durumunu dogrula, sonra bu dosyayi duzelt.
 Updated: 2026-08-13
 
 Current task:
-  Faz 14 (acilis oncesi borc kapatma) BITTI - alti asama da tamam.
-  Commitlenmedi; kullanici "toplu commitleriz" dedi.
+  YOK. Faz 14 (acilis oncesi borc kapatma) bitti ve canlida.
+  Kullanici yeni gorev vermedi.
 
 Hemen sonraki adim:
-  14.1-14.6 commitlenir, push ayrica sorulur.
-  Sonrasi icin verilmis bir gorev YOK.
+  Kullanicinin secmesi bekleniyor.
+
+  DOGRULANACAK (canlida): 14.4'un migration'i
+  (20260813120000_add_expense_description_fold) production veritabanina
+  vercel-build ile uygulandi mi - Vercel deploy log'undan teyit edilmeli.
+  Kolon GENERATED ALWAYS oldugu icin mevcut production kayitlari kendiliginden
+  dolar; ayri bir backfill adimi YOK.
 
   FOTOGRAF EKLEME: kullanici Cloudflare'e gecene kadar ASKIDA. Karar
   verildiginde fotograf VERITABANINA KONMAYACAK - nesne deposu (Vercel Blob
@@ -32,13 +37,8 @@ Hemen sonraki adim:
   yedekleri ve baglanti limitini vurur.
 
 Status:
-  Faz 13'e kadar her sey canlida (`8475783`'e kadar push edildi).
-  Faz 14 commitlendi ama PUSH EDILMEDI:
-    671e7d4  14.1 + 14.6  zil davranisi + bildirim saklama
-    020955e  14.3         createGroup / acceptGroupInvite testleri
-    ea48316  14.2         --chart-1..5 kaldirildi
-    948f93c  14.5         toplama SQL'e tasindi
-    257912c  14.4         Turkce arama katlamasi (MIGRATION ICERIR)
+  Calisma agaci temiz, push edilmemis commit yok.
+  Faz 14'un tamami canlida (`c5ab3d2`'ye kadar).
 
   Testler: 493 birim / 32 E2E, tsc + lint temiz, tam E2E kosusu yapildi.
 

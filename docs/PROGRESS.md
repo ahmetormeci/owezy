@@ -543,7 +543,7 @@ anlık görüntü. Harcama, ödeme ve audit log'a dokunulmuyor.
 
 **Test:** 493 birim / 32 E2E.
 **Commit:** `671e7d4` (14.1+14.6), `020955e` (14.3), `ea48316` (14.2),
-`948f93c` (14.5), `257912c` (14.4) — hiçbiri **push edilmedi**.
+`948f93c` (14.5), `257912c` (14.4) — hepsi push edildi.
 
 ---
 
