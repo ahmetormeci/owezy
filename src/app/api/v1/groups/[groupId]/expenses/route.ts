@@ -21,10 +21,13 @@ export async function GET(
       limit: searchParams.get("limit") ?? undefined,
       cursor: searchParams.get("cursor") ?? undefined,
       includeDeleted: searchParams.get("includeDeleted") ?? undefined,
+      q: searchParams.get("q") ?? undefined,
+      category: searchParams.get("category") ?? undefined,
+      mine: searchParams.get("mine") ?? undefined,
     });
 
-    const { expenses, nextCursor } = await listExpenses(user.id, groupId, query);
-    return NextResponse.json({ ok: true, expenses, nextCursor });
+    const { expenses, nextCursor, matches } = await listExpenses(user.id, groupId, query);
+    return NextResponse.json({ ok: true, expenses, nextCursor, matches });
   } catch (error) {
     return handleApiError(error);
   }

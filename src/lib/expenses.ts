@@ -160,8 +160,28 @@ export type ListExpensesOptions = {
   limit?: number;
   cursor?: string;
   includeDeleted?: boolean;
+  /** Aciklamada gecen metin. Buyuk/kucuk harf ayrimi yok. */
+  q?: string;
+  category?: ExpenseCategory;
+  /** Yalnizca cagiranin katilimci oldugu harcamalar. */
+  mine?: boolean;
 };
 
+/**
+ * Filtreleme SUNUCUDA yapiliyor, ekrandaki satirlarda degil.
+ *
+ * Liste bir seferde 20 kayit tasiyor. Yuklenmis satirlari suzseydik kullanici
+ * "sonuc yok" gorurken aradigi kayit sonraki sayfada duruyor olabilirdi -
+ * yani arama kutusu sessizce yalan soylerdi.
+ *
+ * TURKCE ARAMA SINIRI (olculdu, veritabani collation'i C.UTF-8): buyuk "I"
+ * kucultuldugunde "i" oluyor, "ı" degil. Yani "Isik" yazan bir harcama "ışık"
+ * aramasiyla BULUNMAZ. Diger Turkce harflerde (c/C, s/S, o/O, u/U, g/G)
+ * sorun yok; "İstanbul" da "istanbul" ile eslesiyor. Duzgun cozum Turkce
+ * katlama yapan uretilmis bir kolon + index - kendi basina bir is.
+ * Aranan metinde "ı"yi "i"ye cevirmek COZUM DEGIL: "isi" ile "ısı"yi
+ * eslestirip yanlis sonuc uretirdi.
+ */
 export async function listExpenses(
   userId: string,
   groupId: string,
@@ -176,20 +196,37 @@ export async function listExpenses(
 
   const limit = Math.min(options.limit ?? DEFAULT_EXPENSE_PAGE_SIZE, MAX_EXPENSE_PAGE_SIZE);
 
-  const rows = await prisma.expense.findMany({
-    where: {
-      groupId,
-      ...(options.includeDeleted ? {} : { deletedAt: null }),
-    },
-    include: { participants: true },
-    // Cursor sayfalamasinin dogru calismasi icin siralama BENZERSIZ olmali.
-    // expenseDate tek basina yeterli degil (ayni gune birden fazla harcama
-    // dusebilir), bu yuzden createdAt ve id ile kesinlestiriliyor.
-    orderBy: [{ expenseDate: "desc" }, { createdAt: "desc" }, { id: "desc" }],
-    // Bir fazla kayit cekip "daha var mi" sorusunu ek sorgu yapmadan cevapliyoruz.
-    take: limit + 1,
-    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
-  });
+  const where: Prisma.ExpenseWhereInput = {
+    groupId,
+    ...(options.includeDeleted ? {} : { deletedAt: null }),
+    ...(options.q ? { description: { contains: options.q, mode: "insensitive" } } : {}),
+    ...(options.category ? { category: options.category } : {}),
+    // "Beni ilgilendiren" = payi olan. Odeyen olmak yetmez: baskasi adina
+    // odeyip bolusume girmeyen kisinin bakiyesi degisir ama harcama onun
+    // "kendi harcamasi" degildir.
+    ...(options.mine ? { participants: { some: { userId } } } : {}),
+  };
+
+  const isFiltered = Boolean(options.q || options.category || options.mine);
+
+  const [rows, matches] = await Promise.all([
+    prisma.expense.findMany({
+      where,
+      include: { participants: true },
+      // Cursor sayfalamasinin dogru calismasi icin siralama BENZERSIZ olmali.
+      // expenseDate tek basina yeterli degil (ayni gune birden fazla harcama
+      // dusebilir), bu yuzden createdAt ve id ile kesinlestiriliyor.
+      orderBy: [{ expenseDate: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+      // Bir fazla kayit cekip "daha var mi" sorusunu ek sorgu yapmadan cevapliyoruz.
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+    }),
+    // Sonuc ozeti yalnizca filtre varken hesaplaniyor. AYNI where kullaniliyor,
+    // yani sayilan kumeyle listelenen kume ayrisamaz.
+    isFiltered
+      ? prisma.expense.aggregate({ where, _count: { _all: true }, _sum: { amount: true } })
+      : null,
+  ]);
 
   const hasMore = rows.length > limit;
   const expenses = hasMore ? rows.slice(0, limit) : rows;
@@ -197,6 +234,10 @@ export async function listExpenses(
   return {
     expenses,
     nextCursor: hasMore ? expenses[expenses.length - 1].id : null,
+    // Filtre yokken null: "kac sonuc" sorusu ancak bir arama varsa anlamli.
+    matches: matches
+      ? { count: matches._count._all, total: matches._sum.amount ?? 0 }
+      : null,
   };
 }
 

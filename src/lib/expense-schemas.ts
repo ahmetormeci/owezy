@@ -52,6 +52,16 @@ export const listExpensesQuerySchema = z.object({
     .enum(["true", "false"])
     .transform((value) => value === "true")
     .optional(),
+  // Arama metni. Bos string'i ELEMEK sart: "?q=" gonderildiginde filtre
+  // uygulanmis sayilirsa liste hicbir seyle eslesmez gibi davranir.
+  q: z.string().trim().min(1).max(100).optional(),
+  category: categorySchema.optional(),
+  // includeDeleted ile ayni sebep: z.coerce.boolean() bos olmayan her string'i
+  // true yapardi, yani "?mine=false" bile true olurdu.
+  mine: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
 });
 
 export const expenseBodySchema = z.discriminatedUnion("splitType", [

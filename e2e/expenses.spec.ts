@@ -210,4 +210,74 @@ test.describe("harcamalar", () => {
       expect(overflows, `${width}px genisliginde sayfa yatay kayiyor`).toBe(false);
     }
   });
+
+  // Arama ve filtre (Faz 13.3a). Filtre SUNUCUDA calisiyor; bu test onun
+  // gorunur sonucunu dogruluyor - ozellikle "yalnizca beni ilgilendirenler"in
+  // odeyene degil KATILIMCILIGA baktigini.
+  test("arama ve filtreler listeyi daraltir", async ({ browser }) => {
+    const owner = await pageAs(browser, "owner");
+    const member = await pageAs(browser, "member");
+    const groupName = uniqueGroupName("filtre");
+
+    await createGroupAndOpen(owner, groupName);
+    const inviteLink = await createInviteLink(owner, groupName);
+    await joinViaInvite(member, inviteLink, groupName);
+
+    await openGroup(owner, groupName);
+
+    async function addExpense(input: {
+      description: string;
+      amount: string;
+      category: string;
+      unselect?: string;
+    }) {
+      await owner.getByRole("link", { name: "Harcama ekle" }).click();
+      await owner.getByLabel("Açıklama").fill(input.description);
+      await owner.getByLabel("Tutar").fill(input.amount);
+      await owner.getByLabel("Kategori").selectOption({ label: input.category });
+      if (input.unselect) {
+        await owner.getByRole("checkbox", { name: input.unselect }).uncheck();
+      }
+      await owner.getByRole("button", { name: "Harcamayı kaydet" }).click();
+      await expect(owner.getByText(input.description)).toBeVisible();
+    }
+
+    await addExpense({ description: "Market alisverisi", amount: "100", category: "Alışveriş" });
+    // Owner bu bolusumden CIKARILIYOR: parayi o odedi ama payi yok.
+    await addExpense({
+      description: "Havaalani taksisi",
+      amount: "200",
+      category: "Ulaşım",
+      unselect: "e2e+clerk_test@example.com",
+    });
+
+    const search = owner.getByLabel("Harcama ara");
+
+    // 1) Metin aramasi.
+    await search.fill("market");
+    await expect(owner.getByText("Havaalani taksisi")).toBeHidden();
+    await expect(owner.getByText("Market alisverisi")).toBeVisible();
+    await expect(owner.getByText("1 sonuç · 100,00 ₺")).toBeVisible();
+
+    // 2) Kategori filtresi.
+    await search.fill("");
+    await owner.getByLabel("Kategori").selectOption({ label: "Ulaşım" });
+    await expect(owner.getByText("Market alisverisi")).toBeHidden();
+    await expect(owner.getByText("Havaalani taksisi")).toBeVisible();
+    await expect(owner.getByText("1 sonuç · 200,00 ₺")).toBeVisible();
+
+    // 3) "Yalnizca beni ilgilendirenler": taksi owner'in payinda olmadigi icin
+    //    dusmeli, market kalmali.
+    await owner.getByLabel("Kategori").selectOption({ label: "Tüm kategoriler" });
+    await owner.getByLabel("Yalnızca beni ilgilendirenler").check();
+    await expect(owner.getByText("Havaalani taksisi")).toBeHidden();
+    await expect(owner.getByText("Market alisverisi")).toBeVisible();
+
+    await owner.screenshot({ path: "test-results/faz13-filtre.png", fullPage: true });
+
+    // 4) Filtre kalkinca liste geri geliyor ve ay toplamlari yeniden yaziliyor.
+    await owner.getByLabel("Yalnızca beni ilgilendirenler").uncheck();
+    await expect(owner.getByText("Havaalani taksisi")).toBeVisible();
+    await expect(owner.getByText("300,00 ₺ · 2 harcama")).toBeVisible();
+  });
 });

@@ -191,6 +191,12 @@ export const MESSAGES_TR = {
   // 11.4d-1'de goreli zamanlarda yasanan hatanin aynisi.
   "ui.month_expense_count_one": "{count} harcama",
   "ui.month_expense_count_other": "{count} harcama",
+  "ui.search_expenses": "Harcama ara",
+  "ui.all_categories": "Tüm kategoriler",
+  "ui.only_mine": "Yalnızca beni ilgilendirenler",
+  "ui.no_matching_expenses": "Aramanla eşleşen harcama yok.",
+  "ui.match_count_one": "{count} sonuç",
+  "ui.match_count_other": "{count} sonuç",
 
   // --- Harcama ---
   "ui.expenses": "Harcamalar",
@@ -520,6 +526,12 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.summary_balance": "Your balance",
   "ui.month_expense_count_one": "{count} expense",
   "ui.month_expense_count_other": "{count} expenses",
+  "ui.search_expenses": "Search expenses",
+  "ui.all_categories": "All categories",
+  "ui.only_mine": "Only ones involving me",
+  "ui.no_matching_expenses": "No expenses match your search.",
+  "ui.match_count_one": "{count} result",
+  "ui.match_count_other": "{count} results",
 
   "ui.members_and_balances": "Members and balances",
   "ui.manage_members": "Manage members",

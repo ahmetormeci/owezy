@@ -33,7 +33,7 @@ const { mockPrisma } = vi.hoisted(() => ({
   mockPrisma: {
     group: { findUnique: vi.fn() },
     groupMember: { findFirst: vi.fn() },
-    expense: { findMany: vi.fn(), findUnique: vi.fn() },
+    expense: { findMany: vi.fn(), findUnique: vi.fn(), aggregate: vi.fn() },
   },
 }));
 
@@ -83,6 +83,7 @@ function resetMocks() {
   mockPrisma.groupMember.findFirst.mockReset();
   mockPrisma.expense.findMany.mockReset();
   mockPrisma.expense.findUnique.mockReset();
+  mockPrisma.expense.aggregate.mockReset();
 }
 
 function allMembersActive() {
@@ -1016,6 +1017,111 @@ describe("listExpenses", () => {
     await listExpenses(CALLER_ID, GROUP_ID);
 
     expect(mockPrisma.expense.findMany.mock.calls[0][0].include).toEqual({ participants: true });
+  });
+
+  // Filtreleme SUNUCUDA olmali: ekrandaki 20 satiri suzmek, aranan kayit
+  // sonraki sayfadayken "sonuc yok" demek olurdu.
+  describe("filtreler", () => {
+    function aggregateReturns(count: number, total: number | null) {
+      mockPrisma.expense.aggregate.mockResolvedValue({
+        _count: { _all: count },
+        _sum: { amount: total },
+      });
+    }
+
+    it("arama metni aciklamada buyuk/kucuk harf ayrimi olmadan aranir", async () => {
+      readableGroup();
+      mockPrisma.expense.findMany.mockResolvedValue([]);
+      aggregateReturns(0, null);
+
+      await listExpenses(CALLER_ID, GROUP_ID, { q: "market" });
+
+      expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toEqual({
+        groupId: GROUP_ID,
+        deletedAt: null,
+        description: { contains: "market", mode: "insensitive" },
+      });
+    });
+
+    it("kategori filtresi where'e eklenir", async () => {
+      readableGroup();
+      mockPrisma.expense.findMany.mockResolvedValue([]);
+      aggregateReturns(0, null);
+
+      await listExpenses(CALLER_ID, GROUP_ID, { category: "FOOD" });
+
+      expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toMatchObject({
+        category: "FOOD",
+      });
+    });
+
+    // "Beni ilgilendiren" = PAYI olan. Odeyen olmak yetmez: baskasi adina
+    // odeyip bolusume girmeyen kisinin harcamasi kendi harcamasi degildir.
+    it("mine filtresi katilimciliga bakar, odeyene degil", async () => {
+      readableGroup();
+      mockPrisma.expense.findMany.mockResolvedValue([]);
+      aggregateReturns(0, null);
+
+      await listExpenses(CALLER_ID, GROUP_ID, { mine: true });
+
+      expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toMatchObject({
+        participants: { some: { userId: CALLER_ID } },
+      });
+    });
+
+    it("filtreler birlikte uygulanir", async () => {
+      readableGroup();
+      mockPrisma.expense.findMany.mockResolvedValue([]);
+      aggregateReturns(0, null);
+
+      await listExpenses(CALLER_ID, GROUP_ID, { q: "taksi", category: "TRANSPORT", mine: true });
+
+      expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toEqual({
+        groupId: GROUP_ID,
+        deletedAt: null,
+        description: { contains: "taksi", mode: "insensitive" },
+        category: "TRANSPORT",
+        participants: { some: { userId: CALLER_ID } },
+      });
+    });
+
+    // Sonuc ozeti ile listelenen kume ayrisamamali: ikisi de AYNI where'i
+    // kullaniyor. Ayri kosullar yazilsaydi "12 sonuc" derken 9 satir
+    // gosterebilirdik.
+    it("sonuc ozeti listeyle ayni where'i kullanir", async () => {
+      readableGroup();
+      mockPrisma.expense.findMany.mockResolvedValue([]);
+      aggregateReturns(3, 45000);
+
+      const result = await listExpenses(CALLER_ID, GROUP_ID, { q: "market" });
+
+      expect(mockPrisma.expense.aggregate.mock.calls[0][0].where).toEqual(
+        mockPrisma.expense.findMany.mock.calls[0][0].where,
+      );
+      expect(result.matches).toEqual({ count: 3, total: 45000 });
+    });
+
+    it("filtre yokken sonuc ozeti hesaplanmaz", async () => {
+      readableGroup();
+      mockPrisma.expense.findMany.mockResolvedValue([]);
+
+      const result = await listExpenses(CALLER_ID, GROUP_ID);
+
+      expect(mockPrisma.expense.aggregate).not.toHaveBeenCalled();
+      expect(result.matches).toBeNull();
+    });
+
+    // Hic eslesme yoksa Prisma _sum.amount olarak null donuyor; bunu 0'a
+    // cevirmezsek arayuzde "null ₺" yazardi.
+    it("hic eslesme yoksa toplam sifir doner", async () => {
+      readableGroup();
+      mockPrisma.expense.findMany.mockResolvedValue([]);
+      aggregateReturns(0, null);
+
+      const result = await listExpenses(CALLER_ID, GROUP_ID, { q: "yok" });
+
+      expect(result.matches).toEqual({ count: 0, total: 0 });
+    });
   });
 
   it("siralama benzersiz olacak sekilde id ile kesinlestirilir", async () => {
