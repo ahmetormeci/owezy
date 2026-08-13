@@ -37,46 +37,82 @@ export type SuggestedTransfer = {
   amount: number;
 };
 
+/** Bir kullanicinin gruptaki dort hareketi. Bakiye bunlardan cikar. */
+export type UserTotals = {
+  userId: string;
+  /** Odedigi harcamalarin toplami. */
+  paid: number;
+  /** Paylarinin toplami. */
+  share: number;
+  /** Yaptigi odemeler. */
+  settledOut: number;
+  /** Aldigi odemeler. */
+  settledIn: number;
+};
+
 /**
- * Her kullanici icin net bakiye:
- *   (odedigi toplam) - (paylarinin toplami) + (yaptigi odemeler) - (aldigi odemeler)
+ * PARA KURALININ TEK YERI:
+ *   bakiye = odedigi - payi + yaptigi odemeler - aldigi odemeler
+ *
+ * Girdi ozetlenmis oldugu icin bu fonksiyon kac harcama oldugundan bagimsiz:
+ * 10 harcamali grupta da 10.000 harcamali grupta da kisi sayisi kadar satir
+ * aliyor. Toplamayi kim yaparsa yapsin (bellekte calculateBalances, ya da
+ * veritabaninda SUM/GROUP BY) sonuc buradan geciyor.
+ *
+ * Ciktida bakiyesi tam sifir olan kullanicilar da yer alir ("odesmis" bilgisi
+ * de gosterilmeye deger); filtrelemek isteyen cagiran katman filtreler.
+ */
+export function calculateBalancesFromTotals(totals: UserTotals[]): UserBalance[] {
+  return (
+    totals
+      .map((entry) => ({
+        userId: entry.userId,
+        amount: entry.paid - entry.share + entry.settledOut - entry.settledIn,
+      }))
+      // Alacaklidan borcluya dogru siralanir; esitlikte userId ile
+      // kesinlestirilir ki ayni girdi her zaman ayni sirayi uretsin.
+      .sort((a, b) => b.amount - a.amount || a.userId.localeCompare(b.userId))
+  );
+}
+
+/**
+ * Ham satirlardan bakiye. Toplamayi bellekte yapar ve sonucu
+ * calculateBalancesFromTotals'a verir - hesabin kendisi orada.
  *
  * Yalnizca silinmemis harcamalar ve iptal edilmemis odemeler verilmelidir;
  * filtreleme cagiran katmanin sorumlulugudur.
- *
- * Ciktida bakiyesi tam sifir olan kullanicilar da yer alir ("odesmis" bilgisi de
- * gosterilmeye deger); filtrelemek isteyen cagiran katman filtreler.
  */
 export function calculateBalances(
   expenses: ExpenseForBalance[],
   settlements: SettlementForBalance[],
 ): UserBalance[] {
-  const totals = new Map<string, number>();
+  const totals = new Map<string, UserTotals>();
 
-  const add = (userId: string, delta: number) => {
-    totals.set(userId, (totals.get(userId) ?? 0) + delta);
+  const entryFor = (userId: string): UserTotals => {
+    let entry = totals.get(userId);
+    if (!entry) {
+      entry = { userId, paid: 0, share: 0, settledOut: 0, settledIn: 0 };
+      totals.set(userId, entry);
+    }
+    return entry;
   };
 
   for (const expense of expenses) {
     // Parayi odeyen kisi tutarin tamamini "alacak" yazar...
-    add(expense.paidById, expense.amount);
+    entryFor(expense.paidById).paid += expense.amount;
     // ...ve her katilimci kendi payi kadar borclanir. Odeyen kisi katilimci
     // olmak zorunda degil (baskasi adina odeme senaryosu).
     for (const participant of expense.participants) {
-      add(participant.userId, -participant.shareAmount);
+      entryFor(participant.userId).share += participant.shareAmount;
     }
   }
 
   for (const settlement of settlements) {
-    add(settlement.fromUserId, settlement.amount);
-    add(settlement.toUserId, -settlement.amount);
+    entryFor(settlement.fromUserId).settledOut += settlement.amount;
+    entryFor(settlement.toUserId).settledIn += settlement.amount;
   }
 
-  // Alacaklidan borcluya dogru siralanir; esitlikte userId ile kesinlestirilir
-  // ki ayni girdi her zaman ayni sirayi uretsin.
-  return [...totals.entries()]
-    .map(([userId, amount]) => ({ userId, amount }))
-    .sort((a, b) => b.amount - a.amount || a.userId.localeCompare(b.userId));
+  return calculateBalancesFromTotals([...totals.values()]);
 }
 
 /**
@@ -148,41 +184,66 @@ export type GroupBalanceEntry = UserBalance & {
 };
 
 /**
- * Grubun butun para hareketleri: silinmemis harcamalar + iptal edilmemis
- * odemeler. Bakiye de ozet de AYNI veriyi istiyor.
+ * Grubun para hareketlerini KISI BASINA toplayarak okur.
+ *
+ * Eskiden burasi grubun butun harcamalarini katilimcilariyla birlikte cekiyordu
+ * (limitsiz). 1000 harcamali ve 3 katilimcili bir grupta bu 4000 nesne demekti
+ * ve her sayfa goruntulemesinde tekrarlaniyordu. Simdi toplama veritabaninda
+ * yapiliyor ve donen satir sayisi harcama sayisindan degil UYE sayisindan
+ * bagimli - yani grup buyudukce degismiyor.
+ *
+ * Dort sorgu paralel gidiyor ve dordu de indeksli toplama; hepsi bir avuc
+ * satir donuyor. Para kurali hala saf fonksiyonda (calculateBalancesFromTotals),
+ * SQL yalnizca topluyor - toplamanin nerede yapildigi degisti, hesabin nerede
+ * yapildigi degil.
  *
  * cache() ile sarili (auth.ts'teki findCurrentUser ile ayni kalip): grup
- * sayfasi hem getGroupBalances hem getGroupSummary cagiriyor ve ikisi ayni
- * istekte TEK sorgu paylasiyor. Sarilmasaydi sayfa grubun butun harcamalarini
- * iki kez okurdu.
- *
- * select, iki cagiranin BIRLESIMI: expenseDate ve category yalnizca ozetin
- * isine yariyor, ama iki ayri okuma acmaktansa iki kolon fazladan cekmek
- * ucuz.
- *
- * BILINEN SINIR: bu sorgunun ustunde limit YOK. 1000 harcamali bir grupta her
- * sayfa goruntulemesi bin satir cekiyor. Dogru cozum bakiyeyi de ozeti de
- * SQL'de toplamak; ikisi tek iste duzeltilmeli (PROGRESS.md teknik borc).
+ * sayfasi hem getGroupBalances hem getGroupSummary cagiriyor, ikisi ayni
+ * istekte ayni sonucu paylasiyor.
  */
-export const loadGroupFinancials = cache(async (groupId: string) => {
-  const [expenses, settlements] = await Promise.all([
-    prisma.expense.findMany({
+export const loadGroupTotals = cache(async (groupId: string): Promise<UserTotals[]> => {
+  const [paidRows, shareRows, outRows, inRows] = await Promise.all([
+    prisma.expense.groupBy({
+      by: ["paidById"],
       where: { groupId, deletedAt: null },
-      select: {
-        paidById: true,
-        amount: true,
-        expenseDate: true,
-        category: true,
-        participants: { select: { userId: true, shareAmount: true } },
-      },
+      _sum: { amount: true },
     }),
-    prisma.settlement.findMany({
+    // Katilimci paylari harcamaya baglanarak filtreleniyor: silinmis bir
+    // harcamanin paylari bakiyeye girmemeli.
+    prisma.expenseParticipant.groupBy({
+      by: ["userId"],
+      where: { expense: { groupId, deletedAt: null } },
+      _sum: { shareAmount: true },
+    }),
+    prisma.settlement.groupBy({
+      by: ["fromUserId"],
       where: { groupId, cancelledAt: null },
-      select: { fromUserId: true, toUserId: true, amount: true },
+      _sum: { amount: true },
+    }),
+    prisma.settlement.groupBy({
+      by: ["toUserId"],
+      where: { groupId, cancelledAt: null },
+      _sum: { amount: true },
     }),
   ]);
 
-  return { expenses, settlements };
+  const totals = new Map<string, UserTotals>();
+  const entryFor = (userId: string): UserTotals => {
+    let entry = totals.get(userId);
+    if (!entry) {
+      entry = { userId, paid: 0, share: 0, settledOut: 0, settledIn: 0 };
+      totals.set(userId, entry);
+    }
+    return entry;
+  };
+
+  // _sum hic satir yoksa null doner; 0'a cevirmezsek aritmetik NaN uretirdi.
+  for (const row of paidRows) entryFor(row.paidById).paid = row._sum.amount ?? 0;
+  for (const row of shareRows) entryFor(row.userId).share = row._sum.shareAmount ?? 0;
+  for (const row of outRows) entryFor(row.fromUserId).settledOut = row._sum.amount ?? 0;
+  for (const row of inRows) entryFor(row.toUserId).settledIn = row._sum.amount ?? 0;
+
+  return [...totals.values()];
 });
 
 export async function getGroupBalances(userId: string, groupId: string) {
@@ -193,8 +254,8 @@ export async function getGroupBalances(userId: string, groupId: string) {
 
   await assertActiveMemberOfGroup(groupId, userId);
 
-  const [{ expenses, settlements }, memberships] = await Promise.all([
-    loadGroupFinancials(groupId),
+  const [totals, memberships] = await Promise.all([
+    loadGroupTotals(groupId),
     prisma.groupMember.findMany({
       where: { groupId },
       select: {
@@ -206,7 +267,7 @@ export async function getGroupBalances(userId: string, groupId: string) {
     }),
   ]);
 
-  const rawBalances = calculateBalances(expenses, settlements);
+  const rawBalances = calculateBalancesFromTotals(totals);
 
   // Bir kullanicinin birden fazla uyelik satiri olabilir (ayrilip tekrar
   // katilmissa). Aktif bir satiri varsa o gecerlidir.

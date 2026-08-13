@@ -6,8 +6,10 @@ const { mockPrisma } = vi.hoisted(() => ({
   mockPrisma: {
     group: { findUnique: vi.fn() },
     groupMember: { findFirst: vi.fn(), findMany: vi.fn() },
-    expense: { findMany: vi.fn() },
-    settlement: { findMany: vi.fn() },
+    // Toplama veritabaninda: servis ham satir okumuyor.
+    expense: { groupBy: vi.fn(), aggregate: vi.fn() },
+    expenseParticipant: { groupBy: vi.fn() },
+    settlement: { groupBy: vi.fn() },
   },
 }));
 
@@ -254,5 +256,113 @@ describe("calculateGroupSummary - ay kirilimi", () => {
     expect(summary.byMonth.reduce((sum, slice) => sum + slice.count, 0)).toBe(
       summary.expenseCount,
     );
+  });
+});
+
+// Ozet artik iki yoldan hesaplanabiliyor: ham satirlardan (calculateGroupSummary,
+// yukaridaki butun testler bunu kullaniyor) ve veritabaninin topladigi
+// satirlardan (getGroupSummary -> buildGroupSummary). Ikisi AYNI sonucu vermek
+// zorunda; ayrisirlarsa ekranda gordugumuz ozet sessizce yanlis olur.
+describe("getGroupSummary - SQL toplamasi bellek toplamasiyla ayni", () => {
+  const GROUP_ID = "group-1";
+
+  const expenses: ExpenseForSummary[] = [
+    expense({
+      amount: 30000,
+      paidById: ALI,
+      category: "FOOD",
+      expenseDate: new Date("2026-08-10T00:00:00.000Z"),
+      participants: [
+        { userId: ALI, shareAmount: 10000 },
+        { userId: BERK, shareAmount: 20000 },
+      ],
+    }),
+    expense({
+      amount: 12000,
+      paidById: BERK,
+      category: "TRANSPORT",
+      expenseDate: new Date("2026-08-24T00:00:00.000Z"),
+      participants: [{ userId: ALI, shareAmount: 12000 }],
+    }),
+    expense({
+      amount: 8000,
+      paidById: ALI,
+      category: "FOOD",
+      expenseDate: new Date("2026-07-03T00:00:00.000Z"),
+      participants: [{ userId: BERK, shareAmount: 8000 }],
+    }),
+  ];
+
+  const settlements: SettlementForSummary[] = [
+    { fromUserId: BERK, toUserId: ALI, amount: 5000 },
+  ];
+
+  it("iki yol da ayni GroupSummary'yi uretiyor", async () => {
+    const { getGroupSummary } = await import("@/lib/summary");
+
+    mockPrisma.group.findUnique.mockResolvedValue({
+      id: GROUP_ID,
+      currency: "TRY",
+      deletedAt: null,
+    });
+    mockPrisma.groupMember.findFirst.mockResolvedValue({ id: "m1", userId: ALI });
+
+    // Veritabaninin dondurecegi toplanmis satirlari elle kuruyoruz; hangi
+    // sorgu oldugunu "by" soyluyor.
+    mockPrisma.expense.groupBy.mockImplementation((args: { by: string[] }) => {
+      if (args.by[0] === "paidById") {
+        return Promise.resolve([
+          { paidById: ALI, _sum: { amount: 38000 } },
+          { paidById: BERK, _sum: { amount: 12000 } },
+        ]);
+      }
+      if (args.by[0] === "category") {
+        return Promise.resolve([
+          { category: "FOOD", _sum: { amount: 38000 } },
+          { category: "TRANSPORT", _sum: { amount: 12000 } },
+        ]);
+      }
+      // expenseDate: gun bazinda, aya katlama buildGroupSummary'de.
+      return Promise.resolve([
+        {
+          expenseDate: new Date("2026-08-10T00:00:00.000Z"),
+          _sum: { amount: 30000 },
+          _count: { _all: 1 },
+        },
+        {
+          expenseDate: new Date("2026-08-24T00:00:00.000Z"),
+          _sum: { amount: 12000 },
+          _count: { _all: 1 },
+        },
+        {
+          expenseDate: new Date("2026-07-03T00:00:00.000Z"),
+          _sum: { amount: 8000 },
+          _count: { _all: 1 },
+        },
+      ]);
+    });
+    mockPrisma.expenseParticipant.groupBy.mockResolvedValue([
+      { userId: ALI, _sum: { shareAmount: 22000 } },
+      { userId: BERK, _sum: { shareAmount: 28000 } },
+    ]);
+    mockPrisma.settlement.groupBy.mockImplementation((args: { by: string[] }) =>
+      Promise.resolve(
+        args.by[0] === "fromUserId"
+          ? [{ fromUserId: BERK, _sum: { amount: 5000 } }]
+          : [{ toUserId: ALI, _sum: { amount: 5000 } }],
+      ),
+    );
+    mockPrisma.expense.aggregate.mockResolvedValue({
+      _sum: { amount: 50000 },
+      _count: { _all: 3 },
+    });
+
+    const fromSql = await getGroupSummary(ALI, GROUP_ID);
+    const fromRows = calculateGroupSummary(expenses, settlements, ALI);
+
+    // currency yalnizca SQL yolunda var (gruptan geliyor), gerisi ayni olmali.
+    const { currency, ...summary } = fromSql;
+    expect(currency).toBe("TRY");
+    expect(summary).toEqual(fromRows);
   });
 });

@@ -7,8 +7,11 @@ const { mockPrisma } = vi.hoisted(() => ({
   mockPrisma: {
     group: { findUnique: vi.fn() },
     groupMember: { findFirst: vi.fn(), findMany: vi.fn() },
-    expense: { findMany: vi.fn() },
-    settlement: { findMany: vi.fn() },
+    // Servis artik ham satir okumuyor: toplama veritabaninda GROUP BY ile
+    // yapiliyor ve donen satir sayisi harcama sayisina degil uye sayisina bagli.
+    expense: { groupBy: vi.fn() },
+    expenseParticipant: { groupBy: vi.fn() },
+    settlement: { groupBy: vi.fn() },
   },
 }));
 
@@ -393,9 +396,56 @@ describe("getGroupBalances", () => {
     mockPrisma.group.findUnique.mockReset();
     mockPrisma.groupMember.findFirst.mockReset();
     mockPrisma.groupMember.findMany.mockReset();
-    mockPrisma.expense.findMany.mockReset();
-    mockPrisma.settlement.findMany.mockReset();
+    mockPrisma.expense.groupBy.mockReset();
+    mockPrisma.expenseParticipant.groupBy.mockReset();
+    mockPrisma.settlement.groupBy.mockReset();
+    // Varsayilan: hicbir hareket yok. Senaryosu olan testler ustune yaziyor.
+    givenMovements([], []);
   });
+
+  /**
+   * Senaryolari yine harcama/odeme olarak yaziyoruz - okunakli olan bu.
+   * Bu yardimci onlari veritabaninin dondurecegi TOPLANMIS sekle ceviriyor,
+   * yani testler servisin gercekte gordugu veriyi gorüyor.
+   */
+  function givenMovements(
+    expenses: ExpenseForBalance[],
+    settlements: SettlementForBalance[],
+  ) {
+    const paid = new Map<string, number>();
+    const share = new Map<string, number>();
+    const out = new Map<string, number>();
+    const received = new Map<string, number>();
+    const bump = (target: Map<string, number>, key: string, value: number) =>
+      target.set(key, (target.get(key) ?? 0) + value);
+
+    for (const expense of expenses) {
+      bump(paid, expense.paidById, expense.amount);
+      for (const participant of expense.participants) {
+        bump(share, participant.userId, participant.shareAmount);
+      }
+    }
+    for (const settlement of settlements) {
+      bump(out, settlement.fromUserId, settlement.amount);
+      bump(received, settlement.toUserId, settlement.amount);
+    }
+
+    mockPrisma.expense.groupBy.mockResolvedValue(
+      [...paid].map(([paidById, amount]) => ({ paidById, _sum: { amount } })),
+    );
+    mockPrisma.expenseParticipant.groupBy.mockResolvedValue(
+      [...share].map(([userId, shareAmount]) => ({ userId, _sum: { shareAmount } })),
+    );
+    // Iki cagri da ayni mock'a dusuyor; hangisi oldugunu "by" soyluyor.
+    // Cagri sirasina bagli bir mock kirilgan olurdu.
+    mockPrisma.settlement.groupBy.mockImplementation((args: { by: string[] }) =>
+      Promise.resolve(
+        args.by[0] === "fromUserId"
+          ? [...out].map(([fromUserId, amount]) => ({ fromUserId, _sum: { amount } }))
+          : [...received].map(([toUserId, amount]) => ({ toUserId, _sum: { amount } })),
+      ),
+    );
+  }
 
   function member(userId: string, displayName: string, leftAt: Date | null = null) {
     return {
@@ -418,7 +468,7 @@ describe("getGroupBalances", () => {
     mockPrisma.group.findUnique.mockResolvedValue(null);
 
     await expect(getGroupBalances(ALI, GROUP_ID)).rejects.toBeInstanceOf(NotFoundError);
-    expect(mockPrisma.expense.findMany).not.toHaveBeenCalled();
+    expect(mockPrisma.expense.groupBy).not.toHaveBeenCalled();
   });
 
   it("grup soft-delete edilmisse NotFoundError firlatir", async () => {
@@ -432,22 +482,25 @@ describe("getGroupBalances", () => {
     mockPrisma.groupMember.findFirst.mockResolvedValue(null);
 
     await expect(getGroupBalances(ALI, GROUP_ID)).rejects.toBeInstanceOf(ForbiddenError);
-    expect(mockPrisma.expense.findMany).not.toHaveBeenCalled();
+    expect(mockPrisma.expense.groupBy).not.toHaveBeenCalled();
   });
 
   it("yalnizca silinmemis harcamalari ve iptal edilmemis odemeleri hesaba katar", async () => {
     readableGroup();
-    mockPrisma.expense.findMany.mockResolvedValue([]);
-    mockPrisma.settlement.findMany.mockResolvedValue([]);
     mockPrisma.groupMember.findMany.mockResolvedValue([]);
 
     await getGroupBalances(ALI, GROUP_ID);
 
-    expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toEqual({
+    expect(mockPrisma.expense.groupBy.mock.calls[0][0].where).toEqual({
       groupId: GROUP_ID,
       deletedAt: null,
     });
-    expect(mockPrisma.settlement.findMany.mock.calls[0][0].where).toEqual({
+    // Silinmis bir harcamanin paylari da disarida kalmali; filtre iliski
+    // uzerinden kuruluyor.
+    expect(mockPrisma.expenseParticipant.groupBy.mock.calls[0][0].where).toEqual({
+      expense: { groupId: GROUP_ID, deletedAt: null },
+    });
+    expect(mockPrisma.settlement.groupBy.mock.calls[0][0].where).toEqual({
       groupId: GROUP_ID,
       cancelledAt: null,
     });
@@ -455,8 +508,7 @@ describe("getGroupBalances", () => {
 
   it("bakiyeleri kullanici bilgileriyle zenginlestirir", async () => {
     readableGroup();
-    mockPrisma.expense.findMany.mockResolvedValue([marketExpense, internetExpense]);
-    mockPrisma.settlement.findMany.mockResolvedValue([]);
+    givenMovements([marketExpense, internetExpense], []);
     mockPrisma.groupMember.findMany.mockResolvedValue([
       member(ALI, "Ali"),
       member(BERK, "Berk"),
@@ -478,8 +530,6 @@ describe("getGroupBalances", () => {
 
   it("hic hareketi olmayan aktif uyeyi sifir bakiyeyle listeler", async () => {
     readableGroup();
-    mockPrisma.expense.findMany.mockResolvedValue([]);
-    mockPrisma.settlement.findMany.mockResolvedValue([]);
     mockPrisma.groupMember.findMany.mockResolvedValue([member(ALI, "Ali"), member(BERK, "Berk")]);
 
     const result = await getGroupBalances(ALI, GROUP_ID);
@@ -492,14 +542,10 @@ describe("getGroupBalances", () => {
 
   it("gruptan ayrilmis ama borcu duran uye listede kalir ve isaretlenir", async () => {
     readableGroup();
-    mockPrisma.expense.findMany.mockResolvedValue([
-      {
-        paidById: ALI,
-        amount: 10000,
-        participants: [{ userId: CAN, shareAmount: 10000 }],
-      },
-    ]);
-    mockPrisma.settlement.findMany.mockResolvedValue([]);
+    givenMovements(
+      [{ paidById: ALI, amount: 10000, participants: [{ userId: CAN, shareAmount: 10000 }] }],
+      [],
+    );
     mockPrisma.groupMember.findMany.mockResolvedValue([
       member(ALI, "Ali"),
       member(CAN, "Can", new Date("2026-08-01T00:00:00.000Z")),
@@ -524,8 +570,6 @@ describe("getGroupBalances", () => {
 
   it("gruptan ayrilmis ve bakiyesi kapanmis uyeyi listeden cikarir", async () => {
     readableGroup();
-    mockPrisma.expense.findMany.mockResolvedValue([]);
-    mockPrisma.settlement.findMany.mockResolvedValue([]);
     mockPrisma.groupMember.findMany.mockResolvedValue([
       member(ALI, "Ali"),
       member(CAN, "Can", new Date("2026-08-01T00:00:00.000Z")),
@@ -538,8 +582,6 @@ describe("getGroupBalances", () => {
 
   it("ayrilip tekrar katilan uye aktif kabul edilir", async () => {
     readableGroup();
-    mockPrisma.expense.findMany.mockResolvedValue([]);
-    mockPrisma.settlement.findMany.mockResolvedValue([]);
     // Once ayrilmis, sonra tekrar katilmis: iki uyelik satiri var.
     mockPrisma.groupMember.findMany.mockResolvedValue([
       member(CAN, "Can", new Date("2026-07-01T00:00:00.000Z")),
@@ -555,8 +597,7 @@ describe("getGroupBalances", () => {
 
   it("odemeler bakiyeye yansir", async () => {
     readableGroup();
-    mockPrisma.expense.findMany.mockResolvedValue([marketExpense, internetExpense]);
-    mockPrisma.settlement.findMany.mockResolvedValue([
+    givenMovements([marketExpense, internetExpense], [
       { fromUserId: CAN, toUserId: ALI, amount: 15000 },
     ]);
     mockPrisma.groupMember.findMany.mockResolvedValue([

@@ -122,9 +122,9 @@ export default async function GroupDetailPage({
   let settlementData: Awaited<ReturnType<typeof listSettlements>>;
   let summary: Awaited<ReturnType<typeof getGroupSummary>>;
   try {
-    // getGroupSummary ve getGroupBalances ayni veriyi istiyor; ikisi de
-    // loadGroupFinancials'i cagiriyor ve cache() sayesinde bu istekte
-    // veritabanina TEK sorgu gidiyor.
+    // getGroupSummary ve getGroupBalances ayni kisi-basi toplamlari istiyor;
+    // ikisi de loadGroupTotals'i cagiriyor ve cache() sayesinde bu istekte
+    // veritabanina TEK kez gidiliyor.
     [group, balanceData, members, expenseData, settlementData, summary] = await Promise.all([
       getGroupForUser(user.id, groupId),
       getGroupBalances(user.id, groupId),
