@@ -168,6 +168,30 @@ export type ListExpensesOptions = {
 };
 
 /**
+ * Filtre kosulu TEK yerde kuruluyor.
+ *
+ * Hem listeleme hem disa aktarma bunu kullaniyor. Iki yerde ayri yazilsaydi
+ * zamanla ayrisirlardi ve "ekranda gordugum 12 satiri indirdim" diyen
+ * kullanici baska bir dosya alirdi.
+ */
+function buildExpenseWhere(
+  userId: string,
+  groupId: string,
+  options: ListExpensesOptions,
+): Prisma.ExpenseWhereInput {
+  return {
+    groupId,
+    ...(options.includeDeleted ? {} : { deletedAt: null }),
+    ...(options.q ? { description: { contains: options.q, mode: "insensitive" } } : {}),
+    ...(options.category ? { category: options.category } : {}),
+    // "Beni ilgilendiren" = payi olan. Odeyen olmak yetmez: baskasi adina
+    // odeyip bolusume girmeyen kisinin bakiyesi degisir ama harcama onun
+    // "kendi harcamasi" degildir.
+    ...(options.mine ? { participants: { some: { userId } } } : {}),
+  };
+}
+
+/**
  * Filtreleme SUNUCUDA yapiliyor, ekrandaki satirlarda degil.
  *
  * Liste bir seferde 20 kayit tasiyor. Yuklenmis satirlari suzseydik kullanici
@@ -196,17 +220,7 @@ export async function listExpenses(
 
   const limit = Math.min(options.limit ?? DEFAULT_EXPENSE_PAGE_SIZE, MAX_EXPENSE_PAGE_SIZE);
 
-  const where: Prisma.ExpenseWhereInput = {
-    groupId,
-    ...(options.includeDeleted ? {} : { deletedAt: null }),
-    ...(options.q ? { description: { contains: options.q, mode: "insensitive" } } : {}),
-    ...(options.category ? { category: options.category } : {}),
-    // "Beni ilgilendiren" = payi olan. Odeyen olmak yetmez: baskasi adina
-    // odeyip bolusume girmeyen kisinin bakiyesi degisir ama harcama onun
-    // "kendi harcamasi" degildir.
-    ...(options.mine ? { participants: { some: { userId } } } : {}),
-  };
-
+  const where = buildExpenseWhere(userId, groupId, options);
   const isFiltered = Boolean(options.q || options.category || options.mine);
 
   const [rows, matches] = await Promise.all([
@@ -576,5 +590,40 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
       where: { id: expenseId },
       include: { participants: true },
     });
+  });
+}
+
+/**
+ * Disa aktarma icin eslesen HER kayit.
+ *
+ * Sayfalama YOK ve bu bilerek: kullanici "ekranda gordugum listeyi indir"
+ * bekliyor, "ilk 20'sini" degil. Sessizce kirpilmis bir mali dosya, yanlis
+ * bir toplamdan daha kotudur - dosyanin eksik oldugu hicbir yerde belli olmaz.
+ *
+ * Filtre kosulu listelemeyle AYNI fonksiyondan geliyor (buildExpenseWhere),
+ * yani indirilen kume ekrandaki kumeyle ayrisamaz.
+ *
+ * SINIR: bu sorgunun ustunde de limit yok. Grup sayfasi zaten butun
+ * harcamalari okuyor (loadGroupFinancials), yani yeni bir sinif sorun degil;
+ * ayni teknik borcun parcasi.
+ */
+export async function listExpensesForExport(
+  userId: string,
+  groupId: string,
+  options: Omit<ListExpensesOptions, "limit" | "cursor"> = {},
+) {
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group || group.deletedAt) {
+    throw new NotFoundError("group.not_found");
+  }
+
+  await assertActiveMemberOfGroup(groupId, userId);
+
+  return prisma.expense.findMany({
+    where: buildExpenseWhere(userId, groupId, options),
+    include: { participants: true },
+    // Disa aktarmada ESKIDEN YENIYE: tablo okuyan biri zaman sirasi bekler,
+    // ekrandaki "en yenisi ustte" mantigi burada gecerli degil.
+    orderBy: [{ expenseDate: "asc" }, { createdAt: "asc" }, { id: "asc" }],
   });
 }

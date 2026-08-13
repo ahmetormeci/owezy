@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test, expect } from "./fixtures";
 import {
   addEqualExpense,
@@ -279,5 +280,67 @@ test.describe("harcamalar", () => {
     await owner.getByLabel("Yalnızca beni ilgilendirenler").uncheck();
     await expect(owner.getByText("Havaalani taksisi")).toBeVisible();
     await expect(owner.getByText("300,00 ₺ · 2 harcama")).toBeVisible();
+  });
+
+  // CSV disa aktarma (Faz 13.3b). Iddia dosyanin INDIGI degil, ICERIGI:
+  // Excel'in okuyabilmesi icin BOM, Turkce yerelde ";" ayrac, ve ayrac iceren
+  // bir aciklamanin tirnaklanmasi.
+  test("CSV disa aktarma Excel'in okuyabilecegi bicimde ve filtreyi izler", async ({
+    browser,
+  }) => {
+    const page = await pageAs(browser, "owner");
+    await createGroupAndOpen(page, uniqueGroupName("csv"));
+
+    async function addExpense(description: string, amount: string) {
+      await page.getByRole("link", { name: "Harcama ekle" }).click();
+      await page.getByLabel("Açıklama").fill(description);
+      await page.getByLabel("Tutar").fill(amount);
+      await page.getByRole("button", { name: "Harcamayı kaydet" }).click();
+      await expect(page.getByText(description)).toBeVisible();
+    }
+
+    // Aciklamada NOKTALI VIRGUL var: Turkce dosyada ayracin ta kendisi.
+    // Tirnaklanmazsa satiri iki hucreye boler ve tablo kayar.
+    // Ondalikli tutar bilerek: Turkce dosyada ondalik ayraci VIRGUL olmali ve
+    // ayrac noktali virgul oldugu icin ikisi cakismamali.
+    await addExpense("Market; alisveris", "120,50");
+    await addExpense("Taksi", "200");
+
+    async function downloadCsv() {
+      const downloadPromise = page.waitForEvent("download");
+      await page.getByRole("link", { name: "Dışa aktar" }).click();
+      const download = await downloadPromise;
+      const path = await download.path();
+      return { text: readFileSync(path, "utf8"), name: download.suggestedFilename() };
+    }
+
+    const all = await downloadCsv();
+
+    // Excel UTF-8'i ancak BOM ile taniyor; onsuz Turkce harfler bozuluyor.
+    expect(all.text.startsWith("﻿")).toBe(true);
+    expect(all.name).toMatch(/\.csv$/);
+
+    const lines = all.text.replace("﻿", "").split("\r\n");
+    expect(lines[0]).toBe("Tarih;Açıklama;Kategori;Ödeyen;Tutar (TRY);Payın (TRY)");
+
+    // Ayrac iceren aciklama tirnakli; tutarlar Turkce ondalikla ve para birimi
+    // simgesi olmadan (simgeli olsa Excel metin okurdu).
+    expect(all.text).toContain('"Market; alisveris"');
+    // Ondalik VIRGUL, ayrac NOKTALI VIRGUL - Turkce Excel ikisini de dogru
+    // okuyor. Tam sayida ondalik hic yazilmiyor; Excel yine sayi goruyor.
+    expect(all.text).toContain(";120,50;120,50");
+    expect(all.text).toContain(";200;200");
+    expect(lines).toHaveLength(3);
+
+    // Filtre acikken indirilen dosya da suzulmus olmali.
+    await page.getByLabel("Harcama ara").fill("taksi");
+    await expect(page.getByText("1 sonuç · 200,00 ₺")).toBeVisible();
+
+    const filtered = await downloadCsv();
+    const filteredLines = filtered.text.replace("﻿", "").split("\r\n");
+
+    expect(filteredLines).toHaveLength(2);
+    expect(filtered.text).toContain("Taksi");
+    expect(filtered.text).not.toContain("Market");
   });
 });

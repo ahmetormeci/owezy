@@ -194,17 +194,30 @@ export function ExpenseList({
 
   const list = isFiltered ? filtered : unfiltered;
 
+  // Filtreler tek yerde URL'e cevriliyor: liste de disa aktarma da bunu
+  // kullaniyor, yani indirilen dosya ekranda gorulen kumeyle ayni.
+  const filterParams = useCallback(() => {
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query.trim());
+    if (category) params.set("category", category);
+    if (mine) params.set("mine", "true");
+    return params;
+  }, [query, category, mine]);
+
   const buildUrl = useCallback(
     (cursor: string | null) => {
-      const params = new URLSearchParams({ limit: "20" });
+      const params = filterParams();
+      params.set("limit", "20");
       if (cursor) params.set("cursor", cursor);
-      if (query.trim()) params.set("q", query.trim());
-      if (category) params.set("category", category);
-      if (mine) params.set("mine", "true");
       return `/api/v1/groups/${groupId}/expenses?${params.toString()}`;
     },
-    [groupId, query, category, mine],
+    [groupId, filterParams],
   );
+
+  const exportParams = filterParams().toString();
+  const exportUrl = `/api/v1/groups/${groupId}/expenses/export${
+    exportParams ? `?${exportParams}` : ""
+  }`;
 
   // Filtre degisince ilk sayfa yeniden cekiliyor. initialExpenses de bagimli:
   // bir harcama silindiginde router.refresh() sunucudan yeni liste getiriyor
@@ -307,6 +320,16 @@ export function ExpenseList({
         />
         {t("ui.only_mine")}
       </label>
+      {/* Duz bir baglanti, fetch degil: tarayici indirmeyi kendisi yapiyor,
+          cerezler gidiyor ve dosya adini Content-Disposition belirliyor.
+          Blob'a cevirip indirmek ayni isi daha fazla kodla yapardi. */}
+      <a
+        href={exportUrl}
+        download
+        className="ml-auto text-xs text-muted-foreground transition-colors hover:text-brand"
+      >
+        {t("ui.export_csv")} ↓
+      </a>
     </div>
   );
 

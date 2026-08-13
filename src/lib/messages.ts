@@ -197,6 +197,10 @@ export const MESSAGES_TR = {
   "ui.no_matching_expenses": "Aramanla eşleşen harcama yok.",
   "ui.match_count_one": "{count} sonuç",
   "ui.match_count_other": "{count} sonuç",
+  "ui.export_csv": "Dışa aktar",
+  "ui.csv_paid_by": "Ödeyen",
+  "ui.csv_amount": "Tutar ({currency})",
+  "ui.csv_your_share": "Payın ({currency})",
 
   // --- Harcama ---
   "ui.expenses": "Harcamalar",
@@ -532,6 +536,10 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.no_matching_expenses": "No expenses match your search.",
   "ui.match_count_one": "{count} result",
   "ui.match_count_other": "{count} results",
+  "ui.export_csv": "Export",
+  "ui.csv_paid_by": "Paid by",
+  "ui.csv_amount": "Amount ({currency})",
+  "ui.csv_your_share": "Your share ({currency})",
 
   "ui.members_and_balances": "Members and balances",
   "ui.manage_members": "Manage members",
