@@ -22,6 +22,13 @@
    uygulamada zaten ANLAM tasiyor. Kimlik rengi de yesil olsaydi kullanici
    yesil bir butonu "alacak" sanabilirdi. Kobalt ucuncu bir aile aciyor.
 
+   GRAFIK RENGI PALETI YOK ve bu bilerek. shadcn'in urettigi --chart-1..5
+   (kobalt/camgobegi/mor/pembe) buradaydi, hicbir yerde kullanilmiyordu ve
+   ADR-021 ile celisiyordu. Faz 13'un kategori kirilimi TEK renkle cizilir:
+   karsilastirmayi uzunluk yapar, renk yapmaz. Yedi kategoriye yedi renk
+   verilseydi kullanici turuncu bir cubugu "bir sey mi oldu?" diye okurdu.
+   Yeni bir grafik gelirse de kural ayni.
+
    ADR-021 (Faz 11.6): ARAYUZUN KARAKTERI RENKTEN GELMIYOR.
    Yogunluktan, sac teli cizgilerden ve kesin tipografiden geliyor. Bunun
    tokenlara yansimasi:
@@ -94,11 +101,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -177,12 +179,6 @@
   --debt: oklch(0.545 0.105 27);
   --debt-soft: oklch(0.968 0.016 27);
 
-  --chart-1: oklch(0.487 0.176 258);
-  --chart-2: oklch(0.62 0.13 232);
-  --chart-3: oklch(0.7 0.11 196);
-  --chart-4: oklch(0.58 0.15 285);
-  --chart-5: oklch(0.68 0.12 320);
-
   /* 0.625rem (10px) -> 0.5rem (8px). Kucuk bir sayi ama sayfanin
      tamamindaki his degisiyor: 10px yastik, 8px kesin. */
   --radius: 0.5rem;
@@ -237,12 +233,6 @@
   --credit-soft: oklch(0.255 0.042 165);
   --debt: oklch(0.705 0.105 27);
   --debt-soft: oklch(0.252 0.045 27);
-
-  --chart-1: oklch(0.685 0.152 258);
-  --chart-2: oklch(0.74 0.12 232);
-  --chart-3: oklch(0.8 0.1 196);
-  --chart-4: oklch(0.7 0.14 285);
-  --chart-5: oklch(0.78 0.11 320);
 
   --sidebar: oklch(0.176 0.007 265);
   --sidebar-foreground: oklch(0.945 0.003 265);
