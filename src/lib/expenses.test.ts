@@ -1029,7 +1029,7 @@ describe("listExpenses", () => {
       });
     }
 
-    it("arama metni aciklamada buyuk/kucuk harf ayrimi olmadan aranir", async () => {
+    it("arama katlanmis kolon uzerinden yapilir", async () => {
       readableGroup();
       mockPrisma.expense.findMany.mockResolvedValue([]);
       aggregateReturns(0, null);
@@ -1039,7 +1039,21 @@ describe("listExpenses", () => {
       expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toEqual({
         groupId: GROUP_ID,
         deletedAt: null,
-        description: { contains: "market", mode: "insensitive" },
+        descriptionFold: { contains: "market" },
+      });
+    });
+
+    // Aranan metin de kayit gibi katlaniyor: "IŞIK" -> "isik". Katlanmasaydi
+    // veritabanindaki "isik" ile hicbir zaman eslesmezdi.
+    it("aranan metin de katlaniyor", async () => {
+      readableGroup();
+      mockPrisma.expense.findMany.mockResolvedValue([]);
+      aggregateReturns(0, null);
+
+      await listExpenses(CALLER_ID, GROUP_ID, { q: "IŞIK Çay" });
+
+      expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toMatchObject({
+        descriptionFold: { contains: "isik cay" },
       });
     });
 
@@ -1079,7 +1093,7 @@ describe("listExpenses", () => {
       expect(mockPrisma.expense.findMany.mock.calls[0][0].where).toEqual({
         groupId: GROUP_ID,
         deletedAt: null,
-        description: { contains: "taksi", mode: "insensitive" },
+        descriptionFold: { contains: "taksi" },
         category: "TRANSPORT",
         participants: { some: { userId: CALLER_ID } },
       });

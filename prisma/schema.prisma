@@ -187,6 +187,16 @@ model Expense {
   createdById String          @db.Uuid
   deletedById String?         @db.Uuid
   description String          @db.Text
+  // Aramada karsilastirilan katlanmis bicim: Turkce harfler ASCII karsiligina
+  // iner ve metin kucultulur ("Isik" -> "isik", "ışık" -> "isik").
+  //
+  // Veritabaninda GENERATED ALWAYS ... STORED (bkz. migration
+  // 20260813..._add_expense_description_fold). Prisma bunu bilmiyor ve
+  // bilmesine gerek de yok: hicbir yazma yolu bu alani "data" icinde
+  // gondermedigi surece degeri Postgres uretiyor. Bu yuzden NULLABLE -
+  // zorunlu olsaydi Prisma create'te deger isterdi ve uretilmis kolona
+  // yazmaya calismak hata verirdi.
+  descriptionFold String?     @db.Text
   amount      Int
   currency    String          @db.Char(3)
   category    ExpenseCategory @default(OTHER)

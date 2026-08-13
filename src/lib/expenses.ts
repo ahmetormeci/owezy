@@ -9,6 +9,7 @@ import {
 } from "@/lib/errors";
 import { assertActiveMemberOfGroup, assertCanModifyRecord } from "@/lib/group-access";
 import { createNotifications } from "@/lib/notifications";
+import { foldForSearch } from "@/lib/search-fold";
 import {
   DEFAULT_EXPENSE_PAGE_SIZE,
   MAX_EXPENSE_PAGE_SIZE,
@@ -182,7 +183,10 @@ function buildExpenseWhere(
   return {
     groupId,
     ...(options.includeDeleted ? {} : { deletedAt: null }),
-    ...(options.q ? { description: { contains: options.q, mode: "insensitive" } } : {}),
+    // Aranan metin de kayit da AYNI sekilde katlaniyor (bkz. search-fold.ts).
+    // Kolon veritabaninda uretilmis oldugu icin "mode: insensitive"e gerek yok:
+    // iki taraf da zaten kucuk harfli ve Turkce harfler ASCII'ye inmis durumda.
+    ...(options.q ? { descriptionFold: { contains: foldForSearch(options.q) } } : {}),
     ...(options.category ? { category: options.category } : {}),
     // "Beni ilgilendiren" = payi olan. Odeyen olmak yetmez: baskasi adina
     // odeyip bolusume girmeyen kisinin bakiyesi degisir ama harcama onun
@@ -198,13 +202,11 @@ function buildExpenseWhere(
  * "sonuc yok" gorurken aradigi kayit sonraki sayfada duruyor olabilirdi -
  * yani arama kutusu sessizce yalan soylerdi.
  *
- * TURKCE ARAMA SINIRI (olculdu, veritabani collation'i C.UTF-8): buyuk "I"
- * kucultuldugunde "i" oluyor, "ı" degil. Yani "Isik" yazan bir harcama "ışık"
- * aramasiyla BULUNMAZ. Diger Turkce harflerde (c/C, s/S, o/O, u/U, g/G)
- * sorun yok; "İstanbul" da "istanbul" ile eslesiyor. Duzgun cozum Turkce
- * katlama yapan uretilmis bir kolon + index - kendi basina bir is.
- * Aranan metinde "ı"yi "i"ye cevirmek COZUM DEGIL: "isi" ile "ısı"yi
- * eslestirip yanlis sonuc uretirdi.
+ * TURKCE ARAMA: 13.3a'da bir sinir olculmustu - veritabani collation'i
+ * C.UTF-8 ve buyuk "I" kucultuldugunde "i" oluyor, "ı" degil; yani "Isik"
+ * yazan harcama "ışık" aramasiyla bulunmuyordu. Artik iki taraf da
+ * Expense.descriptionFold uzerinden katlaniyor (search-fold.ts) ve arama
+ * hem buyuk/kucuk harfe hem aksana duyarsiz.
  */
 export async function listExpenses(
   userId: string,
@@ -603,9 +605,10 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
  * Filtre kosulu listelemeyle AYNI fonksiyondan geliyor (buildExpenseWhere),
  * yani indirilen kume ekrandaki kumeyle ayrisamaz.
  *
- * SINIR: bu sorgunun ustunde de limit yok. Grup sayfasi zaten butun
- * harcamalari okuyor (loadGroupFinancials), yani yeni bir sinif sorun degil;
- * ayni teknik borcun parcasi.
+ * SINIR: bu sorgunun ustunde limit yok ve bu bilerek - kirpilmis bir mali
+ * dosyanin eksik oldugu hicbir yerde belli olmaz. Grup sayfasindaki toplamalar
+ * artik veritabaninda yapiliyor (loadGroupTotals), yani limitsiz kalan tek
+ * okuma burasi ve yalnizca kullanici dosyayi indirdiginde calisiyor.
  */
 export async function listExpensesForExport(
   userId: string,

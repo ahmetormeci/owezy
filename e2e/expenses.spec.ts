@@ -282,6 +282,41 @@ test.describe("harcamalar", () => {
     await expect(owner.getByText("300,00 ₺ · 2 harcama")).toBeVisible();
   });
 
+  // Turkce arama katlamasi. 13.3a'da olculmus sinir buydu: veritabani
+  // collation'i C.UTF-8 ve buyuk "I" kucultuldugunde "i" oluyor, "ı" degil -
+  // yani "Isik" yazan harcama "ışık" aramasiyla BULUNMUYORDU.
+  test("Turkce arama noktali/noktasiz i ayrimina takilmaz", async ({ browser }) => {
+    const page = await pageAs(browser, "owner");
+    await createGroupAndOpen(page, uniqueGroupName("katlama"));
+
+    async function addExpense(description: string, amount: string) {
+      await page.getByRole("link", { name: "Harcama ekle" }).click();
+      await page.getByLabel("Açıklama").fill(description);
+      await page.getByLabel("Tutar").fill(amount);
+      await page.getByRole("button", { name: "Harcamayı kaydet" }).click();
+      await expect(page.getByText(description)).toBeVisible();
+    }
+
+    await addExpense("Isik faturasi", "100");
+    await addExpense("Çay ocagi", "50");
+
+    const search = page.getByLabel("Harcama ara");
+
+    // Asil hata: noktasiz "ı" ile aranan noktali "I".
+    await search.fill("ışık");
+    await expect(page.getByText("Isik faturasi")).toBeVisible();
+    await expect(page.getByText("Çay ocagi")).toBeHidden();
+
+    // Ters yon de calismali.
+    await search.fill("ISIK");
+    await expect(page.getByText("Isik faturasi")).toBeVisible();
+
+    // Aksana duyarsizlik: "cay" ile "Çay" eslesiyor.
+    await search.fill("cay");
+    await expect(page.getByText("Çay ocagi")).toBeVisible();
+    await expect(page.getByText("Isik faturasi")).toBeHidden();
+  });
+
   // CSV disa aktarma (Faz 13.3b). Iddia dosyanin INDIGI degil, ICERIGI:
   // Excel'in okuyabilmesi icin BOM, Turkce yerelde ";" ayrac, ve ayrac iceren
   // bir aciklamanin tirnaklanmasi.
