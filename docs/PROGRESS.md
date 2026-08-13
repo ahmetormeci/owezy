@@ -13,8 +13,8 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 447 | ✅ tümü geçiyor |
-| E2E (Playwright) | 29 | ✅ tümü geçiyor |
+| Birim (Vitest) | 454 | ✅ tümü geçiyor |
+| E2E (Playwright) | 30 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -396,7 +396,8 @@ ve **bulma** (arama/filtre yok). Grafik yalnızca ikincisine cevap veriyor.
 | Aşama | Durum | İş |
 |---|---|---|
 | 13.1 + 13.2 | **DONE** | Ay başlıkları + özet bloğu (bakiyenin açıklaması + kategori/ay kırılımı) |
-| 13.3 | TODO | Arama + filtre ("yalnızca beni ilgilendirenler" dahil) + CSV |
+| 13.3a | **DONE** | Arama + kategori + "yalnızca beni ilgilendirenler" + sonuç satırı |
+| 13.3b | TODO | CSV dışa aktarma |
 
 **13.1 ve 13.2 neden birleşti:** Ay başlığındaki toplam ekrandaki 20 kayıttan
 hesaplanamaz — bir ay sayfa sınırını aştığında sessizce yanlış olurdu. Doğru
@@ -428,15 +429,39 @@ anlatmıyor.
 `scrollWidth > innerWidth` ölçülüyor. 11.5'teki yatay kayma ancak ekran
 görüntüsüyle yakalanmıştı; bu ölçüm o boşluğu kapatıyor.
 
-**Test:** 447 birim / 29 E2E.
-**Commit:** `b301e85` — **push edilmedi**.
+**Commit:** `b301e85` (13.1+13.2), `7bfd57f` (13.3a) — **push edilmedi**.
 
-### 13.3 öncesi dikkat edilecekler
+**13.3a'da yapıldı:** `listExpenses` artık `q`, `category` ve `mine`
+alıyor; filtre **sunucuda**. Ekrandaki 20 satırı süzmek, aranan kayıt sonraki
+sayfadayken "sonuç yok" demek olurdu.
 
-- **Filtre, ekrandaki 20 kayda uygulanamaz.** Arama/filtre sunucuda olmalı;
-  yüklenmiş satırları süzmek "sonuç yok" derken aslında sonraki sayfada
-  duran kaydı gizler. `listExpenses`'e filtre parametreleri ve `/api/v1`
-  ucuna karşılıkları gerekiyor.
+"Beni ilgilendiren" **katılımcılığa** bakıyor, ödeyene değil: başkası adına
+ödeyip bölüşüme girmeyen kişinin bakiyesi değişir ama o harcama onun kendi
+harcaması değildir. E2E bunu tam olarak bu senaryoyla doğruluyor.
+
+**Bir çelişki çözüldü:** filtre açıkken ay başlığı o ayın tam toplamını
+göstermeye devam etseydi, süzülmüş bir listenin üstünde yanlış bir sayı
+dururdu. Filtre açıkken ay toplamları gizleniyor, yerine tek bir sonuç satırı
+yazıyor (`1 sonuç · 100,00 ₺`). O sayı listenin **aynı** `where`'inden geliyor;
+bir test iki koşulun eşit olduğunu koruyor.
+
+**TÜRKÇE ARAMA SINIRI (ölçüldü):** veritabanı collation'ı `C.UTF-8`. Büyük
+`I` küçültülünce `i` oluyor, `ı` değil — yani "Işık" yazan bir harcama "ışık"
+aramasıyla **bulunmuyor**. Diğer Türkçe harflerde sorun yok, "İstanbul" da
+"istanbul" ile eşleşiyor. Düzgün çözüm Türkçe katlama yapan üretilmiş bir
+kolon + index; kendi başına bir iş. Aranan metinde `ı`→`i` çevirmek **çözüm
+değil**, "ısı" ile "isi"yi eşleştirip yanlış sonuç üretir.
+
+**Test:** 454 birim / 30 E2E.
+
+### 13.3b öncesi dikkat edilecekler
+
+- **CSV filtreden etkilenmeli mi?** Ekranda süzülmüş bir liste dururken
+  "dışa aktar" butonunun bütün grubu vermesi şaşırtır. Aynı `where`'i
+  kullanan bir uç doğrusu; karar verilmedi.
+- **CSV'de Türkçe karakter ve Excel:** BOM'suz UTF-8 CSV'yi Excel Türkçe
+  Windows'ta bozuk gösterir. Ayraç da sorun: Türkçe yerelde Excel `;`
+  bekler, `,` değil.
 - **Sınırsız okuma borcu duruyor.** `loadGroupFinancials` grubun bütün
   harcamalarını çekiyor (`take` yok). 1000 harcamalı grupta her sayfa
   görüntülemesi bin satır demek. Doğru çözüm bakiyeyi de özeti de SQL'de

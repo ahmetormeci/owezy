@@ -10,6 +10,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-13
 
+### Harcamalarda arama ve filtre (Faz 13.3a)
+- Arama kutusu, kategori seçici ve **"yalnızca beni ilgilendirenler"**.
+  Filtreleme **sunucuda**: ekrandaki 20 satırı süzmek, aranan kayıt sonraki
+  sayfadayken "sonuç yok" demek olurdu.
+- "Beni ilgilendiren" **katılımcılığa** bakıyor, ödeyene değil. Başkası adına
+  ödeyip bölüşüme girmeyen kişinin bakiyesi değişir ama o harcama onun kendi
+  harcaması değildir.
+- **Filtre açıkken ay toplamları gizleniyor**, yerine `1 sonuç · 100,00 ₺`
+  yazıyor. Süzülmüş bir listenin üstünde ayın tam toplamı, yan yana
+  konularak söylenen bir yalan olurdu. Sonuç sayısı listenin **aynı**
+  `where`'inden geliyor.
+- **Türkçe arama sınırı ölçüldü ve belgelendi:** collation `C.UTF-8`, büyük
+  `I` küçültülünce `i` oluyor — "Işık" yazan harcama "ışık" aramasıyla
+  bulunmuyor. Diğer harflerde sorun yok. Düzgün çözümü (Türkçe katlama yapan
+  üretilmiş kolon) ayrı bir iş; uydurma çözüm "ısı" ile "isi"yi eşleştirirdi.
+
 ### Grup sayfası: özet bloğu ve ay başlıkları (Faz 13.1 + 13.2)
 - **Harcama listesi aylara bölündü.** Her ay başlığında o ayın toplamı ve
   harcama sayısı var. Toplam **özetten** geliyor, ekrandaki satırlardan

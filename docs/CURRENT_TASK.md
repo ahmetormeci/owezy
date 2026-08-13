@@ -19,25 +19,29 @@ Updated: 2026-08-13
 
 Current task:
   Faz 13 - Grup sayfasi 100 harcamada.
-  13.1 + 13.2 (ay basliklari + ozet blogu) BITTI, commitlenmedi.
-  13.3 (arama + filtre + CSV) yapilmadi.
+  13.1 + 13.2 (ay basliklari + ozet blogu) BITTI, commitlendi (`b301e85`).
+  13.3a (arama + filtre) BITTI, commitlenmedi.
+  13.3b (CSV disa aktarma) yapilmadi.
 
 Hemen sonraki adim:
-  13.1+13.2 commitlenir (kullanici isteyince), push ayrica sorulur.
+  13.3a commitlenir (kullanici isteyince), push ayrica sorulur.
 
-  Sonra 13.3: arama + filtre. DIKKAT - filtre SUNUCUDA olmali. Yuklenmis 20
-  satiri suzmek "sonuc yok" derken sonraki sayfadaki kaydi gizler.
-  listExpenses'e filtre parametreleri ve /api/v1 ucuna karsiliklari gerekiyor.
-  Ayrintili notlar PROGRESS.md "Faz 13" bolumunde.
+  Sonra 13.3b: CSV. Iki karar verilmedi - CSV filtreden etkilensin mi
+  (ekranda suzulmus liste dururken butun grubu vermek sasirtir) ve Excel
+  uyumu (BOM'suz UTF-8 Turkce Windows'ta bozuk gorunur; Turkce yerelde Excel
+  ayrac olarak ";" bekler). Ayrinti PROGRESS.md "Faz 13" bolumunde.
 
 Status:
   Faz 12 tamam ve PUSH EDILDI (`fea2fb9`'a kadar).
   Production migration dogrulandi.
 
-  13.1+13.2 commitlendi: `b301e85`. PUSH EDILMEDI - push Vercel'de production
-  deploy tetikliyor, kullanicinin onayi bekleniyor.
+  Calisma agaci temiz. PUSH EDILMEMIS commitler:
+    b301e85  13.1+13.2  ozet blogu + ay basliklari
+    3012a7c  dokuman
+    7bfd57f  13.3a      arama + filtre
+  Push Vercel'de production deploy tetikliyor; kullanicinin onayi bekleniyor.
 
-  Testler: 447 birim / 29 E2E, tsc + lint temiz, tam E2E kosusu yapildi.
+  Testler: 454 birim / 30 E2E, tsc + lint temiz, tam E2E kosusu yapildi.
 
   12.1 (`3578386`) ve 12.2 (`d18997f`) push edildi.
   DOGRULANDI (canlida): 12.1'in migration'i
