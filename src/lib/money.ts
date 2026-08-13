@@ -15,6 +15,26 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   GBP: "£",
 };
 
+/**
+ * Yeni grup acilirken kabul edilen para birimleri.
+ *
+ * Liste burada, cunku sinirin sebebi bu dosyada: formatMoney ve parseMoney her
+ * para biriminin IKI ONDALIK BASAMAGI oldugunu varsayiyor (/100, %100). TRY ve
+ * USD icin dogru. JPY'de dogru DEGIL (sifir ondalik) - o gruplarda butun
+ * tutarlar 100 kat kucuk gorunurdu.
+ *
+ * DIKKAT: formatMoney'nin currency parametresi bilerek DARALTILMADI. O,
+ * veritabaninda ne yaziyorsa onu gostermek zorunda; tipini daraltmak eski ya da
+ * elle olusturulmus bir kaydi okunamaz yapardi. Bu liste yalnizca YENI kayit
+ * uretilen yolu (createGroupSchema) baglar.
+ *
+ * EUR ve GBP de iki ondalikli, yani teknik olarak guvenliler; listede
+ * olmamalarinin sebebi urun kapsami, hesaplama degil.
+ */
+export const SUPPORTED_CURRENCIES = ["TRY", "USD"] as const;
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
+export const DEFAULT_CURRENCY: SupportedCurrency = "TRY";
+
 // Dil tipi artik locale.ts'te: cerez adi ve dogrulamasiyla ayni yerde durmasi
 // gerekiyordu (bkz. o dosyanin bas yorumu). Buradan yeniden disa aktariliyor,
 // boylece "@/lib/money"den Locale alan mevcut importlar oldugu gibi calisiyor.

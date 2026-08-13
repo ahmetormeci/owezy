@@ -85,7 +85,7 @@ export const MESSAGES_TR = {
   "validation.group_name_required": "Grup adı boş olamaz",
   "validation.group_name_too_long": "Grup adı en fazla 100 karakter olabilir",
   "validation.description_too_long": "Açıklama en fazla 500 karakter olabilir",
-  "validation.currency_length": "Para birimi 3 harfli olmalıdır",
+  "validation.currency_unsupported": "Desteklenmeyen para birimi",
 
   // --- Genel ---
   // Bu normalde kullaniciya gorunmez: korumali sayfalar zaten giris ekranina
@@ -425,7 +425,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "validation.group_name_required": "Group name cannot be empty",
   "validation.group_name_too_long": "Group name can be at most 100 characters",
   "validation.description_too_long": "Description can be at most 500 characters",
-  "validation.currency_length": "Currency must be 3 letters",
+  "validation.currency_unsupported": "Unsupported currency",
 
   // --- General ---
   "auth.not_signed_in": "You need to sign in to do that",

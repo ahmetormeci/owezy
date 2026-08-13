@@ -5,18 +5,22 @@ import { NotFoundError, ForbiddenError, ConflictError } from "@/lib/errors";
 import { assertActiveMemberOfGroup } from "@/lib/group-access";
 import { calculateBalances } from "@/lib/balances";
 import { createNotifications } from "@/lib/notifications";
+import { DEFAULT_CURRENCY, type SupportedCurrency } from "@/lib/money";
 
 const DEFAULT_INVITE_TTL_DAYS = 7;
 const DEFAULT_INVITE_MAX_USES = 1;
 
+// currency tipi bilerek DAR: sema calisma zamaninda eliyor, bu tip de derleme
+// zamaninda eliyor. Servisi bir gun baska bir yerden (ornegin bir betikten)
+// cagiran biri desteklenmeyen bir kod veremez.
 type CreateGroupInput = {
   name: string;
   description?: string;
-  currency?: string;
+  currency?: SupportedCurrency;
 };
 
 export async function createGroup(userId: string, input: CreateGroupInput) {
-  const currency = input.currency ?? "TRY";
+  const currency = input.currency ?? DEFAULT_CURRENCY;
 
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.create({
