@@ -78,6 +78,17 @@ type ListNotificationsOptions = {
   unreadOnly?: boolean;
 };
 
+/**
+ * Bildirimlerin saklanma suresi.
+ *
+ * Bildirim FINANSAL KAYIT DEGIL: harcamanin, odemenin ve audit log'un
+ * fiziksel olarak silinmemesi kurali (ADR'ler, PROJECT.md) buraya islemiyor.
+ * Bildirim, o an olan bir seyi haber veren gecici bir isaret; payload'i da
+ * zaten bir anlik goruntu. Iki ay onceki "harcama eklendi" bildirimi kimsenin
+ * isine yaramiyor, ama sonsuza kadar birikiyordu.
+ */
+export const NOTIFICATION_RETENTION_DAYS = 60;
+
 export async function listNotifications(
   userId: string,
   options: ListNotificationsOptions = {},
@@ -87,17 +98,28 @@ export async function listNotifications(
     MAX_NOTIFICATION_PAGE_SIZE,
   );
 
-  const rows = await prisma.notification.findMany({
-    where: {
-      userId,
-      ...(options.unreadOnly ? { readAt: null } : {}),
-    },
-    // Cursor sayfalamasi icin siralama BENZERSIZ olmali: ayni milisaniyede
-    // birden fazla bildirim olusabilecegi icin id ile kesinlestiriyoruz.
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: limit + 1,
-    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
-  });
+  const cutoff = new Date(Date.now() - NOTIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+
+  const [, rows] = await Promise.all([
+    // Temizlik OKUMA sirasinda: cron yok, ve kullanici zaten burada.
+    // where'de userId var - hem baskasinin kaydina dokunmuyor hem de
+    // (userId, createdAt) index'i tam bu sorguyu karsiliyor, yani eski kayit
+    // yoksa maliyeti bir index taramasi.
+    prisma.notification.deleteMany({
+      where: { userId, createdAt: { lt: cutoff } },
+    }),
+    prisma.notification.findMany({
+      where: {
+        userId,
+        ...(options.unreadOnly ? { readAt: null } : {}),
+      },
+      // Cursor sayfalamasi icin siralama BENZERSIZ olmali: ayni milisaniyede
+      // birden fazla bildirim olusabilecegi icin id ile kesinlestiriyoruz.
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+    }),
+  ]);
 
   const hasMore = rows.length > limit;
   const notifications = hasMore ? rows.slice(0, limit) : rows;

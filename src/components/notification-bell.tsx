@@ -6,7 +6,6 @@ import { Bell } from "lucide-react";
 import { toast } from "sonner";
 import type { NotificationType } from "@prisma/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/api-client";
 import { describeNotification, formatRelativeTime } from "@/lib/notification-text";
 import { useLocale, useTranslate } from "@/lib/i18n";
@@ -44,12 +43,30 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
     setUnreadCount(initialUnreadCount);
   }
 
+  /**
+   * Menu acildiginda liste cekiliyor ve bildirimler OKUNDU sayiliyor.
+   *
+   * Once elle basilan bir "tumunu okundu isaretle" dugmesi vardi; zile bakip
+   * kapatan kullanicinin rakami oldugu gibi kaliyordu. Zile bakmak zaten
+   * "gordum" demek.
+   *
+   * INCELIK: rozet hemen sifirlaniyor ama listedeki readAt'e DOKUNULMUYOR.
+   * Boylece mavi noktalar menu acik kaldigi surece duruyor ve kullanici
+   * hangilerinin yeni oldugunu okurken gorebiliyor. Bir dahaki acilista
+   * sunucudan okunmus olarak geliyorlar ve noktalar kendiliginden kalkiyor.
+   */
   async function loadNotifications() {
     setIsLoading(true);
     try {
       const data = await apiRequest<ListResponse>("/api/v1/notifications?limit=10");
       setItems(data.notifications);
-      setUnreadCount(data.unreadCount);
+
+      if (data.unreadCount > 0) {
+        // Okundu isaretleme listeden SONRA: istek basarisiz olursa bildirimler
+        // okunmamis kaliyor ve bir sonraki acilista yine gorunuyorlar.
+        await apiRequest("/api/v1/notifications/read-all", { method: "POST" });
+      }
+      setUnreadCount(0);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : t("ui.notifications_load_failed"),
@@ -64,9 +81,15 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
   // sunucudan geliyor.
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
+
     if (nextOpen) {
       void loadNotifications();
+      return;
     }
+
+    // Tazeleme KAPANISTA: menu acikken yapilsaydi sunucu agaci yeniden gelir
+    // ve okurken listenin altindan cekilirdi.
+    router.refresh();
   }
 
   async function handleItemClick(item: NotificationItem, href: string | null) {
@@ -96,20 +119,6 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
     router.refresh();
   }
 
-  async function handleMarkAllRead() {
-    try {
-      await apiRequest("/api/v1/notifications/read-all", { method: "POST" });
-      const readAt = new Date().toISOString();
-      setItems((current) => current?.map((row) => ({ ...row, readAt })) ?? null);
-      setUnreadCount(0);
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("ui.notifications_mark_failed"),
-      );
-    }
-  }
-
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger
@@ -129,13 +138,10 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
       </PopoverTrigger>
 
       <PopoverContent align="end" className="w-88 gap-0 p-0">
-        <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+        {/* "Tumunu okundu isaretle" dugmesi kalkti: menuyu acmak zaten
+            okundu sayiyor, dolayisiyla dugme hicbir zaman gorunmezdi. */}
+        <div className="border-b border-border px-3 py-2">
           <span className="font-medium">{t("ui.notifications")}</span>
-          {unreadCount > 0 ? (
-            <Button variant="ghost" size="sm" onClick={handleMarkAllRead}>
-              {t("ui.mark_all_read")}
-            </Button>
-          ) : null}
         </div>
 
         {isLoading && items === null ? (

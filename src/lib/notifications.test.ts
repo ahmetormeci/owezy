@@ -11,6 +11,7 @@ const { mockTx, mockPrisma } = vi.hoisted(() => ({
       findMany: vi.fn(),
       count: vi.fn(),
       updateMany: vi.fn(),
+      deleteMany: vi.fn(),
     },
   },
 }));
@@ -25,6 +26,7 @@ const {
   countUnreadNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  NOTIFICATION_RETENTION_DAYS,
 } = await import("@/lib/notifications");
 
 // mockTx yalnizca createNotifications'in gercekten kullandigi iki modeli
@@ -185,6 +187,53 @@ describe("listNotifications", () => {
     await listNotifications(ALI, { limit: 500 });
 
     expect(mockPrisma.notification.findMany.mock.calls[0][0].take).toBe(51);
+  });
+});
+
+// Bildirimler sonsuza kadar birikiyordu. Cron olmadigi icin temizlik okuma
+// sirasinda yapiliyor: kullanici zaten burada ve (userId, createdAt) index'i
+// tam bu sorguyu karsiliyor.
+describe("listNotifications - saklama suresi", () => {
+  beforeEach(() => {
+    mockPrisma.notification.deleteMany.mockReset();
+    mockPrisma.notification.findMany.mockReset();
+    mockPrisma.notification.findMany.mockResolvedValue([]);
+  });
+
+  it("okuma sirasinda eskiyenleri siliyor", async () => {
+    await listNotifications(ALI);
+
+    expect(mockPrisma.notification.deleteMany).toHaveBeenCalledTimes(1);
+  });
+
+  // where'de userId OLMASAYDI bir kullanicinin zile tiklamasi BUTUN
+  // kullanicilarin eski bildirimlerini silerdi.
+  it("yalnizca cagiran kullanicinin kayitlarina dokunuyor", async () => {
+    await listNotifications(ALI);
+
+    expect(mockPrisma.notification.deleteMany.mock.calls[0][0].where.userId).toBe(ALI);
+  });
+
+  it("esik saklama suresi kadar geride", async () => {
+    const before = Date.now();
+    await listNotifications(ALI);
+    const after = Date.now();
+
+    const cutoff: Date = mockPrisma.notification.deleteMany.mock.calls[0][0].where.createdAt.lt;
+    const windowMs = NOTIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+    expect(cutoff.getTime()).toBeGreaterThanOrEqual(before - windowMs - 1000);
+    expect(cutoff.getTime()).toBeLessThanOrEqual(after - windowMs + 1000);
+  });
+
+  // Silme kosulu "esikten ESKI" olmali. Ters yazilsaydi tam tersi olur ve
+  // yeni bildirimler silinirdi - hem de sessizce.
+  it("esikten eski olanlari siliyor, yenileri degil", async () => {
+    await listNotifications(ALI);
+
+    const where = mockPrisma.notification.deleteMany.mock.calls[0][0].where;
+    expect(where.createdAt).toHaveProperty("lt");
+    expect(where.createdAt).not.toHaveProperty("gt");
   });
 });
 

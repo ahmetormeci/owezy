@@ -53,7 +53,12 @@ test.describe("bildirimler", () => {
     await expect(owner.getByText("Kendi harcamam")).toHaveCount(0);
   });
 
-  test("tumunu okundu isaretleyince rakam kaybolur", async ({ browser }) => {
+  // Once elle basilan bir "tumunu okundu isaretle" dugmesi vardi ve bu test onu
+  // olcuyordu. Artik zile bakmak "gordum" sayiliyor: menuyu acmak bildirimleri
+  // okundu isaretliyor, dugme de kalkti.
+  test("zile tiklayinca bildirimler okundu sayilir ve rakam kaybolur", async ({
+    browser,
+  }) => {
     const owner = await pageAs(browser, "owner");
     const member = await pageAs(browser, "member");
     const groupName = uniqueGroupName("okundu");
@@ -68,9 +73,16 @@ test.describe("bildirimler", () => {
     await member.goto("/groups");
     // Okunmamis varken zilin erisilebilir adi sayiyi da icerir.
     await member.getByRole("button", { name: /Bildirimler \(\d+ okunmamış\)/ }).click();
-    await member.getByRole("button", { name: "Tümünü okundu işaretle" }).click();
 
-    // Sayi sifirlaninca ad sadece "Bildirimler" olur.
+    // Bildirim listeye dustu ve rakam gitti - hicbir seye tiklamadan.
+    await expect(member.getByText("Okundu testi")).toBeVisible();
+    await expect(
+      member.getByRole("button", { name: "Bildirimler", exact: true }),
+    ).toBeVisible();
+
+    // Asil iddia: sayfayi yeniden yukleyince de geri gelmiyor. Yalnizca yerel
+    // state sifirlansaydi rakam burada tekrar belirirdi.
+    await member.reload();
     await expect(
       member.getByRole("button", { name: "Bildirimler", exact: true }),
     ).toBeVisible();

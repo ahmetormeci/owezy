@@ -344,9 +344,7 @@ export const MESSAGES_TR = {
   "ui.notifications_with_unread": "Bildirimler ({count} okunmamış)",
   "ui.unread": "Okunmamış",
   "ui.no_notifications": "Henüz bildirimin yok.",
-  "ui.mark_all_read": "Tümünü okundu işaretle",
   "ui.notifications_load_failed": "Bildirimler yüklenemedi",
-  "ui.notifications_mark_failed": "Bildirimler işaretlenemedi",
   // "3 dakika once" gibi goreli zamanlar burada DEGIL: Intl.RelativeTimeFormat
   // uretiyor (notification-text.ts). Sebebi Ingilizce: "{count} minutes ago"
   // sablonu 1 icin "1 minutes ago" yazardi. Turkcede cogul eki olmadigi icin
@@ -687,9 +685,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.notifications_with_unread": "Notifications ({count} unread)",
   "ui.unread": "Unread",
   "ui.no_notifications": "No notifications yet.",
-  "ui.mark_all_read": "Mark all as read",
   "ui.notifications_load_failed": "Notifications could not be loaded",
-  "ui.notifications_mark_failed": "Notifications could not be marked",
   "ui.just_now": "just now",
   "ui.someone": "Someone",
   "ui.notif_expense_added": "{actor} added a new expense",
