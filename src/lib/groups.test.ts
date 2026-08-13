@@ -1,13 +1,24 @@
+import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, ForbiddenError, NotFoundError } from "@/lib/errors";
 
 const { mockTx, mockPrisma } = vi.hoisted(() => ({
   mockTx: {
-    group: { findUnique: vi.fn(), update: vi.fn() },
-    groupMember: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    group: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), create: vi.fn(), update: vi.fn() },
+    groupMember: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+    },
     groupInvite: { findUnique: vi.fn(), update: vi.fn() },
     expense: { findMany: vi.fn() },
     settlement: { findMany: vi.fn() },
+    // Bildirimler ayni transaction'da yaziliyor; createNotifications islemi
+    // yapanin adini okumak icin user.findUnique de cagiriyor.
+    user: { findUnique: vi.fn() },
+    notification: { createMany: vi.fn() },
   },
   mockPrisma: {
     group: { findUnique: vi.fn() },
@@ -26,6 +37,8 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 const {
+  createGroup,
+  acceptGroupInvite,
   getGroupForUser,
   updateGroup,
   getInviteStatus,
@@ -603,5 +616,175 @@ describe("removeGroupMember", () => {
       where: { id: "m-target" },
       data: { leftAt: expect.any(Date) },
     });
+  });
+});
+
+// createGroup ve acceptGroupInvite bugune kadar yalnizca E2E'nin dolayli
+// kapsamindaydi (PROGRESS.md teknik borc). Ikisi de kurucu islemler: birincisi
+// grubu sahipsiz birakabilir, ikincisi bir guvenlik siniri.
+describe("createGroup", () => {
+  beforeEach(() => {
+    resetMocks();
+    mockTx.group.create.mockResolvedValue({ id: GROUP_ID, name: "Ev" });
+    mockTx.groupMember.create.mockResolvedValue({ id: "m1" });
+  });
+
+  it("grubu olusturur ve cagirani OWNER olarak ekler", async () => {
+    const result = await createGroup(OWNER, { name: "Ev", description: "Kira ve faturalar" });
+
+    expect(mockTx.group.create).toHaveBeenCalledWith({
+      data: {
+        name: "Ev",
+        description: "Kira ve faturalar",
+        currency: "TRY",
+        createdById: OWNER,
+      },
+    });
+    expect(mockTx.groupMember.create).toHaveBeenCalledWith({
+      data: { groupId: GROUP_ID, userId: OWNER, role: "OWNER" },
+    });
+    expect(result).toEqual({ id: GROUP_ID, name: "Ev" });
+  });
+
+  // Grup ve sahiplik AYNI transaction'da yazilmali. Ikincisi disarida kalsaydi
+  // ve patlasaydi, ortada hicbir uyesi olmayan - dolayisiyla kimsenin
+  // acamayacagi ve silemeyecegi - bir grup kalirdi.
+  it("grup ve sahiplik ayni transaction icinde yazilir", async () => {
+    await createGroup(OWNER, { name: "Ev" });
+
+    expect(mockTx.group.create).toHaveBeenCalledTimes(1);
+    expect(mockTx.groupMember.create).toHaveBeenCalledTimes(1);
+    expect(mockTx.group.create.mock.invocationCallOrder[0]).toBeLessThan(
+      mockTx.groupMember.create.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("para birimi verilmezse TRY'ye duser", async () => {
+    await createGroup(OWNER, { name: "Ev" });
+
+    expect(mockTx.group.create.mock.calls[0][0].data.currency).toBe("TRY");
+  });
+
+  it("verilen para birimi kullanilir", async () => {
+    await createGroup(OWNER, { name: "Trip", currency: "USD" });
+
+    expect(mockTx.group.create.mock.calls[0][0].data.currency).toBe("USD");
+  });
+});
+
+describe("acceptGroupInvite", () => {
+  const RAW_TOKEN = "a".repeat(64);
+  // Kodun kendisiyle ayni hesap: SHA-256. Testin ham token'i degil HASH'i
+  // aradigini dogrulamasi icin burada bagimsizca hesapliyoruz.
+  const TOKEN_HASH = createHash("sha256").update(RAW_TOKEN).digest("hex");
+
+  function validInvite(overrides: Record<string, unknown> = {}) {
+    return {
+      id: INVITE_ID,
+      groupId: GROUP_ID,
+      invitedById: OWNER,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+      useCount: 0,
+      maxUses: 1,
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    resetMocks();
+    mockTx.groupMember.create.mockResolvedValue({ id: "m2", userId: MEMBER });
+    mockTx.group.findUniqueOrThrow.mockResolvedValue({ name: "Ev" });
+    mockTx.groupMember.findMany.mockResolvedValue([{ userId: OWNER }, { userId: MEMBER }]);
+    mockTx.user.findUnique.mockResolvedValue({ displayName: "Uye" });
+  });
+
+  // Ham token veritabaninda HIC saklanmiyor; aranan sey onun hash'i.
+  it("davet ham token'la degil hash'iyle aranir", async () => {
+    mockTx.groupInvite.findUnique.mockResolvedValue(validInvite());
+    mockTx.groupMember.findFirst.mockResolvedValue(null);
+
+    await acceptGroupInvite(MEMBER, RAW_TOKEN);
+
+    expect(mockTx.groupInvite.findUnique).toHaveBeenCalledWith({
+      where: { tokenHash: TOKEN_HASH },
+    });
+    expect(JSON.stringify(mockTx.groupInvite.findUnique.mock.calls)).not.toContain(RAW_TOKEN);
+  });
+
+  it("bilinmeyen token NotFoundError verir", async () => {
+    mockTx.groupInvite.findUnique.mockResolvedValue(null);
+
+    await expect(acceptGroupInvite(MEMBER, RAW_TOKEN)).rejects.toBeInstanceOf(NotFoundError);
+    expect(mockTx.groupMember.create).not.toHaveBeenCalled();
+  });
+
+  // Iptal edilen davet de NotFoundError veriyor, ConflictError DEGIL: aksi
+  // halde "bu token bir zamanlar vardi" bilgisi sizardi.
+  it("iptal edilmis davet NotFoundError verir", async () => {
+    mockTx.groupInvite.findUnique.mockResolvedValue(validInvite({ revokedAt: new Date() }));
+
+    await expect(acceptGroupInvite(MEMBER, RAW_TOKEN)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("suresi dolmus davet ConflictError verir", async () => {
+    mockTx.groupInvite.findUnique.mockResolvedValue(
+      validInvite({ expiresAt: new Date(Date.now() - 60_000) }),
+    );
+
+    await expect(acceptGroupInvite(MEMBER, RAW_TOKEN)).rejects.toBeInstanceOf(ConflictError);
+    expect(mockTx.groupMember.create).not.toHaveBeenCalled();
+  });
+
+  it("kullanim hakki bitmis davet ConflictError verir", async () => {
+    mockTx.groupInvite.findUnique.mockResolvedValue(validInvite({ useCount: 1, maxUses: 1 }));
+
+    await expect(acceptGroupInvite(MEMBER, RAW_TOKEN)).rejects.toBeInstanceOf(ConflictError);
+    expect(mockTx.groupMember.create).not.toHaveBeenCalled();
+  });
+
+  it("zaten aktif uye olan kisi tekrar katilamaz", async () => {
+    mockTx.groupInvite.findUnique.mockResolvedValue(validInvite());
+    mockTx.groupMember.findFirst.mockResolvedValue({ id: "m0", userId: MEMBER });
+
+    await expect(acceptGroupInvite(MEMBER, RAW_TOKEN)).rejects.toBeInstanceOf(ConflictError);
+    expect(mockTx.groupMember.create).not.toHaveBeenCalled();
+  });
+
+  it("basarili katilimda uyelik MEMBER rolüyle ve daveti acan kayitla olusur", async () => {
+    mockTx.groupInvite.findUnique.mockResolvedValue(validInvite());
+    mockTx.groupMember.findFirst.mockResolvedValue(null);
+
+    await acceptGroupInvite(MEMBER, RAW_TOKEN);
+
+    expect(mockTx.groupMember.create).toHaveBeenCalledWith({
+      data: { groupId: GROUP_ID, userId: MEMBER, role: "MEMBER", invitedById: OWNER },
+    });
+  });
+
+  // Sayac artmasaydi tek kullanimlik bir davet sinirsiz kullanilabilirdi.
+  it("basarili katilimda kullanim sayaci artar", async () => {
+    mockTx.groupInvite.findUnique.mockResolvedValue(validInvite());
+    mockTx.groupMember.findFirst.mockResolvedValue(null);
+
+    await acceptGroupInvite(MEMBER, RAW_TOKEN);
+
+    expect(mockTx.groupInvite.update).toHaveBeenCalledWith({
+      where: { id: INVITE_ID },
+      data: { useCount: { increment: 1 } },
+    });
+  });
+
+  it("gruba katilim mevcut uyelere bildirilir", async () => {
+    mockTx.groupInvite.findUnique.mockResolvedValue(validInvite());
+    mockTx.groupMember.findFirst.mockResolvedValue(null);
+
+    await acceptGroupInvite(MEMBER, RAW_TOKEN);
+
+    expect(mockTx.notification.createMany).toHaveBeenCalled();
+    const rows = mockTx.notification.createMany.mock.calls[0][0].data;
+    // Katilan kisiye kendi katilimi bildirilmiyor.
+    expect(rows.map((row: { userId: string }) => row.userId)).toEqual([OWNER]);
+    expect(rows[0].type).toBe("MEMBER_JOINED");
   });
 });
