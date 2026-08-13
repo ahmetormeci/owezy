@@ -10,6 +10,30 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ## 2026-08-13
 
+### Grup sayfası: özet bloğu ve ay başlıkları (Faz 13.1 + 13.2)
+- **Harcama listesi aylara bölündü.** Her ay başlığında o ayın toplamı ve
+  harcama sayısı var. Toplam **özetten** geliyor, ekrandaki satırlardan
+  değil: sayfa ilk 20 kaydı yüklüyor ve bir ay sayfa sınırını aştığında
+  yüklenmişleri toplamak sessizce yanlış sonuç verirdi.
+- **Yeni özet bloğu:** toplam / senin payın / harcama sayısı, aylık sütunlar,
+  kategori kırılımı ve **bakiyenin açıklaması** — `ödediğin − payın (± ödemeler)
+  = bakiyen`. Sayfadaki en büyük rakam bugüne kadar gerekçesiz duruyordu.
+  Bir birim testi bu dört sayının `calculateBalances`'in verdiği bakiyeyle
+  birebir aynı sonucu verdiğini koruyor.
+- **Kategori kırılımı tek renk** (kobalt, karşılaştırmayı uzunluk yapıyor).
+  Yedi kategoriye yedi renk ADR-021'i çiğnerdi; ayrıca dar ekranda pasta
+  okunmaz, çubuk listesi okunur. Yüzdeler basis point, float yok.
+- **Yeni sorgu eklenmedi.** `getGroupBalances` grubun bütün harcamalarını
+  zaten okuyordu; okuma `loadGroupFinancials`'a taşınıp `cache()` ile
+  sarıldı, bakiye ve özet aynı istekte tek sorgu paylaşıyor.
+- `GET /api/v1/groups/[groupId]/summary` — mobil istemci aynı hesabı çağıracak.
+- **Ekran görüntüsü bir hata yakaladı:** aylık sütunlar zemin rengiyle
+  boyanmıştı ve açık temada görünmüyordu; tutar etiketi de kabın dışına taşıp
+  kırpılıyordu. Düzeltildi. Tek aylık grafik artık hiç gösterilmiyor —
+  karşılaştıracak ikinci sütun yokken bir şey anlatmıyor.
+- **E2E artık düzen hatası da yakalıyor:** 390 ve 768 px'te yatay kayma
+  ölçülüyor. 11.5'teki kayma ancak ekran görüntüsüyle yakalanmıştı.
+
 ### `middleware.ts` → `proxy.ts` (Faz 12.4)
 - Next.js 16 dosya kuralını yeniden adlandırdı; **özellik aynı**. `git mv` ile
   taşındı, dosya geçmişi korundu.

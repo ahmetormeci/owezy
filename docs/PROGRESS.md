@@ -13,8 +13,8 @@
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 434 | ✅ tümü geçiyor |
-| E2E (Playwright) | 28 | ✅ tümü geçiyor |
+| Birim (Vitest) | 447 | ✅ tümü geçiyor |
+| E2E (Playwright) | 29 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -387,48 +387,68 @@ rename ayrı: dosyanın geçmişi `f2adb48`'e (Faz 2) kadar takip ediliyor.
 
 ---
 
-## Faz 13 — Grup sayfası 100 harcamada · **PLANLANDI**
+## Faz 13 — Grup sayfası 100 harcamada · **IN_PROGRESS**
 
-Yön onaylandı (mockup üzerinden), kapsam henüz kesinleşmedi. Sorun: sayfa
-2 harcamada iyi çalışıyor, 100 harcamada üç ayrı şey bozuluyor — **yön**
+Sayfa 2 harcamada iyi çalışıyor, 100 harcamada üç ayrı şey bozuluyor — **yön**
 (ay sınırı yok), **anlam** ("nereye gitti" sorusunun cevabı hiçbir yerde yok)
 ve **bulma** (arama/filtre yok). Grafik yalnızca ikincisine cevap veriyor.
 
-| Aşama | İş |
-|---|---|
-| 13.1 | Ay başlıkları + ay toplamı (grafik değil; en ucuz, en çok kazandıran) |
-| 13.2 | Özet bloğu: bakiyenin açıklaması + kategori/ay kırılımı |
-| 13.3 | Arama + filtre ("yalnızca beni ilgilendirenler" dahil) |
+| Aşama | Durum | İş |
+|---|---|---|
+| 13.1 + 13.2 | **DONE** | Ay başlıkları + özet bloğu (bakiyenin açıklaması + kategori/ay kırılımı) |
+| 13.3 | TODO | Arama + filtre ("yalnızca beni ilgilendirenler" dahil) + CSV |
 
-### Uygulamadan önce dikkat edilecekler
+**13.1 ve 13.2 neden birleşti:** Ay başlığındaki toplam ekrandaki 20 kayıttan
+hesaplanamaz — bir ay sayfa sınırını aştığında sessizce yanlış olurdu. Doğru
+toplam özetin verisinden geliyor, yani 13.1 zaten 13.2'nin veri katmanına
+bağımlıydı. Ayrı yapmak aynı yere iki kez dokunmak olurdu.
 
-- **Özet, ekrandaki 20 harcamadan hesaplanamaz.** Sayfa `listExpenses`'ten
-  yalnızca ilk 20 kaydı alıyor; toplam onlardan çıkarılırsa **yanlış sayı**
-  gösterilir.
-- **Ama yeni bir sorgu da gerekmiyor.** `getGroupBalances` bugün grubun
-  **bütün** silinmemiş harcamalarını zaten belleğe çekiyor (`balances.ts`,
-  `findMany`'de `take` yok). Özet aynı veriden hesaplanabilir; `select`'e
-  yalnızca `category` ve `expenseDate` eklenir. Ayrı bir toplama sorgusu
-  fazladan gidiş-dönüş olurdu.
-- **Bunun bedeli var ve ayrı bir borç:** o sorgu sınırsız. 1000 harcamalı bir
-  grupta her sayfa görüntülemesi bin satır çekiyor. Doğru çözüm bakiyeyi de
-  özeti de SQL'de toplamak (`SUM`/`GROUP BY`); ikisi tek işte düzeltilmeli.
-  13.2 bu profili **kötüleştirmiyor**, ama düzeltmiyor da.
-- **Aylık kırılım Prisma `groupBy` ile yapılamaz** (tarihi aya indiremiyor).
-  Bellekte gruplanır ya da `date_trunc` ile ham sorgu yazılır.
-- **Para tam sayı olduğu için toplama tam.** Yüzde hesabında (kategori payı)
-  float'a düşülmemeli; `basisPoints` deseni burada da geçerli.
-- **Silinmiş harcamalar ve iptal edilmiş ödemeler özete girmez** — bakiyede
-  olduğu gibi.
+**13.1 + 13.2'de yapıldı:**
+
+- `loadGroupFinancials` (`balances.ts`) — grubun harcama ve ödemelerini okuyan
+  tek yer, `cache()` ile sarılı. Bakiye ve özet aynı istekte **tek sorgu**
+  paylaşıyor; sarılmasaydı sayfa bütün harcamaları iki kez okurdu.
+- `summary.ts` — saf `calculateGroupSummary` + `getGroupSummary` servisi.
+  Yüzdeler basis point, float yok. Ay anahtarı `toISOString()`'ten alınıyor
+  (`getMonth()` DEĞİL — `@db.Date` UTC gece yarısı döner ve UTC'nin
+  gerisindeki bir dilimde ayın ilk günü bir önceki aya düşerdi).
+- `GET /api/v1/groups/[groupId]/summary` — mobil istemci için.
+- `GroupSummary` bileşeni + harcama listesinde ay başlıkları.
+- `formatMonth` (`dates.ts`), `formatBasisPoints` yeniden kullanıldı.
+
+**Ekran görüntüsü yine gerçek bir hata yakaladı:** aylık sütunları
+`bg-panel-strong` ile boyamıştım — o zemin rengi, açık temada neredeyse
+görünmüyordu ve sütunlar boş kutu gibi duruyordu. Ayrıca tutar etiketi sabit
+yükseklikli kabın dışına taşıp kırpılıyordu. Sütunlar kobalta çevrildi,
+çubuk kendi sabit kabına alındı. **Tek aylık grafik artık hiç
+gösterilmiyor** — karşılaştıracak ikinci sütun yokken grafik bir şey
+anlatmıyor.
+
+**E2E artık düzen hatası da yakalıyor:** yeni testin sonunda 390 ve 768 px'te
+`scrollWidth > innerWidth` ölçülüyor. 11.5'teki yatay kayma ancak ekran
+görüntüsüyle yakalanmıştı; bu ölçüm o boşluğu kapatıyor.
+
+**Test:** 447 birim / 29 E2E.
+**Commit:** `b301e85` — **push edilmedi**.
+
+### 13.3 öncesi dikkat edilecekler
+
+- **Filtre, ekrandaki 20 kayda uygulanamaz.** Arama/filtre sunucuda olmalı;
+  yüklenmiş satırları süzmek "sonuç yok" derken aslında sonraki sayfada
+  duran kaydı gizler. `listExpenses`'e filtre parametreleri ve `/api/v1`
+  ucuna karşılıkları gerekiyor.
+- **Sınırsız okuma borcu duruyor.** `loadGroupFinancials` grubun bütün
+  harcamalarını çekiyor (`take` yok). 1000 harcamalı grupta her sayfa
+  görüntülemesi bin satır demek. Doğru çözüm bakiyeyi de özeti de SQL'de
+  toplamak (`SUM`/`GROUP BY`); ikisi tek işte düzeltilmeli. 13.1+13.2 bu
+  profili **kötüleştirmedi** (okuma zaten vardı, `cache()` ile paylaşıldı)
+  ama düzeltmedi de.
 - **Ürün riski:** `category` varsayılanı `OTHER`. Kimse dokunmazsa kategori
-  kırılımı tek çubuk "Diğer" olur. Grafik gelecekse formdaki kategori
-  seçiminin görünürlüğü artmalı.
-- **Renk kararı:** kategori kırılımı **tek renk** (kobalt, uzunlukla
-  karşılaştırma). Çok renkli palet ADR-021'i çiğner — renk bu uygulamada
-  yalnızca alacak/borç taşır. `globals.css`'teki `--chart-1..5` shadcn'den
-  kalma ve hiçbir yerde kullanılmıyor; bu iş yapılırken kaldırılmalı.
-- **Özet `/api/v1` altında olmalı**, sayfada değil: mobil istemci aynı ucu
-  çağıracak.
+  kırılımı tek çubuk "Diğer" olur. Formdaki kategori seçiminin görünürlüğü
+  artmalı.
+- **`globals.css`'teki `--chart-1..5`** shadcn'den kalma beş renk; hiçbir
+  yerde kullanılmıyor ve ADR-021 ile çelişiyor (kategori kırılımı tek renk).
+  Kaldırılmalı.
 
 ---
 

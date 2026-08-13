@@ -18,25 +18,26 @@ durumunu dogrula, sonra bu dosyayi duzelt.
 Updated: 2026-08-13
 
 Current task:
-  Faz 12 (acilis oncesi duzeltmeler) BITTI - dort asama da tamam.
-  Commit bekleniyor: kullanici 12.3 ve 12.4'u birlikte commitlemek istedi.
+  Faz 13 - Grup sayfasi 100 harcamada.
+  13.1 + 13.2 (ay basliklari + ozet blogu) BITTI, commitlenmedi.
+  13.3 (arama + filtre + CSV) yapilmadi.
 
 Hemen sonraki adim:
-  1. 12.3 + 12.4 commitlenir (kullanici istedi), push ayrica sorulur.
-  2. Sonra Faz 13: grup sayfasi 100 harcamada. Yonu MOCKUP UZERINDEN
-     ONAYLANDI. Kapsam: 13.1 ay basliklari + ay toplami, 13.2 ozet blogu
-     (bakiyenin aciklamasi + kategori/ay kirilimi), 13.3 arama + filtre
-     ("yalnizca beni ilgilendirenler" dahil) + CSV.
-     UYGULAMADAN ONCE PROGRESS.md'deki "Faz 13" bolumu okunmali - orada
-     olculmus mühendislik notlari var (ozellikle: ozet ekrandaki 20
-     harcamadan hesaplanamaz ama yeni sorgu da gerekmiyor).
+  13.1+13.2 commitlenir (kullanici isteyince), push ayrica sorulur.
+
+  Sonra 13.3: arama + filtre. DIKKAT - filtre SUNUCUDA olmali. Yuklenmis 20
+  satiri suzmek "sonuc yok" derken sonraki sayfadaki kaydi gizler.
+  listExpenses'e filtre parametreleri ve /api/v1 ucuna karsiliklari gerekiyor.
+  Ayrintili notlar PROGRESS.md "Faz 13" bolumunde.
 
 Status:
-  Calisma agaci temiz. PUSH EDILMEMIS 3 commit var:
-    90fb6b5  12.3  para birimi daraltmasi
-    07a8e7d  12.4  saf rename (middleware.ts -> proxy.ts, %100)
-    40a6095  12.4  bayat yorumun duzeltilmesi
-  Push Vercel'de production deploy tetikliyor; kullanicinin onayi bekleniyor.
+  Faz 12 tamam ve PUSH EDILDI (`fea2fb9`'a kadar).
+  Production migration dogrulandi.
+
+  13.1+13.2 commitlendi: `b301e85`. PUSH EDILMEDI - push Vercel'de production
+  deploy tetikliyor, kullanicinin onayi bekleniyor.
+
+  Testler: 447 birim / 29 E2E, tsc + lint temiz, tam E2E kosusu yapildi.
 
   12.1 (`3578386`) ve 12.2 (`d18997f`) push edildi.
   DOGRULANDI (canlida): 12.1'in migration'i
