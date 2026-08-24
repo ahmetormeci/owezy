@@ -15,11 +15,11 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (17)
+Updated: 2026-08-24 (18)
 
 Current task:
-  FAZ 18 - MOBIL UYGULAMA. 18.0-18.5 BITTI, yani fazin planlanan butun
-  adimlari tamam. Oncelik iOS (ADR-030); Android bilerek ertelendi.
+  FAZ 18 - MOBIL UYGULAMA. 18.0-18.7 bitti (18.6 ve 18.7 plana sonradan
+  eklendi). Oncelik iOS (ADR-030); Android bilerek ertelendi.
 
 Hemen sonraki adim:
   YOK - KULLANICIDAN GOREV BEKLENIYOR.
@@ -28,18 +28,35 @@ Hemen sonraki adim:
 
   MOBILDE BUGUN NE VAR:
     giris (e-posta + kod), grup listesi / tek grupta dogrudan gruba
-    yonlendirme, fis ekrani (harcama satirlari, ay perforasyonlari, ay
-    ara toplamlari, sayfalama, cift cizgi + toplamlar, yirtik kenar),
-    satir ici harcama girisi, harcama detayi (duzenleme + silme).
+    yonlendirme, GRUP OLUSTURMA (satir ici), UYELER + DAVET LINKI
+    (iOS paylasim sayfasi), fis ekrani (harcama satirlari, ay
+    perforasyonlari, ay ara toplamlari, sayfalama, cift cizgi +
+    toplamlar, yirtik kenar), satir ici harcama girisi, harcama detayi
+    (duzenleme + silme).
+
+  ROTA YAPISI (18.7'de degisti):
+    /                       YALNIZCA yonlendirme (0 / 1 / 2+ karari)
+    /groups                 liste - HER ZAMAN gorunur
+    /groups/[id]            fis
+    /groups/[id]/members    uyeler + davet
+    /groups/[id]/expenses/[id]  harcama detayi
+    Giris ile listenin AYRILMA sebebi bir hataydi: ikisi ayni dosyadayken
+    grup ekranindaki "Gruplarim" tek gruplu kullanicida hicbir sey
+    yapmiyordu ("/" gruba geri yonlendiriyordu) ve o kullanici listeye,
+    dolayisiyla "grup olustur"a hic ulasamiyordu.
 
   MOBILDE HENUZ YOK (bilincli kapsam disi, 18.x'te not edildi):
     - odesme plani ("hesap boyle kapanir") ve odesme kaydetme
-    - grup olusturma / uye davet etme / uye yonetimi
     - bildirimler
     - EXACT/PERCENTAGE bolusumun mobilde duzenlenmesi (bilincli:
       tutari degistirmek paylarla celisirdi)
     - silinen harcamayi GERI ALMA (restore ucu VAR ama hicbir arayuz
       kullanmiyor - WEB'DE DE YOK)
+    - DAVETI KABUL ETME (link owezy.net/join/<kod>'a gidiyor; uygulama
+      icinde acmak universal link ister, o da ONAYLANMIS Apple hesabi
+      gerektiriyor - bekleniyor). Davet edilen web'den katiliyor.
+    - daveti iptal etme, uye cikarma, sahiplik devri
+    - grup adi/aciklamasi duzenleme (aciklama mobilde HIC girilemiyor)
     - dil secimi (cihaz dili okunuyor, kullanici degistiremiyor)
     - marka isareti (web'de SVG; RN'de react-native-svg gerekirdi)
 

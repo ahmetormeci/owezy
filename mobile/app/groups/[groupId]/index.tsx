@@ -397,11 +397,17 @@ export default function GroupScreen() {
         </Receipt>
 
         <View style={s.footer}>
-          {/* Tek gruplu kullanici buraya YONLENDIRILEREK geliyor, yani listeyi
-              hic gormuyor. Cikis yolunu bu ekranda da birakmak sart. */}
-          <Link href="/" asChild>
+          {/* "/" DEGIL "/groups". Onceki hali tek gruplu kullanicida hicbir
+              sey yapmiyordu: "/" adresi tek grupta gruba GERI yonlendiriyor,
+              yani baglanti ayni ekrana carpip donuyordu (Faz 18.7). */}
+          <Link href="/groups" asChild>
             <Pressable>
               <Text style={s.footerText}>{t("ui.my_groups")}</Text>
+            </Pressable>
+          </Link>
+          <Link href={`/groups/${groupId}/members`} asChild>
+            <Pressable>
+              <Text style={s.footerText}>{t("ui.manage_members")}</Text>
             </Pressable>
           </Link>
           <Pressable onPress={() => void signOut()}>

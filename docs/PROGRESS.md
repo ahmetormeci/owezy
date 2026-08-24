@@ -718,6 +718,7 @@ En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi �
 | 18.4 | **DONE** | Fiş ekranı |
 | 18.5 | **DONE** | Satır içi harcama girişi |
 | 18.6 | **DONE** | Harcama detayı: düzenleme ve silme |
+| 18.7 | **DONE** | Grup oluşturma, üyeler ve davet linki |
 
 **18.3 — ekran değil, GİRİŞ KARARI.** "Grup listesi ekranı" olarak
 planlanmıştı; yapılmadı. Sebep: `GET /api/v1/groups` bakiye döndürmüyor, yani
@@ -820,6 +821,37 @@ döndürüyordu ve onu `useFocusEffect` bağımlılığına koymak yine sonsuz d
 üretti. Kaynağında düzeltildi (`useMemo`) ve kural
 [CONVENTIONS.md](CONVENTIONS.md)'de **genişletildi**: sorun Clerk'e özgü değil,
 her render'da yeniden üretilen **her** değer için geçerli.
+
+**18.7 — grup oluşturma ve davet.** Ama önce **bulunan bir hata**: grup
+ekranındaki "Gruplarım" bağlantısı **tek gruplu kullanıcıda hiçbir şey
+yapmıyordu.** `/` adresine gidiyordu, orası da tek grupta gruba geri
+yönlendiriyordu — yani kullanıcı aynı ekrana çarpıp dönüyordu ve **listeye,
+dolayısıyla "grup oluştur"a hiç ulaşamıyordu**. 18.3'te yazılmış, fark
+edilmemişti çünkü o sırada test kullanıcısının iki grubu vardı.
+
+Çözüm yapısal: **giriş ile liste ayrıldı.** `/` yalnızca yönlendirme yapıyor,
+`/groups` **her zaman** listeyi gösteriyor.
+
+**Grup oluşturma satır içi** — ayrı form ekranı yok. Hem ilk açılış ekranında
+hem listede aynı bileşen; harcama bestecisiyle aynı mantık. İlk açılış ekranı
+artık yalnızca "grup oluştur" demiyor, oluşturmayı da sunuyor.
+
+**Davet linki iOS'un kendi paylaşım sayfasıyla** gönderiliyor — React
+Native'in yerleşik `Share` modülü, **yeni bağımlılık yok**. Ham kod sunucudan
+yalnızca bir kez dönüyor, o yüzden ekranda da bırakılıyor.
+
+**Daveti kabul etme mobilde YOK.** Link `owezy.net/join/<kod>` adresine
+gidiyor; uygulama içinde açmak universal link kurulumu, o da **onaylanmış
+Apple Developer hesabı** ister. Davet edilen web'den katılıyor.
+
+**İki metin gerçeğe uyduruldu:** `ui.invite_once_warning` "Sayfayı
+yenilersen" diyordu — telefonda sayfa yenileme diye bir şey yok, ifade
+platform-nötr hâle getirildi. Ve tekrar paylaşma düğmesi "Davet linki oluştur"
+ile **aynı adı taşıyordu** ama farklı iş yapıyordu; ayrı bir anahtar aldı
+(`ui.share_link`).
+
+**Kapsam dışı (bilinçli):** daveti iptal etme, üye çıkarma, sahiplik devri,
+grup adı/açıklaması düzenleme.
 
 **18.4 için bilinen zorluk:** React Native'de CSS yok. Fişin noktalı ayracı
 (`border-bottom: 1px dotted`), perfore çizgisi ve yırtık kenarı web'deki

@@ -8,6 +8,25 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (13)
+
+### Mobilde grup oluşturma ve davet (Faz 18.7)
+- **Önce bir hata düzeltildi:** grup ekranındaki "Gruplarım" bağlantısı
+  tek gruplu kullanıcıda hiçbir şey yapmıyordu — `/` adresi tek grupta
+  gruba geri yönlendiriyor, yani bağlantı aynı ekrana çarpıp dönüyordu.
+  Tek gruplu biri listeye, dolayısıyla "grup oluştur"a hiç ulaşamıyordu.
+  **Giriş ile liste ayrıldı**: `/` yönlendirir, `/groups` her zaman
+  listeyi gösterir.
+- **Grup oluşturma satır içi** — ilk açılış ekranında ve listede aynı
+  bileşen. İlk açılış artık yalnızca "grup oluştur" demiyor, sunuyor da.
+- **Davet linki iOS paylaşım sayfasıyla** gönderiliyor; React Native'in
+  yerleşik `Share` modülü, yeni bağımlılık yok.
+- **Daveti kabul etme mobilde yok** — universal link kurulumu, o da
+  onaylanmış Apple hesabı gerektiriyor. Davet edilen web'den katılıyor.
+- **İki metin gerçeğe uyduruldu:** davet uyarısı "Sayfayı yenilersen"
+  diyordu (telefonda öyle bir şey yok), ve tekrar paylaşma düğmesi
+  "Davet linki oluştur" ile aynı adı taşıyıp farklı iş yapıyordu.
+
 ## 2026-08-24 (12)
 
 ### Silme metni gerçeğe uyduruldu

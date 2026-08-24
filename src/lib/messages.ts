@@ -297,8 +297,12 @@ export const MESSAGES_TR = {
   "ui.no_active_invite": "Aktif bir davet linki yok.",
   "ui.invite_ready": "Davet linkin hazır",
   "ui.invite_once_warning":
-    "Bu link yalnızca şimdi gösteriliyor. Sayfayı yenilersen bir daha göremezsin, çünkü sunucuda linkin kendisi değil yalnızca şifrelenmiş bir özeti saklanıyor.",
+    "Bu link yalnızca şimdi gösteriliyor. Bir daha göremezsin, çünkü sunucuda linkin kendisi değil yalnızca şifrelenmiş bir özeti saklanıyor.",
   "ui.invite_created": "Davet linki oluşturuldu",
+
+  // Mobil (Faz 18.7): mevcut linki tekrar paylasma. "Davet linki olustur"
+  // ile AYNI adi tasiyamaz - ikisi farkli is yapiyor.
+  "ui.share_link": "Bağlantıyı paylaş",
   "ui.invite_create_failed": "Davet linki oluşturulamadı",
   "ui.invite_revoke": "İptal et",
   "ui.invite_revoked": "Davet iptal edildi",
@@ -649,8 +653,10 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.no_active_invite": "No active invite links.",
   "ui.invite_ready": "Your invite link is ready",
   "ui.invite_once_warning":
-    "This link is shown only now. If you refresh the page you won't see it again, because the server stores only a hashed digest of it, not the link itself.",
+    "This link is shown only now. You will not see it again, because the server keeps only a hashed digest of it, not the link itself.",
   "ui.invite_created": "Invite link created",
+
+  "ui.share_link": "Share link",
   "ui.invite_create_failed": "The invite link could not be created",
   "ui.invite_revoke": "Revoke",
   "ui.invite_revoked": "Invite revoked",
