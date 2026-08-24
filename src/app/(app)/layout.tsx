@@ -4,10 +4,12 @@ import { auth } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
 import { getOrCreateCurrentUser } from "@/lib/auth";
 import { countUnreadNotifications } from "@/lib/notifications";
+import { listGroupsForUser } from "@/lib/groups";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { BrandMark } from "@/components/brand-mark";
+import { GroupSwitcher } from "@/components/group-switcher";
 import { getTranslate } from "@/lib/i18n-server";
 
 // (app) bir "route group": parantezli klasor adi URL'e yansimaz, yalnizca
@@ -32,7 +34,16 @@ export default async function AppLayout({
   // geliyor, istemcinin ayrica bir istek atmasi gerekmiyor. Bildirimlerin
   // KENDISI ise yalnizca menu acildiginda cekiliyor.
   const user = await getOrCreateCurrentUser();
-  const unreadCount = user ? await countUnreadNotifications(user.id) : 0;
+  // Bildirim sayisi ve grup listesi PARALEL: ikisi de baslikta gorunuyor ve
+  // birbirini beklemeleri icin sebep yok. Grup listesi kucuk bir sorgu
+  // (kullanici basina birkac satir) ve baslik zaten her sayfada.
+  const [unreadCount, groups] = user
+    ? await Promise.all([countUnreadNotifications(user.id), listGroupsForUser(user.id)])
+    : [0, []];
+
+  // Marka baglantisi "ev"e gider. Tek grubu olan icin ev, o grubun kendisi -
+  // arada duran tek satirlik bir dizin sayfasi degil (Faz 16.4).
+  const homeHref = groups.length === 1 ? `/groups/${groups[0].id}` : "/groups";
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
@@ -42,13 +53,24 @@ export default async function AppLayout({
           okunmasini engelliyor ama sayfanin devam ettigini de belli ediyor. */}
       <header className="sticky top-0 z-30 border-b border-line-soft bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-12 w-full max-w-4xl items-center justify-between px-4">
-          <Link
-            href="/groups"
-            className="flex items-center gap-2 rounded-md text-[0.8125rem] font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <BrandMark className="size-4 text-brand" />
-            {t("ui.app_name")}
-          </Link>
+          {/* Marka isareti + grup degistirici. Uygulama adi baslikta artik
+              YAZILMIYOR: sekme basliginda zaten var ve o yerin asil isi
+              "hangi gruptayim" sorusunu cevaplamak. */}
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Link
+              href={homeHref}
+              aria-label={t("ui.app_name")}
+              className="flex shrink-0 items-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <BrandMark className="size-4 text-brand" />
+            </Link>
+            {groups.length > 0 ? (
+              <>
+                <span aria-hidden="true" className="h-4 w-px shrink-0 bg-border" />
+                <GroupSwitcher groups={groups.map(({ id, name }) => ({ id, name }))} />
+              </>
+            ) : null}
+          </div>
           <div className="flex items-center gap-1">
             <LanguageToggle />
             <ThemeToggle />

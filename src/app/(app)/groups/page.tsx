@@ -3,6 +3,7 @@ import { getOrCreateCurrentUser } from "@/lib/auth";
 import { listGroupsForUser } from "@/lib/groups";
 import { Badge } from "@/components/ui/badge";
 import { CreateGroupDialog } from "@/components/create-group-dialog";
+import { BrandMark } from "@/components/brand-mark";
 import { getTranslate } from "@/lib/i18n-server";
 
 // Server Component: veriyi kendi API'mize HTTP istegi atarak degil, dogrudan
@@ -26,10 +27,20 @@ export default async function GroupsPage() {
       </div>
 
       {groups.length === 0 ? (
-        // Bos durum: kutu degil, cizginin altinda sessiz bir cumle. Bos bir
-        // liste icin kart cizmek, olmayan bir seye yer ayirmak demek.
-        <div className="mt-6 border-t border-border pt-6 text-muted-foreground">
-          {t("ui.no_groups")}
+        // ILK EKRAN (Faz 16.5). Hala kutu yok - ama bu, uygulamayi ilk acan
+        // kisinin gordugu TEK sey ve cizginin altindaki gri bir cumle olarak
+        // birakilamazdi. Ortalanmis, marka isaretiyle birlikte, nefes alan
+        // bir alan: bos oldugu icin degil, baslangic oldugu icin boyle.
+        //
+        // Ikinci bir "Yeni grup" dugmesi BILEREK KONMADI: tetikleyici zaten
+        // ustte duruyor ve ayni adi tasiyan iki dugme hem ekran okuyucuda
+        // belirsizlik hem de testlerde cift eslesme uretirdi (16.3'te tam
+        // olarak bu yasandi).
+        <div className="mt-16 flex flex-col items-center gap-5 text-center">
+          <BrandMark className="size-8 text-brand" />
+          <p className="max-w-sm text-balance text-muted-foreground">
+            {t("ui.no_groups")}
+          </p>
         </div>
       ) : (
         // Her grup bir kart degil, bir SATIR. Kart deseninde uc grup uc ayri

@@ -451,10 +451,31 @@ export function ExpenseList({
 
   // list yalnizca ilk aramanin cevabi beklenirken null olur.
   if (!list || list.expenses.length === 0) {
+    // Grubun HIC harcamasi yok mu, yoksa yalnizca bu goruntu mu bos?
+    // Ozet butun aylari tasiyor; bos olmasi grubun bos olmasi demek.
+    const groupIsEmpty = monthTotals.length === 0 && !isFiltered;
+
     return (
-      <div className="flex flex-col gap-3">
-        {filters}
-        <p className="text-muted-foreground">
+      <div className="flex flex-col gap-4">
+        {/* Bos bir fiste filtre cubugu YOK (Faz 16.5): suzulecek hicbir sey
+            yokken arama kutusu gostermek, olmayan bir isi varmis gibi
+            gosterir. Filtre acikken cubuk elbette duruyor - kullanici onu
+            kapatabilmeli. */}
+        {groupIsEmpty ? null : filters}
+
+        {groupIsEmpty ? (
+          // Yazilmayi bekleyen satirlar. Icleri BILEREK bos: mockup'ta ornek
+          // aciklamalar vardi ("Kahvalti", "Benzin") ama uydurma icerik
+          // ekranda gercek kayitla karisir. Bos noktali cizgiler ayni seyi
+          // soyluyor - burasi yazilacak - hicbir sey uydurmadan.
+          <div aria-hidden="true" className="flex flex-col gap-5 py-2">
+            <span className="block border-b border-dotted border-border" />
+            <span className="block border-b border-dotted border-border opacity-60" />
+            <span className="block border-b border-dotted border-border opacity-30" />
+          </div>
+        ) : null}
+
+        <p className="text-sm text-muted-foreground">
           {!list
             ? t("ui.loading")
             : isFiltered

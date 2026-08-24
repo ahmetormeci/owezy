@@ -200,6 +200,12 @@ export default async function GroupDetailPage({
 
   const hasSuggestions = suggestedTransfers.length > 0;
 
+  // BOS GRUP (Faz 16.5): harcamasi olmayan bir grupta bakiye blogu, hesabin
+  // nasil kapanacagi ve toplamlar HIC CIZILMIYOR. Ucu de sifir gosterirdi ve
+  // sifirlarla dolu bir fis, olmayan bir gecmisi varmis gibi anlatir.
+  // Ustelik "Odestin" damgasi orada yanlis: odesecek bir sey hic olmadi.
+  const isEmpty = summary.expenseCount === 0;
+
   return (
     <>
       {/* Tezgah. Fisin bir NESNE gibi durabilmesi icin altinda ondan koyu bir
@@ -269,6 +275,7 @@ export default async function GroupDetailPage({
             gore kurulur" kurali fiilen bozulurdu. Hesap ozetleri de ayni
             sebeple bakiyeyi basa koyar. Fis dili korunuyor (cift cizgi,
             mono etiket), sirasi degil. */}
+        {!isEmpty ? (
         <div className="flex flex-col gap-2 border-t border-dashed border-border pt-5">
           <div className="flex items-end justify-between gap-4">
             <span className="cap text-foreground">{t("ui.your_status")}</span>
@@ -296,11 +303,12 @@ export default async function GroupDetailPage({
             )}
           </div>
         </div>
+        ) : null}
 
         {/* Hesabin nasil kapanacagi. Fiil BASLIKTA, satirda degil - Turkce'de
             "{isim}'e ode" yer tutucuyla dogru yazilamiyor (ek son harfe gore
             degisiyor). Bu kural SuggestionGroup'tan beri gecerli. */}
-        {hasSuggestions ? (
+        {!isEmpty && hasSuggestions ? (
           <div className="flex flex-col gap-4 rounded-[3px] border border-border bg-panel px-4 py-3.5">
             <span className="cap text-foreground">{t("ui.settle_plan")}</span>
             <SuggestionGroup
@@ -345,9 +353,9 @@ export default async function GroupDetailPage({
               </div>
             ) : null}
           </div>
-        ) : (
+        ) : !isEmpty ? (
           <p className="text-sm text-muted-foreground">{t("ui.everyone_settled")}</p>
-        )}
+        ) : null}
 
         {/* Harcamalar: fisin govdesi. Ay basliklari artik perfore cizgi. */}
         <ExpenseList
@@ -375,6 +383,7 @@ export default async function GroupDetailPage({
 
         {/* Fisin kapanisi: cift cizgi ve toplamlar. Bu ucu zaten hesaplaniyor
             (summary), yeni bir sorgu yok. */}
+        {!isEmpty ? (
         <div className="flex flex-col gap-2 border-t-[3px] border-double border-foreground pt-4">
           <ReceiptLine muted amount={formatMoney(summary.totalAmount, currency, locale)}>
             <span className="cap">{t("ui.summary_total")}</span>
@@ -386,6 +395,7 @@ export default async function GroupDetailPage({
             <span className="cap">{t("ui.summary_you_paid")}</span>
           </ReceiptLine>
         </div>
+        ) : null}
 
         {/* Fisin bir sonraki satiri. Toplamlardan SONRA duruyor: fis once
             kendini kapatiyor, sonra "bir satir daha?" diye soruyor. */}

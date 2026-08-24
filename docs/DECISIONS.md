@@ -513,6 +513,10 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 3. **Satır içi harcama girişi.** Fişin son satırı yazılabilir; yalnızca en
    yaygın durumu yapıyor (eşit bölüşüm, ödeyen sen, tarih bugün, kategori
    Diğer) ve bu varsayımları yazıyor.
+4. **Uygulama tek gruplu kullanıcıyı doğrudan grubuna bırakıyor.** Karşılama
+   sayfası (`/`) ve başlıktaki marka işareti, kullanıcının tek grubu varsa o
+   gruba gider. `/groups` **yönlendirmiyor**; erişilebilir bir liste olarak
+   kalıyor ve başlıktaki grup değiştiriciden ulaşılıyor.
 
 **Neden:** Kullanıcı ekran görüntüsüyle şunu gösterdi: 1-2 gruplu birinde
 "Gruplarım" ekranı geniş bir boşluktu. Sorun boşluk değil, ekranın bir DİZİN
@@ -534,6 +538,12 @@ en altta durur. Uygulamada öyle yapılmadı: 40 harcamalı bir grupta bakiye
 ekranın çok altına düşerdi ve ADR-016'nın "sayfa bakiyeye göre kurulur"
 kuralı fiilen bozulurdu. Hesap özetleri de aynı sebeple bakiyeyi başa koyar.
 Fiş dili korundu, sırası değil.
+
+**Neden `/groups` yönlendirmiyor:** İlk tasarım "tek grup varsa liste gruba
+yönlensin"di. Uygulanmadı, çünkü **"Yeni grup" düğmesi yalnızca o listede
+duruyor**: liste kendine gelen herkesi geri gönderseydi tek gruplu kullanıcı
+ikinci bir grubu asla oluşturamazdı. Şikayetin kaynağı zaten listenin varlığı
+değil, oraya **düşmekti** — o yüzden iniş noktası değişti, liste değil.
 
 **Ödenen bedeller — ikisi de bilerek:**
 

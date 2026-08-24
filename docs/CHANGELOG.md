@@ -28,6 +28,19 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 - **Özet bloğundaki tekrar temizlendi.** TOPLAM/PAYIN kutuları ve "bakiyen
   nasıl oluştu" denklemi kalktı; ikisi de fişte vardı.
 
+### Uygulama artık grubunun içine açılıyor (Faz 16.4–16.5)
+- **Tek grubu olan kullanıcı doğrudan grubuna giriyor.** Karşılama sayfası ve
+  başlıktaki marka işareti oraya gidiyor. `/groups` erişilebilir kalıyor —
+  "Yeni grup" orada duruyor ve yönlendirseydi ikinci grup hiç kurulamazdı.
+- **Başlıkta grup değiştirici.** İki veya daha fazla grubu olanlar için açılır
+  menü; tek grubu olanda düz metin. Başlıkta uygulama adı yerine artık
+  hangi grupta olduğun yazıyor.
+- **Boş grup fişi dürüstleşti.** Sıfırlarla dolu toplamlar, yanlış bir
+  "Ödeştin" damgası ve süzülecek şey yokken duran filtre çubuğu kalktı.
+  Yerine yazılmayı bekleyen üç solan çizgi geldi.
+- **İlk ekran.** Hiç grubu olmayan kullanıcı artık çizginin altında gri bir
+  cümle değil, ortalanmış ve nefes alan bir başlangıç görüyor.
+
 ## 2026-08-24
 
 ### Kendi alan adı ve production kimlik doğrulama (Faz 15)

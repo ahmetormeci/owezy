@@ -8,13 +8,13 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 15 faz tamamlandı, 16. faz sürüyor. Uygulama canlıda ve `main`'e giden her değişiklik
+**Özet:** 16 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
 | Birim (Vitest) | 498 | ✅ tümü geçiyor |
-| E2E (Playwright) | 34 | ✅ tümü geçiyor |
+| E2E (Playwright) | 35 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -601,7 +601,7 @@ ile kalıyor, yalnızca Vercel'in Production kapsamı `pk_live_` kullanıyor.
 
 ---
 
-## Faz 16 — Fiş tasarımı · **DEVAM EDİYOR**
+## Faz 16 — Fiş tasarımı · **DONE**
 
 Kullanıcı ekran görüntüsüyle bir şey gösterdi: 1-2 gruplu birinde "Gruplarım"
 ekranı geniş bir boşluktu. Teşhis, satırların çirkinliği değil ekranın bir
@@ -616,8 +616,8 @@ yönünü seçti. Kararların tamamı ADR-027'de.
 | 16.1 | **DONE** | Fiş görünümü: kâğıt, noktalı ayraçlar, perfore ay çizgileri, çift çizgi + toplamlar, yırtık kenar |
 | 16.2 | **DONE** | Katlanan aylar + sunucu tarafı ay penceresi (`listExpenses(month)`) |
 | 16.3 | **DONE** | Satır içi harcama girişi |
-| 16.4 | Sırada | Gruplar listesi varış noktası olmaktan çıkıyor; başlıkta grup değiştirici |
-| 16.5 | Sırada | Boş ve ödeşmiş durumların fiş dilinde karşılıkları |
+| 16.4 | **DONE** | Uygulama tek gruplu kullanıcıyı doğrudan grubuna bırakıyor; başlıkta grup değiştirici |
+| 16.5 | **DONE** | Boş ve ödeşmiş durumların fiş dilinde karşılıkları |
 
 **Ekran görüntüsü üç gerçek hata yakaladı, üçü de koddan bakınca görünmüyordu:**
 
@@ -641,9 +641,23 @@ ekran okuyucu için de belirsizlik. Satır içi giriş kendi diline bağlandı:
 **"Ne aldın?" / "Ne kadar?"**. Hedefli koşular bunu göstermemişti; yalnızca
 tam koşu gösterdi.
 
-**Test:** 498 birim / 34 E2E. İki yeni E2E satır içi girişi kapsıyor
-(uçtan uca ekleme ve bozuk tutarın reddi), 5 yeni birim testi ay aralığının
-sınırlarını (ay/yıl dönümü, şubat, UTC).
+**16.4'te plandan sapıldı ve sebebi ADR-027'de:** "gruplar listesi gruba
+yönlensin" fikri, tek gruplu kullanıcının ikinci grubu oluşturmasının önünü
+kapatıyordu ("Yeni grup" yalnızca o listede). İniş noktası değiştirildi, liste
+değil.
+
+**16.5'te mockup'tan sapıldı:** tasarımda boş fişte örnek açıklamalar vardı
+("Kahvaltı", "Benzin"). Kodda satırlar BOŞ bırakıldı — uydurma içerik ekranda
+gerçek kayıtla karışır. Boş noktalı çizgiler aynı şeyi uydurmadan söylüyor.
+
+Boş bir grupta bakiye bloğu, ödeşme planı, toplamlar ve filtre çubuğu artık
+hiç çizilmiyor. Dördü de sıfır ya da boş gösteriyordu; "Ödeştin" damgası ise
+düpedüz yanlıştı — ödeşecek bir şey hiç olmadı.
+
+**Test:** 498 birim / 35 E2E. Üç yeni E2E: satır içi girişin uçtan uca
+eklemesi, bozuk tutarın reddi ve tek gruplu kullanıcının ana sayfadan
+doğrudan grubuna girmesi. 5 yeni birim testi ay aralığının sınırlarını
+kapsıyor (ay/yıl dönümü, şubat, UTC).
 
 ---
 

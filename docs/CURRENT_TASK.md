@@ -15,21 +15,25 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (2)
+Updated: 2026-08-24 (3)
 
 Current task:
-  FAZ 16 - FIS TASARIMI. 16.1, 16.2 ve 16.3 bitti ve dogrulandi;
-  16.4 ile 16.5 kaldi.
+  YOK. Faz 16 (fis tasarimi) bes asamasiyla bitti ve dogrulandi.
+  Kullanici yeni gorev vermedi.
 
 Hemen sonraki adim:
-  16.4 - Gruplar listesi varis noktasi olmaktan cikiyor. Tek grubu olan
-  kullanici dogrudan grubun icine dusecek, grup degistirme baslikta kucuk bir
-  kontrol olacak, liste yalnizca cok grup varken gorunecek.
-  Sonrasinda 16.5 - bos ve odesmis durumlarin fis dilindeki karsiliklari.
+  Kullanicinin secmesi bekleniyor.
 
-  DIKKAT (16.4 icin): grup listesi bugun "/groups" ve (app)/layout.tsx'teki
-  marka baglantisi oraya gidiyor. Yonlendirme degisikligi E2E'deki
-  createGroupAndOpen / openGroup yardimcilarini da ilgilendiriyor.
+  ACIK URUN RISKI - BUYUDU: satir ici giris her zaman OTHER kategorisi
+  kullaniyor. "Kategori varsayilani OTHER, kirilim tek cubuk Diger cikiyor"
+  riski Faz 13'ten beri yaziliydi; hizli giris bunu artik daha da besliyor.
+  Cozum muhtemelen kirilimin kendisinde, hizli girise kategori secimi
+  koymakta degil - satiri sisirir.
+
+  FIS TASARIMI CANLIDA GOZLE BAKILMADI: butun dogrulama E2E'nin urettigi
+  gruplarda ve ekran goruntusuyle yapildi. Gercek bir grupta cok aylik
+  katlama ve uzun aciklamalarin noktali ayracla nasil durdugu ilk kez orada
+  gorunecek.
 
   FOTOGRAF EKLEME: Cloudflare'e gecildi, karar artik verilebilir. Karar
   verildiginde fotograf VERITABANINA KONMAYACAK - nesne deposu (Vercel Blob
@@ -46,8 +50,8 @@ Status:
   Faz 15 canlida: https://owezy.net, Clerk production (pk_live_),
   GitHub + Google kendi OAuth uygulamalarimizla, webhook 200 donuyor.
 
-  Testler: 498 birim / 34 E2E. Faz 16.3 sonrasi hepsi kosuldu ve temiz:
-  498 birim, tsc, lint ve TAM E2E KOSUSU - 34/34, 6,4 dakika.
+  Testler: 498 birim / 35 E2E. Faz 16 sonrasi hepsi kosuldu ve temiz:
+  498 birim, tsc, lint ve TAM E2E KOSUSU - 35/35, 6,5 dakika.
 
   TAM KOSU SART - OLCULDU: 16.3'te hedefli kosular temiz gorunurken tam kosu
   19 test dusurdu. Sebep satir ici girisin erisilebilir adlarinin (Aciklama /

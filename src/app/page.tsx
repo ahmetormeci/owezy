@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
+import { findCurrentUser } from "@/lib/auth";
+import { listGroupsForUser } from "@/lib/groups";
 import { BrandMark } from "@/components/brand-mark";
 import { PublicControls } from "@/components/public-controls";
 import { formatMoney, formatSignedMoney } from "@/lib/money";
@@ -27,7 +29,17 @@ export default async function HomePage() {
   const t = await getTranslate();
   const locale = await getLocale();
   if (userId) {
-    redirect("/groups");
+    // Tek grubu olan kullaniciyi dogrudan grubunun icine birakiyoruz
+    // (Faz 16.4). Kullanicilarin cogu bir ya da iki grupla calisiyor ve
+    // tek satirlik bir dizin sayfasi, arada duran bos bir duraktir.
+    //
+    // findCurrentUser kullaniyoruz, getOrCreateCurrentUser DEGIL: burasi
+    // herkese acik karsilama sayfasi ve bir SAYFA GORUNTULEMESI kullanici
+    // kaydi yaratmamali (bkz. auth.ts). Kayit henuz yoksa liste sayfasina
+    // gidiyoruz; onu (app) duzeni zaten olusturuyor.
+    const user = await findCurrentUser();
+    const groups = user ? await listGroupsForUser(user.id) : [];
+    redirect(groups.length === 1 ? `/groups/${groups[0].id}` : "/groups");
   }
 
   return (
