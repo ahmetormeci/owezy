@@ -1,4 +1,4 @@
-# SplitApp — Proje Tanımı
+# Owezy — Proje Tanımı
 
 > **Bu dosya high-level'dır.** Dosya yapısı ve katman kuralları için
 > [ARCHITECTURE.md](ARCHITECTURE.md), veri modeli detayı için
@@ -11,7 +11,7 @@ hesaplayan ve borçların kapatılmasını takip eden bir web uygulaması
 (Splitwise benzeri). Arayüz **Türkçe ve İngilizce**; dil çerezden, o yoksa
 hesaptan okunur (`User.locale`).
 
-**Canlı:** https://split-app-mauve.vercel.app
+**Canlı:** https://owezy.net
 
 ## Temel özellikler
 

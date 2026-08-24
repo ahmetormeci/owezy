@@ -117,7 +117,7 @@ export const MESSAGES_TR = {
   "ui.copy": "Kopyala",
 
   // --- Karsilama / kimlik ---
-  "ui.app_name": "SplitApp",
+  "ui.app_name": "Owezy",
   "ui.tagline":
     "Grup harcamalarını kaydet, kimin kime ne kadar borçlu olduğunu tek bakışta gör.",
   "ui.meta_description":
@@ -472,7 +472,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.copy": "Copy",
 
   // --- Landing / identity ---
-  "ui.app_name": "SplitApp",
+  "ui.app_name": "Owezy",
   "ui.tagline": "Track group expenses and see who owes whom at a glance.",
   "ui.meta_description": "Share group expenses and see who owes whom.",
   "ui.sign_in": "Sign in",

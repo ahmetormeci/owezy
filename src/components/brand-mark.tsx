@@ -13,8 +13,8 @@ export function BrandMark({ className }: { className?: string }) {
     <svg
       viewBox="0 0 24 24"
       className={className}
-      // Isaret bilgi tasimiyor, yanindaki "SplitApp" yazisi tasiyor.
-      // Ekran okuyucuya iki kez "SplitApp" dedirtmemek icin gizliyoruz.
+      // Isaret bilgi tasimiyor, yanindaki "Owezy" yazisi tasiyor.
+      // Ekran okuyucuya iki kez "Owezy" dedirtmemek icin gizliyoruz.
       aria-hidden="true"
       focusable="false"
     >

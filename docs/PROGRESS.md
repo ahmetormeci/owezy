@@ -8,7 +8,7 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 14 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
+**Özet:** 15 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
@@ -547,6 +547,60 @@ anlık görüntü. Harcama, ödeme ve audit log'a dokunulmuyor.
 
 ---
 
+## Faz 15 — Kendi alan adı ve production kimlik doğrulama · **DONE**
+
+Faz 8'den beri bilinen sınır: uygulama Clerk'in **development** anahtarlarıyla
+çalışıyordu ve gerçek kullanıcıya açılamıyordu. Alan adı işini kullanıcı
+üstlenmişti; `owezy.net` alınınca bu faz açıldı.
+
+| # | Durum | İş |
+|---|---|---|
+| 15.1 | **DONE** | DNS Squarespace'ten Cloudflare'e; Vercel kayıtları proxy kapalı |
+| 15.2 | **DONE** | Clerk production instance ve alan adı doğrulaması |
+| 15.3 | **DONE** | GitHub ve Google için kendi OAuth uygulamalarımız |
+| 15.4 | **DONE** | Webhook production instance'ta yeniden tanımlandı |
+| 15.5 | **DONE** | Uygulama adı SplitApp → Owezy |
+
+**Kararların gerekçesi ADR-026'da** (proxy neden kapalı, apex neden birincil,
+sosyal girişler için neden kendi OAuth uygulamalarımız).
+
+**Kod değişikliği yalnızca 15.5:** `ui.app_name` (TR + EN) ve `brand-mark.tsx`
+yorumları. Arayüzdeki isim tek yerden geldiği için iki satır yetti. Geri kalan
+her şey panel işi oldu — kodda hiçbir yerde sabit alan adı yok.
+
+**Yolda iki gerçek hata çıktı, ikisi de öğreticiydi:**
+
+1. **`NEXT_PUBLIC_` değişkenleri derleme anında gömülür.** Vercel'de
+   publishable key değiştirildi ama site günlerce değil, deploy'lar boyunca
+   `pk_test_` sunmaya devam etti: derleme önbelleği eski değeri taşıyan paketi
+   yeniden kullanıyordu. Önbelleksiz deploy çözdü. Sunucu tarafı sırları
+   (`CLERK_SECRET_KEY`) bu sorunu yaşamaz — onlar çalışma anında okunuyor.
+2. **Webhook 400 döndü: `Base64Coder: incorrect characters`.** Sır yanlış
+   değil **bozuktu** — Clerk sırrı `.env` satırı biçiminde gösteriyor
+   (`CLERK_WEBHOOK_SIGNING_SECRET=whsec_...`) ve satırın tamamı değer kutusuna
+   yapıştırılmıştı. Hata mesajı ayırt ediciydi: yanlış ama geçerli bir sır
+   imza uyuşmazlığı verirdi, çözümleme hatası değil.
+
+**Doğrulama dışarıdan yapıldı** (`dig` + `curl`), panel ekranına güvenilmedi:
+delegasyonun `.net` kayıt sunucusunda Cloudflare'i gösterdiği, beş Clerk
+kaydının proxy'siz olduğu, sertifikanın çıktığı, sayfaya gömülü anahtarın
+`pk_live_` → `clerk.owezy.net` olduğu ve `dev-browser-missing` başlığının
+kalktığı tek tek ölçüldü.
+
+**Açılış öncesi temizlik:** Production veritabanındaki bütün veri tabloları
+boşaltıldı ve Clerk production kullanıcıları silindi. Kayıtların tamamı
+kullanıcının ve arkadaşlarının test verisiydi. `_prisma_migrations`
+korundu — silinseydi bir sonraki deploy migration'ları baştan uygulamaya
+çalışıp var olan tablolar yüzünden patlardı.
+
+**Development instance silinmedi:** E2E testleri onun `+clerk_test`
+kullanıcılarına ve sabit `424242` koduna bağlı. Yerel `.env.local` `pk_test_`
+ile kalıyor, yalnızca Vercel'in Production kapsamı `pk_live_` kullanıyor.
+
+**Test:** Kod değişikliği arayüz metniyle sınırlı; 493 birim / 32 E2E.
+
+---
+
 ## Faz dışı düzeltmeler
 
 | İş | Commit |
@@ -566,14 +620,10 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Alan adı + Clerk production instance** | Gerçek kullanıcılara açmanın önündeki tek engel (kullanıcı üstlendi) |
-| **Bildirim saklama politikası** | Kayıtlar sonsuza kadar birikiyor |
-| **`createGroup` / `acceptGroupInvite` birim testleri** | İkisi de yalnızca E2E'nin dolaylı kapsamında; davet kabulü bir güvenlik sınırı |
 | **`npm audit fix`** | 10'un 5'i sürüm aralığı içinde kapanıyor; `package-lock.json` yazma izni gerekiyor |
 
 ## Bilinen teknik borç
 
-- `createGroup` ve `acceptGroupInvite` için birim testi yok (E2E dolaylı kapsıyor)
 - Optimistic locking yok (ADR-010, mobil aşamasına ertelendi)
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`

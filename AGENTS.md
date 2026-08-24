@@ -4,7 +4,7 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-# SplitApp — bu repoda çalışırken
+# Owezy — bu repoda çalışırken
 
 ## Önce oku
 
@@ -98,7 +98,9 @@ Bunlar tartışılmış ve karara bağlanmıştır (gerekçeler DECISIONS.md'de)
 
 ## Ortam
 
-- Windows, PowerShell. Kullanıcı `node`/`npx` komutlarını çalıştırabiliyor.
+- macOS (Apple Silicon), zsh. Node **24**, nvm ile kurulu (`~/.nvm`; giriş
+  satırları `~/.zshrc`'de). CI de Node 24 kullanıyor — ikisi bilerek aynı.
+  Kullanıcı `node`/`npx` komutlarını çalıştırabiliyor.
 - Üç ayrı veritabanı: geliştirme, E2E, production. `E2E_DATABASE_URL` ile
   `DATABASE_URL` **asla** aynı olmamalı — `e2e/db-cleanup.ts` aynıysa
   çalışmayı reddeder.

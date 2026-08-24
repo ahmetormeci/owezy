@@ -15,34 +15,50 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-13
+Updated: 2026-08-24
 
 Current task:
-  YOK. Faz 14 (acilis oncesi borc kapatma) bitti ve canlida.
+  YOK. Faz 15 (kendi alan adi + production kimlik dogrulama) bitti ve canlida.
   Kullanici yeni gorev vermedi.
 
 Hemen sonraki adim:
   Kullanicinin secmesi bekleniyor.
 
-  DOGRULANACAK (canlida): 14.4'un migration'i
-  (20260813120000_add_expense_description_fold) production veritabanina
-  vercel-build ile uygulandi mi - Vercel deploy log'undan teyit edilmeli.
-  Kolon GENERATED ALWAYS oldugu icin mevcut production kayitlari kendiliginden
-  dolar; ayri bir backfill adimi YOK.
-
-  FOTOGRAF EKLEME: kullanici Cloudflare'e gecene kadar ASKIDA. Karar
+  FOTOGRAF EKLEME: Cloudflare'e gecildi, karar artik verilebilir. Karar
   verildiginde fotograf VERITABANINA KONMAYACAK - nesne deposu (Vercel Blob
   ya da Cloudflare R2), veritabani yalnizca anahtar/boyut/tip tutar
   (~100 bayt/fotograf). Gerekce ve sayilar konusuldu; bytea'ya koymak
   yedekleri ve baglanti limitini vurur.
 
 Status:
-  Calisma agaci temiz, push edilmemis commit yok.
-  Faz 14'un tamami canlida (`c5ab3d2`'ye kadar).
+  COMMIT EDILMEMIS DEGISIKLIK VAR (Faz 15). Kod: messages.ts (ui.app_name
+  TR + EN -> "Owezy"), brand-mark.tsx (yorumlar). Dokuman: AGENTS.md,
+  PROJECT.md, PROGRESS.md, DECISIONS.md (ADR-026), CHANGELOG.md ve bu dosya.
+  Kod dosyasi icerdigi icin bu bir KOD commit'i - push kullaniciya sorulur.
 
-  Testler: 493 birim / 32 E2E, tsc + lint temiz, tam E2E kosusu yapildi.
+  Faz 15 canlida: https://owezy.net, Clerk production (pk_live_),
+  GitHub + Google kendi OAuth uygulamalarimizla, webhook 200 donuyor.
 
-  IZLENECEK - ARALIKLI E2E HATASI: Faz 14 sonrasi ardarda uc tam kosudan
+  Testler: 493 birim / 32 E2E. Isim degisikliginden SONRA hepsi kosuldu ve
+  temiz: 493 birim, tsc, lint ve TAM E2E KOSUSU - 32/32, 5,4 dakika.
+
+  ORTAM - YENI MAKINE (23 Agustos 2026): proje Windows'tan macOS'a tasindi,
+  repo sifirdan klonlandi. Kurulum TAMAM ve dogrulandi: Node 24 (nvm ile),
+  "npm ci", "npx prisma generate", .env.local dolduruldu (kullanici),
+  Playwright chromium kuruldu, .claude/settings.json elle yeniden
+  olusturuldu (.env.local + package-lock.json yazma korumasi; klasor
+  gitignore'da oldugu icin klonla gelmiyor).
+
+  NPM SURUM FARKI - BILINMESI GEREKEN: npm 11.17 paketlerin kurulum
+  betiklerini varsayilan olarak CALISTIRMIYOR; 7 paket beklemede
+  (@prisma/engines, sharp, @sentry/cli, fsevents, unrs-resolver, prisma).
+  Sonuca bakildi: prisma client yine uretildi, 493 birim ve 32 E2E gecti,
+  yani bugun bir sey kirmiyor. Tek beklenen etki: fsevents kurulmadigi icin
+  dev sunucusunda dosya izleme macOS'un yerel API'si yerine yoklamaya
+  dusebilir. Gerekirse: "npm approve-scripts --allow-scripts-pending".
+
+  IZLENECEK - ARALIKLI E2E HATASI (macOS'ta ardarda iki tam kosu 32/32
+  gecti, yani tekrarlamadi): Faz 14 sonrasi ardarda uc tam kosudan
   BIRINDE bir test "toBeVisible" ile dustu; digerlerinde 32/32 gecti.
   Hangi test oldugu belirlenemedi, cunku sonraki kosu test-results'i
   temizliyor. Iki muhtemel sebep var ve ikisi de tahmin:
@@ -53,10 +69,12 @@ Status:
   timeout'u yalnizca orada yukselt. Suite'in tamamina timeout eklemek
   gercek yavaslamalari gizler.
 
-  MIGRATION VAR: 20260813120000_add_expense_description_fold
-  (Expense.descriptionFold, GENERATED ALWAYS). Gelistirme ve E2E
-  veritabanlarina UYGULANDI. Push edilince production'a vercel-build ile
-  gidecek - Vercel deploy log'undan teyit edilmeli.
+  MIGRATION DURUMU: 20260813120000_add_expense_description_fold
+  (Expense.descriptionFold, GENERATED ALWAYS) gelistirme ve E2E
+  veritabanlarina uygulandi. Production'a da uygulanmis OLMALI: vercel-build
+  her deploy'da "prisma migrate deploy" kosuyor ve Faz 15'te birden fazla
+  deploy basariyla gecti. Bu bir CIKARIM, gozle dogrulama degil; kesin teyit
+  Vercel deploy log'undaki migrate ciktisinda.
 
   CANLIDA GOZLE BAKILMADI: ozet blogu ve ay basliklari yalnizca E2E'nin
   urettigi 2-3 harcamalik gruplarda gorundu. Gercek bir grupta cok aylik
@@ -64,22 +82,29 @@ Status:
   varsayilani OTHER oldugu icin gecmis harcamalarda kirilim tek cubuk
   "Diger" cikabilir - hata degil ama blogu ise yaramaz gosterir.
 
-CANLIYA ACILMANIN ONUNDEKI ENGEL:
-  Uygulama Clerk'in DEVELOPMENT anahtarlariyla calisiyor (Faz 8'den beri
-  bilinen sinir). Alan adi isini KULLANICI ustlendi; karar verince
-  Squarespace'ten alinip Cloudflare'e verilecek, gecis o zaman konusulacak.
+CANLI DURUM (Faz 15 sonrasi):
+  Adres      : https://owezy.net (apex birincil, www 307 ile yonleniyor)
+  DNS        : Cloudflare, Vercel ve Clerk kayitlari PROXY KAPALI (ADR-026)
+  Kimlik     : Clerk production instance, pk_live_ -> clerk.owezy.net
+  Sosyal     : GitHub + Google, kendi OAuth uygulamalarimizla
+  Webhook    : https://owezy.net/api/webhooks/clerk, test olayi 200 dondu
 
-  Alan adi hazir oldugunda kalan adimlar - hepsi PANEL isi, kod degisikligi yok:
-    1. Alan adi Vercel'e baglanir
-    2. Clerk'te production instance olusturulur
-    3. Clerk'in verdigi DNS kayitlari alan adina eklenir
-    4. pk_live_ / sk_live_ anahtarlari Vercel env'ine konur
-    5. Webhook ucu production instance'ta yeniden tanimlanir
-       (/api/webhooks/clerk) ve yeni imza sirri Vercel'e eklenir
+  PRODUCTION VERITABANI SIFIRLANDI (24 Agustos 2026): butun veri tablolari
+  TRUNCATE ile bosaltildi ve Clerk production kullanicilari silindi.
+  Icerideki her kayit kullanicinin ve arkadaslarinin test verisiydi; uygulama
+  hic gercek kullaniciya acilmamisti. _prisma_migrations'a DOKUNULMADI.
+  BU BIR KURAL DEGISIKLIGI DEGIL: "finansal kayitlar fiziksel olarak
+  silinmez" uygulamanin CALISMA ANINDAKI davranisini baglar (soft delete +
+  ExpenseEdit audit log). Acilis oncesi tek seferlik temizlik ayri bir sey ve
+  emsal degildir.
 
-  NOT: Clerk formunda gorunen uygulama adi su an "split-app" (Clerk
-  panelindeki uygulama adindan geliyor, kodda degil). Isim netlesince orasi
-  da guncellenmeli - "Giris yap / split-app ile devam etmek icin" yaziyor.
+  DEVELOPMENT INSTANCE SILINMEYECEK: E2E testleri onun +clerk_test
+  kullanicilarina ve sabit 424242 koduna bagli. Yerel .env.local pk_test_
+  ile kaliyor; yalnizca Vercel'in Production kapsami pk_live_ kullaniyor.
+
+  NOT: Clerk panelindeki uygulama adi "owezy" (kucuk harf). Arayuzdeki
+  ui.app_name "Owezy". Giris formundaki yazi Clerk'ten geldigi icin
+  ikisi ayrisik - Clerk panelinden duzeltilmesi bekleniyor.
 
 Blocked by:
   Yok.

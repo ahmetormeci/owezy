@@ -8,6 +8,31 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24
+
+### Kendi alan adı ve production kimlik doğrulama (Faz 15)
+- **Uygulama artık https://owezy.net adresinde.** Alan adı Squarespace'ten
+  alındı, DNS Cloudflare'e taşındı, hosting Vercel'de kaldı. Cloudflare
+  **proxy'siz** kullanılıyor; apex birincil, `www` ona 307 ile yönleniyor
+  (ADR-026).
+- **Clerk production instance devrede.** Faz 8'den beri development
+  anahtarlarıyla çalışan uygulama artık `pk_live_` kullanıyor; cevaplardaki
+  `dev-browser-missing` başlığı kalktı.
+- **GitHub ve Google girişleri kendi OAuth uygulamalarımızla çalışıyor.**
+  Development'ta Clerk'in paylaşımlı hesapları yetiyordu, production'da
+  yetmiyor (ADR-026).
+- **Webhook production instance'ta yeniden tanımlandı**
+  (`https://owezy.net/api/webhooks/clerk`; `user.created`, `user.updated`,
+  `user.deleted`).
+- **Production veritabanı sıfırlandı.** Bütün veri tabloları boşaltıldı ve
+  Clerk production kullanıcıları silindi — içerideki her kayıt açılış öncesi
+  test verisiydi. `_prisma_migrations` korundu. Bu, "finansal kayıtlar
+  fiziksel olarak silinmez" kuralının **istisnası değil**: o kural
+  uygulamanın çalışma anındaki davranışını bağlar; buradaki, hiç kullanıcıya
+  açılmamış bir veritabanının tek seferlik temizliğidir.
+- **Uygulama adı SplitApp → Owezy.** Arayüzdeki isim tek yerden geliyor
+  (`ui.app_name`, TR + EN), o yüzden değişiklik iki satır.
+
 ## 2026-08-13
 
 ### Açılış öncesi borç kapatma (Faz 14.1–14.5)

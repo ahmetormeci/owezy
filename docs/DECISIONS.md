@@ -500,6 +500,44 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-026 — Alan adı Cloudflare'de, uygulama Vercel'de; proxy kapalı
+**Tarih:** 2026-08-24 · **Durum:** Kabul edildi
+
+**Karar:** `owezy.net` alındı ve açılış altyapısı üç kararla kuruldu:
+
+1. **DNS Cloudflare'de, hosting Vercel'de.** Nameserver'lar Squarespace'ten
+   Cloudflare'e çevrildi. Vercel'i gösteren bütün kayıtlar **proxy kapalı**
+   (DNS only) girildi — Clerk'in kayıtları da dahil.
+2. **Apex birincil.** `owezy.net` asıl adres, `www.owezy.net` ona 307 ile
+   yönleniyor. Apex kaydı bir `CNAME`; Cloudflare onu flattening ile
+   çözümlüyor.
+3. **Production'da sosyal girişler kendi OAuth uygulamalarımızla.** GitHub ve
+   Google için ayrı OAuth istemcileri oluşturuldu ve Clerk'e tanıtıldı.
+
+**Neden proxy kapalı:** Turuncu bulut açıkken Cloudflare araya kendi CDN'ini
+ve kendi TLS'ini sokuyor. Vercel alan adının sahipliğini doğrulayıp
+sertifikasını üretemiyor, iki CDN üst üste binince önbellek ve yönlendirme
+hataları çıkıyor. Clerk ise proxied kayıtlarla doğrulamayı hiç geçemiyor.
+Sertifikayı zaten Vercel ve Clerk kendileri veriyor; Cloudflare'den istenen
+tek şey DNS.
+
+**Neden apex birincil:** Marka adı `owezy.net`. İki adresin de bağımsız
+çalışması SEO açısından aynı sayfanın iki kopyası demek olurdu; biri seçilip
+diğeri yönlendirilmek zorunda.
+
+**Neden kendi OAuth uygulamalarımız:** Clerk paylaşımlı OAuth hesaplarını
+yalnızca development instance'ında veriyor. Production'da kendi istemcini
+tanıtmazsan "GitHub ile devam et" ve "Google ile devam et" düğmeleri çalışmaz.
+Google tarafında istenen kapsamlar yalnızca `openid`, `userinfo.email` ve
+`userinfo.profile` — Google'ın "hassas" saymadığı kapsamlar, bu yüzden
+consent screen'i yayınlamak inceleme gerektirmedi.
+
+**Sonuç:** Faz 8'den beri duran "development anahtarlarıyla çalışıyoruz"
+sınırı kalktı. Development instance **silinmedi**: E2E testleri onun
+`+clerk_test` kullanıcılarına ve sabit `424242` doğrulama koduna bağlı.
+
+---
+
 ## ADR-025 — Para toplaması veritabanında, para kuralı saf fonksiyonda
 **Tarih:** 2026-08-13 · **Durum:** Kabul edildi
 
