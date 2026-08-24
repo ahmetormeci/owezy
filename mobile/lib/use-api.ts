@@ -1,6 +1,6 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiGet } from "./api";
+import { apiGet, type ApiResult } from "./api";
 
 export type QueryState<T> =
   | { kind: "loading" }
@@ -8,26 +8,31 @@ export type QueryState<T> =
   | { kind: "error"; text: string };
 
 /**
- * Oturumlu bir GET'i ekrana baglar.
+ * Oturumlu GET'i cagirabilen SABIT bir fonksiyon.
  *
  * NEDEN AYRI BIR KANCA: getToken'i dogru kullanmak gorunenden zor.
  * useAuth() her render'da YENI bir getToken donduruyor; onu bir bagimlilik
  * listesine koymak sonsuz donguye yol aciyor (18.2'de simulatorde bizzat
- * yasandi, bkz. CONVENTIONS.md "Mobil"). Bu tuzagi her ekranda yeniden
- * kurmak yerine tek yerde cozuyoruz.
- *
- * path null ise istek ATILMAZ - "henuz hangi adresi cagiracagimi bilmiyorum"
- * durumu icin (orn. yonlendirme bekleyen bir ekran).
+ * yasandi, bkz. CONVENTIONS.md "Mobil"). Burada fonksiyonun kendisi degil
+ * HER ZAMAN GUNCEL bir referansi tutuluyor, boylece donen "get" bir kez
+ * uretiliyor ve kimligi hic degismiyor.
  */
-export function useApiGet<T>(path: string | null) {
+export function useApiClient() {
   const { getToken } = useAuth();
-
-  // Fonksiyonun kendisi degil, HER ZAMAN GUNCEL bir referansi.
   const getTokenRef = useRef(getToken);
   useEffect(() => {
     getTokenRef.current = getToken;
   });
 
+  return useCallback(async <T,>(path: string): Promise<ApiResult<T>> => {
+    const token = await getTokenRef.current();
+    return apiGet<T>(path, token);
+  }, []);
+}
+
+/** Bir GET'i ekrana baglar. path null ise istek ATILMAZ. */
+export function useApiGet<T>(path: string | null) {
+  const get = useApiClient();
   const [state, setState] = useState<QueryState<T>>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -43,8 +48,7 @@ export function useApiGet<T>(path: string | null) {
 
     void (async () => {
       try {
-        const token = await getTokenRef.current();
-        const result = await apiGet<T>(path, token);
+        const result = await get<T>(path);
         if (cancelled) return;
 
         setState(
@@ -62,9 +66,9 @@ export function useApiGet<T>(path: string | null) {
     return () => {
       cancelled = true;
     };
-    // Bagimliliklar BILEREK yalnizca bu ikisi: ikisi de sabit deger, yani
-    // efekt yalnizca gercekten yeni bir istek gerektiginde calisiyor.
-  }, [path, attempt]);
+    // get SABIT (useApiClient bunu garanti ediyor), yani efekt yalnizca
+    // gercekten yeni bir istek gerektiginde calisiyor.
+  }, [path, attempt, get]);
 
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
 

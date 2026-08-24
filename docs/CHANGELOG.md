@@ -8,6 +8,28 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (9)
+
+### Fiş ekranı mobilde (Faz 18.4)
+- **Teknikler ölçüldü, tahmin edilmedi.** Tek kullanımlık bir deneme
+  ekranında yedi yol gerçek cihazda denendi. Sonuç: noktalı ayraç
+  tekrarlanan `·` + `ellipsizeMode="clip"` ile, perfore
+  `borderStyle: "dashed"` ile, yırtık kenar border üçgen hilesiyle.
+  **`react-native-svg` gerekmedi.**
+- **İki şey tahmin edilseydi yanlış çıkardı:** iOS'ta
+  `borderStyle: "dotted"` sessizce düz çizgiye dönüyor (`dashed`
+  dönmüyor), ve React Native'in `textTransform` özelliği dil bilmediği
+  için Türkçe büyük harfte "SENİN" yerine "SENIN" üretiyordu. Büyük harf
+  artık `toLocaleUpperCase(locale)` ile.
+- **Kâğıt greni yok.** Web'de SVG filtresi; React Native'de karşılığı bir
+  PNG döşemek olurdu ve %5 opaklıkta bir doku telefonda görünmüyor.
+- **Sayfalama var ve test edildi.** Bir ayda 20'den fazla harcama varsa
+  "daha fazla" çıkıyor; ara toplam her zaman ayın gerçeğini söylüyor
+  ("25 EXPENSES"), 20 satır gösterirken bile. 25 harcamalık gerçek
+  veriyle doğrulandı.
+- Kapsam dışı: ödeşme planı, harcama başına "senin payın", satır içi
+  giriş (18.5).
+
 ## 2026-08-24 (8)
 
 ### Mobilin girişi (Faz 18.3)

@@ -149,6 +149,27 @@ tamamen kilitledi. Çözüm, fonksiyonun kendisini değil **her zaman güncel bi
 referansını** tutmak (`useRef` + her render'da güncelleyen bir efekt), böylece
 `useCallback`'in kimliği sabit kalıyor. Örnek: `mobile/app/index.tsx`.
 
+**Büyük harfe çevirme JavaScript'te ve dile duyarlı yapılır.** React
+Native'in `textTransform: "uppercase"` özelliği dil bilmiyor ve Türkçede
+"i" harfini "I" yapıyor — "Senin durumun" → "SENIN" (doğrusu "SENİN"). Web'de
+bu sorun yok çünkü CSS `text-transform` `<html lang>` değerine bakıyor;
+mobilde o bilgi yok, biz vermek zorundayız: `children.toLocaleUpperCase(locale)`
+(`mobile/components/receipt.tsx` içindeki `Cap`). Hermes'in bunu desteklediği
+simülatörde doğrulandı — "SENİN DURUMUN", "ÖDEDİĞİN".
+
+**Fişin görsel unsurları için ölçülmüş teknikler** (Faz 18.4, hiçbiri tahmin
+değil, tek kullanımlık bir deneme ekranında simülatörde görüldü):
+
+| Unsur | Çalışan | Çalışmayan |
+|---|---|---|
+| Noktalı ayraç | tekrarlanan `·` + `ellipsizeMode="clip"` | `borderStyle: "dotted"` — **üç ayrı yazımda da**; biri hiç çizilmiyor, ikisi düz çizgiye dönüyor |
+| Perfore çizgi | `borderStyle: "dashed"` | — (`dashed` çalışıyor, `dotted` çalışmıyor; ikisi aynı davranmıyor) |
+| Yırtık kenar | border üçgen hilesi | — |
+
+`react-native-svg` **gerekmedi**. Kâğıt greni ise yok: web'de SVG filtresi,
+React Native'de CSS filtresi olmadığı için karşılığı bir PNG döşemek olurdu ve
+%5 opaklıkta bir doku telefonda zaten görünmüyor.
+
 **Saf modüller sınırı geçer, React bileşenleri GEÇMEZ.** Web'in
 `src/lib/i18n.tsx`'ini mobilden import etmek `Cannot read property
 'useContext' of null` ile düştü: o dosya mobil ağacın dışında olduğu için

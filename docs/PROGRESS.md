@@ -715,7 +715,7 @@ En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi �
 | 18.1 | **DONE** | Eksik iki uç: `GET /groups/[groupId]` ve tek harcamanın `GET`'i |
 | 18.2 | **DONE** | `mobile/` Expo iskeleti + Clerk oturumu |
 | 18.3 | **DONE** | Uygulamanın girişi: 0 / 1 / 2+ grup — ilk dikey dilim |
-| 18.4 | Sırada | Fiş ekranı |
+| 18.4 | **DONE** | Fiş ekranı |
 | 18.5 | Sırada | Satır içi harcama girişi |
 
 **18.3 — ekran değil, GİRİŞ KARARI.** "Grup listesi ekranı" olarak
@@ -746,6 +746,29 @@ veriyle görüldü — ikinci bir üye ve 480,00 ₺'lik bir harcama üretilip
 2. **Bakiye biçimi ayrışıyordu.** Mutlak değer yazıyordum, web
    `formatSignedMoney` kullanıyor. Aynı bakiyenin iki istemcide farklı
    okunması istenmediği için web'e hizalandı.
+
+**18.4 — fiş kuruldu, teknikler ÖLÇÜLDÜ.** "React Native'de CSS yok"
+diye yazılan zorluk, tek kullanımlık bir deneme ekranıyla çözüldü: yedi teknik
+gerçek cihazda yan yana denendi. Sonuç `react-native-svg` gerektirmedi.
+Ayrıntı [CONVENTIONS.md](CONVENTIONS.md) "Mobil" bölümünde.
+
+İki şey tahmin edilseydi yanlış çıkardı: iOS'ta `borderStyle: "dotted"`
+**sessizce düz çizgiye dönüyor** (`dashed` dönmüyor), ve React Native'in
+`textTransform` özelliği dil bilmediği için Türkçe büyük harfte "İ" yerine
+"I" üretiyordu.
+
+**Ekranda ne var:** harcama satırları (açıklama · noktalı ayraç · tutar, altında
+tarih · kategori · kim ödedi), ay perforasyonları, ay ara toplamları, çift
+çizgi + üç toplam, yırtık kenar. Geçmiş aylar katlı (ADR-016'nın gerekçesi
+telefonda daha da geçerli).
+
+**Sayfalama var ve test edildi.** Bir ayda 20'den fazla harcama varsa "daha
+fazla" çıkıyor; ara toplam satırı her zaman **ayın gerçeğini** söylüyor
+("25 EXPENSES") — 20 satır gösterirken toplamı 20 satıra göre yazmak, kendiyle
+çelişen bir fiş bırakırdı. 25 harcamalık gerçek veriyle doğrulandı.
+
+**Kapsam dışı bırakılanlar:** ödeşme planı, harcama başına "senin payın"
+(`/api/v1/me` gerektiriyordu, bakiye zaten en üstte), satır içi giriş (18.5).
 
 **18.4 için bilinen zorluk:** React Native'de CSS yok. Fişin noktalı ayracı
 (`border-bottom: 1px dotted`), perfore çizgisi ve yırtık kenarı web'deki

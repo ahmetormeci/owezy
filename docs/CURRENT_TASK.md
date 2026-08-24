@@ -15,59 +15,58 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (13)
+Updated: 2026-08-24 (14)
 
 Current task:
-  FAZ 18 - MOBIL UYGULAMA. 18.0, 18.1, 18.2 ve 18.3 bitti. Oncelik iOS
-  (ADR-030); Android bilerek ertelendi.
+  FAZ 18 - MOBIL UYGULAMA. 18.0-18.4 bitti. Oncelik iOS (ADR-030);
+  Android bilerek ertelendi.
 
 Hemen sonraki adim:
-  18.4 - FIS EKRANI. Bugun grup ekrani yalnizca ad + bakiye tasiyor
-  (iskelet). 18.4 harcama satirlarini getirecek.
-  ZORLUK: React Native'de CSS yok. Noktali ayrac (border-bottom: 1px
-  dotted), perfore cizgisi ve yirtik kenar web'deki tekniklerle
-  kurulamaz - baska turlu cozulmeleri gerekecek.
-  Uc: GET /api/v1/groups/[groupId]/expenses (var, ay filtresi de var).
+  18.5 - SATIR ICI HARCAMA GIRISI. Web'de fisin altinda duran, aciklama +
+  tutar alan ve kategoriyi ACIKLAMADAN TAHMIN EDEN satir (ADR-028).
+  Uc hazir: POST /api/v1/groups/[groupId]/expenses.
+  DIKKAT: web'de bu is 16.3'te ERISILEBILIRLIK CAKISMASI yaratmisti -
+  "Aciklama"/"Tutar" adlari sayfadaki mevcut adlarla cakisti ve TAM E2E
+  kosusunda 19 test dustu. Mobilde E2E yok ama ders ayni: yeni girdinin
+  adi ekranda benzersiz olmali.
 
-  18.3 NE YAPTI - EKRAN DEGIL, GIRIS KARARI:
-    0 grup  -> ilk acilis (marka yazisi + tek cumle)
-    1 grup  -> DOGRUDAN grubun ici, liste YOK
-    2+      -> liste (varis degil, GECIS yuzeyi)
-  "Grup listesi ekrani" olarak planlanmisti ama GET /api/v1/groups bakiye
-  DONDURMUYOR; liste ad + rol'den ibaret kalirdi, yani web'de "bombos" diye
-  reddedilen ekranin aynisi. Web'in cozumu ADR-016'ydi, mobil de onu
-  uyguluyor. LISTEDE BAKIYE BILEREK YOK - eklemek her grup icin bakiye
-  hesabi demekti ve liste artik varis noktasi degil.
+  18.4 NE YAPTI - FIS EKRANI:
+    mobile/components/receipt.tsx  Receipt, ReceiptLine, Cap,
+                                   ReceiptPerforation, ReceiptDoubleRule,
+                                   TornEdge
+    Ekranda: harcama satirlari (aciklama · noktali ayrac · tutar, altinda
+    tarih · kategori · kim odedi), ay perforasyonlari, ay ara toplamlari,
+    cift cizgi + uc toplam, yirtik kenar. Gecmis aylar KATLI.
 
-  DOSYALAR:
-    mobile/app/index.tsx              giris + ilk acilis + liste
-    mobile/app/groups/[groupId].tsx   grup ekrani (ad + bakiye)
-    mobile/lib/use-api.ts             oturumlu GET kancasi
-    mobile/lib/theme.ts               web tokenlarinin hex karsiliklari
-    mobile/lib/i18n.tsx               sozluk web'den, saglayici mobilin
+  TEKNIKLER OLCULDU (tek kullanimlik deneme ekraniyla, silindi):
+    noktali ayrac : tekrarlanan "·" + ellipsizeMode="clip"
+    perfore       : borderStyle "dashed"
+    yirtik kenar  : border ucgen hilesi
+    react-native-svg GEREKMEDI.
+    IKI TUZAK: iOS'ta borderStyle "dotted" SESSIZCE DUZ CIZGIYE donuyor
+    ("dashed" donmuyor); React Native'in textTransform'u dil bilmiyor ve
+    Turkcede "SENIN" uretiyordu - buyuk harf artik
+    toLocaleUpperCase(locale) ile. Ayrinti CONVENTIONS.md "Mobil".
 
-  BULUNAN IKI SEY (ikisi de CONVENTIONS.md "Mobil" bolumunde):
-    1. IKI REACT KOPYASI. Web'in i18n.tsx'ini import etmek
-       "Cannot read property 'useContext' of null" ile dustu: dosya mobil
-       agacin disinda oldugu icin "react" kokten cozuluyor (19.2.4) ve
-       mobilinkinden (19.2.3) farkli bir kopya oluyor.
-       KURAL: saf moduller siniri gecer, REACT BILESENLERI GECMEZ.
-       Bundler'i zorlamak mumkundu ama yapilmadi - o kapi acilsaydi web
-       bilesenlerini paylasmanin yolu da acilirdi, oysa onlar <div>
-       kullaniyor ve React Native'de <div> yok.
-    2. BAKIYE BICIMI AYRISIYORDU. Mutlak deger yaziliyordu, web
-       formatSignedMoney kullaniyor. Ayni bakiyenin iki istemcide farkli
-       okunmamasi icin web'e hizalandi.
+  KAGIT GRENI YOK: web'de SVG filtresi, RN'de karsiligi PNG dosemek olurdu
+  ve %5 opaklikta bir doku telefonda gorunmuyor.
 
-  TEST VERISI URETME (18.4'te yine lazim olacak):
-    e2e/.auth/*.json icindeki __session KISA OMURLU bir JWT; ciplak bir
-    request context ile kullanilamiyor (401). Gercek bir tarayici sayfasi
-    acilirsa Clerk'in JS'i onu tazeliyor. Yani: playwright chromium ->
-    storageState -> sayfa icinden fetch. Gelistirme veritabaninda su an
-    testuser1'in iki grubu var ("Ev", "Bodrum tatili"), Ev'de ikinci bir
-    uye ve 480,00 TL'lik bir harcama var (bakiye +240,00).
+  SAYFALAMA VAR VE TEST EDILDI: bir ayda 20'den fazla harcama varsa "daha
+  fazla" cikiyor. ARA TOPLAM HER ZAMAN AYIN GERCEGINI SOYLUYOR ("25
+  EXPENSES") - 20 satir gosterirken toplami 20 satira gore yazmak,
+  kendiyle celisen bir fis birakirdi.
 
-  ONCEKI ISLERDEN DEVAM EDENLER:
+  KAPSAM DISI BIRAKILANLAR (bilincli): odesme plani, harcama basina
+  "senin payin" (/api/v1/me gerektiriyordu, bakiye zaten en ustte).
+
+  TEST VERISI (gelistirme veritabaninda su an duruyor):
+    testuser1'in iki grubu: "Ev" ve "Bodrum tatili" (ikincisi BOS - bos
+    fis durumunu gormek icin). Ev'de iki uye ve 28 harcama:
+    2026-08(1), 2026-07(2), 2026-06(25 - sayfalama testi icin).
+    Uretme yolu: playwright chromium + e2e/.auth/owner.json + sayfa
+    icinden fetch (storage state'teki __session kisa omurlu, ciplak
+    request context ile 401 doner; gercek tarayicida Clerk taziliyor).
+
   BEKLEYEN IS - @clerk/expo GECISI (KULLANICI ONAYLADI, YAPILAMADI):
     Gecis DENENDI ve GERI ALINDI. Sebep bizde degil: @clerk/expo'nun
     yayinlanmis her surumu (4.5.1 / 4.5.2 / 4.5.3, latest dahil) dolayli
