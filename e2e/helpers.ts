@@ -10,7 +10,10 @@ export function uniqueGroupName(label: string): string {
 
 // Bir grup sayfasinin adresi: /groups/<uuid>. Bir islemin gercekten bitip
 // gruba yonlendirdigimizi anlamak icin kullaniyoruz.
-const GROUP_PAGE_URL = /\/groups\/[0-9a-f-]{36}$/;
+// Faz 16.2: harcama kaydedildikten sonra grup sayfasina "?month=YYYY-MM" ile
+// donuluyor (kullanici kaydettigi satiri gorsun diye). Kalip sorgu dizesini
+// artik opsiyonel olarak kabul ediyor.
+const GROUP_PAGE_URL = /\/groups\/[0-9a-f-]{36}(\?month=\d{4}-\d{2})?$/;
 
 export async function pageAs(browser: Browser, key: E2EUser["key"]): Promise<Page> {
   const user = userByKey(key);

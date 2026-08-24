@@ -15,14 +15,21 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24
+Updated: 2026-08-24 (2)
 
 Current task:
-  YOK. Faz 15 (kendi alan adi + production kimlik dogrulama) bitti ve canlida.
-  Kullanici yeni gorev vermedi.
+  FAZ 16 - FIS TASARIMI. 16.1, 16.2 ve 16.3 bitti ve dogrulandi;
+  16.4 ile 16.5 kaldi.
 
 Hemen sonraki adim:
-  Kullanicinin secmesi bekleniyor.
+  16.4 - Gruplar listesi varis noktasi olmaktan cikiyor. Tek grubu olan
+  kullanici dogrudan grubun icine dusecek, grup degistirme baslikta kucuk bir
+  kontrol olacak, liste yalnizca cok grup varken gorunecek.
+  Sonrasinda 16.5 - bos ve odesmis durumlarin fis dilindeki karsiliklari.
+
+  DIKKAT (16.4 icin): grup listesi bugun "/groups" ve (app)/layout.tsx'teki
+  marka baglantisi oraya gidiyor. Yonlendirme degisikligi E2E'deki
+  createGroupAndOpen / openGroup yardimcilarini da ilgilendiriyor.
 
   FOTOGRAF EKLEME: Cloudflare'e gecildi, karar artik verilebilir. Karar
   verildiginde fotograf VERITABANINA KONMAYACAK - nesne deposu (Vercel Blob
@@ -39,8 +46,14 @@ Status:
   Faz 15 canlida: https://owezy.net, Clerk production (pk_live_),
   GitHub + Google kendi OAuth uygulamalarimizla, webhook 200 donuyor.
 
-  Testler: 493 birim / 32 E2E. Isim degisikliginden SONRA hepsi kosuldu ve
-  temiz: 493 birim, tsc, lint ve TAM E2E KOSUSU - 32/32, 5,4 dakika.
+  Testler: 498 birim / 34 E2E. Faz 16.3 sonrasi hepsi kosuldu ve temiz:
+  498 birim, tsc, lint ve TAM E2E KOSUSU - 34/34, 6,4 dakika.
+
+  TAM KOSU SART - OLCULDU: 16.3'te hedefli kosular temiz gorunurken tam kosu
+  19 test dusurdu. Sebep satir ici girisin erisilebilir adlarinin (Aciklama /
+  Tutar) sayfadaki mevcut adlarla cakismasiydi. Dar kapsamli kosu bunu
+  gostermiyor cunku cakisma baska spec dosyalarindaki akislarda ortaya
+  cikiyor.
 
   ORTAM - YENI MAKINE (23 Agustos 2026): proje Windows'tan macOS'a tasindi,
   repo sifirdan klonlandi. Kurulum TAMAM ve dogrulandi: Node 24 (nvm ile),
@@ -57,8 +70,8 @@ Status:
   dev sunucusunda dosya izleme macOS'un yerel API'si yerine yoklamaya
   dusebilir. Gerekirse: "npm approve-scripts --allow-scripts-pending".
 
-  IZLENECEK - ARALIKLI E2E HATASI (macOS'ta ardarda iki tam kosu 32/32
-  gecti, yani tekrarlamadi): Faz 14 sonrasi ardarda uc tam kosudan
+  IZLENECEK - ARALIKLI E2E HATASI (macOS'ta bes tam kosu temiz gecti, yani
+  tekrarlamadi): Faz 14 sonrasi ardarda uc tam kosudan
   BIRINDE bir test "toBeVisible" ile dustu; digerlerinde 32/32 gecti.
   Hangi test oldugu belirlenemedi, cunku sonraki kosu test-results'i
   temizliyor. Iki muhtemel sebep var ve ikisi de tahmin:

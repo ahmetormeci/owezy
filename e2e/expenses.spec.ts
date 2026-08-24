@@ -184,18 +184,27 @@ test.describe("harcamalar", () => {
     await expect(page.getByText("1.000,00 ₺ · %25")).toBeVisible();
 
     // Ay adi IKI yerde geciyor: ozetteki aylik sutunun etiketinde ve listenin
-    // ay basliginda. Baslik ".label" tasiyor (SectionHead ile ayni bicim),
-    // sutun etiketi tasimiyor - iddiayi ona cipaliyoruz ki dogru olani
-    // olctugumuzden emin olalim.
-    await expect(page.locator(".label", { hasText: "Ağustos 2026" })).toBeVisible();
-    await expect(page.locator(".label", { hasText: "Temmuz 2026" })).toBeVisible();
+    // ay basliginda. Faz 16'da baslik ".label" yerine ".cap" tasiyor (fisin
+    // perfore cizgisi); sutun etiketi hicbirini tasimiyor - iddiayi ".cap"e
+    // cipaliyoruz ki dogru olani olctugumuzden emin olalim.
+    await expect(page.locator(".cap", { hasText: "Ağustos 2026" })).toBeVisible();
+    await expect(page.locator(".cap", { hasText: "Temmuz 2026" })).toBeVisible();
 
-    // Ay toplami ve tekil/cogul. Bu metin yalnizca ay basliginda var.
-    await expect(page.getByText("3.000,00 ₺ · 1 harcama")).toBeVisible();
-    await expect(page.getByText("1.000,00 ₺ · 1 harcama")).toBeVisible();
+    // Ay ara toplamlari. Faz 16'da tek metin olmaktan cikti: adet satirin
+    // solunda, tutar saginda. Iki ay da tek harcamali oldugu icin ikisinin de
+    // etiketi "1 harcama" - o yuzden tutarlariyla birlikte, ayni satirda
+    // olduklarini dogruluyoruz.
+    const ayToplamlari = page
+      .locator("div", { has: page.locator(".cap", { hasText: "1 harcama" }) })
+      .filter({ hasText: "harcama" });
+    await expect(ayToplamlari.filter({ hasText: "3.000,00 ₺" }).last()).toBeVisible();
+    await expect(ayToplamlari.filter({ hasText: "1.000,00 ₺" }).last()).toBeVisible();
 
-    // Bakiyenin acilimi: tek kisilik grupta odedigin = payin, bakiye sifir.
-    await expect(page.getByText("Bakiyen nasıl oluştu")).toBeVisible();
+    // Bakiyenin acilimi artik FISIN KENDISINDE: cift cizginin altindaki
+    // toplamlar bloğu. "Bakiyen nasil olustu" denklemi kaldirildi cunku ayni
+    // sayilari sayfada ikinci kez gosteriyordu (Faz 16).
+    await expect(page.locator(".cap", { hasText: "Ödediğin" })).toBeVisible();
+    await expect(page.locator(".cap", { hasText: "Payın" })).toBeVisible();
 
     await page.screenshot({ path: "test-results/faz13-ozet.png", fullPage: true });
 
@@ -230,14 +239,24 @@ test.describe("harcamalar", () => {
       description: string;
       amount: string;
       category: string;
-      unselect?: string;
+      /** true ise ODEYEN kisi bolusumden cikarilir. */
+      unselectPayer?: boolean;
     }) {
       await owner.getByRole("link", { name: "Harcama ekle" }).click();
       await owner.getByLabel("Açıklama").fill(input.description);
       await owner.getByLabel("Tutar").fill(input.amount);
       await owner.getByLabel("Kategori").selectOption({ label: input.category });
-      if (input.unselect) {
-        await owner.getByRole("checkbox", { name: input.unselect }).uncheck();
+      if (input.unselectPayer) {
+        // Katilimci kutusunun etiketi kullanicinin GORUNEN ADI (displayName:
+        // ad soyad, yoksa e-posta). Testin e-postayi sabit yazmasi, Clerk
+        // hesabina bir ad girildigi gun sessizce kiriliyordu - nitekim
+        // kirildi. Adi sayfanin kendisinden okuyoruz: "Kim odedi?"
+        // secimindeki secili secenek, cikarmak istedigimiz kisinin ta kendisi.
+        const payerName = await owner
+          .getByLabel("Kim ödedi?")
+          .locator("option:checked")
+          .innerText();
+        await owner.getByRole("checkbox", { name: payerName.trim() }).uncheck();
       }
       await owner.getByRole("button", { name: "Harcamayı kaydet" }).click();
       await expect(owner.getByText(input.description)).toBeVisible();
@@ -249,7 +268,7 @@ test.describe("harcamalar", () => {
       description: "Havaalani taksisi",
       amount: "200",
       category: "Ulaşım",
-      unselect: "e2e+clerk_test@example.com",
+      unselectPayer: true,
     });
 
     const search = owner.getByLabel("Harcama ara");
@@ -279,7 +298,14 @@ test.describe("harcamalar", () => {
     // 4) Filtre kalkinca liste geri geliyor ve ay toplamlari yeniden yaziliyor.
     await owner.getByLabel("Yalnızca beni ilgilendirenler").uncheck();
     await expect(owner.getByText("Havaalani taksisi")).toBeVisible();
-    await expect(owner.getByText("300,00 ₺ · 2 harcama")).toBeVisible();
+    // Faz 16: ay ara toplami tek metin degil artik - adet satirin solunda,
+    // tutar saginda, arada noktali ayrac var. Ikisinin AYNI SATIRDA oldugunu
+    // dogruluyoruz; ayri ayri "gorunur mu" demek daha zayif bir iddia olurdu
+    // (300,00 ₺ fisin toplamlar blogunda da geciyor).
+    const ayToplami = owner
+      .locator("div", { has: owner.locator(".cap", { hasText: "2 harcama" }) })
+      .last();
+    await expect(ayToplami).toContainText("300,00 ₺");
   });
 
   // Turkce arama katlamasi. 13.3a'da olculmus sinir buydu: veritabani
@@ -377,5 +403,48 @@ test.describe("harcamalar", () => {
     expect(filteredLines).toHaveLength(2);
     expect(filtered.text).toContain("Taksi");
     expect(filtered.text).not.toContain("Market");
+  });
+
+  test("satir ici giris harcamayi sayfadan cikmadan ekler", async ({ browser }) => {
+    const page = await pageAs(browser, "owner");
+    await createGroupAndOpen(page, uniqueGroupName("satirici"));
+
+    // Bos halde fis tek temiz satir: varsayimlar da gonder dugmesi de yok.
+    // Bu, tasarimin bir gerekcesi - yazmadan once soylenecek bir sey yok.
+    await expect(page.getByText("Eşit bölünür")).toBeHidden();
+
+    await page.getByLabel("Ne aldın?").fill("Satir ici market");
+    await page.getByLabel("Ne kadar?").fill("480,50");
+
+    // Yazmaya baslayinca NE OLACAGI yaziyor. Sessizce varsayim yapan bir hizli
+    // giris, yanlis kaydedilmis bir harcamadan daha kotu.
+    await expect(page.getByText("Eşit bölünür · sen ödedin · bugün")).toBeVisible();
+
+    await page.getByRole("button", { name: "Ekle" }).click();
+
+    await expect(page.getByText("Satir ici market")).toBeVisible();
+    await expect(page.getByText("480,50 ₺").first()).toBeVisible();
+
+    // Alanlar temizleniyor: ayni harcamayi iki kez eklemek kolay olmamali.
+    await expect(page.getByLabel("Ne aldın?")).toHaveValue("");
+    await expect(page.getByText("Eşit bölünür")).toBeHidden();
+  });
+
+  test("satir ici giris bozuk tutari reddeder", async ({ browser }) => {
+    const page = await pageAs(browser, "owner");
+    await createGroupAndOpen(page, uniqueGroupName("satirici-hata"));
+
+    await page.getByLabel("Ne aldın?").fill("Bozuk tutar");
+    await page.getByLabel("Ne kadar?").fill("abc");
+    await page.getByRole("button", { name: "Ekle" }).click();
+
+    // Mesaj tam formdakiyle AYNI: iki ayri yerde ayni hatanin iki farkli
+    // sesle konusmamasi icin ayni sozluk anahtari kullaniliyor.
+    await expect(page.getByText("Tutarı anlayamadım")).toBeVisible();
+
+    // Yazilan sey KAYBOLMUYOR: hatali gonderimde alanlari temizlemek,
+    // kullaniciya her seyi bastan yazdirmak demek.
+    await expect(page.getByLabel("Ne aldın?")).toHaveValue("Bozuk tutar");
+    await expect(page.getByLabel("Ne kadar?")).toHaveValue("abc");
   });
 });

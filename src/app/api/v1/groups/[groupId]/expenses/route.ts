@@ -24,6 +24,7 @@ export async function GET(
       q: searchParams.get("q") ?? undefined,
       category: searchParams.get("category") ?? undefined,
       mine: searchParams.get("mine") ?? undefined,
+      month: searchParams.get("month") ?? undefined,
     });
 
     const { expenses, nextCursor, matches } = await listExpenses(user.id, groupId, query);

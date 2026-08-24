@@ -18,6 +18,8 @@ import { RecordSettlementDialog } from "@/components/record-settlement-dialog";
 import { SectionHead } from "@/components/section-head";
 import { PersonAvatar } from "@/components/person-avatar";
 import { GroupSummary } from "@/components/group-summary";
+import { Receipt, ReceiptLine } from "@/components/receipt";
+import { ExpenseComposer } from "@/components/expense-composer";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
 
 // Renkler artik dogrudan yazilmiyor (eskiden "text-emerald-600
@@ -101,10 +103,13 @@ function SuggestionGroup({
 
 export default async function GroupDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ groupId: string }>;
+  searchParams: Promise<{ month?: string }>;
 }) {
   const { groupId } = await params;
+  const { month: requestedMonth } = await searchParams;
   const t = await getTranslate();
   const locale = await getLocale();
 
@@ -121,18 +126,35 @@ export default async function GroupDetailPage({
   let expenseData: Awaited<ReturnType<typeof listExpenses>>;
   let settlementData: Awaited<ReturnType<typeof listSettlements>>;
   let summary: Awaited<ReturnType<typeof getGroupSummary>>;
+  let openMonth: string | null;
   try {
     // getGroupSummary ve getGroupBalances ayni kisi-basi toplamlari istiyor;
     // ikisi de loadGroupTotals'i cagiriyor ve cache() sayesinde bu istekte
     // veritabanina TEK kez gidiliyor.
-    [group, balanceData, members, expenseData, settlementData, summary] = await Promise.all([
+    [group, balanceData, members, settlementData, summary] = await Promise.all([
       getGroupForUser(user.id, groupId),
       getGroupBalances(user.id, groupId),
       listGroupMembers(user.id, groupId),
-      listExpenses(user.id, groupId, { limit: 20 }),
       listSettlements(user.id, groupId, { limit: 20 }),
       getGroupSummary(user.id, groupId),
     ]);
+
+    // HARCAMALAR AYRI VE SONRA CEKILIYOR (Faz 16.2), cunku hangi ayin
+    // cekilecegini ozet soyluyor: byMonth azalan sirali, ilki en yeni ay.
+    //
+    // Bedeli bir ek gidis-donus. Alternatifi, filtresiz ilk 20 kaydi cekip
+    // istemcide aya bolmekti - ama o zaman "daha fazla yukle" acik ayin
+    // sinirini asip bir onceki ayin satirlarini acik ayin altina eklerdi.
+    // Sayfalamanin dogru calismasi icin pencerenin SORGUDA olmasi gerekiyor.
+    // Istenen ay YALNIZCA gercekten harcamasi olan bir ayssa aciliyor.
+    // Dogrudan dogrulamadan kullansaydik "?month=oyle-boyle" bos bir fis
+    // uretirdi; ozette olmayan bir ay zaten gosterilecek hicbir sey tasimaz.
+    const knownMonth = summary.byMonth.some((slice) => slice.month === requestedMonth);
+    openMonth = (knownMonth ? requestedMonth : summary.byMonth[0]?.month) ?? null;
+    expenseData = await listExpenses(user.id, groupId, {
+      limit: 20,
+      ...(openMonth ? { month: openMonth } : {}),
+    });
   } catch (error) {
     if (error instanceof AppError) {
       notFound();
@@ -172,181 +194,224 @@ export default async function GroupDetailPage({
     (transfer) => transfer.fromUserId !== user.id && transfer.toUserId !== user.id,
   );
 
+  // Fisin ustundeki kisi satiri. Isimler bir cumle degil, basili bir liste -
+  // o yuzden araya nokta konuyor, virgul degil.
+  const memberNames = balances.map((balance) => balance.displayName).join(" · ");
+
+  const hasSuggestions = suggestedTransfers.length > 0;
+
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-col gap-1">
+    <>
+      {/* Tezgah. Fisin bir NESNE gibi durabilmesi icin altinda ondan koyu bir
+          yuzey gerekiyor; sayfanin zemini bunu tek basina veremiyordu.
+          fixed + -z-10: yalnizca bu rotada, govdenin arkasinda ve yapiskan
+          basligin (z-30) altinda. Baska sayfalarin zeminine dokunmuyor. */}
+      <div aria-hidden="true" className="fixed inset-0 -z-10 bg-surface" />
+
+      <div className="mx-auto mb-3 flex w-full max-w-[36.25rem] items-center justify-between gap-3">
         <Link
           href="/groups"
           className="text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           {t("ui.back_to_groups")}
         </Link>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-[1.0625rem] font-semibold">{group.name}</h1>
-              {group.role === "OWNER" ? (
-                <EditGroupDialog
-                  groupId={groupId}
-                  initialName={group.name}
-                  initialDescription={group.description}
-                />
-              ) : null}
-            </div>
-            {group.description ? (
-              <p className="mt-0.5 text-xs text-muted-foreground">{group.description}</p>
-            ) : null}
-          </div>
-          {/* Eylemler TEK YERDE toplandi. 11.5'te "Odeme kaydet" durum
-              panelinin icindeydi; onaylanan tasarimda (ADR-021) panel
-              yalnizca bilgi tasiyor, eylemler baslikta duruyor. Yogun bir
-              duzende dagilmis butonlar araniyor. */}
-          <div className="flex shrink-0 gap-2">
-            <RecordSettlementDialog
+        {/* Eylemler fisin DISINDA. Kagidin uzerine buton koymak, basili bir
+            belgeye tiklanabilir bir sey eklemek gibi durur; ustelik fis
+            okunacak, butonlar kullanilacak - iki ayri is. */}
+        <div className="flex shrink-0 items-center gap-2">
+          {group.role === "OWNER" ? (
+            <EditGroupDialog
               groupId={groupId}
-              currency={currency}
-              currentUserId={user.id}
-              counterparties={balances
-                .filter((balance) => balance.userId !== user.id)
-                .map((balance) => ({
-                  userId: balance.userId,
-                  displayName: balance.displayName,
-                }))}
-              suggestedTransfers={suggestedTransfers}
+              initialName={group.name}
+              initialDescription={group.description}
             />
-            <Link
-              href={`/groups/${groupId}/expenses/new`}
-              className={buttonVariants({ size: "sm" })}
-            >
-              {t("ui.add_expense")}
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Durum paneli.
-          Kullanici bu sayfaya tek soruyla geliyor: alacakli miyim, borclu
-          muyum, ne kadar? (ADR-016). Panel bunu cevapliyor ve yaninda
-          "kime odeyecegim"i tasiyor - o, ayni sorunun ikinci yarisi.
-
-          ADR-021: dolu renk alani DEGIL. Zemin bir tik kalkiyor, ayrimi
-          1 px kenarlik yapiyor. Sayfadaki tek renk tutarin isaretinde ve
-          odesmis durumda o da griye dusuyor. */}
-      <section className="mt-4 grid gap-5 rounded-lg border border-border bg-card p-5 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-9 sm:p-6">
-        <div>
-          <p className="label">{t("ui.your_status")}</p>
-          <p
-            className={`money text-figure mt-1.5 font-medium ${balanceToneClass(myAmount)}`}
-          >
-            {myAmount === 0
-              ? formatMoney(0, currency, locale)
-              : formatSignedMoney(myAmount, currency, locale)}
-          </p>
-          {/* Odesmis durumda rakam artik "0,00 ₺" yaziyor (once "Odestin"
-              kelimesi yazardi) - sayi uc durumda da kahraman kaliyor.
-              "Odestin" alt satira indi; hem daha dogru bir yer hem de o
-              kelimeyi iki E2E testi ariyor. */}
-          <p className="mt-1.5 text-muted-foreground">
-            {myAmount > 0
-              ? t("ui.owed_to_you")
-              : myAmount < 0
-                ? t("ui.you_owe")
-                : t("ui.settled_up")}
-          </p>
-        </div>
-
-        {/* Genis ekranda dikey cizgiyle ayriliyor, darda yataya doner.
-            min-w-0 SART: grid cocuklari varsayilan olarak icerigin altina
-            inmeyi reddediyor ve uzun bir isim sutunu tasirir (11.5'te bu
-            hata yasandi). */}
-        <div className="min-w-0 border-t border-line-soft pt-4 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-9">
-          {iPay.length === 0 && iReceive.length === 0 ? (
-            // Bu ayrim onemli: benim odemem kalmamis olabilir ama GRUPTA
-            // baskalarinin borcu duruyor olabilir. O durumda "herkes
-            // odesmis" demek duz yalan olur.
-            suggestedTransfers.length === 0 ? (
-              <p className="text-muted-foreground">{t("ui.everyone_settled")}</p>
-            ) : (
-              <p className="text-muted-foreground">{t("ui.no_open_balance")}</p>
-            )
-          ) : (
-            <div className="flex flex-col gap-4">
-              <SuggestionGroup
-                title={t("ui.you_should_pay")}
-                transfers={iPay}
-                // Odeyen benim; satirda gorulmesi gereken KARSI TARAF.
-                personOf={(transfer) => personByUserId.get(transfer.toUserId)}
-                currency={currency}
-                locale={locale}
-                fallbackName={t("ui.unknown_user")}
-              />
-              <SuggestionGroup
-                title={t("ui.will_be_paid_to_you")}
-                transfers={iReceive}
-                personOf={(transfer) => personByUserId.get(transfer.fromUserId)}
-                currency={currency}
-                locale={locale}
-                fallbackName={t("ui.unknown_user")}
-              />
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Bakiyenin ACIKLAMASI ve grubun harcama dagilimi. Durum paneli "ne
-          kadar" diyor, bu blok "neden" diyor. */}
-      <GroupSummary summary={summary} currency={currency} />
-
-      {/* KADEME 2 - Sayfanin govdesi. Gruba gelmenin ikinci sebebi:
-          "ne harcandi". */}
-      {/* Sayfanin govdesi. Kart kalkti: bolumu artik kucuk bir etiket ve
-          altindaki cizgi ayiriyor (ADR-021). */}
-      <section className="mt-8">
-        <SectionHead title={t("ui.expenses")} />
-        <ExpenseList
+          ) : null}
+          <RecordSettlementDialog
             groupId={groupId}
             currency={currency}
             currentUserId={user.id}
-            nameByUserId={Object.fromEntries(nameByUserId)}
-            // Ay toplamlari ozetten geliyor, listeden DEGIL: liste yalnizca ilk
-            // 20 kaydi tasiyor ve bir ay sayfa sinirini astiginda yuklenmis
-            // satirlardan hesaplanan toplam sessizce yanlis olurdu.
-            monthTotals={summary.byMonth}
-            initialNextCursor={expenseData.nextCursor}
-            initialExpenses={expenseData.expenses.map((expense) => ({
-              id: expense.id,
-              description: expense.description,
-              amount: expense.amount,
-              category: expense.category,
-              // Client bilesenine gecen veri serilestirilebilir olmali;
-              // Date yerine ISO metin gonderiyoruz.
-              expenseDate: expense.expenseDate.toISOString(),
-              paidById: expense.paidById,
-              createdById: expense.createdById,
-              participants: expense.participants.map((participant) => ({
-                userId: participant.userId,
-                shareAmount: participant.shareAmount,
-              })),
-            }))}
-        />
-      </section>
+            counterparties={balances
+              .filter((balance) => balance.userId !== user.id)
+              .map((balance) => ({
+                userId: balance.userId,
+                displayName: balance.displayName,
+              }))}
+            suggestedTransfers={suggestedTransfers}
+          />
+          <Link
+            href={`/groups/${groupId}/expenses/new`}
+            className={buttonVariants({ size: "sm" })}
+          >
+            {t("ui.add_expense")}
+          </Link>
+        </div>
+      </div>
 
-      {/* Referans bilgisi, gunluk akisin parcasi degil.
-          Genis ekranda yan yana: sayfa kisaliyor ve goz ikincil bolgeye
-          gectigini anliyor. items-start olmasa iki sutun birbirinin boyuna
-          uzardi.
+      <Receipt>
+        {/* Fis basligi: grup adi basili bir baslik gibi, harf araligi acik. */}
+        <div className="flex flex-col items-center gap-2 text-center">
+          {/* Duzenle dugmesi basligin YANINDA DEGIL. Harf araligi acik basili
+              bir baslgin yanina buton koymak dengeyi bozuyordu (ekran
+              goruntusunde goruldu); eylemler zaten kagidin disinda. */}
+          <h1 className="pl-[0.34em] font-mono text-[1.0625rem] font-semibold tracking-[0.34em] uppercase">
+            {group.name}
+          </h1>
+          <p className="cap">{memberNames}</p>
+          {group.description ? (
+            <p className="text-xs text-muted-foreground">{group.description}</p>
+          ) : null}
+        </div>
 
-          min-w-0 SART. Grid cocuklarinin varsayilan min-width degeri "auto",
-          yani icerigin min-content genisliginin altina inmeyi reddediyorlar.
-          Uzun bir isim (ornegin e-posta adresi) sutunu zorla genisletiyor ve
-          icerideki truncate hic devreye giremiyor - sayfa yatay kayiyor.
-          Mobil ekran goruntusunde yakalandi (11.5). */}
-      <div className="mt-8 grid gap-8 md:grid-cols-2 md:items-start">
-      <section className="min-w-0">
-        <SectionHead
-          title={t("ui.members_and_balances")}
-          action={{ href: `/groups/${groupId}/members`, label: t("ui.manage_members") }}
+        {/* BAKIYE FISIN USTUNDE, ALTINDA DEGIL.
+            Gercek bir fiste toplam en altta durur ve tasarim onerisi de
+            oyleydi. Uygulamada boyle yapilmadi: 40 harcamali bir grupta
+            bakiye ekranin cok altina duserdi ve ADR-016'nin "sayfa bakiyeye
+            gore kurulur" kurali fiilen bozulurdu. Hesap ozetleri de ayni
+            sebeple bakiyeyi basa koyar. Fis dili korunuyor (cift cizgi,
+            mono etiket), sirasi degil. */}
+        <div className="flex flex-col gap-2 border-t border-dashed border-border pt-5">
+          <div className="flex items-end justify-between gap-4">
+            <span className="cap text-foreground">{t("ui.your_status")}</span>
+            <p className={`money text-figure font-medium ${balanceToneClass(myAmount)}`}>
+              {myAmount === 0
+                ? formatMoney(0, currency, locale)
+                : formatSignedMoney(myAmount, currency, locale)}
+            </p>
+          </div>
+          {/* Odesmis durumda cumle yerine DAMGA. Metin ayni ("Odestin"),
+              yalnizca bir kez ekranda - iki E2E testi onu ariyor. */}
+          <div className="flex justify-end">
+            {myAmount === 0 && !hasSuggestions ? (
+              <span className="rounded-[4px] border-2 border-credit px-4 py-1.5 pl-[calc(1rem+0.22em)] font-mono text-sm font-semibold tracking-[0.22em] text-credit uppercase opacity-90 [transform:rotate(-4deg)]">
+                {t("ui.settled_up")}
+              </span>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {myAmount > 0
+                  ? t("ui.owed_to_you")
+                  : myAmount < 0
+                    ? t("ui.you_owe")
+                    : t("ui.settled_up")}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Hesabin nasil kapanacagi. Fiil BASLIKTA, satirda degil - Turkce'de
+            "{isim}'e ode" yer tutucuyla dogru yazilamiyor (ek son harfe gore
+            degisiyor). Bu kural SuggestionGroup'tan beri gecerli. */}
+        {hasSuggestions ? (
+          <div className="flex flex-col gap-4 rounded-[3px] border border-border bg-panel px-4 py-3.5">
+            <span className="cap text-foreground">{t("ui.settle_plan")}</span>
+            <SuggestionGroup
+              title={t("ui.you_should_pay")}
+              transfers={iPay}
+              personOf={(transfer) => personByUserId.get(transfer.toUserId)}
+              currency={currency}
+              locale={locale}
+              fallbackName={t("ui.unknown_user")}
+            />
+            <SuggestionGroup
+              title={t("ui.will_be_paid_to_you")}
+              transfers={iReceive}
+              personOf={(transfer) => personByUserId.get(transfer.fromUserId)}
+              currency={currency}
+              locale={locale}
+              fallbackName={t("ui.unknown_user")}
+            />
+            {/* Beni ilgilendirmeyen transferler. Ayni blokta ama en altta ve
+                soluk: grubun takas plani dogru bir bilgi, ama benim isim
+                degil. */}
+            {otherTransfers.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <p className="label">{t("ui.other_suggested_payments")}</p>
+                <ul className="flex flex-col gap-1.5">
+                  {otherTransfers.map((transfer) => (
+                    <li
+                      key={`${transfer.fromUserId}-${transfer.toUserId}`}
+                      className="flex items-center gap-2 text-muted-foreground"
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        {nameByUserId.get(transfer.fromUserId) ?? t("ui.unknown_user")}
+                        {" → "}
+                        {nameByUserId.get(transfer.toUserId) ?? t("ui.unknown_user")}
+                      </span>
+                      <span className="money shrink-0">
+                        {formatMoney(transfer.amount, currency, locale)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t("ui.everyone_settled")}</p>
+        )}
+
+        {/* Harcamalar: fisin govdesi. Ay basliklari artik perfore cizgi. */}
+        <ExpenseList
+          groupId={groupId}
+          currency={currency}
+          currentUserId={user.id}
+          nameByUserId={Object.fromEntries(nameByUserId)}
+          monthTotals={summary.byMonth}
+          openMonth={openMonth}
+          initialNextCursor={expenseData.nextCursor}
+          initialExpenses={expenseData.expenses.map((expense) => ({
+            id: expense.id,
+            description: expense.description,
+            amount: expense.amount,
+            category: expense.category,
+            expenseDate: expense.expenseDate.toISOString(),
+            paidById: expense.paidById,
+            createdById: expense.createdById,
+            participants: expense.participants.map((participant) => ({
+              userId: participant.userId,
+              shareAmount: participant.shareAmount,
+            })),
+          }))}
         />
+
+        {/* Fisin kapanisi: cift cizgi ve toplamlar. Bu ucu zaten hesaplaniyor
+            (summary), yeni bir sorgu yok. */}
+        <div className="flex flex-col gap-2 border-t-[3px] border-double border-foreground pt-4">
+          <ReceiptLine muted amount={formatMoney(summary.totalAmount, currency, locale)}>
+            <span className="cap">{t("ui.summary_total")}</span>
+          </ReceiptLine>
+          <ReceiptLine muted amount={formatMoney(summary.myShare, currency, locale)}>
+            <span className="cap">{t("ui.summary_your_share")}</span>
+          </ReceiptLine>
+          <ReceiptLine muted amount={formatMoney(summary.myPaid, currency, locale)}>
+            <span className="cap">{t("ui.summary_you_paid")}</span>
+          </ReceiptLine>
+        </div>
+
+        {/* Fisin bir sonraki satiri. Toplamlardan SONRA duruyor: fis once
+            kendini kapatiyor, sonra "bir satir daha?" diye soruyor. */}
+        <ExpenseComposer
+          groupId={groupId}
+          memberIds={members.map((member) => member.userId)}
+          currentUserId={user.id}
+        />
+
+        <div className="money flex justify-between text-[0.625rem] tracking-[0.08em] text-muted-foreground">
+          <span>{group.currency}</span>
+          <span>{t("ui.app_name")}</span>
+        </div>
+      </Receipt>
+
+      {/* KAGIDIN ALTI - referans bolgesi.
+          Uyeler, odemeler ve dagilim gunluk akisin parcasi degil; fisin
+          disinda, tezgahin uzerinde duruyorlar. */}
+      <div className="mx-auto mt-10 flex w-full max-w-[36.25rem] flex-col gap-8">
+        <GroupSummary summary={summary} currency={currency} />
+
+        <section className="min-w-0">
+          <SectionHead
+            title={t("ui.members_and_balances")}
+            action={{ href: `/groups/${groupId}/members`, label: t("ui.manage_members") }}
+          />
           <ul className="flex flex-col">
             {balances.map((balance) => (
               <li
@@ -365,67 +430,33 @@ export default async function GroupDetailPage({
                   ) : null}
                   {balance.hasLeft ? <Badge variant="outline">{t("ui.member_left")}</Badge> : null}
                 </div>
-                <span
-                  className={`money shrink-0 font-medium ${balanceToneClass(balance.amount)}`}
-                >
-                  {balance.amount === 0
-                    ? "—"
-                    : formatSignedMoney(balance.amount, currency, locale)}
+                <span className={`money shrink-0 font-medium ${balanceToneClass(balance.amount)}`}>
+                  {balance.amount === 0 ? "—" : formatSignedMoney(balance.amount, currency, locale)}
                 </span>
               </li>
             ))}
           </ul>
-      </section>
+        </section>
 
-        <div className="flex min-w-0 flex-col gap-8">
-          {/* Beni ilgilendirmeyen transferler. Panelde degiller cunku sayfa
-              "senin durumun" sorusuna cevap veriyor; ama grubun takas plani
-              dogru bir bilgi ve bir yerde durmali. Bos oldugunda hic
-              gorunmuyor - "Onerilen odemeler: yok" diyen bir bolum, olmayan
-              bir isi varmis gibi gosterirdi. */}
-          {otherTransfers.length > 0 ? (
-            <section className="min-w-0">
-              <SectionHead title={t("ui.other_suggested_payments")} />
-              <ul className="flex flex-col">
-                {otherTransfers.map((transfer) => (
-                  <li
-                    key={`${transfer.fromUserId}-${transfer.toUserId}`}
-                    className="flex items-center justify-between gap-4 border-b border-line-soft py-2.5 last:border-b-0"
-                  >
-                    <span className="min-w-0 truncate">
-                      {nameByUserId.get(transfer.fromUserId) ?? t("ui.unknown_user")}
-                      {" → "}
-                      {nameByUserId.get(transfer.toUserId) ?? t("ui.unknown_user")}
-                    </span>
-                    <span className="money shrink-0 font-medium">
-                      {formatMoney(transfer.amount, currency, locale)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <section className="min-w-0">
-            <SectionHead title={t("ui.settlements")} />
-            <SettlementList
-              groupId={groupId}
-              currency={currency}
-              currentUserId={user.id}
-              nameByUserId={Object.fromEntries(nameByUserId)}
-              settlements={settlementData.settlements.map((settlement) => ({
-                id: settlement.id,
-                fromUserId: settlement.fromUserId,
-                toUserId: settlement.toUserId,
-                amount: settlement.amount,
-                note: settlement.note,
-                settledAt: settlement.settledAt.toISOString(),
-                createdById: settlement.createdById,
-              }))}
-            />
-          </section>
-        </div>
+        <section className="min-w-0">
+          <SectionHead title={t("ui.settlements")} />
+          <SettlementList
+            groupId={groupId}
+            currency={currency}
+            currentUserId={user.id}
+            nameByUserId={Object.fromEntries(nameByUserId)}
+            settlements={settlementData.settlements.map((settlement) => ({
+              id: settlement.id,
+              fromUserId: settlement.fromUserId,
+              toUserId: settlement.toUserId,
+              amount: settlement.amount,
+              note: settlement.note,
+              settledAt: settlement.settledAt.toISOString(),
+              createdById: settlement.createdById,
+            }))}
+          />
+        </section>
       </div>
-    </div>
+    </>
   );
 }

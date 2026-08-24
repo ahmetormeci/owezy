@@ -500,6 +500,57 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-027 — Grup sayfası bir fiş; harcama listesi bir rulo
+**Tarih:** 2026-08-24 · **Durum:** Kabul edildi
+
+**Karar:** Grup sayfası yeniden kuruldu. Üç parça:
+
+1. **Sayfa bir NESNE.** Kâğıt yüzeyden bir ton açık (`--paper` / `--surface`),
+   satırlar noktalı ayraçla tutara bağlanıyor, ay sınırları perfore çizgi,
+   kapanış çift çizgi + toplamlar, altta yırtık kenar ve çok hafif gren.
+2. **Ay penceresi SUNUCUDA.** `listExpenses` artık `month` alıyor
+   (`YYYY-MM` → UTC aralık). Açık ay tam, geçmiş aylar tek satır katlı.
+3. **Satır içi harcama girişi.** Fişin son satırı yazılabilir; yalnızca en
+   yaygın durumu yapıyor (eşit bölüşüm, ödeyen sen, tarih bugün, kategori
+   Diğer) ve bu varsayımları yazıyor.
+
+**Neden:** Kullanıcı ekran görüntüsüyle şunu gösterdi: 1-2 gruplu birinde
+"Gruplarım" ekranı geniş bir boşluktu. Sorun boşluk değil, ekranın bir DİZİN
+sayfası olmasıydı — ve boşluk, doldurularak değil kompozisyona çevrilerek
+çözülür. Fiş metaforu bunu yapıyor: dar bir sütun bir nesne olarak duruyor,
+etrafındaki alan kaza değil tezgâh.
+
+**"100 harcamada ne olacak" sorusunun cevabı katlama.** Fiş bir rulo gibi
+davranıyor: uzuyor ama okunaksızlaşmıyor. Katlı bir ay HİÇ SORGU ATMIYOR —
+taşıdığı toplam ve adet zaten hesaplanan özetten geliyor.
+
+**Neden pencere sunucuda:** İstemcide süzseydik "daha fazla yükle" açık ayın
+sınırını aşıp bir önceki ayın satırlarını açık ayın altına eklerdi.
+Sayfalamanın doğru çalışması için pencerenin sorguda olması gerekiyor. Aynı
+gerekçe ADR-024 öncesi 13.3a'da da kurulmuştu: filtre sunucuda.
+
+**Bakiye tasarımda fişin ALTINDAYDI, kodda ÜSTTE.** Gerçek bir fişte toplam
+en altta durur. Uygulamada öyle yapılmadı: 40 harcamalı bir grupta bakiye
+ekranın çok altına düşerdi ve ADR-016'nın "sayfa bakiyeye göre kurulur"
+kuralı fiilen bozulurdu. Hesap özetleri de aynı sebeple bakiyeyi başa koyar.
+Fiş dili korundu, sırası değil.
+
+**Ödenen bedeller — ikisi de bilerek:**
+
+- **Harcama sorgusu artık paralel değil sıralı.** Hangi ayın çekileceğini
+  özet söylüyor, o yüzden özeti beklemek zorunda: bir ek gidiş-dönüş.
+- **Satır içi giriş her zaman `OTHER` kategorisi kullanıyor** ve bu, PROGRESS'te
+  zaten yazılı olan "kategori varsayılanı OTHER, kırılım tek çubuk Diğer
+  çıkıyor" riskini BÜYÜTÜYOR. Hızlı girişe kategori seçimi koymak satırı
+  şişirirdi; doğru çözüm muhtemelen kırılımın kendisinde.
+
+**Kaldırılanlar:** Özet bloğundaki üç rakam kutusu (TOPLAM / PAYIN / HARCAMA)
+ve "bakiyen nasıl oluştu" denklemi. İkisi de fişte zaten vardı; aynı sayı
+sayfada iki kez duruyordu. Blok artık yalnızca fişte OLMAYANI taşıyor:
+paranın nereye gittiği.
+
+---
+
 ## ADR-026 — Alan adı Cloudflare'de, uygulama Vercel'de; proxy kapalı
 **Tarih:** 2026-08-24 · **Durum:** Kabul edildi
 

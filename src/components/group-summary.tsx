@@ -1,13 +1,8 @@
 import type { GroupSummary as GroupSummaryData } from "@/lib/summary";
-import { formatBasisPoints, formatMoney, formatSignedMoney } from "@/lib/money";
+import { formatBasisPoints, formatMoney } from "@/lib/money";
 import { formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
-import type { Locale } from "@/lib/locale";
-
-// Cevirici tipini elle yazmak yerine kaynaktan turetiyoruz: getTranslate'in
-// imzasi degisirse burasi da onunla degisir.
-type Translate = Awaited<ReturnType<typeof getTranslate>>;
 
 /**
  * "Para nereye gitti" ve "bakiyem neden bu".
@@ -47,21 +42,12 @@ export async function GroupSummary({
   const showMonths = months.length > 1;
 
   return (
-    <section className="mt-8 rounded-lg border border-border bg-card">
-      <div className="grid grid-cols-3">
-        <Figure label={t("ui.summary_total")} value={formatMoney(summary.totalAmount, currency, locale)} />
-        <Figure
-          label={t("ui.summary_your_share")}
-          value={formatMoney(summary.myShare, currency, locale)}
-          bordered
-        />
-        <Figure
-          label={t("ui.summary_expense_count")}
-          value={String(summary.expenseCount)}
-          bordered
-        />
-      </div>
-
+    // Faz 16: uc rakam kutusu (TOPLAM / PAYIN / HARCAMA) ve "bakiyen nasil
+    // olustu" denklemi BURADAN KALKTI. Ikisi de fisin kendisinde var artik -
+    // toplamlar cift cizginin altinda, bakiye ustte. Ayni sayiyi bir sayfada
+    // iki kez gostermek, ekran goruntusunde bakinca hemen goze carpiyordu.
+    // Bu blok yalnizca fiste OLMAYANI tasiyor: paranin nereye gittigi.
+    <section className="rounded-lg border border-border bg-card">
       <div className={`grid gap-7 p-5 md:gap-9 ${showMonths ? "md:grid-cols-2" : ""}`}>
         {showMonths ? (
           <div className="min-w-0">
@@ -116,95 +102,6 @@ export async function GroupSummary({
         </div>
       </div>
 
-      <BalanceBreakdown summary={summary} currency={currency} locale={locale} t={t} />
     </section>
-  );
-}
-
-function Figure({
-  label,
-  value,
-  bordered = false,
-}: {
-  label: string;
-  value: string;
-  bordered?: boolean;
-}) {
-  return (
-    <div className={`border-b border-line-soft p-4 ${bordered ? "border-l" : ""}`}>
-      <p className="label">{label}</p>
-      <p className="money mt-1 text-lg font-medium">{value}</p>
-    </div>
-  );
-}
-
-/**
- * Sayfadaki en buyuk rakamin ACIKLAMASI.
- *
- * Bakiye bugune kadar gerekcesiz duruyordu. Buradaki sayilar tam olarak
- * bakiyeyi veriyor: odedigin - payin + yaptigin odemeler - aldigin odemeler.
- * Toplamin tuttugunu bir birim testi koruyor (summary.test.ts) - iki ayri kod
- * yolu sessizce ayrilirsa kullaniciya birbirini tutmayan iki rakam gosterirdik.
- *
- * Odeme satiri yalnizca gercekten odeme varsa yaziliyor: "0,00 ₺" yazan bir
- * satir, olmayan bir hareketi varmis gibi gosterir.
- */
-function BalanceBreakdown({
-  summary,
-  currency,
-  locale,
-  t,
-}: {
-  summary: GroupSummaryData;
-  currency: string;
-  locale: Locale;
-  t: Translate;
-}) {
-  const hasSettlements = summary.mySettlementsOut > 0 || summary.mySettlementsIn > 0;
-
-  return (
-    <div className="border-t border-line-soft px-5 py-4">
-      <p className="label mb-2">{t("ui.summary_how_balance")}</p>
-      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-sm">
-        <Term label={t("ui.summary_you_paid")} value={formatMoney(summary.myPaid, currency, locale)} />
-        <Term
-          label={t("ui.summary_your_share")}
-          value={`−${formatMoney(summary.myShare, currency, locale)}`}
-        />
-        {hasSettlements ? (
-          <Term
-            label={t("ui.summary_settlements")}
-            value={formatSignedMoney(
-              summary.mySettlementsOut - summary.mySettlementsIn,
-              currency,
-              locale,
-            )}
-          />
-        ) : null}
-        <span className="text-muted-foreground">=</span>
-        <Term
-          label={t("ui.summary_balance")}
-          value={formatSignedMoney(summary.myBalance, currency, locale)}
-          strong
-        />
-      </div>
-    </div>
-  );
-}
-
-function Term({
-  label,
-  value,
-  strong = false,
-}: {
-  label: string;
-  value: string;
-  strong?: boolean;
-}) {
-  return (
-    <span className="flex items-baseline gap-1.5">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={`money ${strong ? "font-medium" : ""}`}>{value}</span>
-    </span>
   );
 }

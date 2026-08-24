@@ -62,6 +62,12 @@ export const listExpensesQuerySchema = z.object({
     .enum(["true", "false"])
     .transform((value) => value === "true")
     .optional(),
+  // Ay penceresi: "YYYY-MM". Sema burada da dogruluyor ki gecersiz bir deger
+  // servise hic ulasmasin - servisteki kontrol son savunma hatti, ilki degil.
+  month: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+    .optional(),
 });
 
 export const expenseBodySchema = z.discriminatedUnion("splitType", [

@@ -8,6 +8,26 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (2)
+
+### Grup sayfası fiş oldu (Faz 16.1–16.3)
+- **Grup sayfası artık bir fiş.** Noktalı ayraçlar, mono tutarlar, perfore ay
+  çizgileri, çift çizgiyle kapanan toplamlar, yırtık alt kenar. Gerekçe
+  ADR-027; kısası: 1-2 gruplu bir kullanıcıda eski düzen geniş bir boşluktu ve
+  boşluk doldurularak değil kompozisyona çevrilerek çözülür.
+- **Geçmiş aylar katlanıyor.** Açık ay tam, eski aylar tek satır
+  (`TEMMUZ 2026 · 11 harcama … 2.340,00`). Katlı bir ay hiç sorgu atmıyor.
+  Açılınca o ayın tamamı çekiliyor — ay içinde de sayfalama var, çünkü
+  sessizce kırpılmış bir ay, başlığındaki toplamla çelişirdi.
+- **Harcama sayfadan çıkmadan eklenebiliyor.** Fişin son satırı yazılabilir.
+  Yalnızca en yaygın durumu yapıyor (eşit bölüşüm, sen ödedin, bugün) ve
+  yazmaya başlayınca bu varsayımları söylüyor.
+- **Harcama kaydedince artık o harcamanın AYINA dönülüyor.** Geçmiş bir aya
+  harcama eklendiğinde o ay katlı olduğu için kayıt kaybolmuş görünüyordu.
+  Yan fayda: belirli bir ayı açan bağlantı paylaşılabilir (`?month=2026-07`).
+- **Özet bloğundaki tekrar temizlendi.** TOPLAM/PAYIN kutuları ve "bakiyen
+  nasıl oluştu" denklemi kalktı; ikisi de fişte vardı.
+
 ## 2026-08-24
 
 ### Kendi alan adı ve production kimlik doğrulama (Faz 15)

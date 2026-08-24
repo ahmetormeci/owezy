@@ -53,6 +53,7 @@ const {
   restoreExpense,
   listExpenses,
   getExpenseForUser,
+  monthKeyToRange,
 } = await import("@/lib/expenses");
 
 const GROUP_ID = "group-1";
@@ -1288,5 +1289,49 @@ describe("getExpenseForUser", () => {
     expect(mockPrisma.expense.findUnique.mock.calls[0][0].include).toEqual({
       participants: true,
     });
+  });
+});
+
+describe("monthKeyToRange", () => {
+  // Bu fonksiyonun tek isi bir ay anahtarini tarih araligina cevirmek, ama
+  // yanlis cevirdiginde hata GORUNMUYOR: katlanmis ayin toplami dogru kalir,
+  // acilinca gelen satirlar eksik ya da fazla olur. O yuzden sinirlar test
+  // altinda.
+
+  it("ayin ilk gununden bir sonraki ayin ilk gunune kadar acilir", () => {
+    expect(monthKeyToRange("2026-08")).toEqual({
+      gte: new Date("2026-08-01T00:00:00.000Z"),
+      lt: new Date("2026-09-01T00:00:00.000Z"),
+    });
+  });
+
+  it("aralik ayinda yil dondurur", () => {
+    // Ayri bir "yil artir" dali yok; Date.UTC ay indeksi 12 olunca kendisi
+    // ilerletiyor. Bu testin varlik sebebi o davranisi sabitlemek.
+    expect(monthKeyToRange("2026-12")).toEqual({
+      gte: new Date("2026-12-01T00:00:00.000Z"),
+      lt: new Date("2027-01-01T00:00:00.000Z"),
+    });
+  });
+
+  it("subatin uzunlugunu bilmek zorunda kalmaz", () => {
+    // Ust sinir DAHIL DEGIL, o yuzden 28 mi 29 mu sorusu hic sorulmuyor.
+    expect(monthKeyToRange("2028-02").lt).toEqual(new Date("2028-03-01T00:00:00.000Z"));
+  });
+
+  it("aralik UTC'dir, yerel saat dilimi degil", () => {
+    // UTC'nin gerisindeki bir dilimde yerel hesap yapilsaydi ayin ilk gunu
+    // bir onceki aya duserdi. summary.ts'teki monthKey de UTC kullaniyor;
+    // ikisi ayrisirsa katli ayin toplami ile icerigi tutmaz.
+    const { gte } = monthKeyToRange("2026-03");
+    expect(gte.getUTCDate()).toBe(1);
+    expect(gte.getUTCHours()).toBe(0);
+    expect(gte.getUTCMonth()).toBe(2);
+  });
+
+  it("bicimi bozuk ay anahtarini reddeder", () => {
+    for (const bozuk of ["2026-13", "2026-00", "26-08", "2026-8", "2026-08-01", ""]) {
+      expect(() => monthKeyToRange(bozuk)).toThrow(ValidationError);
+    }
   });
 });

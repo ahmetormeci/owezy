@@ -92,6 +92,11 @@
   --color-line-soft: var(--line-soft);
   --color-panel: var(--panel);
   --color-panel-strong: var(--panel-strong);
+  /* Fis gorunumu icin iki yuzey. --paper fisin kendisi, --surface altindaki
+     tezgah. Ikisi arasindaki fark bilerek kucuk: fis bir kart degil, uzerinde
+     durdugu yuzeyden bir ton acik bir kagit. */
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -164,6 +169,11 @@
   --panel-strong: oklch(0.968 0.003 265);
   --line-soft: oklch(0.949 0.003 265);
 
+  /* Fis ve tezgah. --paper zeminden BIR TIK ACIK, --surface bir tik koyu:
+     kagit yuzeyin uzerinde duruyor. Golge degil bu farki ayiriyor. */
+  --paper: oklch(0.996 0.001 265);
+  --surface: oklch(0.938 0.004 265);
+
   /* Anlam renkleri.
      Borc rengi saf kirmizi DEGIL, kiremit: saf kirmizi --destructive'in
      (silme butonu) rengi. Borclu olmak bir hata degil, o yuzden "tehlike"
@@ -229,6 +239,11 @@
   --panel-strong: oklch(0.205 0.008 265);
   --line-soft: oklch(0.212 0.008 265);
 
+  /* Koyu temada iliski TERSINE DONMUYOR, korunuyor: kagit yine yuzeyden
+     acik. Acik temada oldugu gibi burada da fis one cikan nesne. */
+  --paper: oklch(0.196 0.007 265);
+  --surface: oklch(0.132 0.006 265);
+
   --credit: oklch(0.735 0.095 165);
   --credit-soft: oklch(0.255 0.042 165);
   --debt: oklch(0.705 0.105 27);
@@ -269,6 +284,50 @@
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--muted-foreground);
+}
+
+/* FIS GORUNUMU (Faz 16).
+   Uc yardimci, uc is:
+
+   .cap    - fisin etiketi. .label ile ayni isi yapiyor gibi gorunuyor ama
+             MONO ve arasi daha acik: fis uzerindeki basili yazi, arayuz
+             etiketi degil. Ikisi ayni dosyada yan yana durabilsin diye
+             ayrildilar.
+   .leader - noktali ayrac. Aciklama ile tutar arasini dolduran nokta dizisi
+             gercek fislerin okuma yardimi: goz satirdan kaymadan tutara
+             ulasiyor. translateY, noktalari yazinin taban cizgisine degil
+             ortasina hizaliyor.
+   .paper  - kagidin kendisi. ::before ile cok hafif bir gren: doku BILGI
+             tasimiyor, yalnizca yuzeyi duz bir dikdortgen olmaktan
+             cikariyor. %5 opaklik bilerek - goruldugu anda kitsch olur. */
+@utility cap {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+@utility leader {
+  flex-grow: 1;
+  border-bottom: 1px dotted var(--border);
+  margin: 0 0.625rem;
+  transform: translateY(-0.3125rem);
+}
+
+@utility paper {
+  position: relative;
+  background: var(--paper);
+}
+
+@utility paper-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 @layer base {

@@ -160,6 +160,7 @@ export const MESSAGES_TR = {
 
   // --- Bakiye ---
   "ui.your_status": "Senin durumun",
+  "ui.settle_plan": "Hesap böyle kapanır",
   "ui.settled_up": "Ödeştin",
   "ui.owed_to_you": "Bu tutar sana borçlu",
   "ui.you_owe": "Bu tutarı borçlusun",
@@ -209,6 +210,11 @@ export const MESSAGES_TR = {
   "ui.save_expense": "Harcamayı kaydet",
   "ui.save_changes": "Değişiklikleri kaydet",
   "ui.expense_added": "Harcama eklendi",
+  // Fisin son satiri: sayfadan cikmadan harcama ekleme (Faz 16.3).
+  "ui.composer_placeholder": "Ne aldın?",
+  "ui.composer_amount": "Ne kadar?",
+  "ui.composer_hint": "Eşit bölünür · sen ödedin · bugün",
+  "ui.composer_submit": "Ekle",
   "ui.expense_updated": "Harcama güncellendi",
   "ui.expense_deleted": "Harcama silindi",
   "ui.expense_delete_failed": "Harcama silinemedi",
@@ -508,6 +514,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
 
   // --- Balances ---
   "ui.your_status": "Where you stand",
+  "ui.settle_plan": "How this settles",
   "ui.settled_up": "All settled",
   "ui.owed_to_you": "This much is owed to you",
   "ui.you_owe": "You owe this much",
@@ -549,6 +556,10 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.save_expense": "Save expense",
   "ui.save_changes": "Save changes",
   "ui.expense_added": "Expense added",
+  "ui.composer_placeholder": "What did you buy?",
+  "ui.composer_amount": "How much?",
+  "ui.composer_hint": "Split equally · you paid · today",
+  "ui.composer_submit": "Add",
   "ui.expense_updated": "Expense updated",
   "ui.expense_deleted": "Expense deleted",
   "ui.expense_delete_failed": "The expense could not be deleted",

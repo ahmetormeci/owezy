@@ -306,7 +306,11 @@ export function ExpenseForm({
       });
 
       toast.success(isEditing ? t("ui.expense_updated") : t("ui.expense_added"));
-      router.push(`/groups/${groupId}`);
+      // Harcamanin AYINA donuyoruz, grubun varsayilan ayina degil (Faz 16.2).
+      // Fiste yalnizca acik ay tam gorunuyor; gecmis bir aya harcama ekleyip
+      // varsayilan aya donseydik kullanici kaydettigi satiri goremezdi ve
+      // kaydin gitmedigini sanirdi. expenseDate zaten "YYYY-MM-DD".
+      router.push(`/groups/${groupId}?month=${expenseDate.slice(0, 7)}`);
       router.refresh();
     } catch (submitError) {
       setError(

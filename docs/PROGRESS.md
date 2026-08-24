@@ -8,13 +8,13 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 15 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
+**Özet:** 15 faz tamamlandı, 16. faz sürüyor. Uygulama canlıda ve `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 493 | ✅ tümü geçiyor |
-| E2E (Playwright) | 32 | ✅ tümü geçiyor |
+| Birim (Vitest) | 498 | ✅ tümü geçiyor |
+| E2E (Playwright) | 34 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -598,6 +598,52 @@ kullanıcılarına ve sabit `424242` koduna bağlı. Yerel `.env.local` `pk_test
 ile kalıyor, yalnızca Vercel'in Production kapsamı `pk_live_` kullanıyor.
 
 **Test:** Kod değişikliği arayüz metniyle sınırlı; 493 birim / 32 E2E.
+
+---
+
+## Faz 16 — Fiş tasarımı · **DEVAM EDİYOR**
+
+Kullanıcı ekran görüntüsüyle bir şey gösterdi: 1-2 gruplu birinde "Gruplarım"
+ekranı geniş bir boşluktu. Teşhis, satırların çirkinliği değil ekranın bir
+DİZİN sayfası olmasıydı — ve boşluk doldurularak değil kompozisyona
+çevrilerek çözülür.
+
+Üç yön hazırlandı (akış diyagramı, fiş, koyu pano); kullanıcı **fiş**
+yönünü seçti. Kararların tamamı ADR-027'de.
+
+| # | Durum | İş |
+|---|---|---|
+| 16.1 | **DONE** | Fiş görünümü: kâğıt, noktalı ayraçlar, perfore ay çizgileri, çift çizgi + toplamlar, yırtık kenar |
+| 16.2 | **DONE** | Katlanan aylar + sunucu tarafı ay penceresi (`listExpenses(month)`) |
+| 16.3 | **DONE** | Satır içi harcama girişi |
+| 16.4 | Sırada | Gruplar listesi varış noktası olmaktan çıkıyor; başlıkta grup değiştirici |
+| 16.5 | Sırada | Boş ve ödeşmiş durumların fiş dilinde karşılıkları |
+
+**Ekran görüntüsü üç gerçek hata yakaladı, üçü de koddan bakınca görünmüyordu:**
+
+1. **Toplamlar sayfada iki kez vardı.** Fişte TOPLAM/PAYIN, hemen altındaki
+   özet bloğunda yine TOPLAM/PAYIN. Özet bloğu artık yalnızca fişte olmayanı
+   taşıyor.
+2. **Yırtık kenar hiç çizilmiyordu.** Desen 14 px yüksekti, şerit 7 px — yani
+   yalnızca düz üst yarısı görünüyordu. Maskeye çevrildi: üçgen maskede, renk
+   `--paper`'dan geliyor, koyu tema kendiliğinden doğru.
+3. **Filtre çubuğu kâğıdın üstüne bırakılmış arayüz gibiydi.** Kenarlıklar
+   kalktı, satır iki kesikli çizgi arasına alındı; erişilebilirlik korundu.
+
+**16.2'de çıkan ürün kusuru:** geçmiş bir aya harcama eklendiğinde o ay katlı
+olduğu için kayıt **kaybolmuş görünüyordu**. Form artık harcamanın ayına
+dönüyor (`?month=YYYY-MM`). Ekran görüntüsü testi olmasa fark edilmezdi.
+
+**16.3'te tam koşu 19 test kırdı ve sebebi test değildi:** satır içi girişin
+alanlarına `Açıklama` / `Tutar` demiştim; bu adlar grup düzenleme penceresinde
+ve harcama formunda zaten vardı. Yani aynı sayfada iki "Açıklama" alanı vardı —
+ekran okuyucu için de belirsizlik. Satır içi giriş kendi diline bağlandı:
+**"Ne aldın?" / "Ne kadar?"**. Hedefli koşular bunu göstermemişti; yalnızca
+tam koşu gösterdi.
+
+**Test:** 498 birim / 34 E2E. İki yeni E2E satır içi girişi kapsıyor
+(uçtan uca ekleme ve bozuk tutarın reddi), 5 yeni birim testi ay aralığının
+sınırlarını (ay/yıl dönümü, şubat, UTC).
 
 ---
 

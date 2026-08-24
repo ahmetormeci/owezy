@@ -166,7 +166,44 @@ export type ListExpensesOptions = {
   category?: ExpenseCategory;
   /** Yalnizca cagiranin katilimci oldugu harcamalar. */
   mine?: boolean;
+  /**
+   * Tek bir aya kapsama: "YYYY-MM".
+   *
+   * Bir FILTRE degil, bir PENCERE - bu yuzden isFiltered'a dahil degil ve
+   * "N sonuc" satirini tetiklemiyor. Fis gorunumunde acik ay tam, eski aylar
+   * katli duruyor; katli bir ay acildiginda o ayin TAMAMI bu secenekle
+   * cekiliyor.
+   */
+  month?: string;
 };
+
+/** "YYYY-MM" bicimini dogrulayan kalip. API ve servis ayni kalibi kullaniyor. */
+export const MONTH_KEY_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+/**
+ * "2026-08" -> [2026-08-01T00:00:00Z, 2026-09-01T00:00:00Z)
+ *
+ * UTC OLMAK ZORUNDA: expenseDate alani @db.Date, yani veritabaninda UTC gece
+ * yarisi duruyor ve summary.ts'teki monthKey de ay anahtarini toISOString'den
+ * aliyor. Yerel saatle hesaplasaydik UTC'nin gerisindeki bir dilimde ayin ilk
+ * gunu bir onceki aya duserdi: katlanmis ayin toplami ile acilinca gelen
+ * satirlar tutmazdi.
+ *
+ * Ust sinir DAHIL DEGIL (lt): ayin son gunu 31 mi 30 mu diye bilmek
+ * gerekmiyor, bir sonraki ayin ilkine kadar diyoruz. Aralik icin yil da
+ * kendiliginden artiyor.
+ */
+export function monthKeyToRange(month: string): { gte: Date; lt: Date } {
+  if (!MONTH_KEY_PATTERN.test(month)) {
+    throw new ValidationError("validation.invalid");
+  }
+  const year = Number(month.slice(0, 4));
+  const monthIndex = Number(month.slice(5, 7)) - 1;
+  return {
+    gte: new Date(Date.UTC(year, monthIndex, 1)),
+    lt: new Date(Date.UTC(year, monthIndex + 1, 1)),
+  };
+}
 
 /**
  * Filtre kosulu TEK yerde kuruluyor.
@@ -192,6 +229,7 @@ function buildExpenseWhere(
     // odeyip bolusume girmeyen kisinin bakiyesi degisir ama harcama onun
     // "kendi harcamasi" degildir.
     ...(options.mine ? { participants: { some: { userId } } } : {}),
+    ...(options.month ? { expenseDate: monthKeyToRange(options.month) } : {}),
   };
 }
 
