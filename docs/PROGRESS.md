@@ -714,9 +714,38 @@ En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi �
 | 18.0 | **DONE** | API envanteri + Bearer sözleşmesinin ölçülmesi ve teste bağlanması |
 | 18.1 | **DONE** | Eksik iki uç: `GET /groups/[groupId]` ve tek harcamanın `GET`'i |
 | 18.2 | **DONE** | `mobile/` Expo iskeleti + Clerk oturumu |
-| 18.3 | Sırada | Grup listesi ekranı — ilk dikey dilim |
+| 18.3 | **DONE** | Uygulamanın girişi: 0 / 1 / 2+ grup — ilk dikey dilim |
 | 18.4 | Sırada | Fiş ekranı |
 | 18.5 | Sırada | Satır içi harcama girişi |
+
+**18.3 — ekran değil, GİRİŞ KARARI.** "Grup listesi ekranı" olarak
+planlanmıştı; yapılmadı. Sebep: `GET /api/v1/groups` bakiye döndürmüyor, yani
+liste ad + rol'den ibaret kalırdı — web'de "bomboş" diye reddedilen ekranın
+aynısı. Web'in çözümü satırları güzelleştirmek değil ADR-016'ydı: tek grubu
+olan kullanıcı listeyi hiç görmez. Mobil de aynı kuralı uyguluyor:
+
+| Grup | Ne görünür |
+|---|---|
+| 0 | İlk açılış — marka yazısı + tek cümle |
+| 1 | Doğrudan grubun içi, liste yok |
+| 2+ | Liste — varış değil, **geçiş** yüzeyi |
+
+**Listede bakiye BİLEREK yok.** Eklemek her grup için bakiye hesabı demekti;
+liste artık varış noktası olmadığı için değmez. Gerçek kullanımdan sonra
+tekrar bakılabilir.
+
+**Doğrulama simülatörde, üç durum da:** 0 grup (ilk açılış), 1 grup
+(yönlendirme), 2 grup (liste + satıra dokunup gezinme). Bakiye ekranı gerçek
+veriyle görüldü — ikinci bir üye ve 480,00 ₺'lik bir harcama üretilip
+`+₺240.00` yeşil olarak doğrulandı.
+
+**Bulunan iki şey:**
+1. **İki React kopyası.** Web'in `i18n.tsx`'i mobilden import edilemiyor;
+   kural [CONVENTIONS.md](CONVENTIONS.md)'ye yazıldı. Sözlük paylaşılmaya
+   devam ediyor, sağlayıcı mobile taşındı.
+2. **Bakiye biçimi ayrışıyordu.** Mutlak değer yazıyordum, web
+   `formatSignedMoney` kullanıyor. Aynı bakiyenin iki istemcide farklı
+   okunması istenmediği için web'e hizalandı.
 
 **18.4 için bilinen zorluk:** React Native'de CSS yok. Fişin noktalı ayracı
 (`border-bottom: 1px dotted`), perfore çizgisi ve yırtık kenarı web'deki

@@ -1,61 +1,36 @@
 import { useAuth } from "@clerk/clerk-expo";
-import { Redirect } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { Link, Redirect } from "expo-router";
+import { useMemo } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { formatMoney } from "@/lib/money";
-import { apiGet } from "../lib/api";
+import { useTranslate } from "../lib/i18n";
+import { useApiGet } from "../lib/use-api";
+import { useTheme, type Theme } from "../lib/theme";
 
-// Fis tasarimi 18.4'un isi. Burasi bilerek sade: 18.2'nin sorusu "guzel
-// gorunuyor mu" degil, "oturum ve API gercekten calisiyor mu".
+/**
+ * Uygulamanin girisi.
+ *
+ * BURASI BIR "GRUPLAR LISTESI" DEGIL, bir YONLENDIRME. Web'de ADR-016 ile
+ * verilmis karari mobilde de uyguluyor: tek grubu olan kullanici listeyi HIC
+ * gormuyor, dogrudan grubunun icine dusuyor.
+ *
+ * Sebep: kullanicilarin cogunun bir, bilemedin iki grubu olacak. Onlari once
+ * tek satirlik bir listeye dusurmek, bos bir ekrani varis noktasi yapmak
+ * olurdu. Liste 2+ grupta bir GECIS yuzeyi olarak kaliyor - varis degil.
+ */
+type Group = { id: string; name: string; description: string | null; role: "OWNER" | "MEMBER" };
 
-type MeUser = { id: string; displayName: string; email: string };
+export default function EntryScreen() {
+  const { isLoaded, isSignedIn, signOut } = useAuth();
+  const t = useTranslate();
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
-type State =
-  | { kind: "loading" }
-  | { kind: "ok"; user: MeUser }
-  | { kind: "error"; text: string };
-
-export default function HomeScreen() {
-  const { isLoaded, isSignedIn, getToken, signOut } = useAuth();
-  const [state, setState] = useState<State>({ kind: "loading" });
-
-  // getToken'i DOGRUDAN bagimlilik olarak kullanamayiz: Clerk her render'da
-  // YENI bir fonksiyon donduruyor. Bagimlilikta olsaydi load her render'da
-  // degisir, useEffect yeniden calisir, setState yeni bir render tetikler ve
-  // dongu kapanmazdi - "Maximum update depth exceeded". Simulatorde bizzat
-  // gorulen bir hata, tahmin degil.
-  //
-  // Cozum: fonksiyonun kendisini degil, HER ZAMAN GUNCEL bir referansini
-  // tutuyoruz. Boylece load'un kimligi sabit kaliyor.
-  const getTokenRef = useRef(getToken);
-  useEffect(() => {
-    getTokenRef.current = getToken;
-  });
-
-  const load = useCallback(async () => {
-    setState({ kind: "loading" });
-    try {
-      const token = await getTokenRef.current();
-      const result = await apiGet<{ ok: true; user: MeUser }>("/api/v1/me", token);
-
-      setState(
-        result.ok
-          ? { kind: "ok", user: result.data.user }
-          : { kind: "error", text: `${result.status} · ${result.code}` },
-      );
-    } catch (error) {
-      // Buraya genelde ag hatasi dusuyor: dev sunucusu kapali ya da
-      // EXPO_PUBLIC_API_BASE_URL cihazdan erisilemeyen bir adres.
-      setState({ kind: "error", text: String(error) });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      void load();
-    }
-  }, [isLoaded, isSignedIn, load]);
+  // Kancalar kosulsuz cagrilmali; "henuz istek atma" durumunu path=null
+  // tasiyor.
+  const { state, reload } = useApiGet<{ groups: Group[] }>(
+    isLoaded && isSignedIn ? "/api/v1/groups" : null,
+  );
 
   if (!isLoaded) {
     return (
@@ -69,54 +44,130 @@ export default function HomeScreen() {
     return <Redirect href="/sign-in" />;
   }
 
+  if (state.kind === "loading") {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <ActivityIndicator />
+      </SafeAreaView>
+    );
+  }
+
+  if (state.kind === "error") {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <Text style={styles.error}>{state.text}</Text>
+        <Pressable style={styles.button} onPress={reload}>
+          <Text style={styles.buttonText}>{t("ui.try_again")}</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  const groups = state.data.groups;
+
+  // Tek grup: listeyi atla.
+  if (groups.length === 1) {
+    return <Redirect href={`/groups/${groups[0].id}`} />;
+  }
+
+  // Ilk acilis. Bos oldugu icin degil, BASLANGIC oldugu icin nefes aliyor.
+  if (groups.length === 0) {
+    return (
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.firstRun}>
+          <Text style={styles.wordmark}>Owezy</Text>
+          <Text style={styles.firstRunText}>{t("ui.no_groups")}</Text>
+        </View>
+        <SignOutRow styles={styles} label={t("ui.sign_out")} onPress={() => void signOut()} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.screen}>
-      <Text style={styles.cap}>OTURUM</Text>
+      <Text style={styles.title}>{t("ui.my_groups")}</Text>
 
-      {state.kind === "loading" && <ActivityIndicator />}
+      <ScrollView style={styles.list}>
+        {groups.map((group) => (
+          <Link key={group.id} href={`/groups/${group.id}`} asChild>
+            <Pressable style={styles.row}>
+              <View style={styles.rowText}>
+                <Text style={styles.rowName} numberOfLines={1}>
+                  {group.name}
+                </Text>
+                {group.description ? (
+                  <Text style={styles.rowDescription} numberOfLines={1}>
+                    {group.description}
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={styles.rowRole}>
+                {group.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
+              </Text>
+            </Pressable>
+          </Link>
+        ))}
+      </ScrollView>
 
-      {state.kind === "error" && (
-        <>
-          <Text style={styles.error}>{state.text}</Text>
-          <Pressable style={styles.button} onPress={() => void load()}>
-            <Text style={styles.buttonText}>Tekrar dene</Text>
-          </Pressable>
-        </>
-      )}
-
-      {state.kind === "ok" && (
-        <>
-          <Text style={styles.name}>{state.user.displayName}</Text>
-          <Text style={styles.muted}>{state.user.email}</Text>
-
-          {/*
-            Paylasilan saf modulun olcumu (ADR-029). Bu satir web'deki
-            src/lib/money.ts'ten geliyor - mobilde kopyasi yok. Dogru
-            gorunuyorsa Metro'nun takma ad cozumu ve Hermes'in Intl destegi
-            birlikte calisiyor demektir.
-          */}
-          <Text style={styles.cap}>PAYLASILAN MODUL</Text>
-          <Text style={styles.money}>{formatMoney(123456, "TRY", "tr")}</Text>
-        </>
-      )}
-
-      <Pressable style={styles.secondary} onPress={() => void signOut()}>
-        <Text style={styles.secondaryText}>Çıkış yap</Text>
-      </Pressable>
+      <SignOutRow styles={styles} label={t("ui.sign_out")} onPress={() => void signOut()} />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 24, gap: 8, backgroundColor: "#fff" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" },
-  cap: { fontSize: 11, letterSpacing: 2, color: "#888", marginTop: 24 },
-  name: { fontSize: 28, fontWeight: "600" },
-  muted: { fontSize: 14, color: "#666" },
-  money: { fontSize: 32, fontVariant: ["tabular-nums"] },
-  error: { fontSize: 14, color: "#b3261e" },
-  button: { marginTop: 12, padding: 12, backgroundColor: "#111", borderRadius: 8, alignSelf: "flex-start" },
-  buttonText: { color: "#fff" },
-  secondary: { marginTop: "auto", paddingVertical: 12 },
-  secondaryText: { color: "#666" },
-});
+function SignOutRow({
+  styles,
+  label,
+  onPress,
+}: {
+  styles: ReturnType<typeof createStyles>;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={styles.signOut} onPress={onPress}>
+      <Text style={styles.signOutText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: theme.paper, paddingHorizontal: 24 },
+    centered: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      backgroundColor: theme.paper,
+    },
+    title: { fontSize: 17, fontWeight: "600", color: theme.foreground, paddingTop: 8 },
+    // flex: 1 SART. flexGrow: 0 ile liste yalnizca kendi yuksekligini
+    // kapliyordu ve "cikis yap" son satirin hemen altina yapisip UCUNCU BIR
+    // LISTE SATIRI gibi okunuyordu. Simdi liste kalan alani aliyor, cikis
+    // alta iniyor - ilk acilis ekraniyla da tutarli.
+    list: { flex: 1, marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border },
+    // Her grup bir KART degil bir SATIR (ADR-021): kart deseninde iki grup
+    // iki ayri yuzey demekti.
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 16,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.lineSoft,
+    },
+    rowText: { flexShrink: 1 },
+    rowName: { fontSize: 16, fontWeight: "500", color: theme.foreground },
+    rowDescription: { marginTop: 2, fontSize: 12, color: theme.muted },
+    rowRole: { fontSize: 12, color: theme.muted },
+    firstRun: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
+    wordmark: { fontSize: 34, fontWeight: "600", color: theme.brand },
+    firstRunText: { textAlign: "center", color: theme.muted, maxWidth: 300, lineHeight: 22 },
+    error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
+    button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
+    buttonText: { color: "#fff", fontSize: 15 },
+    signOut: { paddingVertical: 16 },
+    signOutText: { color: theme.muted, fontSize: 14 },
+  });
+}

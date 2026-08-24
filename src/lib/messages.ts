@@ -155,6 +155,11 @@ export const MESSAGES_TR = {
   "ui.group_updated": "Grup güncellendi",
   "ui.role_owner": "Sahip",
   "ui.role_member": "Üye",
+
+  // Mobil istemcinin ihtiyaci (Faz 18.3). Web'de karsiliklari Clerk'in kendi
+  // bileseninden geliyordu, o yuzden sozlukte yoklardi.
+  "ui.sign_out": "Çıkış yap",
+  "ui.try_again": "Tekrar dene",
   "ui.you": "Sen",
   "ui.member_left": "Ayrıldı",
 
@@ -509,6 +514,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.group_updated": "Group updated",
   "ui.role_owner": "Owner",
   "ui.role_member": "Member",
+
+  "ui.sign_out": "Sign out",
+  "ui.try_again": "Try again",
   "ui.you": "You",
   "ui.member_left": "Left",
 

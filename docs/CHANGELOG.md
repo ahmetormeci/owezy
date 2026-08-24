@@ -8,6 +8,29 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (8)
+
+### Mobilin girişi (Faz 18.3)
+- **"Grup listesi ekranı" yapılmadı; onun yerine giriş kararı uygulandı.**
+  `GET /api/v1/groups` bakiye döndürmüyor, yani liste ad + rol'den ibaret
+  kalırdı — web'de "bomboş" diye reddedilen ekranın aynısı. Web'in çözümü
+  ADR-016'ydı: **0 grup** → ilk açılış, **1 grup** → doğrudan grubun içi,
+  **2+** → liste (varış değil, geçiş yüzeyi). Mobil aynı kuralı uyguluyor.
+- **Grup ekranı iskeleti**: grubun adı ve kullanıcının bakiyesi. 18.1'de
+  yazılan `GET /groups/[groupId]` ilk kez kullanılıyor.
+- **Sözlük web ile ortak.** `@/lib/messages` mobilde de kullanılıyor, yani
+  ADR-020'nin "eksik çeviri = derleme hatası" garantisi mobilde de geçerli.
+  Cihazın dili `Intl` ile okunuyor — 18.2'de Hermes Intl'i ölçtüğümüz için
+  ek paket gerekmedi. İki yeni anahtar eklendi (`ui.sign_out`,
+  `ui.try_again`), her ikisi de iki dilde.
+- **Renk paleti**: web tokenlarının hex karşılıkları `mobile/lib/theme.ts`'te,
+  oklch'den hesaplanarak. Açık ve koyu tema.
+- **Bulundu: web'in React bileşenleri mobilde çalışmıyor.** `i18n.tsx`'i
+  import etmek iki React kopyası yüzünden düştü. Sağlayıcı mobile taşındı,
+  sözlük paylaşılmaya devam ediyor. Kural CONVENTIONS.md'de.
+- **Bulundu: bakiye biçimi ayrışıyordu.** Mutlak değer yerine web'le aynı
+  `formatSignedMoney` kullanılıyor artık.
+
 ## 2026-08-24 (7)
 
 ### Mobil iskelet ayakta (Faz 18.2)

@@ -149,6 +149,19 @@ tamamen kilitledi. Çözüm, fonksiyonun kendisini değil **her zaman güncel bi
 referansını** tutmak (`useRef` + her render'da güncelleyen bir efekt), böylece
 `useCallback`'in kimliği sabit kalıyor. Örnek: `mobile/app/index.tsx`.
 
+**Saf modüller sınırı geçer, React bileşenleri GEÇMEZ.** Web'in
+`src/lib/i18n.tsx`'ini mobilden import etmek `Cannot read property
+'useContext' of null` ile düştü: o dosya mobil ağacın dışında olduğu için
+oradan `react` çözülünce kökteki kopya bulunuyor — mobilinkinden farklı bir
+sürüm (19.2.4 / 19.2.3). İki React kopyası, kanca çağrılarının boş bir
+dispatcher'a gitmesi demek.
+
+Bundler'ı tek React'e zorlamak mümkündü ama yapılmadı: o kapı açılsaydı web
+bileşenlerini paylaşmanın yolu da açılırdı, oysa onlar `<div>` kullanıyor ve
+React Native'de `<div>` yok. Mobil kendi 20 satırlık sağlayıcısını taşıyor
+(`mobile/lib/i18n.tsx`); paylaşılan şey değerli olanı — **sözlüğün kendisi**
+(`@/lib/messages`, 700+ satır) ve `translate()`.
+
 **Oturum belirteci `expo-secure-store`'da saklanır**, `AsyncStorage`'da
 değil — orası düz metin.
 
