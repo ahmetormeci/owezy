@@ -500,6 +500,54 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-029 — Mobil uygulama Expo ile, aynı repoda; Bearer sözleşmesi ölçüldü
+**Tarih:** 2026-08-24 · **Durum:** Kabul edildi
+
+**Karar:** Mobil uygulama **Expo / React Native** ile yazılacak ve **aynı
+repoda `mobile/` klasöründe** duracak.
+
+**Neden Expo:** Saf modüller olduğu gibi yeniden kullanılıyor — `split.ts`
+(bölüşüm, largest remainder), `money.ts` (kuruş aritmetiği), `search-fold.ts`,
+`expense-category-guess.ts`, `messages.ts` (iki dilli sözlük),
+`notification-text.ts`. Bunları koruyan 510 birim testinin çoğu ikinci kez
+yazılmıyor. Native (Swift + Kotlin) seçilseydi para aritmetiği ve bölüşüm
+mantığı **üç kez** yazılırdı (web + iOS + Android) ve üç kez test edilirdi;
+tek kişilik bir projede bu bakım yükü, native hissiyatın getirisinden ağır.
+
+**Neden aynı repo, monorepo değil:** Monorepo daha temiz uzun vadeli yapı ama
+bedeli çalışan her şeyi taşımak — CI, Vercel kökü, tsconfig yolları,
+Playwright. Henüz tek satır mobil kod yokken yapılacak bir yeniden düzenleme
+değil. `mobile/` kendi `package.json`'ıyla yan yana duruyor; paylaşılan saf
+modüller önce göreli yolla kullanılıyor, gerçekten sıkışınca ortak paket
+çıkarılır. Önce yapıyı kurup sonra ona ihtiyaç aramak yerine tersi.
+
+**Neden ayrı repo değil:** Paylaşılan mantık kopyalanır ve zamanla ayrışır.
+Para aritmetiğinde ayrışma, sessiz hata demektir.
+
+## Bearer sözleşmesi artık ölçüldü
+
+ADR-002 iş mantığını `/api/v1` altına koyarken gerekçesi "mobil istemci de
+aynı uçları çağıracak"tı. Bu bugüne kadar bir **varsayımdı**: web istemcisi
+Clerk oturumunu çerezle taşıyor, mobil ise `Authorization: Bearer`
+kullanacaktı.
+
+Ölçüldü (Faz 18 öncesi):
+
+```
+Çerezsiz, token yok  →  401
+Çerezsiz, Bearer     →  200  {"ok":true,"groups":[...]}
+```
+
+Sonuç bir E2E testine bağlandı (`auth.spec.ts`). Sebebi: biri ileride çerez
+varsayan bir kontrol eklerse (CSRF, SameSite, origin doğrulaması) mobil
+sözleşme sessizce kırılırdı. Test önce **negatifi** doğruluyor — token yokken
+401 — yoksa 200 "uç herkese açık" anlamına da gelebilirdi.
+
+**API'de bulunan iki eksik:** `GET /groups/[groupId]` yok (yalnızca `PATCH`
+var) ve tek bir harcamanın `GET`'i yok. Geri kalan her okuma ucu mevcut.
+
+---
+
 ## ADR-028 — Kategori açıklamadan tahmin edilir, kullanıcıya sorulmaz
 **Tarih:** 2026-08-24 · **Durum:** Kabul edildi
 

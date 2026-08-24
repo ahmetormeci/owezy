@@ -15,14 +15,38 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (5)
+Updated: 2026-08-24 (6)
 
 Current task:
-  YOK. Faz 17'den sonra bagimlilik bakimi yapildi: npm audit fix ve
-  Next 16.2.11 -> 16.3.2. Kullanici yeni gorev vermedi.
+  FAZ 18 - MOBIL UYGULAMA. 18.0 (API envanteri + Bearer sozlesmesinin
+  olculmesi) bitti. Kullanici 18.1'e baslamadan once compact istedi.
 
 Hemen sonraki adim:
-  Kullanicinin secmesi bekleniyor.
+  18.1 - API'deki iki eksik ucu tamamlamak:
+    - GET /groups/[groupId]      (bugun yalnizca PATCH var)
+    - GET /groups/[groupId]/expenses/[expenseId]  (bugun PUT + DELETE var)
+  Ikisi de mobil ekranlar yazilmadan once lazim; liste uclari verinin
+  cogunu tasiyor ama tek kayit ekranlari icin yetmiyor.
+
+  ARDINDAN (sirasiyla):
+    18.2  mobile/ Expo iskeleti + Clerk oturumu
+    18.3  Grup listesi ekrani (ilk dikey dilim: kimlik + API + tasarim)
+    18.4  Fis ekrani
+    18.5  Satir ici harcama girisi
+
+  KARARLAR ADR-029'DA: Expo / React Native, ayni repoda "mobile/" klasoru.
+  Monorepo'ya GECILMEYECEK (calisan her seyi tasimak, henuz tek satir mobil
+  kod yokken alinacak risk degil). Paylasilan saf modul listesi de orada.
+
+  18.4 ICIN BILINEN ZORLUK: React Native'de CSS yok. Fisin noktali ayraci
+  (border-bottom: 1px dotted), perfore cizgisi ve yirtik kenari web'deki
+  tekniklerle kurulamaz - baska turlu cozulmeleri gerekecek.
+
+  MOBILDE DOGRULAMA: iOS Simulator surulebiliyor ve ekran goruntusu
+  alinabiliyor, yani web'de ise yarayan "ekran goruntusuyle hata yakalama"
+  dongusu mobilde de kurulabilir. Fiziksel cihazda deneme kullanicinin isi.
+
+  ACIK KALANLAR (yeni gorev degil, akilda tutulacaklar):
 
   KATEGORI RISKI COZULDU (Faz 17, ADR-028): kategori artik aciklamadan
   tahmin ediliyor. Tamamen bitmedi - harcamalari gercekten tek kategoriye
@@ -47,16 +71,14 @@ Hemen sonraki adim:
   yedekleri ve baglanti limitini vurur.
 
 Status:
-  COMMIT EDILMEMIS DEGISIKLIK VAR (Faz 15). Kod: messages.ts (ui.app_name
-  TR + EN -> "Owezy"), brand-mark.tsx (yorumlar). Dokuman: AGENTS.md,
-  PROJECT.md, PROGRESS.md, DECISIONS.md (ADR-026), CHANGELOG.md ve bu dosya.
-  Kod dosyasi icerdigi icin bu bir KOD commit'i - push kullaniciya sorulur.
+  Calisma agaci temiz, push edilmemis commit yok. main = origin/main.
 
-  Faz 15 canlida: https://owezy.net, Clerk production (pk_live_),
-  GitHub + Google kendi OAuth uygulamalarimizla, webhook 200 donuyor.
+  CANLIDA: Faz 15, 16 ve 17 ile bagimlilik bakiminin tamami.
+  https://owezy.net - Clerk production (pk_live_), GitHub + Google kendi
+  OAuth uygulamalarimizla, webhook 200 donuyor, Next 16.3.2.
 
-  Testler: 510 birim / 35 E2E. Next 16.3.2 sonrasi hepsi kosuldu:
-  510 birim, tsc, lint, TAM E2E ve ayrica "npm run build".
+  Testler: 510 birim / 36 E2E. Hepsi kosuldu ve temiz: 510 birim, tsc,
+  lint, TAM E2E ve ayrica "npm run build".
 
   DERLEME AYRICA KOSULDU cunku E2E "next dev" kullaniyor, Vercel ise
   "next build" - cerceve yukseltmesinde ikisi ayri ayri kirilabilir.

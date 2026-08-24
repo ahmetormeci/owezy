@@ -61,4 +61,51 @@ test.describe("kimlik dogrulama", () => {
     await expect(page).toHaveURL(/\/groups\/[0-9a-f-]{36}/);
     await expect(page.getByRole("heading", { name: groupName })).toBeVisible();
   });
+
+  test("api cerezsiz Bearer token ile calisiyor", async ({ browser, playwright }) => {
+    // MOBIL SOZLESMESI. ADR-002 is mantigini /api/v1 altina koydu cunku
+    // "mobil istemci de ayni uclari cagiracak" - ama bu bugune kadar bir
+    // VARSAYIMDI. Web istemcisi oturumu cerezle tasiyor; mobil Bearer
+    // kullanacak. Bu test o sozlesmeyi koruyor: biri ileride cerez varsayan
+    // bir kontrol eklerse (CSRF, SameSite, origin dogrulamasi) mobil taraf
+    // sessizce kirilirdi.
+    const page = await pageAs(browser, "owner");
+    await page.goto("/groups");
+
+    // Clerk istemci tarafta yuklenmeden session yok.
+    await page.waitForFunction(
+      () => {
+        const clerk = (window as unknown as { Clerk?: { loaded?: boolean; session?: unknown } })
+          .Clerk;
+        return Boolean(clerk?.loaded && clerk?.session);
+      },
+      undefined,
+      { timeout: 20_000 },
+    );
+
+    const token = await page.evaluate(async () => {
+      const clerk = (
+        window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }
+      ).Clerk;
+      return clerk?.session ? await clerk.session.getToken() : null;
+    });
+    expect(token).toBeTruthy();
+
+    // TAMAMEN YENI bir istek baglami: cerez yok, tarayici durumu yok.
+    // Mobil uygulamanin durumu tam olarak bu.
+    const api = await playwright.request.newContext({ baseURL: "http://localhost:3100" });
+    try {
+      // Once NEGATIF: token olmadan kapali oldugunu dogruluyoruz, yoksa
+      // asagidaki 200 "ucu herkese acik" anlamina da gelebilirdi.
+      expect((await api.get("/api/v1/groups")).status()).toBe(401);
+
+      const cevap = await api.get("/api/v1/groups", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(cevap.status()).toBe(200);
+      expect(await cevap.json()).toMatchObject({ ok: true, groups: expect.any(Array) });
+    } finally {
+      await api.dispose();
+    }
+  });
 });

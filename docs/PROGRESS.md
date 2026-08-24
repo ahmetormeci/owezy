@@ -8,13 +8,13 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 17 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
+**Özet:** 17 faz tamamlandı, 18. faz (mobil) başladı. Uygulama canlıda ve `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
 | Birim (Vitest) | 510 | ✅ tümü geçiyor |
-| E2E (Playwright) | 35 | ✅ tümü geçiyor |
+| E2E (Playwright) | 36 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -697,6 +697,35 @@ ipucu yoksa null), 3'ü `createExpense`'in sınırları.
 
 ---
 
+## Faz 18 — Mobil uygulama · **BAŞLADI**
+
+Projenin baştan beri hedefi. ADR-002 iş mantığını `/api/v1` altına bunun için
+koymuştu; bu faz o kararın karşılığını alıyor.
+
+**Kararlar ADR-029'da:** Expo / React Native, aynı repoda `mobile/` klasörü.
+
+**Zemin ölçüldü, varsayılmadı.** API yüzeyinin envanteri çıkarıldı ve mobilin
+ihtiyacı olan okuma uçlarının neredeyse tamamının zaten var olduğu görüldü.
+En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi — bir
+ölçümle doğrulandı ve kalıcı bir E2E testine bağlandı.
+
+| # | Durum | İş |
+|---|---|---|
+| 18.0 | **DONE** | API envanteri + Bearer sözleşmesinin ölçülmesi ve teste bağlanması |
+| 18.1 | Sırada | Eksik iki uç: `GET /groups/[groupId]` ve tek harcamanın `GET`'i |
+| 18.2 | Sırada | `mobile/` Expo iskeleti + Clerk oturumu |
+| 18.3 | Sırada | Grup listesi ekranı — ilk dikey dilim |
+| 18.4 | Sırada | Fiş ekranı |
+| 18.5 | Sırada | Satır içi harcama girişi |
+
+**18.4 için bilinen zorluk:** React Native'de CSS yok. Fişin noktalı ayracı
+(`border-bottom: 1px dotted`), perfore çizgisi ve yırtık kenarı web'deki
+tekniklerle kurulamaz; başka türlü çözülmeleri gerekecek.
+
+**Test:** 510 birim / 36 E2E (biri yeni: Bearer sözleşmesi).
+
+---
+
 ## Faz dışı düzeltmeler
 
 | İş | Commit |
@@ -719,7 +748,7 @@ karar vermemiştir.
 | Aday | Neden önemli |
 |---|---|
 | **Fişin canlıda gözle görülmesi** | Uzun açıklamalarda noktalı ayraç ve çok aylı katlama yalnızca yapay veriyle sınandı |
-| **Mobil uygulama** | Projenin baştan beri hedefi; `/api/v1` mimarisi bunun için kuruldu |
+| **`disableLogger` ölçümü** | `next.config.ts`'teki satır Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
 ## Bilinen teknik borç
 

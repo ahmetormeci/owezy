@@ -55,6 +55,10 @@ dönüşecek. Server Actions yalnızca aynı Next.js istemcisinden çağrılabil
 Route Handler'ları mobil istemci de aynı şekilde çağırabilir. Kod tabanında
 hiç `"use server"` yoktur ve olmamalıdır.
 
+Bu gerekçe artık **ölçülmüş durumda**: çerez taşımayan bir istemci
+`Authorization: Bearer` ile `/api/v1`'i çağırabiliyor (token yokken 401,
+token varken 200). Bir E2E testi bu sözleşmeyi koruyor — bkz. ADR-029.
+
 **Okuma yolu ile yazma yolu farklıdır:**
 - **Okuma:** Server Component → doğrudan servis katmanı (`src/lib/*`).
   Sayfa zaten sunucuda render ediliyor; kendi kendine HTTP turu atmak

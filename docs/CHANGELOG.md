@@ -8,6 +8,21 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (5)
+
+### Mobil fazının zemini (Faz 18.0)
+- **Mobil uygulama Expo / React Native ile yazılacak, aynı repoda
+  `mobile/` klasöründe.** Gerekçeler ADR-029'da; kısası, saf modüller
+  (bölüşüm, para aritmetiği, sözlük, kategori tahmini) ikinci kez
+  yazılmıyor.
+- **ADR-002'nin dayandığı varsayım ölçüldü.** Çerez taşımayan bir istemci
+  `Authorization: Bearer` ile `/api/v1`'i çağırabiliyor: token yokken 401,
+  token varken 200. Sonuç kalıcı bir E2E testine bağlandı — biri ileride
+  çerez varsayan bir kontrol eklerse mobil sözleşme sessizce kırılırdı.
+- **API envanteri çıkarıldı.** Mobilin ihtiyacı olan okuma uçlarının
+  neredeyse tamamı zaten var; iki eksik bulundu (`GET /groups/[groupId]`
+  ve tek harcamanın `GET`'i).
+
 ## 2026-08-24 (4)
 
 ### Bağımlılıklar ve Next 16.3.2
