@@ -44,10 +44,24 @@ export async function apiPost<T>(
   return send<T>(path, token, "POST", body);
 }
 
+/** Oturumlu PUT. Sunucu govdenin TAMAMINI bekliyor, kismi guncelleme yok. */
+export async function apiPut<T>(
+  path: string,
+  token: string | null,
+  body: unknown,
+): Promise<ApiResult<T>> {
+  return send<T>(path, token, "PUT", body);
+}
+
+/** Oturumlu DELETE. Silme YUMUSAK: sunucu kaydi isaretliyor, fiziksel silme yok. */
+export async function apiDelete<T>(path: string, token: string | null): Promise<ApiResult<T>> {
+  return send<T>(path, token, "DELETE");
+}
+
 async function send<T>(
   path: string,
   token: string | null,
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PUT" | "DELETE",
   body?: unknown,
 ): Promise<ApiResult<T>> {
   const response = await fetch(`${apiBaseUrl()}${path}`, {

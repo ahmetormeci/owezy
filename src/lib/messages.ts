@@ -221,6 +221,9 @@ export const MESSAGES_TR = {
   "ui.composer_hint": "Eşit bölünür · sen ödedin · bugün",
   "ui.composer_submit": "Ekle",
   "ui.expense_updated": "Harcama güncellendi",
+
+  // Mobil (Faz 18.6): esit olmayan bolusum telefonda duzenlenmiyor.
+  "ui.edit_split_on_web": "Bu harcamanın bölüşümü eşit değil. Tutarını telefondan değiştirmek mevcut payları bozardı; düzenlemek için web'i kullan.",
   "ui.expense_deleted": "Harcama silindi",
   "ui.expense_delete_failed": "Harcama silinemedi",
   "ui.expenses_load_failed": "Harcamalar yüklenemedi",
@@ -569,6 +572,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.composer_hint": "Split equally · you paid · today",
   "ui.composer_submit": "Add",
   "ui.expense_updated": "Expense updated",
+
+  "ui.edit_split_on_web":
+    "This expense is not split equally. Changing its amount here would break the existing shares; edit it on the web.",
   "ui.expense_deleted": "Expense deleted",
   "ui.expense_delete_failed": "The expense could not be deleted",
   "ui.expenses_load_failed": "Expenses could not be loaded",

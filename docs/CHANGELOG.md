@@ -8,6 +8,33 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (11)
+
+### Harcama düzenleme ve silme, mobilde (Faz 18.6)
+- **Fişteki her satır bir detay ekranına açılıyor**, yalnızca kendi
+  kayıtların değil. Bazı satırların dokunulabilir olması fişin
+  tekdüzeliğini bozardı ve hangisinin hangisi olduğu bakınca
+  anlaşılmazdı. Başkasının satırı salt okunur açılıyor — ve orada
+  18.4'te kesilen **"senin payın"** bilgisi var.
+- **Yalnızca eşit bölüşüm düzenlenebiliyor.** `EXACT`/`PERCENTAGE` bir
+  harcamayı `EQUAL` olarak göndermek, kullanıcının kurduğu bölüşümü
+  sessizce yok etmek olurdu. Ekran bunu yazıyor.
+- Düzenlenebilen: açıklama, tutar, kim ödedi. **Tarih gönderilmiyor** —
+  sunucu mevcut tarihi koruyor, yani düzenleme tarihi bugüne kaydırmıyor.
+- **Silmede modal onay** kullanıldı (18.5'te doğrulama hataları için
+  modal'dan kaçınılmıştı; geri alınamaz görünen işlemde kesinti istenen
+  şeydir).
+- **Aynı sonsuz döngü hatası ikinci kez çıktı**, bu kez kendi
+  `useApiGet`'imizden. Kaynağında düzeltildi (`useMemo`) ve
+  CONVENTIONS.md'deki kural genişletildi: sorun Clerk'e özgü değil, her
+  render'da yeniden üretilen **her** değer için geçerli.
+
+### Bulundu: silme metni olmayan bir şeyi vaat ediyor
+- `ui.delete_expense_hint` "kayıt silinmiyor, gerekirse geri
+  alınabilir" diyor. Ama `restore` ucunu kullanan **hiçbir arayüz yok** —
+  web'de de yok. Yani kullanıcı geri alamıyor. **Metin de arayüz de
+  değiştirilmedi**; ikisi de web'i etkilediği için karar bekliyor.
+
 ## 2026-08-24 (10)
 
 ### Satır içi harcama girişi mobilde (Faz 18.5)

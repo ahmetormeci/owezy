@@ -717,6 +717,7 @@ En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi �
 | 18.3 | **DONE** | Uygulamanın girişi: 0 / 1 / 2+ grup — ilk dikey dilim |
 | 18.4 | **DONE** | Fiş ekranı |
 | 18.5 | **DONE** | Satır içi harcama girişi |
+| 18.6 | **DONE** | Harcama detayı: düzenleme ve silme |
 
 **18.3 — ekran değil, GİRİŞ KARARI.** "Grup listesi ekranı" olarak
 planlanmıştı; yapılmadı. Sebep: `GET /api/v1/groups` bakiye döndürmüyor, yani
@@ -789,6 +790,31 @@ ediyor (ADR-028). Varsayımlar gizlenmiyor: yazmaya başlayınca altta
 - **Tazelemede ekran kaybolmuyor.** Harcama eklenince özet yeniden çekiliyor;
   `useApiGet` artık **aynı adresin** tazelenmesinde eldeki veriyi koruyor.
   Yoksa en sık yapılan işin ardından sayfa spinner'a düşerdi.
+
+**18.6 — harcamayı düzeltmek ve silmek.** Fişteki **her** satır bir detay
+ekranına açılıyor, yalnızca düzenlenebilir olanlar değil: bazı satırların
+dokunulabilir olması fişin tekdüzeliğini bozardı ve hangisinin hangisi olduğu
+bakınca anlaşılmazdı. Başkasının satırında ekran salt okunur — ve o hâliyle de
+işe yarıyor, çünkü 18.4'te kesilen **"senin payın"** bilgisi oraya yerleşti.
+
+**Yalnızca eşit bölüşüm düzenlenebiliyor.** `EXACT`/`PERCENTAGE` bir
+harcamanın tutarını değiştirmek kişi başı payların toplamıyla çelişirdi; onu
+`EQUAL` olarak göndermek ise kullanıcının kurduğu bölüşümü **sessizce yok
+etmek** olurdu. Ekran bunu söylüyor, sessizce salt okunur kalmıyor.
+
+**Düzenlenebilen:** açıklama, tutar, kim ödedi. Tarih gönderilmiyor —
+sunucu gönderilmediğinde mevcut tarihi koruyor, yani düzenleme tarihi sessizce
+bugüne kaydırmıyor. Tarih ve bölüşüm tipi kapsam dışı (biri yeni bağımlılık,
+diğeri çok daha büyük bir form).
+
+**Silmede modal kullanıldı** — 18.5'te doğrulama hataları için modal'dan
+kaçınılmıştı; geri alınamaz görünen bir işlemde kesinti istenen şeydir.
+
+**Aynı hata sınıfı ikinci kez çıktı.** `useApiGet` her render'da yeni bir nesne
+döndürüyordu ve onu `useFocusEffect` bağımlılığına koymak yine sonsuz döngü
+üretti. Kaynağında düzeltildi (`useMemo`) ve kural
+[CONVENTIONS.md](CONVENTIONS.md)'de **genişletildi**: sorun Clerk'e özgü değil,
+her render'da yeniden üretilen **her** değer için geçerli.
 
 **18.4 için bilinen zorluk:** React Native'de CSS yok. Fişin noktalı ayracı
 (`border-bottom: 1px dotted`), perfore çizgisi ve yırtık kenarı web'deki

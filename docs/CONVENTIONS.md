@@ -138,16 +138,28 @@ Kurallar:
 
 ## Mobil (React Native)
 
-**Clerk kancalarından gelen fonksiyonlar bağımlılık listesine KONMAZ.**
-`useAuth()` her render'da **yeni bir** `getToken` döndürüyor. Onu
-`useCallback`/`useEffect` bağımlılığına koymak sonsuz döngü üretiyor:
-fonksiyon değişir → efekt yeniden çalışır → `setState` yeni render tetikler →
-fonksiyon yine değişir. Ekranda `Maximum update depth exceeded` olarak çıkıyor.
+**Her render'da yeniden üretilen hiçbir değer bağımlılık listesine KONMAZ.**
+Bu kural iki kez, iki farklı kaynaktan ihlal edildi ve ikisi de aynı ekranda
+patladı — `Maximum update depth exceeded`:
 
-Bu tahmin değil; 18.2'de simülatörde bizzat görüldü ve giriş sonrası ekranı
-tamamen kilitledi. Çözüm, fonksiyonun kendisini değil **her zaman güncel bir
-referansını** tutmak (`useRef` + her render'da güncelleyen bir efekt), böylece
-`useCallback`'in kimliği sabit kalıyor. Örnek: `mobile/app/index.tsx`.
+1. **Clerk'in `getToken`'ı** (Faz 18.2). `useAuth()` her render'da yeni bir
+   fonksiyon döndürüyor.
+2. **Bizim kendi `useApiGet`'imiz** (Faz 18.6). Her render'da yeni bir
+   `{ state, reload }` nesnesi döndürüyordu; onu `useFocusEffect`'in
+   bağımlılığına koymak döngüyü kurdu.
+
+İkincisi **kaynağında** düzeltildi: `useApiGet` artık `useMemo` ile sabit bir
+nesne döndürüyor. Ama kural çağıran tarafta da geçerli — bir nesnenin
+tamamını değil, ihtiyaç duyulan **sabit parçasını** (`summary.reload`)
+bağımlılığa koy.
+
+**Hiçbir statik kontrol bunu göstermiyor.** İki seferde de `tsc` temizdi;
+hata yalnızca uygulama çalışırken ve o ekrana girilince çıktı.
+
+
+Çözüm deseni: fonksiyonun kendisini değil **her zaman güncel bir referansını**
+tutmak (`useRef` + her render'da güncelleyen bir efekt). Örnek:
+`mobile/lib/use-api.ts`.
 
 **Büyük harfe çevirme JavaScript'te ve dile duyarlı yapılır.** React
 Native'in `textTransform: "uppercase"` özelliği dil bilmiyor ve Türkçede

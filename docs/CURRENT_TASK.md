@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (15)
+Updated: 2026-08-24 (16)
 
 Current task:
   FAZ 18 - MOBIL UYGULAMA. 18.0-18.5 BITTI, yani fazin planlanan butun
@@ -30,14 +30,16 @@ Hemen sonraki adim:
     giris (e-posta + kod), grup listesi / tek grupta dogrudan gruba
     yonlendirme, fis ekrani (harcama satirlari, ay perforasyonlari, ay
     ara toplamlari, sayfalama, cift cizgi + toplamlar, yirtik kenar),
-    satir ici harcama girisi.
+    satir ici harcama girisi, harcama detayi (duzenleme + silme).
 
   MOBILDE HENUZ YOK (bilincli kapsam disi, 18.x'te not edildi):
-    - harcama duzenleme/silme
     - odesme plani ("hesap boyle kapanir") ve odesme kaydetme
     - grup olusturma / uye davet etme / uye yonetimi
     - bildirimler
-    - harcama basina "senin payin"
+    - EXACT/PERCENTAGE bolusumun mobilde duzenlenmesi (bilincli:
+      tutari degistirmek paylarla celisirdi)
+    - silinen harcamayi GERI ALMA (restore ucu VAR ama hicbir arayuz
+      kullanmiyor - WEB'DE DE YOK)
     - dil secimi (cihaz dili okunuyor, kullanici degistiremiyor)
     - marka isareti (web'de SVG; RN'de react-native-svg gerekirdi)
 
@@ -210,6 +212,15 @@ Hemen sonraki adim:
       kaydolmus biri Apple ile girince eslesme olmuyor, Clerk ikinci
       hesap aciyor ve ayni insan grupta iki kez gorunuyor.
     - owezy.net'te gizlilik politikasi ve destek sayfasi HALA YOK.
+
+  KARAR BEKLEYEN - SILME METNI OLMAYAN BIR SEYI VAAT EDIYOR:
+    ui.delete_expense_hint "kayit silinmiyor, gerekirse geri alinabilir"
+    diyor. restore ucu sunucuda VAR ama onu kullanan hicbir arayuz YOK -
+    web'de de yok. Yani kullanici geri alamiyor. Iki secenek:
+      (a) geri alma arayuzunu ekle (once web, sonra mobil)
+      (b) metni gerceklige uydur
+    METIN DE ARAYUZ DE DEGISTIRILMEDI: ikisi de web'i etkiliyor,
+    kullaniciya soruldu.
 
   ACIK KALANLAR (yeni gorev degil, akilda tutulacaklar):
 

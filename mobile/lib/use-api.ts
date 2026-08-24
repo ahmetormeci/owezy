@@ -1,6 +1,6 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiGet, apiPost, type ApiResult } from "./api";
+import { apiDelete, apiGet, apiPost, apiPut, type ApiResult } from "./api";
 
 export type QueryState<T> =
   | { kind: "loading" }
@@ -34,7 +34,17 @@ export function useApiClient() {
     return apiPost<T>(path, token, body);
   }, []);
 
-  return useMemo(() => ({ get, post }), [get, post]);
+  const put = useCallback(async <T,>(path: string, body: unknown): Promise<ApiResult<T>> => {
+    const token = await getTokenRef.current();
+    return apiPut<T>(path, token, body);
+  }, []);
+
+  const remove = useCallback(async <T,>(path: string): Promise<ApiResult<T>> => {
+    const token = await getTokenRef.current();
+    return apiDelete<T>(path, token);
+  }, []);
+
+  return useMemo(() => ({ get, post, put, remove }), [get, post, put, remove]);
 }
 
 /** Bir GET'i ekrana baglar. path null ise istek ATILMAZ. */
@@ -88,5 +98,8 @@ export function useApiGet<T>(path: string | null) {
 
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
 
-  return { state, reload };
+  // Donen nesne MEMOIZE ediliyor. Her render'da yeni bir nesne dondurmek,
+  // onu bir bagimlilik listesine koyan her cagriyi sonsuz donguye sokuyor -
+  // 18.6'da useFocusEffect'te tam olarak bu yasandi. Kural CONVENTIONS.md'de.
+  return useMemo(() => ({ state, reload }), [state, reload]);
 }

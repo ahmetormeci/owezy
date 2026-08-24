@@ -1,6 +1,6 @@
 import { useAuth } from "@clerk/clerk-expo";
-import { Link, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,17 +15,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate, formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { formatMoney, formatSignedMoney } from "@/lib/money";
-import { useLocale, useTranslate } from "../../lib/i18n";
-import { useApiClient, useApiGet } from "../../lib/use-api";
-import { useTheme, type Theme } from "../../lib/theme";
-import { ExpenseComposer } from "../../components/expense-composer";
+import { useLocale, useTranslate } from "../../../lib/i18n";
+import { useApiClient, useApiGet } from "../../../lib/use-api";
+import { useTheme, type Theme } from "../../../lib/theme";
+import { ExpenseComposer } from "../../../components/expense-composer";
 import {
   Receipt,
   ReceiptDoubleRule,
   ReceiptLine,
   ReceiptPerforation,
   Cap,
-} from "../../components/receipt";
+} from "../../../components/receipt";
 
 /**
  * Grup ekrani: sayfanin KENDISI bir fis (ADR-021).
@@ -79,6 +79,7 @@ type MonthState = {
 export default function GroupScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const { signOut } = useAuth();
+  const router = useRouter();
   const t = useTranslate();
   const locale = useLocale();
   const theme = useTheme();
@@ -170,6 +171,26 @@ export default function GroupScreen() {
     summary.reload();
   }, [summary]);
 
+  /**
+   * Ekrana GERI DONULDUGUNDE tazele.
+   *
+   * Harcama detayinda bir kayit duzenlenip ya da silinip geri gelindiginde fis
+   * eski veriyi gosterirdi. Ilk odaklanma ATLANIYOR: mount aninda veri zaten
+   * cekiliyor, ikinci bir istek bosuna olurdu.
+   */
+  const firstFocus = useRef(true);
+  const reloadSummary = summary.reload;
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      setMonths({});
+      reloadSummary();
+    }, [reloadSummary]),
+  );
+
   const toggleMonth = useCallback(
     (month: string) => {
       if (months[month]) {
@@ -235,6 +256,7 @@ export default function GroupScreen() {
     return (
       <ReceiptLine
         key={expense.id}
+        onPress={() => router.push(`/groups/${groupId}/expenses/${expense.id}`)}
         label={expense.description}
         amount={formatMoney(expense.amount, currency, locale)}
         secondary={[

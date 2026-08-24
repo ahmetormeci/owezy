@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
+import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { useLocale } from "../lib/i18n";
 import { useTheme, type Theme } from "../lib/theme";
 
@@ -57,18 +57,28 @@ export function ReceiptLine({
   amount,
   secondary,
   cap = false,
+  onPress,
 }: {
   label: string;
   amount: string;
   secondary?: string;
   /** Toplam satirlari icin: etiket mono ve buyuk harf. */
   cap?: boolean;
+  /**
+   * Satira dokununca. HARCAMA SATIRLARININ HEPSI dokunulabilir, yalnizca
+   * duzenlenebilir olanlar degil: bazi satirlarin dokunulabilir olmasi fisin
+   * tekduzeligini bozardi ve hangisinin hangisi oldugu BAKINCA anlasilmazdi.
+   * Detay ekrani baskasinin satirinda salt okunur aciliyor.
+   */
+  onPress?: () => void;
 }) {
   const theme = useTheme();
   const s = styles(theme);
 
+  const Wrapper = onPress ? Pressable : View;
+
   return (
-    <View style={s.lineBlock}>
+    <Wrapper style={s.lineBlock} onPress={onPress}>
       <View style={s.line}>
         {cap ? (
           <Cap>{label}</Cap>
@@ -85,7 +95,7 @@ export function ReceiptLine({
           {secondary}
         </Text>
       ) : null}
-    </View>
+    </Wrapper>
   );
 }
 
