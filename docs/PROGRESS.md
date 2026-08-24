@@ -712,7 +712,7 @@ En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi �
 | # | Durum | İş |
 |---|---|---|
 | 18.0 | **DONE** | API envanteri + Bearer sözleşmesinin ölçülmesi ve teste bağlanması |
-| 18.1 | Sırada | Eksik iki uç: `GET /groups/[groupId]` ve tek harcamanın `GET`'i |
+| 18.1 | **DONE** | Eksik iki uç: `GET /groups/[groupId]` ve tek harcamanın `GET`'i |
 | 18.2 | Sırada | `mobile/` Expo iskeleti + Clerk oturumu |
 | 18.3 | Sırada | Grup listesi ekranı — ilk dikey dilim |
 | 18.4 | Sırada | Fiş ekranı |
@@ -722,7 +722,15 @@ En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi �
 (`border-bottom: 1px dotted`), perfore çizgisi ve yırtık kenarı web'deki
 tekniklerle kurulamaz; başka türlü çözülmeleri gerekecek.
 
-**Test:** 510 birim / 36 E2E (biri yeni: Bearer sözleşmesi).
+**18.1 not:** İki uç da yeni mantık getirmedi — `getGroupForUser` ve
+`getExpenseForUser` zaten yazılıydı, web sayfaları onları doğrudan çağırıyordu.
+Yapılan iş o okumaları HTTP'ye açmak. Tek harcamanın gövdesi **bilerek** liste
+ucundaki `expenses[]` elemanıyla aynı şekilde dönüyor: farklı bir şekil, mobil
+tarafta aynı veri için iki ayrı çözümleyici yazmak demekti.
+
+**Platform sırası (ADR-030):** önce iOS, Android sonra.
+
+**Test:** 518 birim / 36 E2E.
 
 ---
 

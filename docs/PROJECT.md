@@ -104,6 +104,62 @@ Detay: [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Bildirim sorguları kullanıcıya kilitlidir.** `where` koşulunda `userId`
   vardır; id bilmek başkasının kaydına erişim sağlamaz.
 
+## Yayınlama — App Store ve Google Play
+
+Bu bölüm bir karar listesi değil, **gereklerin envanteri**. Kararlar
+ADR-030'da (önce iOS; hesap silme ve Sign in with Apple henüz karara
+bağlanmadı).
+
+> Mağaza kuralları değişiyor. Buradaki sayılar 2026-08 itibarıyla; kesin
+> rakamı her zaman Apple/Google'ın kendi konsolu gösterir.
+
+### Apple
+
+- **Apple Developer Program**, yıllık 99 $, her yıl yenilenir.
+- Kimlik doğrulaması artık iOS'taki **Apple Developer uygulaması** üzerinden.
+  Başvuru onaylanana kadar `developer.apple.com` sitesi seni üye değilmiş gibi
+  karşılar ve "Enroll Now" gösterir — bu normaldir, **ikinci kez kayıt olma**.
+- **Bundle ID kalıcıdır.** Uygulama adı App Store Connect'te rezerve edilir.
+- **TestFlight iki ayrı kanal:**
+
+  | | Kim | Kaç kişi | İnceleme |
+  |---|---|---|---|
+  | Internal | App Store Connect kullanıcıları | 100 | Yok, dakikalar içinde |
+  | External | E-posta daveti ya da açık link | 10.000 | İlk build için Beta App Review (~1 gün) |
+
+  Build'ler **90 gün sonra sona erer**.
+- **Export compliance**: yalnızca HTTPS kullandığımız için
+  `ITSAppUsesNonExemptEncryption: false` yazılır, soru her build'de sorulmaz.
+- **Demo hesap zorunlu.** Uygulama giriş duvarının arkasında olduğu için
+  inceleyiciye çalışan bir hesap verilmek zorunda (App Review Information).
+  İçinde örnek grup ve harcamalar olmalı.
+- Mağaza sayfası: ekran görüntüleri, açıklama, **gizlilik politikası URL'si
+  (zorunlu)**, App Privacy formu, yaş sınırı, kategori.
+- İnceleme genelde 1-2 gün.
+
+### Google
+
+- **Play Console 25 $, bir kerelik** (yıllık değil).
+- **Kişisel hesaplarda takvim kuralı:** production'a çıkmadan önce kapalı
+  testte belirli sayıda test kullanıcısıyla **14 gün kesintisiz** test şart.
+  Sayı kuralın ilk halinde 20'ydi, sonra 12'ye indirildi — **güncel rakamı
+  Play Console kendi ekranında gösteriyor**. Organizasyon hesapları muaf ama
+  onlar da D-U-N-S numarası istiyor (alması haftalar sürebiliyor).
+- Kanallar: internal (100 kişi, inceleme yok) → closed (14 günlük saat burada
+  işler) → open → production.
+- Gerekenler: gizlilik politikası URL'si, **Data safety** formu, içerik
+  derecelendirme anketi, hedef kitle beyanı, demo hesap ("App access"),
+  reklam beyanı.
+- **Paket adı kalıcıdır.**
+- Teknik tuzak: **ilk AAB elle yüklenmek zorunda**; Google'ın API'si ilk
+  sürümü oluşturamıyor, `eas submit` ancak ondan sonra çalışıyor.
+
+### Sıralamanın mantığı
+
+Bekleme süresi olan işler kodu beklemez; kodu değiştiren işler koddan önce
+karara bağlanır. Mağaza sayfası, ekran görüntüleri ve inceleme ise en sona
+kalır — uygulama çalışmadan yapılamazlar.
+
 ## Veri modeli — high-level
 
 9 model, 5 enum. Detay ve kısıtlar: [DATABASE.md](DATABASE.md).

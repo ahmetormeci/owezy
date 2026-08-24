@@ -8,6 +8,30 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (6)
+
+### API'nin iki eksik ucu (Faz 18.1)
+- **`GET /api/v1/groups/[groupId]`** eklendi (daha önce yalnızca `PATCH`
+  vardı) ve **`GET /api/v1/groups/[groupId]/expenses/[expenseId]`** eklendi
+  (daha önce `PUT` + `DELETE` vardı).
+- İkisi de yeni mantık getirmiyor: `getGroupForUser` ve `getExpenseForUser`
+  zaten yazılıydı, web sayfaları onları doğrudan çağırıyordu. Yapılan iş o
+  okumaları HTTP'ye açmak (ADR-002).
+- Tek harcamanın gövdesi **bilerek** liste ucundaki `expenses[]` elemanıyla
+  aynı — farklı bir şekil, mobil tarafta iki ayrı çözümleyici demekti.
+- Birim testi 510 → 518.
+
+### Yayınlama kararı
+- **Önce iOS, Android sonra** (ADR-030). Gerekçe: Google'ın kişisel
+  hesaplara dayattığı "kapalı testte 14 gün" kuralı bir takvim kuralı,
+  kodla hızlandırılamıyor; iki platformu paralel yürütmek yerine tek
+  platformda tam bir dikey dilim çıkarılacak.
+- **Mağaza gereklerinin envanteri** PROJECT.md'ye yazıldı (TestFlight
+  kanalları, demo hesap zorunluluğu, Play'in 14 gün kuralı, kalıcı
+  bundle ID, ilk AAB'nin elle yüklenmesi).
+- **İki gerek kodu değiştirecek ve henüz karara bağlanmadı:** uygulama
+  içinden hesap silme (Guideline 5.1.1) ve Sign in with Apple (4.8).
+
 ## 2026-08-24 (5)
 
 ### Mobil fazının zemini (Faz 18.0)

@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { NotFoundError } from "@/lib/errors";
+import { ForbiddenError, NotFoundError } from "@/lib/errors";
 
 // Route'un kendi sorumlulugunu (auth kontrolu, Zod dogrulama, cevap sekli, hata
 // esleme) izole test ediyoruz. updateExpense'in ic mantigi src/lib/expenses.test.ts'te.
-const { mockGetOrCreateCurrentUser, mockUpdateExpense, mockDeleteExpense } = vi.hoisted(() => ({
+const {
+  mockGetOrCreateCurrentUser,
+  mockGetExpenseForUser,
+  mockUpdateExpense,
+  mockDeleteExpense,
+} = vi.hoisted(() => ({
   mockGetOrCreateCurrentUser: vi.fn(),
+  mockGetExpenseForUser: vi.fn(),
   mockUpdateExpense: vi.fn(),
   mockDeleteExpense: vi.fn(),
 }));
@@ -15,11 +21,12 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/expenses", () => ({
+  getExpenseForUser: mockGetExpenseForUser,
   updateExpense: mockUpdateExpense,
   deleteExpense: mockDeleteExpense,
 }));
 
-const { PUT, DELETE } = await import("./route");
+const { GET, PUT, DELETE } = await import("./route");
 
 const GROUP_ID = "11111111-1111-4111-8111-111111111111";
 const EXPENSE_ID = "44444444-4444-4444-8444-444444444444";
@@ -145,5 +152,65 @@ describe("DELETE /api/v1/groups/[groupId]/expenses/[expenseId]", () => {
     const response = await callDeleteRoute();
 
     expect(response.status).toBe(404);
+  });
+});
+
+function callGetRoute() {
+  const request = new NextRequest("http://localhost/api/v1/groups/x/expenses/y");
+  return GET(request, {
+    params: Promise.resolve({ groupId: GROUP_ID, expenseId: EXPENSE_ID }),
+  });
+}
+
+describe("GET /api/v1/groups/[groupId]/expenses/[expenseId]", () => {
+  beforeEach(() => {
+    mockGetOrCreateCurrentUser.mockReset();
+    mockGetExpenseForUser.mockReset();
+  });
+
+  it("giris yapilmamissa 401 doner ve getExpenseForUser hic cagrilmaz", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue(null);
+
+    const response = await callGetRoute();
+
+    expect(response.status).toBe(401);
+    expect(mockGetExpenseForUser).not.toHaveBeenCalled();
+  });
+
+  it("gecerli istekte getExpenseForUser dogru argumanlarla cagrilir ve 200 doner", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+    mockGetExpenseForUser.mockResolvedValue({ id: EXPENSE_ID, amount: 12000, participants: [] });
+
+    const response = await callGetRoute();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json).toEqual({
+      ok: true,
+      expense: { id: EXPENSE_ID, amount: 12000, participants: [] },
+    });
+    expect(mockGetExpenseForUser).toHaveBeenCalledWith(USER_ID, GROUP_ID, EXPENSE_ID);
+  });
+
+  it("grubun uyesi degilse 403 doner", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+    mockGetExpenseForUser.mockRejectedValue(new ForbiddenError("group.not_member"));
+
+    const response = await callGetRoute();
+    const json = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(json.code).toBe("group.not_member");
+  });
+
+  it("silinmis ya da baska gruba ait harcama icin 404 doner", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+    mockGetExpenseForUser.mockRejectedValue(new NotFoundError("expense.not_found"));
+
+    const response = await callGetRoute();
+    const json = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(json.code).toBe("expense.not_found");
   });
 });

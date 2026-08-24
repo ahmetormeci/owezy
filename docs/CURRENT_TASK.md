@@ -15,28 +15,32 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (6)
+Updated: 2026-08-24 (7)
 
 Current task:
-  FAZ 18 - MOBIL UYGULAMA. 18.0 (API envanteri + Bearer sozlesmesinin
-  olculmesi) bitti. Kullanici 18.1'e baslamadan once compact istedi.
+  FAZ 18 - MOBIL UYGULAMA. 18.0 (API envanteri + Bearer sozlesmesi) ve 18.1
+  (eksik iki uc) bitti. Platform sirasi karara baglandi: ONCE iOS (ADR-030).
 
 Hemen sonraki adim:
-  18.1 - API'deki iki eksik ucu tamamlamak:
-    - GET /groups/[groupId]      (bugun yalnizca PATCH var)
-    - GET /groups/[groupId]/expenses/[expenseId]  (bugun PUT + DELETE var)
-  Ikisi de mobil ekranlar yazilmadan once lazim; liste uclari verinin
-  cogunu tasiyor ama tek kayit ekranlari icin yetmiyor.
+  18.2 - mobile/ Expo iskeleti + Clerk oturumu.
+    - "mobile/" kendi package.json'i ile, monorepo'ya GECILMEYECEK (ADR-029)
+    - app.json'da bundle ID: net.owezy.app (KALICI, yayin sonrasi degismez)
+    - Clerk oturumu Bearer ile tasinacak - sozlesme 18.0'da olculdu ve
+      e2e/auth.spec.ts'e baglandi
 
   ARDINDAN (sirasiyla):
-    18.2  mobile/ Expo iskeleti + Clerk oturumu
     18.3  Grup listesi ekrani (ilk dikey dilim: kimlik + API + tasarim)
     18.4  Fis ekrani
     18.5  Satir ici harcama girisi
 
-  KARARLAR ADR-029'DA: Expo / React Native, ayni repoda "mobile/" klasoru.
-  Monorepo'ya GECILMEYECEK (calisan her seyi tasimak, henuz tek satir mobil
-  kod yokken alinacak risk degil). Paylasilan saf modul listesi de orada.
+  18.1 NE YAPTI: GET /api/v1/groups/[groupId] ve
+  GET /api/v1/groups/[groupId]/expenses/[expenseId] eklendi. Yeni mantik YOK -
+  getGroupForUser ve getExpenseForUser zaten yaziliydi, web sayfalari onlari
+  dogrudan cagiriyordu; yapilan is o okumalari HTTP'ye acmak.
+  Tek harcamanin govdesi BILEREK liste ucundeki expenses[] elemaniyla ayni
+  sekilde donuyor - farkli bir sekil, mobil tarafta iki ayri cozumleyici
+  demekti. Ic alanlari (descriptionFold) ayiklamak istersek IKI UCU BIRDEN
+  degistirmek gerekir.
 
   18.4 ICIN BILINEN ZORLUK: React Native'de CSS yok. Fisin noktali ayraci
   (border-bottom: 1px dotted), perfore cizgisi ve yirtik kenari web'deki
@@ -45,6 +49,20 @@ Hemen sonraki adim:
   MOBILDE DOGRULAMA: iOS Simulator surulebiliyor ve ekran goruntusu
   alinabiliyor, yani web'de ise yarayan "ekran goruntusuyle hata yakalama"
   dongusu mobilde de kurulabilir. Fiziksel cihazda deneme kullanicinin isi.
+
+  YAYIN DURUMU (ayrinti: PROJECT.md "Yayinlama", karar: ADR-030):
+    - Apple Developer Program basvurusu ONAY BEKLIYOR. Kimlik dogrulamasi ve
+      odeme yapildi. iOS'taki Developer uygulamasi "enrollment pending"
+      gosteriyor; web sitesinin "Enroll Now" gostermesi NORMAL (site aktif
+      uyelige bakiyor). IKINCI KEZ KAYIT OLUNMAYACAK.
+    - Android BILEREK ERTELENDI. Play'in 14 gunluk kapali test kurali bir
+      takvim kurali; o tarafa donulen gunden en az 2-3 hafta sonra yayin.
+    - KODU DEGISTIRECEK, HENUZ KARAR VERILMEDI (ADR-030'da yazili):
+        * uygulama icinden hesap silme (App Store Guideline 5.1.1)
+        * Sign in with Apple (Guideline 4.8)
+      Ikisi de 18.2'ye girmeden konusulmali.
+    - owezy.net'te gizlilik politikasi ve destek sayfasi YOK; iki magaza da
+      URL istiyor. Web isi, mobil kodu beklemiyor.
 
   ACIK KALANLAR (yeni gorev degil, akilda tutulacaklar):
 
@@ -71,14 +89,14 @@ Hemen sonraki adim:
   yedekleri ve baglanti limitini vurur.
 
 Status:
-  Calisma agaci temiz, push edilmemis commit yok. main = origin/main.
+  COMMIT EDILMEMIS DEGISIKLIK VAR (Faz 18.1 + dokumanlar). Kullanicinin
+  "commitle" demesi bekleniyor. Kod commit'i oldugu icin PUSH DE SORULACAK.
 
   CANLIDA: Faz 15, 16 ve 17 ile bagimlilik bakiminin tamami.
   https://owezy.net - Clerk production (pk_live_), GitHub + Google kendi
   OAuth uygulamalarimizla, webhook 200 donuyor, Next 16.3.2.
 
-  Testler: 510 birim / 36 E2E. Hepsi kosuldu ve temiz: 510 birim, tsc,
-  lint, TAM E2E ve ayrica "npm run build".
+  Testler: 518 birim / 36 E2E.
 
   DERLEME AYRICA KOSULDU cunku E2E "next dev" kullaniyor, Vercel ise
   "next build" - cerceve yukseltmesinde ikisi ayri ayri kirilabilir.
@@ -161,8 +179,8 @@ Blocked by:
 Verify with:
   npx tsc --noEmit
   npm run lint
-  npm test          # beklenen: 493
-  npm run test:e2e  # beklenen: 32, ~7-8 dk, kosarken dosyalara dokunma
+  npm test          # beklenen: 518
+  npm run test:e2e  # beklenen: 36, ~5-6 dk, kosarken dosyalara dokunma
 
   Prisma 7'de postinstall YOK: sema degistiginde "npx prisma generate"
   calistirilmadan tsc eski tipleri gorur ve var olmayan hatalar uretir.

@@ -500,6 +500,50 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-030 — Önce iOS; mağaza gerekleri koda giriyor
+**Tarih:** 2026-08-24 · **Durum:** Kabul edildi
+
+**Karar:** Mobil uygulama **önce iOS'ta** çıkacak. Android'e sonra dönülecek.
+
+**Neden:** Apple Developer Program başvurusu zaten sürüyor (onay bekliyor).
+Google tarafında ise kişisel geliştirici hesapları için **takvim kuralı** var:
+production'a çıkmadan önce kapalı testte belirli sayıda test kullanıcısıyla
+**14 gün kesintisiz** test yapmak gerekiyor. Bu kural kodla hızlandırılamıyor.
+İki platformu paralel yürütmek yerine tek platformda tam bir dikey dilim
+çıkarmak seçildi.
+
+**Kabul edilen bedel açıkça yazılıyor:** Android yayını, o tarafa dönülen
+günden **en az 2-3 hafta sonra** mümkün olacak. Bu bilinerek kabul edildi.
+Expo/React Native seçimi (ADR-029) değişmiyor — Android kodu zaten yazılmış
+olacak, yalnızca yayın süreci sonraya kalıyor.
+
+**Mağaza gerekleri hakkındaki bilgi PROJECT.md'nin "Yayınlama" bölümünde.**
+Orası bir karar listesi değil, gereklerin envanteri.
+
+### HENÜZ KARAR VERİLMEDİ
+
+Aşağıdakiler mağaza incelemesinin dayattığı ve **kodu değiştirecek** konular.
+Hiçbiri karara bağlanmadı — bu ADR onları yalnızca kayda geçiriyor ki
+unutulmasınlar:
+
+- **Uygulama içinden hesap silme.** App Store Guideline 5.1.1, hesap
+  açılabilen uygulamalarda uygulama içi hesap silmeyi **zorunlu** kılıyor.
+  Bizde böyle bir yol yok. "Finansal kayıtlar fiziksel olarak silinmez"
+  kuralıyla çelişmiyor (Apple hesabın silinmesini istiyor, grubun geçmişinin
+  yok edilmesini değil) ama **borcu/alacağı olan bir üye hesabını silerse o
+  bakiyenin ne olacağı** kararlaştırılmadı. Şemayı ve API'yi etkiler.
+- **Sign in with Apple.** Guideline 4.8, üçüncü taraf girişi sunan
+  uygulamalardan gizlilik korumalı bir alternatif de istiyor. Bizde Google ve
+  GitHub girişi var. Kendi e-posta girişimiz şartı karşılıyor olabilir ama
+  inceleyiciye göre değişiyor; garanti yol Sign in with Apple eklemek. Clerk'te
+  hazır sağlayıcı, ancak **onaylanmış Apple hesabı olmadan kurulamıyor**.
+- **Bundle ID / paket adı.** `net.owezy.app` önerildi, 18.2'de `app.json`'a
+  yazılacak. Yayınlandıktan sonra **değiştirilemez**.
+- **Gizlilik politikası ve destek sayfası.** İki mağaza da URL istiyor;
+  owezy.net'te ikisi de yok.
+
+---
+
 ## ADR-029 — Mobil uygulama Expo ile, aynı repoda; Bearer sözleşmesi ölçüldü
 **Tarih:** 2026-08-24 · **Durum:** Kabul edildi
 
