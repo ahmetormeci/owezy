@@ -741,9 +741,25 @@ iOS paketinin içinde **doğrulandı**: `expo export --no-bytecode` çıktısın
 `formatBasisPoints`, `DEFAULT_LOCALE` ve `\u20ba` (₺) var. Metro depo kökünü
 izliyor (`watchFolders`) ve `@/` takma adını tsconfig'ten çözüyor.
 
-**HENÜZ ÖLÇÜLMEDİ:** `formatMoney` `Intl.NumberFormat` kullanıyor ve Hermes'in
-Intl davranışı **çalışan uygulamada** görülmedi — iOS Simulator runtime'ı
-kurulu değil. Paket doğru, çıktı henüz gözle görülmedi.
+**Çalışma anı da ölçüldü.** Uygulama iOS Simulator'da (iPhone 17 Pro, iOS 26.5)
+çalıştırıldı ve `formatMoney` çıktısı web'in birim testlerinin pinlediği
+değerlerle **birebir** aynı çıktı:
+
+| | Web testi | Hermes |
+|---|---|---|
+| `formatMoney(123456789)` | `1.234.567,89 ₺` | aynı |
+| `formatMoney(123456789,"USD","en")` | `$1,234,567.89` | aynı |
+| `formatBasisPoints(3333,"tr")` | `%33,33` | aynı |
+
+Yani Hermes'in `Intl.NumberFormat` desteği bizim kullandığımız kadarıyla
+V8 ile ayrışmıyor. Ölçüm geçici bir kod parçasıyla yapıldı ve geri alındı.
+
+**BULUNAN SORUN — `@clerk/clerk-expo` DEPRECATED.** Uygulama açılışta uyarı
+basıyor: paket bırakılmış, yerine `@clerk/expo` geçmiş. Bu kozmetik değil,
+sürüm ayrışması: web (`@clerk/nextjs@7.5.22`) `@clerk/react@^6` yani **Core 3**
+kullanıyor; `@clerk/clerk-expo` ise `@clerk/clerk-js@5` yani **Core 2**.
+`@clerk/expo@4.5.2` Core 3'te. Yani geçiş bir ayrışma yaratmaz, **var olanı
+kapatır**. Karar bekliyor — henüz yapılmadı.
 
 **Bilinen boşluk:** CI mobil tarafı doğrulamıyor. Kök CI `npm ci` + tsc + lint
 koşuyor ve `mobile/` bağımlılıklarını kurmuyor. Tek ekranı olan bir uygulama

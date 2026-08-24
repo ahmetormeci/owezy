@@ -22,9 +22,14 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
   ediliyor ve iOS paketinin **içinde doğrulandı** (`expo export
   --no-bytecode` çıktısında `formatBasisPoints`, `DEFAULT_LOCALE`, `₺`).
   Saf modüllerin kopyalanmadan kullanılabildiği artık varsayım değil.
-- **Henüz ölçülmedi:** `formatMoney` `Intl.NumberFormat` kullanıyor ve
-  Hermes'in davranışı çalışan uygulamada görülmedi — iOS Simulator
-  runtime'ı kurulu değil.
+- **Çalışma anı da ölçüldü.** Uygulama iPhone 17 Pro / iOS 26.5
+  simülatöründe çalıştırıldı; `formatMoney` çıktısı web'in birim
+  testlerinin pinlediği değerlerle birebir aynı (`1.234.567,89 ₺`,
+  `$1,234,567.89`, `%33,33`). Hermes'in Intl desteği bizim
+  kullandığımız kadarıyla V8'den ayrışmıyor.
+- **Bulundu: `@clerk/clerk-expo` deprecated.** Yerine `@clerk/expo`.
+  Önemi sürüm ayrışması: web Core 3 (`@clerk/react@^6`), kurduğumuz
+  paket Core 2 (`@clerk/clerk-js@5`). Geçiş kararı bekliyor.
 - **Kök doğrulama korundu**: `tsconfig.json` ve `eslint.config.mjs`
   `mobile/`'ı dışlıyor; olmasaydı `tsc` ve `lint` React Native
   dosyalarını Next'in ayarlarıyla derlemeye çalışıp patlardı.

@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (9)
+Updated: 2026-08-24 (10)
 
 Current task:
   FAZ 18 - MOBIL UYGULAMA. 18.0, 18.1 ve 18.2 bitti. Onceligi iOS
@@ -24,18 +24,35 @@ Current task:
 Hemen sonraki adim:
   18.3 - Grup listesi ekrani (ilk dikey dilim). GET /api/v1/groups zaten var.
 
-  ONCE SUNLAR YAPILMALI - 18.2 DOGRULANMASI YARIM KALDI:
-    1. iOS Simulator RUNTIME'i kurulu degil. Xcode 26.6 kuruldu ama
-       "xcrun simctl list runtimes" BOS. Gereken:
-         xcodebuild -downloadPlatform iOS      (birkac GB, uzun surer)
-       Gerekirse once: sudo xcodebuild -runFirstLaunch
-    2. mobile/.env.local YOK. Kullanici dolduracak - ornegi
-       mobile/.env.local.example. Iki degisken:
-         EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY  (kok .env.local'daki pk_test_ ile AYNI)
-         EXPO_PUBLIC_API_BASE_URL           (http://localhost:3000)
-    3. Yerel dev sunucusu ayakta olmali (npm run dev). Mobil pk_test_
-       kullaniyor, dolayisiyla CANLIYI DEGIL yereli cagirmali - canli
-       pk_live_ bekliyor ve test orneginin Bearer'ina 401 doner.
+  ONCE KARARA BAGLANMALI - 18.3'E GIRMEDEN:
+    @clerk/clerk-expo DEPRECATED. Uygulama acilista uyari basiyor.
+    Onemi kozmetik degil, SURUM AYRISMASI:
+      web    @clerk/nextjs@7.5.22 -> @clerk/react@^6      = Core 3
+      mobil  @clerk/clerk-expo@2  -> @clerk/clerk-js@5    = Core 2
+      yenisi @clerk/expo@4.5.2    -> @clerk/clerk-js@^6   = Core 3
+    Yani gecis bir ayrisma YARATMAZ, var olani KAPATIR. Degisecek dosyalar
+    az (app/_layout.tsx, app/sign-in.tsx, app/index.tsx, lib/token-cache.ts)
+    ve hepsi bugun yazildi - simdi ucuz, sonra pahali.
+    KARAR VERILMEDI, kullaniciya soruldu.
+
+  CALISTIRMA (dogrulandi, calisiyor):
+    1. Kokte:          npm run dev          (port 3000, ayakta olmali)
+    2. mobile/ icinde: npx expo start --ios
+    Mobil pk_test_ kullaniyor, dolayisiyla CANLIYI DEGIL yereli cagirmali -
+    canli pk_live_ bekliyor ve test orneginin Bearer'ina 401 doner.
+    mobile/.env.local DOLDURULDU (yayimlanabilir anahtar + localhost:3000).
+
+  SIMULATOR NOTLARI:
+    - Xcode 26.6 + iOS 26.5 runtime kurulu, iPhone 17 Pro calisti.
+    - "simctl list runtimes" indirmeden HEMEN SONRA bos gorunebilir:
+      update_dyld_sim_shared_cache surerken cihazlar listelenmiyor. Bekle.
+    - Iki disk imaji var, biri "Unusable - Duplicate" (~8 GB bosa).
+      Temizlenebilir: xcrun simctl runtime delete <UUID>
+    - MCP simulator araci CALISMIYOR: acik xcode-select kaydi
+      (/var/db/xcode_select_link) yok. Gereken (parola ister):
+        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      O yapilana kadar dokunma/yazma yok. Ekran goruntusu calisiyor:
+        xcrun simctl io booted screenshot <dosya>.png
 
   18.2 NE KURULDU:
     Expo SDK 57 + expo-router + @clerk/clerk-expo 2.20 + expo-secure-store.
@@ -57,9 +74,14 @@ Hemen sonraki adim:
   ciktisinda formatBasisPoints, DEFAULT_LOCALE ve \u20ba var). Metro depo
   kokunu izliyor (watchFolders) ve "@/" takma adini tsconfig'ten cozuyor.
 
-  AMA CALISMA ANI HENUZ GORULMEDI: formatMoney, Intl.NumberFormat
-  kullaniyor. Hermes'in Intl davranisi calisan uygulamada denenmedi.
-  Paket dogru, cikti gozle gorulmedi. 18.3'te ilk is bu.
+  CALISMA ANI DA OLCULDU: uygulama iPhone 17 Pro / iOS 26.5'te
+  calistirildi. formatMoney ciktisi web'in birim testlerinin pinledigi
+  degerlerle BIREBIR ayni:
+    formatMoney(123456789)            -> 1.234.567,89 + lira isareti
+    formatMoney(123456789,"USD","en") -> $1,234,567.89
+    formatBasisPoints(3333,"tr")      -> %33,33
+  Hermes'in Intl.NumberFormat destegi bizim kullandigimiz kadariyla V8 ile
+  ayrismiyor. Olcum GECICI bir kod parcasiyla yapildi ve GERI ALINDI.
 
   KOK DOGRULAMAYI KIRMAMAK ICIN YAPILANLAR (mobile/ acilinca kirilirdi):
     tsconfig.json      exclude'a "mobile" eklendi
@@ -121,10 +143,8 @@ Hemen sonraki adim:
   yalnizca anahtar/boyut/tip tutar.
 
 Status:
-  COMMIT EDILMEMIS DEGISIKLIK VAR (Faz 18.2 + dokumanlar). Kod commit'i
-  oldugu icin PUSH AYRICA SORULACAK.
-
-  Faz 18.1 canlida (b6643ca).
+  Faz 18.1 ve 18.2 canlida (b6643ca, 3f24a3d).
+  Mobil uygulama iOS Simulator'da CALISIYOR ve gozle dogrulandi.
 
   CANLIDA: Faz 15, 16 ve 17 ile bagimlilik bakiminin tamami.
   https://owezy.net - Clerk production (pk_live_), GitHub + Google kendi
