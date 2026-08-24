@@ -8,6 +8,21 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (3)
+
+### Kategori artık açıklamadan anlaşılıyor (Faz 17)
+- **"Market alışverişi" yazınca kategori Alışveriş oluyor.** Kategori
+  gönderilmediğinde açıklamadan tahmin ediliyor; marka adları da tanınıyor
+  (Migros, A101, Uber, Airbnb, Netflix...). Gerekçe ADR-028.
+- **Tahmin gizli değil.** Formda açıklamayı yazarken seçim kutusu değişiyor,
+  elle dokununca susuyor. Satır içi girişte ipucu satırı tahmini yazıyor.
+- **Açık bir seçimi asla ezmiyor** ve düzenlemede hiç çalışmıyor.
+- **Türkçe iki iş gerektirdi:** karşılaştırma katlama üzerinden (aksana ve
+  büyük/küçük harfe duyarsız), ve ünsüz yumuşaması kural olarak koda yazıldı
+  ("yemek" → "yemeği").
+- **Tek kategorili kırılımda çubuk çizilmiyor.** Karşılaştıracak ikinci bir
+  şey yokken çubuk bir şey anlatmıyor — aynı kural aylık grafikte zaten vardı.
+
 ## 2026-08-24 (2)
 
 ### Grup sayfası fiş oldu (Faz 16.1–16.3)

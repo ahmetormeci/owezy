@@ -15,20 +15,25 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (3)
+Updated: 2026-08-24 (4)
 
 Current task:
-  YOK. Faz 16 (fis tasarimi) bes asamasiyla bitti ve dogrulandi.
+  YOK. Faz 17 (kategori tahmini) bitti ve dogrulandi.
   Kullanici yeni gorev vermedi.
 
 Hemen sonraki adim:
   Kullanicinin secmesi bekleniyor.
 
-  ACIK URUN RISKI - BUYUDU: satir ici giris her zaman OTHER kategorisi
-  kullaniyor. "Kategori varsayilani OTHER, kirilim tek cubuk Diger cikiyor"
-  riski Faz 13'ten beri yaziliydi; hizli giris bunu artik daha da besliyor.
-  Cozum muhtemelen kirilimin kendisinde, hizli girise kategori secimi
-  koymakta degil - satiri sisirir.
+  KATEGORI RISKI COZULDU (Faz 17, ADR-028): kategori artik aciklamadan
+  tahmin ediliyor. Tamamen bitmedi - harcamalari gercekten tek kategoriye
+  dusen bir grupta kirilim hala tek cubuk, ama o durumda cubuk hic
+  cizilmiyor.
+
+  TAHMIN LISTESI CANLI VERIYLE SINANMADI: anahtarlar (market, fatura, taksi,
+  Migros, Uber...) elle secildi ve yalnizca birim testleriyle dogrulandi.
+  Gercek aciklamalarda ne kadar isabet ettigi ilk kez canlida gorunecek.
+  Isabetsiz cikarsa cozum listeyi buyutmek olmayabilir - yaygin kelimelerle
+  cakisan anahtar, olmayan anahtardan kotudur.
 
   FIS TASARIMI CANLIDA GOZLE BAKILMADI: butun dogrulama E2E'nin urettigi
   gruplarda ve ekran goruntusuyle yapildi. Gercek bir grupta cok aylik
@@ -50,8 +55,8 @@ Status:
   Faz 15 canlida: https://owezy.net, Clerk production (pk_live_),
   GitHub + Google kendi OAuth uygulamalarimizla, webhook 200 donuyor.
 
-  Testler: 498 birim / 35 E2E. Faz 16 sonrasi hepsi kosuldu ve temiz:
-  498 birim, tsc, lint ve TAM E2E KOSUSU - 35/35, 6,5 dakika.
+  Testler: 510 birim / 35 E2E. Faz 17 sonrasi hepsi kosuldu ve temiz:
+  510 birim, tsc, lint ve TAM E2E KOSUSU - 35/35, 6,4 dakika.
 
   TAM KOSU SART - OLCULDU: 16.3'te hedefli kosular temiz gorunurken tam kosu
   19 test dusurdu. Sebep satir ici girisin erisilebilir adlarinin (Aciklama /

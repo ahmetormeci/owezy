@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { apiRequest } from "@/lib/api-client";
 import { parseMoney } from "@/lib/money";
+import { guessCategory } from "@/lib/expense-category-guess";
+import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { useTranslate } from "@/lib/i18n";
 
 /**
@@ -42,6 +44,13 @@ export function ExpenseComposer({
   const amount = parseMoney(amountText);
   const isDirty = description.trim() !== "" || amountText.trim() !== "";
 
+  // Tahmini BURADA DA hesapliyoruz ama gonderMIYORUZ - yalnizca ipucu
+  // satirinda gostermek icin. Karari sunucu veriyor (ADR-002); ekranda
+  // gorunen ile kaydedilen ayrismasin diye ikisi AYNI saf fonksiyondan
+  // geciyor. Sessizce kategori atayan bir hizli giris, kullanicinin
+  // bilmedigi bir sey yapardi.
+  const guessed = guessCategory(description);
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (isSubmitting) return;
@@ -73,7 +82,10 @@ export function ExpenseComposer({
           description: description.trim(),
           amount,
           paidById: currentUserId,
-          category: "OTHER",
+          // Kategori BILEREK gonderilmiyor: sunucu aciklamadan tahmin
+          // ediyor. Buradan "OTHER" gondermek, tahmini daha dogmadan
+          // ezmek olurdu - nitekim once oyleydi ve kirilimi tek cubuk
+          // "Diger" yapan sebeplerden biriydi.
           expenseDate: today,
           splitType: "EQUAL",
           participantUserIds: memberIds,
@@ -131,7 +143,10 @@ export function ExpenseComposer({
           basladiginda ne olacagini soyluyoruz. */}
       {isDirty ? (
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">{t("ui.composer_hint")}</p>
+          <p className="text-xs text-muted-foreground">
+            {guessed ? `${t(EXPENSE_CATEGORY_CODES[guessed])} · ` : ""}
+            {t("ui.composer_hint")}
+          </p>
           <button
             type="submit"
             disabled={isSubmitting}

@@ -17,6 +17,7 @@ import {
   parsePercentageToBasisPoints,
   type Locale,
 } from "@/lib/money";
+import { guessCategory } from "@/lib/expense-category-guess";
 import {
   inferBasisPoints,
   splitByPercentage,
@@ -156,6 +157,15 @@ export function ExpenseForm({
   const [category, setCategory] = useState<ExpenseCategory>(
     initialValues?.category ?? "OTHER",
   );
+  /**
+   * Kategoriye ELLE dokunuldu mu?
+   *
+   * Dokunulmadigi surece aciklamadan tahmin ediliyor; bir kez secim
+   * yapildiginda tahmin susuyor. DUZENLEMEDE bastan "dokunulmus" sayiliyor:
+   * kayitli bir kategoriyi, kullanici aciklamayi degistirdi diye ezmek
+   * onun kararini geri almak olurdu.
+   */
+  const [categoryTouched, setCategoryTouched] = useState(isEditing);
   const [splitType, setSplitType] = useState<SplitType>(initialValues?.splitType ?? "EQUAL");
   const [expenseDate, setExpenseDate] = useState(
     initialValues?.expenseDate ?? new Date().toISOString().slice(0, 10),
@@ -329,7 +339,16 @@ export function ExpenseForm({
         <Input
           id="description"
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
+          onChange={(event) => {
+            const next = event.target.value;
+            setDescription(next);
+            // Tahmin GORUNUR: secim kutusu yazarken degisiyor, gizli bir
+            // varsayim degil. Ipucu bulunamazsa "Diger"e donuyor - eski bir
+            // tahminin yazi silinince ekranda kalmasi yaniltirdi.
+            if (!categoryTouched) {
+              setCategory(guessCategory(next) ?? "OTHER");
+            }
+          }}
           placeholder={t("ui.description_placeholder")}
           autoFocus
         />
@@ -376,7 +395,10 @@ export function ExpenseForm({
             id="category"
             className={selectClassName}
             value={category}
-            onChange={(event) => setCategory(event.target.value as ExpenseCategory)}
+            onChange={(event) => {
+              setCategory(event.target.value as ExpenseCategory);
+              setCategoryTouched(true);
+            }}
           >
             {EXPENSE_CATEGORY_OPTIONS.map(([value, code]) => (
               <option key={value} value={value}>

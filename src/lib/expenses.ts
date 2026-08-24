@@ -10,6 +10,7 @@ import {
 import { assertActiveMemberOfGroup, assertCanModifyRecord } from "@/lib/group-access";
 import { createNotifications } from "@/lib/notifications";
 import { foldForSearch } from "@/lib/search-fold";
+import { guessCategory } from "@/lib/expense-category-guess";
 import {
   DEFAULT_EXPENSE_PAGE_SIZE,
   MAX_EXPENSE_PAGE_SIZE,
@@ -357,7 +358,13 @@ export async function createExpense(userId: string, groupId: string, input: Crea
         description: input.description,
         amount: input.amount,
         currency: group.currency,
-        category: input.category ?? "OTHER",
+        // Kategori gonderilmediyse ACIKLAMADAN tahmin ediliyor.
+        // Sunucuda, cunku ADR-002: is mantigi /api/v1 altinda ve mobil
+        // istemci de ayni ucu cagiracak - tahmini tarayiciya koysaydik
+        // mobil tarafin onu yeniden yazmasi gerekirdi.
+        // Tahmin ACIK BIR SECIMI EZMIYOR: yalnizca alan bos geldiginde
+        // calisiyor. Hicbir ipucu yoksa yine "OTHER".
+        category: input.category ?? guessCategory(input.description) ?? "OTHER",
         splitType: input.splitType,
         expenseDate: input.expenseDate ?? new Date(),
       },

@@ -159,7 +159,9 @@ describe("createExpense", () => {
         createdById: CALLER_ID,
         amount: 9000,
         currency: "USD", // istemciden degil, grup kaydindan geldi
-        category: "OTHER",
+        // Faz 17: kategori gonderilmediginde ACIKLAMADAN tahmin ediliyor.
+        // Bu fikusturun aciklamasi "Aksam yemegi" - once "OTHER" yaziliyordu.
+        category: "FOOD",
         splitType: "EQUAL",
       }),
     });
@@ -1288,6 +1290,59 @@ describe("getExpenseForUser", () => {
     expect(expense.participants).toHaveLength(2);
     expect(mockPrisma.expense.findUnique.mock.calls[0][0].include).toEqual({
       participants: true,
+    });
+  });
+});
+
+describe("createExpense - kategori tahmini", () => {
+  beforeEach(() => {
+    resetMocks();
+    // CALLER_ID de aktif uye olmali: eksik birakinca butun kurulum
+    // "participants_not_active" ile patliyor. Dosyadaki hazir yardimci
+    // tam bunun icin var.
+    allMembersActive();
+    mockTx.group.findUnique.mockResolvedValue({
+      id: GROUP_ID,
+      currency: "USD",
+      deletedAt: null,
+    });
+    mockTx.expense.create.mockResolvedValue({ id: "expense-1" });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: "expense-1", participants: [] });
+  });
+
+  it("kategori gonderilmediginde aciklamadan tahmin eder", async () => {
+    await createExpense(CALLER_ID, GROUP_ID, {
+      ...baseEqualInput,
+      description: "Dogalgaz faturasi",
+    });
+
+    expect(mockTx.expense.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ category: "BILLS" }),
+    });
+  });
+
+  it("ACIK bir secimi ezmez", async () => {
+    // Tahminin en onemli sinirlari bu: kullanici bir kategori sectiyse
+    // aciklama ne derse desin o kalir.
+    await createExpense(CALLER_ID, GROUP_ID, {
+      ...baseEqualInput,
+      description: "Dogalgaz faturasi",
+      category: "ENTERTAINMENT",
+    });
+
+    expect(mockTx.expense.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ category: "ENTERTAINMENT" }),
+    });
+  });
+
+  it("ipucu yoksa OTHER kaliyor", async () => {
+    await createExpense(CALLER_ID, GROUP_ID, {
+      ...baseEqualInput,
+      description: "Ahmete verdigim borc",
+    });
+
+    expect(mockTx.expense.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ category: "OTHER" }),
     });
   });
 });

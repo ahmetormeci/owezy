@@ -41,6 +41,20 @@ export async function GroupSummary({
   // yaziyor. Iki ay olunca grafik anlam kazaniyor.
   const showMonths = months.length > 1;
 
+  // Tek kategorili bir kirilim da hicbir sey anlatmiyor: tek cubuk her zaman
+  // tam boy ve yaninda "%100" yaziyor. Aylik grafikte ayni kural zaten vardi
+  // (Faz 13); kategori tarafinda yoktu ve varsayilanin "Diger" olmasi
+  // yuzunden en sik gorulen hal buydu - ekran goruntusunde de oyle cikti.
+  // Kategori tahmini (Faz 17) bu durumu seyrekletiyor ama ortadan
+  // kaldirmiyor: iki harcamasi da markete gitmis bir grup hala tek cubuk.
+  const showCategories = summary.byCategory.length > 1;
+
+  // Ikisi de yoksa blogun kendisi cizilmiyor: bos bir kart, olmayan bir
+  // ozetin yerini tutar.
+  if (!showMonths && !showCategories) {
+    return null;
+  }
+
   return (
     // Faz 16: uc rakam kutusu (TOPLAM / PAYIN / HARCAMA) ve "bakiyen nasil
     // olustu" denklemi BURADAN KALKTI. Ikisi de fisin kendisinde var artik -
@@ -48,7 +62,7 @@ export async function GroupSummary({
     // iki kez gostermek, ekran goruntusunde bakinca hemen goze carpiyordu.
     // Bu blok yalnizca fiste OLMAYANI tasiyor: paranin nereye gittigi.
     <section className="rounded-lg border border-border bg-card">
-      <div className={`grid gap-7 p-5 md:gap-9 ${showMonths ? "md:grid-cols-2" : ""}`}>
+      <div className={`grid gap-7 p-5 md:gap-9 ${showMonths && showCategories ? "md:grid-cols-2" : ""}`}>
         {showMonths ? (
           <div className="min-w-0">
             <p className="label mb-3">{t("ui.summary_by_month")}</p>
@@ -80,6 +94,7 @@ export async function GroupSummary({
           </div>
         ) : null}
 
+        {showCategories ? (
         <div className="min-w-0">
           <p className="label mb-3">{t("ui.summary_by_category")}</p>
           <ul className="flex flex-col gap-2.5">
@@ -100,6 +115,7 @@ export async function GroupSummary({
             ))}
           </ul>
         </div>
+        ) : null}
       </div>
 
     </section>

@@ -8,12 +8,12 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 16 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
+**Özet:** 17 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 498 | ✅ tümü geçiyor |
+| Birim (Vitest) | 510 | ✅ tümü geçiyor |
 | E2E (Playwright) | 35 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -483,9 +483,10 @@ filtreliyken satır sayısının düşmesi.
 
 ### Faz 13'ten kalan borç
 
-- **Ürün riski:** `category` varsayılanı `OTHER`. Kimse dokunmazsa kategori
-  kırılımı tek çubuk "Diğer" olur. Formdaki kategori seçiminin görünürlüğü
-  artmalı.
+- ~~**Ürün riski:** `category` varsayılanı `OTHER`, kırılım tek çubuk "Diğer"
+  olur.~~ **Faz 17'de çözüldü** (ADR-028): kategori açıklamadan tahmin
+  ediliyor. Tamamen ortadan kalkmadı — harcamaları gerçekten tek kategoriye
+  düşen grupta kırılım hâlâ tek çubuk, ama artık çubuk hiç çizilmiyor.
 - **Dışa aktarmada limit yok** (`listExpensesForExport`). Bilerek: kırpılmış
   bir mali dosyanın eksik olduğu hiçbir yerde belli olmaz. Grup sayfasındaki
   toplamalar 14.5'te SQL'e taşındığı için limitsiz kalan tek okuma bu ve
@@ -658,6 +659,41 @@ düpedüz yanlıştı — ödeşecek bir şey hiç olmadı.
 eklemesi, bozuk tutarın reddi ve tek gruplu kullanıcının ana sayfadan
 doğrudan grubuna girmesi. 5 yeni birim testi ay aralığının sınırlarını
 kapsıyor (ay/yıl dönümü, şubat, UTC).
+
+---
+
+## Faz 17 — Kategori tahmini · **DONE**
+
+Faz 13'ten beri yazılı bir ürün riskiydi ve Faz 16 onu büyütmüştü: kategori
+alanı vardı ama kimse doldurmuyordu, satır içi giriş de hep `OTHER`
+gönderiyordu. "Nereye gitti" kırılımı tek çubuk "Diğer" çıkıyordu.
+
+**Yapıldı:** Açıklamadan kategori tahmini (`expense-category-guess.ts`, saf).
+Tahmin sunucuda, `createExpense` içinde; aynı fonksiyon formda canlı öneri,
+satır içi girişte de ipucu satırında görünüyor. Gerekçeler ve sınırlar
+**ADR-028**'de.
+
+**İki Türkçe sorunu çıktı:**
+
+1. **Ünsüz yumuşaması.** "yemek" → "yemeği"; baş eşleşmesi tutmuyordu.
+   İstisna listelemek yerine kural koda yazıldı (k→g, p→b, t→d).
+2. **Kısa anahtar eşiği fazla katıydı.** 4 harf ve kısası tam eşleşme
+   isteyince "otel" ekli hallerini kaçırıyordu. 3'e indirildi; "sok", "gaz",
+   "mac" hâlâ tam eşleşme istiyor ki "sokak" market, "gazete" fatura
+   sayılmasın.
+
+**Bir birim testi doğru şeyi yakaladı:** `createExpense`'in mevcut testi
+`category: "OTHER"` bekliyordu ve fikstürün açıklaması "Aksam yemegi"ydi.
+Tahmin devreye girince FOOD oldu — yani test, davranış değişikliğini
+bağırarak bildirdi. Güncellendi, üstüne kuralın iki yönü de bağlandı
+(açık seçim ezilmiyor, ipucu yoksa OTHER).
+
+**İkinci koruma:** tek kategorili kırılımda çubuk çizilmiyor; ay ve kategori
+kırılımının ikisi de anlamsızsa özet bloğu tamamen kayboluyor.
+
+**Test:** 510 birim / 35 E2E. 12 yeni birim testi: 9'u tahmin fonksiyonunun
+kendisi (katlama, yumuşama, kısa anahtar, marka, çakışmada en uzun kazanır,
+ipucu yoksa null), 3'ü `createExpense`'in sınırları.
 
 ---
 

@@ -500,6 +500,71 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-028 — Kategori açıklamadan tahmin edilir, kullanıcıya sorulmaz
+**Tarih:** 2026-08-24 · **Durum:** Kabul edildi
+
+**Karar:** Harcama kategorisi, kategori gönderilmediğinde **açıklamadan
+tahmin ediliyor**. Tahmin `createExpense` içinde, yani **sunucuda** yapılıyor;
+aynı saf fonksiyon (`expense-category-guess.ts`) formda canlı öneri olarak da
+çalışıyor.
+
+**Neden gerekti:** Kategori alanı vardı ama kimse doldurmuyordu. Form
+varsayılan olarak "Diğer"i seçili getiriyordu, kullanıcı dokunmuyordu; satır
+içi giriş de (Faz 16.3) hep `OTHER` gönderiyordu. Sonuç: "nereye gitti"
+kırılımı tek çubuk "Diğer" — var olan bir özellik hiçbir şey anlatmıyordu.
+Risk Faz 13'ten beri yazılıydı ve Faz 16 onu büyütmüştü.
+
+**Neden zorunlu alan değil:** Kategoriyi zorunlu kılmak her harcamada bir
+karar daha demek. İnsanlar en üsttekini seçer, veri yine çöp olur — üstelik bu
+sefer sürtünme de eklenmiş olur.
+
+**Neden sunucuda:** ADR-002. İş mantığı `/api/v1` altında çünkü mobil istemci
+de aynı ucu çağıracak; tahmini tarayıcıya koysaydık mobil tarafın onu yeniden
+yazması gerekirdi. Satır içi giriş bu yüzden kategori **hiç göndermiyor**.
+
+**Neden aynı zamanda görünür:** Sessizce kategori atayan bir sistem,
+kullanıcının bilmediği bir şey yapar. Form açıklamayı yazarken seçim kutusunu
+güncelliyor; satır içi girişin ipucu satırı tahmini yazıyor
+("Alışveriş · eşit bölünür · sen ödedin · bugün").
+
+**Üç sınır:**
+
+1. **Açık bir seçimi asla ezmiyor.** Yalnızca kategori hiç gönderilmediğinde
+   çalışıyor.
+2. **Düzenlemede baştan susuyor.** Kayıtlı bir kategoriyi, kullanıcı açıklamayı
+   değiştirdi diye ezmek onun kararını geri almak olurdu.
+3. **İpucu yoksa `null` dönüyor, `OTHER` değil.** Ayrım anlamlı: `null`
+   "bilmiyorum", `OTHER` "biliyorum, diğeri" demek. Varsayılana çağıran taraf
+   karar veriyor.
+
+**Türkçe iki şey gerektirdi:**
+
+- **Katlama.** Karşılaştırma `foldForSearch` üzerinden — 13.3a'da ölçülmüş,
+  14.4'te çözülmüş bir işin yeniden kullanımı. Anahtarlar katlanmış biçimde
+  yazılıyor.
+- **Ünsüz yumuşaması.** "yemek" → "yemeği", yani baş eşleşmesi tek başına
+  yetmiyor. İstisnaları listelemek yerine kural koda yazıldı: her anahtarın
+  yumuşamış bir ikizi üretiliyor (k→g, p→b, t→d).
+
+**Kısa anahtarlarda tam eşleşme şart** (3 harf ve kısası): "sok" baş
+eşleşmesiyle çalışsaydı "sokak" da market sayılırdı. Sınır önce 4'tü ve "otel"
+gibi çok yaygın bir kelimeyi ekli halleriyle kaçırıyordu.
+
+**Liste geniş ama her marka değil.** Bilerek dışarıda bırakılanlar ve
+sebepleri kodda yazılı: `mango` (meyve de olabilir), `vatan` ("vatandaş"ı
+yakalardı), `apart` ("apartman aidatı"nı konaklama sayardı), `abonelik`
+("Netflix abonelik"te eğlenceyi ezerdi — daha uzun anahtar kazanıyor).
+Yaygın bir kelimeyle çakışan anahtarın yokluğu varlığından iyidir.
+
+**Yanlış tahminin bedeli ucuz:** harcama düzenlenip değiştiriliyor.
+
+**İkinci koruma:** Tek kategorili bir kırılımda çubuk artık hiç çizilmiyor
+(aylık grafikte aynı kural Faz 13'ten beri vardı). Tahmin bu durumu
+seyrekleştiriyor ama ortadan kaldırmıyor: iki harcaması da markete gitmiş bir
+grup hâlâ tek çubuk.
+
+---
+
 ## ADR-027 — Grup sayfası bir fiş; harcama listesi bir rulo
 **Tarih:** 2026-08-24 · **Durum:** Kabul edildi
 
