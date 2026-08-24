@@ -104,7 +104,18 @@ Bunlar tartışılmış ve karara bağlanmıştır (gerekçeler DECISIONS.md'de)
 
 - macOS (Apple Silicon), zsh. Node **24**, nvm ile kurulu (`~/.nvm`; giriş
   satırları `~/.zshrc`'de). CI de Node 24 kullanıyor — ikisi bilerek aynı.
-  Kullanıcı `node`/`npx` komutlarını çalıştırabiliyor.
+  Kullanıcı `node`/`npm`/`npx` komutlarını **Terminal'de** çalıştırabiliyor —
+  ama nvm satırları `~/.zshrc`'de ve zsh o dosyayı yalnızca **etkileşimli**
+  kabuklarda okuyor. Etkileşimli olmayan bir kabukta (örneğin bir sohbet
+  arayüzündeki "Run" düğmesi) `npm not found` çıkıyor. Kullanıcıya komut
+  verirken kendi kendine yeten hâlini yaz:
+
+  ```
+  export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; npm ...
+  ```
+
+  Aynısı bu dosyayı okuyan ajan için de geçerli: her Bash çağrısında nvm
+  yüklenmeli.
 - Üç ayrı veritabanı: geliştirme, E2E, production. `E2E_DATABASE_URL` ile
   `DATABASE_URL` **asla** aynı olmamalı — `e2e/db-cleanup.ts` aynıysa
   çalışmayı reddeder.
