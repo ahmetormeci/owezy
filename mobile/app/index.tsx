@@ -1,6 +1,6 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { Redirect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatMoney } from "@/lib/money";
@@ -20,10 +20,23 @@ export default function HomeScreen() {
   const { isLoaded, isSignedIn, getToken, signOut } = useAuth();
   const [state, setState] = useState<State>({ kind: "loading" });
 
+  // getToken'i DOGRUDAN bagimlilik olarak kullanamayiz: Clerk her render'da
+  // YENI bir fonksiyon donduruyor. Bagimlilikta olsaydi load her render'da
+  // degisir, useEffect yeniden calisir, setState yeni bir render tetikler ve
+  // dongu kapanmazdi - "Maximum update depth exceeded". Simulatorde bizzat
+  // gorulen bir hata, tahmin degil.
+  //
+  // Cozum: fonksiyonun kendisini degil, HER ZAMAN GUNCEL bir referansini
+  // tutuyoruz. Boylece load'un kimligi sabit kaliyor.
+  const getTokenRef = useRef(getToken);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  });
+
   const load = useCallback(async () => {
     setState({ kind: "loading" });
     try {
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const result = await apiGet<{ ok: true; user: MeUser }>("/api/v1/me", token);
 
       setState(
@@ -36,7 +49,7 @@ export default function HomeScreen() {
       // EXPO_PUBLIC_API_BASE_URL cihazdan erisilemeyen bir adres.
       setState({ kind: "error", text: String(error) });
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {

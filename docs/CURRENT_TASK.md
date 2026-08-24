@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (10)
+Updated: 2026-08-24 (11)
 
 Current task:
   FAZ 18 - MOBIL UYGULAMA. 18.0, 18.1 ve 18.2 bitti. Onceligi iOS
@@ -42,6 +42,17 @@ Hemen sonraki adim:
     canli pk_live_ bekliyor ve test orneginin Bearer'ina 401 doner.
     mobile/.env.local DOLDURULDU (yayimlanabilir anahtar + localhost:3000).
 
+  UCTAN UCA DOGRULANDI: simulatorde test kullanicisiyla
+  (e2e+clerk_test@example.com, kod 424242) giris yapildi. Clerk oturumu
+  acildi, getToken() calisti, GET /api/v1/me Bearer ile 200 dondu, ekranda
+  kullanicinin adi ve money.ts'in bicimlendirdigi tutar gorundu.
+
+  YAKALANAN HATA (duzeltildi): useAuth() her render'da YENI bir getToken
+  donduruyor. Onu useCallback bagimliligina koymak sonsuz dongu uretti -
+  "Maximum update depth exceeded" - ve giris sonrasi ekrani kilitledi.
+  Hicbir statik kontrol gostermedi; tsc temizdi. Kural CONVENTIONS.md
+  "Mobil" bolumune yazildi. 18.3 ve 18.4'te ayni tuzak var.
+
   SIMULATOR NOTLARI:
     - Xcode 26.6 + iOS 26.5 runtime kurulu, iPhone 17 Pro calisti.
     - "simctl list runtimes" indirmeden HEMEN SONRA bos gorunebilir:
@@ -51,8 +62,11 @@ Hemen sonraki adim:
     - MCP simulator araci CALISMIYOR: acik xcode-select kaydi
       (/var/db/xcode_select_link) yok. Gereken (parola ister):
         sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-      O yapilana kadar dokunma/yazma yok. Ekran goruntusu calisiyor:
-        xcrun simctl io booted screenshot <dosya>.png
+    - MCP simulator araci ARTIK CALISIYOR (kullanici sudo xcode-select
+      calistirdi). Dokunma, yazma ve ekran goruntusu mumkun. UYARI: o komut
+      CoreSimulator'i yeniden baslatir ve ACIK simulatoru kapatir.
+    - YAZMA HIZI: uzun bir metni tek seferde yazmak karakter dusuruyor
+      (kontrollu TextInput). 8-10 karakterlik parcalar halinde yaz.
 
   18.2 NE KURULDU:
     Expo SDK 57 + expo-router + @clerk/clerk-expo 2.20 + expo-secure-store.

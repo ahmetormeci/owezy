@@ -27,6 +27,15 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
   testlerinin pinlediği değerlerle birebir aynı (`1.234.567,89 ₺`,
   `$1,234,567.89`, `%33,33`). Hermes'in Intl desteği bizim
   kullandığımız kadarıyla V8'den ayrışmıyor.
+- **Uçtan uca doğrulandı.** Simülatörde test kullanıcısıyla giriş
+  yapıldı; `getToken()` çalıştı, `GET /api/v1/me` Bearer ile 200 döndü,
+  ekranda kullanıcı adı ve paylaşılan modülün biçimlendirdiği tutar göründü.
+- **Çalıştırırken gerçek bir hata yakalandı ve düzeltildi.** `useAuth()`
+  her render'da yeni bir `getToken` döndürüyor; onu `useCallback`
+  bağımlılığına koymak sonsuz döngü üretiyordu
+  (`Maximum update depth exceeded`) ve giriş sonrası ekranı kilitliyordu.
+  Hiçbir statik kontrol göstermedi — tsc temizdi. Kural CONVENTIONS.md'ye
+  "Mobil" başlığı altına yazıldı.
 - **Bulundu: `@clerk/clerk-expo` deprecated.** Yerine `@clerk/expo`.
   Önemi sürüm ayrışması: web Core 3 (`@clerk/react@^6`), kurduğumuz
   paket Core 2 (`@clerk/clerk-js@5`). Geçiş kararı bekliyor.

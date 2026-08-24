@@ -754,6 +754,19 @@ değerlerle **birebir** aynı çıktı:
 Yani Hermes'in `Intl.NumberFormat` desteği bizim kullandığımız kadarıyla
 V8 ile ayrışmıyor. Ölçüm geçici bir kod parçasıyla yapıldı ve geri alındı.
 
+**UÇTAN UCA DOĞRULANDI.** Simülatörde test kullanıcısıyla giriş yapıldı:
+Clerk oturumu açıldı, `getToken()` çalıştı, `GET /api/v1/me` Bearer ile 200
+döndü ve ekranda kullanıcının adı ile paylaşılan modülün biçimlendirdiği tutar
+göründü. ADR-002'nin mobil ayağı artık tam.
+
+**ÇALIŞTIRIRKEN GERÇEK BİR HATA YAKALANDI** — kodda vardı, testte yoktu:
+`useAuth()` her render'da yeni bir `getToken` döndürüyor; onu `useCallback`
+bağımlılığına koymak sonsuz döngü üretti (`Maximum update depth exceeded`) ve
+giriş sonrası ekranı tamamen kilitledi. Düzeltildi (güncel referans deseni),
+kural [CONVENTIONS.md](CONVENTIONS.md) "Mobil" bölümüne yazıldı. **Bu hatayı
+hiçbir statik kontrol göstermedi** — tsc temizdi, paket doğru derleniyordu;
+yalnızca uygulamayı açıp giriş yapınca çıktı.
+
 **BULUNAN SORUN — `@clerk/clerk-expo` DEPRECATED.** Uygulama açılışta uyarı
 basıyor: paket bırakılmış, yerine `@clerk/expo` geçmiş. Bu kozmetik değil,
 sürüm ayrışması: web (`@clerk/nextjs@7.5.22`) `@clerk/react@^6` yani **Core 3**

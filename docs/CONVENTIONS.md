@@ -136,6 +136,27 @@ Kurallar:
   değişince test kırılmasın.
 - E2E koşusu sürerken proje dosyalarına dokunma.
 
+## Mobil (React Native)
+
+**Clerk kancalarından gelen fonksiyonlar bağımlılık listesine KONMAZ.**
+`useAuth()` her render'da **yeni bir** `getToken` döndürüyor. Onu
+`useCallback`/`useEffect` bağımlılığına koymak sonsuz döngü üretiyor:
+fonksiyon değişir → efekt yeniden çalışır → `setState` yeni render tetikler →
+fonksiyon yine değişir. Ekranda `Maximum update depth exceeded` olarak çıkıyor.
+
+Bu tahmin değil; 18.2'de simülatörde bizzat görüldü ve giriş sonrası ekranı
+tamamen kilitledi. Çözüm, fonksiyonun kendisini değil **her zaman güncel bir
+referansını** tutmak (`useRef` + her render'da güncelleyen bir efekt), böylece
+`useCallback`'in kimliği sabit kalıyor. Örnek: `mobile/app/index.tsx`.
+
+**Oturum belirteci `expo-secure-store`'da saklanır**, `AsyncStorage`'da
+değil — orası düz metin.
+
+**Paylaşılan saf modüller `@/lib/...` ile import edilir.** Takma ad
+`mobile/tsconfig.json`'daki `paths` alanından çözülüyor; Metro depo kökünü
+`watchFolders` ile izliyor (`mobile/metro.config.js`). Mobil tarafın kendi
+kodu göreli yolla import edilir — `@/` yalnızca web ile paylaşılanı gösterir.
+
 ## Bağımlılıklar
 
 - Yeni paket eklemeden önce mevcut bağımlılıkların yeterli olup olmadığına
