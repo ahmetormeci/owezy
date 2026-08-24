@@ -716,7 +716,7 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **`npm audit fix`** | 10'un 5'i sürüm aralığı içinde kapanıyor; `package-lock.json` yazma izni gerekiyor |
+| **Next 16.2.11 → 16.3.2** | Kalan `postcss` ve `sharp` açıklarını kapatır; `--force` ile değil bilinçli yükseltme olmalı |
 
 ## Bilinen teknik borç
 
@@ -724,13 +724,26 @@ karar vermemiştir.
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi
-- **`npm audit`: 10 açık (1 orta, 9 yüksek).** **İncelendi:** hiçbiri çalışan
-  uygulamaya ulaşmıyor — hepsi derleme veya geliştirme aracında. `sharp`
-  yalnızca `next/image` üzerinden çağrılıyor, `next/image` hiç kullanılmıyor;
-  `postcss` derleme zamanında çalışıyor. `npm audit fix` 5 tanesini sürüm
-  aralığı içinde kapatıyor; kalan ikisi `--force` ve Next 16.2.11 → 16.3.0
-  yükseltmesi istiyor, o ayrı bir iş olmalı. **Yapılmadı:**
-  `package-lock.json` `.claude/settings.json` ile yazmaya kapalı.
+- **`npm audit`: 6 yüksek açık** (önce 12'ydi). `npm audit fix` uygulandı:
+  `brace-expansion`, `fast-uri`, `js-yaml`, `find-my-way`, `valibot` ve
+  Prisma'nın alt paketleri kapandı — 19 yama seviyesi güncelleme, hepsi
+  beyan edilen aralık içinde, `package.json` değişmedi.
+
+  **Kalan altısı bilerek açık.** `npm audit fix --force` iki şey yapmak
+  istiyor: (1) `deepmerge-ts` ve `valibot` için Prisma'yı **7.9.1'den
+  6.12.0'a düşürmek** — majör geri gidiş, şema ve adapter 7 için yazılmış;
+  (2) `postcss` ve `sharp` için Next'i 16.3.2'ye çıkarmak. İkincisi
+  mantıklı ama `--force` ile değil, bilinçli bir yükseltme olarak
+  yapılmalı — ayrı bir iş.
+
+  **Hiçbiri çalışan uygulamaya ulaşmıyor** (Faz 14'te incelendi, hâlâ
+  geçerli): `sharp` yalnızca `next/image` üzerinden çağrılıyor ve
+  `next/image` kod tabanında hiç kullanılmıyor; `postcss` derleme
+  zamanında çalışıyor.
+
+  **Not:** "package-lock.json yazmaya kapalı" engeli sanıldığı kadar güçlü
+  değilmiş — `.claude/settings.json`'daki kural Claude'un dosya düzenleme
+  araçlarını engelliyor, `npm` komutunu değil.
 - Dil düğmesi `/api/v1/me`'ye **çıkış yapmışken de** PATCH atıyor; herkese
   açık sayfalarda bu her zaman 401 dönüyor ve tarayıcı konsoluna hata
   düşüyor. Zararsız (kod bunu bekliyor ve yutuyor) ama gereksiz istek ve
