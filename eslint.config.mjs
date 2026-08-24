@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Mobil uygulama kendi kurallariyla dogrulaniyor (mobile/eslint.config.js).
+    // Buradaki yapilandirma Next icin: React Native dosyalarini next/core-web-vitals
+    // ile denetlemek anlamsiz uyarilar uretir (orn. <img> yerine next/image).
+    "mobile/**",
   ]),
 ]);
 

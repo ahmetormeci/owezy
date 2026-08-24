@@ -53,3 +53,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# expo / react native
+# ORNEK DOSYA ISTISNASI: yukaridaki ".env*" kalibi mobile/.env.local.example'i
+# de yakaliyor. O dosya SIR ICERMIYOR, hangi degiskenlerin gerektigini anlatan
+# tek yer - temiz bir klonda bulunmasi sart.
+!mobile/.env.local.example
+
+# Kurallar mobile/.gitignore icinde - Expo sablonuyla geliyor ve daha eksiksiz.
+# Burada TEKRARLANMIYOR: iki yerde duran ayni kural, zamanla ayrisir.
+#
+# Dikkat: yukaridaki "/node_modules" satirindaki bastaki egik cizgi KOKU
+# isaret ediyor, yani mobile/node_modules ONA dahil degil. Onu kapatan sey
+# mobile/.gitignore.

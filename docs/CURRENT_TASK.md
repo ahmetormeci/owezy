@@ -15,100 +15,115 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (8)
+Updated: 2026-08-24 (9)
 
 Current task:
-  FAZ 18 - MOBIL UYGULAMA. 18.0 (API envanteri + Bearer sozlesmesi) ve 18.1
-  (eksik iki uc) bitti. Platform sirasi karara baglandi: ONCE iOS (ADR-030).
+  FAZ 18 - MOBIL UYGULAMA. 18.0, 18.1 ve 18.2 bitti. Onceligi iOS
+  (ADR-030); Android bilerek ertelendi.
 
 Hemen sonraki adim:
-  18.2 - mobile/ Expo iskeleti + Clerk oturumu.
-    - "mobile/" kendi package.json'i ile, monorepo'ya GECILMEYECEK (ADR-029)
-    - app.json'da bundle ID: net.owezy.app (KALICI, yayin sonrasi degismez)
-    - Clerk oturumu Bearer ile tasinacak - sozlesme 18.0'da olculdu ve
-      e2e/auth.spec.ts'e baglandi
+  18.3 - Grup listesi ekrani (ilk dikey dilim). GET /api/v1/groups zaten var.
+
+  ONCE SUNLAR YAPILMALI - 18.2 DOGRULANMASI YARIM KALDI:
+    1. iOS Simulator RUNTIME'i kurulu degil. Xcode 26.6 kuruldu ama
+       "xcrun simctl list runtimes" BOS. Gereken:
+         xcodebuild -downloadPlatform iOS      (birkac GB, uzun surer)
+       Gerekirse once: sudo xcodebuild -runFirstLaunch
+    2. mobile/.env.local YOK. Kullanici dolduracak - ornegi
+       mobile/.env.local.example. Iki degisken:
+         EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY  (kok .env.local'daki pk_test_ ile AYNI)
+         EXPO_PUBLIC_API_BASE_URL           (http://localhost:3000)
+    3. Yerel dev sunucusu ayakta olmali (npm run dev). Mobil pk_test_
+       kullaniyor, dolayisiyla CANLIYI DEGIL yereli cagirmali - canli
+       pk_live_ bekliyor ve test orneginin Bearer'ina 401 doner.
+
+  18.2 NE KURULDU:
+    Expo SDK 57 + expo-router + @clerk/clerk-expo 2.20 + expo-secure-store.
+    mobile/app/_layout.tsx  ClerkProvider + tokenCache
+    mobile/app/sign-in.tsx  e-posta + dogrulama kodu (kendi ekranimiz)
+    mobile/app/index.tsx    /api/v1/me cagrisi + money.ts olcumu
+    mobile/lib/token-cache.ts  expo-secure-store (Keychain), AsyncStorage DEGIL
+    mobile/lib/api.ts       Bearer'li fetch sarmalayicisi
+    Bundle ID / paket adi: net.owezy.app (KALICI)
+
+  GIRIS NEDEN E-POSTA KODU: Clerk'in Expo tarafinda web'deki <SignIn />
+  dengi YOK, ekrani kendimiz yaziyoruz. E-posta kodu hicbir yonlendirme
+  yapilandirmasi istemiyor ve development orneginin +clerk_test
+  kullanicilari ile sabit 424242 kodu burada da calisiyor. Google/GitHub
+  (useSSO) sonraki bir is.
+
+  ADR-029'UN DAYANAGI OLCULDU: src/lib/money.ts mobil ekranda import
+  ediliyor ve iOS paketinin ICINDE dogrulandi (expo export --no-bytecode
+  ciktisinda formatBasisPoints, DEFAULT_LOCALE ve \u20ba var). Metro depo
+  kokunu izliyor (watchFolders) ve "@/" takma adini tsconfig'ten cozuyor.
+
+  AMA CALISMA ANI HENUZ GORULMEDI: formatMoney, Intl.NumberFormat
+  kullaniyor. Hermes'in Intl davranisi calisan uygulamada denenmedi.
+  Paket dogru, cikti gozle gorulmedi. 18.3'te ilk is bu.
+
+  KOK DOGRULAMAYI KIRMAMAK ICIN YAPILANLAR (mobile/ acilinca kirilirdi):
+    tsconfig.json      exclude'a "mobile" eklendi
+    eslint.config.mjs  globalIgnores'a "mobile/**" eklendi
+    .gitignore         mobile/.env.local.example istisnasi (.env* onu
+                       yakaliyordu; o dosya SIR ICERMIYOR ve commit edilmeli)
+  mobile/ kendi .gitignore'u, kendi tsconfig'i ve kendi node_modules'u ile
+  duruyor - kok kurallar tekrarlanmadi.
+
+  BILINEN BOSLUK: CI mobil tarafi dogrulamiyor (kok CI "npm ci" + tsc + lint
+  kosuyor, mobile/ bagimliliklarini kurmuyor). Tek ekranli bir uygulama icin
+  CI'a ikinci kurulum adimi eklemek erken - ekran sayisi artinca donulecek.
 
   ARDINDAN (sirasiyla):
-    18.3  Grup listesi ekrani (ilk dikey dilim: kimlik + API + tasarim)
     18.4  Fis ekrani
     18.5  Satir ici harcama girisi
 
-  18.1 NE YAPTI: GET /api/v1/groups/[groupId] ve
-  GET /api/v1/groups/[groupId]/expenses/[expenseId] eklendi. Yeni mantik YOK -
-  getGroupForUser ve getExpenseForUser zaten yaziliydi, web sayfalari onlari
-  dogrudan cagiriyordu; yapilan is o okumalari HTTP'ye acmak.
-  Tek harcamanin govdesi BILEREK liste ucundeki expenses[] elemaniyla ayni
-  sekilde donuyor - farkli bir sekil, mobil tarafta iki ayri cozumleyici
-  demekti. Ic alanlari (descriptionFold) ayiklamak istersek IKI UCU BIRDEN
-  degistirmek gerekir.
-
   18.4 ICIN BILINEN ZORLUK: React Native'de CSS yok. Fisin noktali ayraci
   (border-bottom: 1px dotted), perfore cizgisi ve yirtik kenari web'deki
-  tekniklerle kurulamaz - baska turlu cozulmeleri gerekecek.
+  tekniklerle kurulamaz - baska turlu cozulmeleri gerekecek. 18.2'de
+  BILEREK tasarim yapilmadi: ekranlar sade, cunku 18.2'nin sorusu
+  "guzel mi" degil "oturum ve API calisiyor mu"ydu.
 
-  MOBILDE DOGRULAMA: iOS Simulator surulebiliyor ve ekran goruntusu
-  alinabiliyor, yani web'de ise yarayan "ekran goruntusuyle hata yakalama"
-  dongusu mobilde de kurulabilir. Fiziksel cihazda deneme kullanicinin isi.
-
-  YAYIN DURUMU (ayrinti: PROJECT.md "Yayinlama", karar: ADR-030):
-    - Apple Developer Program basvurusu ONAY BEKLIYOR. Kimlik dogrulamasi ve
-      odeme yapildi. iOS'taki Developer uygulamasi "enrollment pending"
-      gosteriyor; web sitesinin "Enroll Now" gostermesi NORMAL (site aktif
-      uyelige bakiyor). IKINCI KEZ KAYIT OLUNMAYACAK.
-    - Android BILEREK ERTELENDI. Play'in 14 gunluk kapali test kurali bir
-      takvim kurali; o tarafa donulen gunden en az 2-3 hafta sonra yayin.
+  YAYIN DURUMU (ayrinti: PROJECT.md "Yayinlama", kararlar: ADR-030/031):
+    - Apple Developer Program basvurusu ONAY BEKLIYOR.
+    - Xcode 26.6 kuruldu (24 Agustos). Simulator runtime'i HENUZ YOK.
+    - Android BILEREK ERTELENDI.
     - HESAP SILME KARARA BAGLANDI (ADR-031), HENUZ UYGULANMADI:
-        DELETE /api/v1/me yazilacak, Clerk'in kendi silme dugmesi KAPALI
-        kalacak, borcu olan da silebilecek (uyari gosterilir, engellenmez).
-        Isin zor kismi ZATEN YAZILI: markUserDeletedFromClerk
-        (src/lib/clerk-sync.ts) anonimlestirme + sahiplik devri + uyelik
-        kapatmayi yapiyor ve user.deleted webhook'una bagli. Eksik olan
-        yalnizca TETIK.
-        Sira: once Clerk'te sil, sonra markUserDeletedFromClerk'i cagir.
-        Ikinci adim duserse webhook ayni isi yapiyor (idempotent).
-
-    - SIGN IN WITH APPLE: HENUZ KARAR VERILMEDI. Karar iki Clerk ayarina
-      bagli ve o ayarlar PANELDE, kullanicinin bakmasi gerekiyor:
-        1. E-posta ile giris ACIK MI?  -> aciksa Guideline 4.8'i muhtemelen
-           zaten karsiliyoruz; kapaliysa Google/GitHub tek yol demektir ve
-           kural kesin devreye girer.
-        2. "Kullanicilar hesabini silebilir" anahtari acik mi? (ADR-031
-           geregi KAPALI olmali - kendi ucumuzu kullanacagiz.)
-      ASIL RISK UYUMLULUK DEGIL, CIFT HESAP: Apple'in "Hide My Email"i
-      xxxx@privaterelay.appleid.com veriyor. Google ile kaydolmus biri sonra
-      Apple ile girerse e-postalar eslesmez, Clerk IKINCI hesap acar ve
-      Owezy'de ayni insan grupta iki kez gorunur, bakiyesi ikiye bolunur.
-      Bir bolusme uygulamasinda bu kozmetik degil, YANLIS PARA. Karar
-      "eklensin mi" degil, "eklenirse cift hesap politikasi ne olacak".
-    - owezy.net'te gizlilik politikasi ve destek sayfasi YOK; iki magaza da
-      URL istiyor. Web isi, mobil kodu beklemiyor.
+        DELETE /api/v1/me yazilacak. Isin zor kismi ZATEN YAZILI:
+        markUserDeletedFromClerk (src/lib/clerk-sync.ts).
+        SIRALAMA DUZELTMESI: Clerk panelindeki "kullanicilar hesabini
+        silebilir" anahtari SU AN ACIK ve silme uctan uca calisiyor.
+        ADR-031 "kapali tutulacak" derken SON DURUMU tarif ediyor.
+        Anahtar, DELETE /api/v1/me yayina girene kadar ACIK KALMALI -
+        simdi kapatmak calisan tek silme yolunu kaldirirdi.
+    - SIGN IN WITH APPLE: EKLENMEYECEK (simdilik). Clerk'te e-posta ile
+      giris ACIK oldugu dogrulandi, yani Guideline 4.8'in istedigi
+      alternatif mevcut. Risk sifir degil - 4.8'in metni alternatifin
+      "e-postayi gizli tutmaya izin vermesi"ni de istiyor ve duz e-posta
+      kaydi bunu sunmuyor - ama reddedilirsek bedeli bir tur, oysa simdi
+      eklersek CIFT HESAP riskini her kullanici icin ustlenirdik:
+      Hide My Email xxxx@privaterelay.appleid.com veriyor, Google ile
+      kaydolmus biri Apple ile girince eslesme olmuyor, Clerk ikinci
+      hesap aciyor ve ayni insan grupta iki kez gorunuyor.
+    - owezy.net'te gizlilik politikasi ve destek sayfasi HALA YOK.
 
   ACIK KALANLAR (yeni gorev degil, akilda tutulacaklar):
 
-  KATEGORI RISKI COZULDU (Faz 17, ADR-028): kategori artik aciklamadan
-  tahmin ediliyor. Tamamen bitmedi - harcamalari gercekten tek kategoriye
-  dusen bir grupta kirilim hala tek cubuk, ama o durumda cubuk hic
-  cizilmiyor.
-
-  TAHMIN LISTESI CANLI VERIYLE SINANMADI: anahtarlar (market, fatura, taksi,
-  Migros, Uber...) elle secildi ve yalnizca birim testleriyle dogrulandi.
-  Gercek aciklamalarda ne kadar isabet ettigi ilk kez canlida gorunecek.
-  Isabetsiz cikarsa cozum listeyi buyutmek olmayabilir - yaygin kelimelerle
-  cakisan anahtar, olmayan anahtardan kotudur.
+  KATEGORI TAHMIN LISTESI CANLI VERIYLE SINANMADI: anahtarlar elle secildi
+  ve yalnizca birim testleriyle dogrulandi. Isabetsiz cikarsa cozum listeyi
+  buyutmek olmayabilir - yaygin kelimelerle cakisan anahtar, olmayan
+  anahtardan kotudur.
 
   FIS TASARIMI CANLIDA GOZLE BAKILMADI: butun dogrulama E2E'nin urettigi
-  gruplarda ve ekran goruntusuyle yapildi. Gercek bir grupta cok aylik
-  katlama ve uzun aciklamalarin noktali ayracla nasil durdugu ilk kez orada
-  gorunecek.
+  gruplarda ve ekran goruntusuyle yapildi.
 
-  FOTOGRAF EKLEME: Cloudflare'e gecildi, karar artik verilebilir. Karar
-  verildiginde fotograf VERITABANINA KONMAYACAK - nesne deposu (Vercel Blob
-  ya da Cloudflare R2), veritabani yalnizca anahtar/boyut/tip tutar
-  (~100 bayt/fotograf). Gerekce ve sayilar konusuldu; bytea'ya koymak
-  yedekleri ve baglanti limitini vurur.
+  FOTOGRAF EKLEME: karar verilebilir durumda. Fotograf VERITABANINA
+  KONMAYACAK - nesne deposu (Vercel Blob ya da Cloudflare R2), veritabani
+  yalnizca anahtar/boyut/tip tutar.
 
 Status:
-  Calisma agaci temiz, push edilmemis commit yok. main = origin/main.
+  COMMIT EDILMEMIS DEGISIKLIK VAR (Faz 18.2 + dokumanlar). Kod commit'i
+  oldugu icin PUSH AYRICA SORULACAK.
+
   Faz 18.1 canlida (b6643ca).
 
   CANLIDA: Faz 15, 16 ve 17 ile bagimlilik bakiminin tamami.

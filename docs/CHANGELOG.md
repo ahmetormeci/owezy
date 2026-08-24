@@ -8,6 +8,41 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (7)
+
+### Mobil iskelet ayakta (Faz 18.2)
+- **`mobile/` açıldı**: Expo SDK 57, expo-router, `@clerk/clerk-expo` 2.20,
+  `expo-secure-store`. Bundle ID / paket adı **`net.owezy.app`** (kalıcı).
+- **Oturum belirteci Keychain'de** (`expo-secure-store`), AsyncStorage'da
+  değil — orası düz metin.
+- **Giriş ekranı kendi ekranımız**: Clerk'in Expo tarafında web'deki
+  `<SignIn />` dengi yok. E-posta + doğrulama kodu ile; development
+  örneğinin `+clerk_test` kullanıcıları ve 424242 kodu burada da çalışıyor.
+- **ADR-029'un dayanağı ölçüldü.** `src/lib/money.ts` mobil ekranda import
+  ediliyor ve iOS paketinin **içinde doğrulandı** (`expo export
+  --no-bytecode` çıktısında `formatBasisPoints`, `DEFAULT_LOCALE`, `₺`).
+  Saf modüllerin kopyalanmadan kullanılabildiği artık varsayım değil.
+- **Henüz ölçülmedi:** `formatMoney` `Intl.NumberFormat` kullanıyor ve
+  Hermes'in davranışı çalışan uygulamada görülmedi — iOS Simulator
+  runtime'ı kurulu değil.
+- **Kök doğrulama korundu**: `tsconfig.json` ve `eslint.config.mjs`
+  `mobile/`'ı dışlıyor; olmasaydı `tsc` ve `lint` React Native
+  dosyalarını Next'in ayarlarıyla derlemeye çalışıp patlardı.
+  `.gitignore`'daki `.env*` kalıbı `mobile/.env.local.example`'ı da
+  yakalıyordu; o dosya sır içermiyor ve commit edilmek zorunda.
+
+### Sign in with Apple: eklenmeyecek (şimdilik)
+- Clerk'te **e-posta ile girişin açık olduğu doğrulandı**, yani Guideline
+  4.8'in istediği alternatif mevcut. Risk sıfır değil ama reddedilmenin
+  bedeli bir tur; şimdi eklemenin bedeli **her kullanıcı için kalıcı çift
+  hesap riski** (Hide My Email adresi Google adresiyle eşleşmiyor).
+
+### ADR-031'e sıralama düzeltmesi
+- Clerk'teki "kullanıcılar hesabını silebilir" anahtarı **şu an açık** ve
+  silme uçtan uca çalışıyor. ADR-031'in "kapalı tutulacak" ifadesi **son
+  durumu** tarif ediyor: anahtar `DELETE /api/v1/me` yayına girene kadar
+  açık kalmalı, yoksa çalışan tek silme yolu kaldırılmış olur.
+
 ## 2026-08-24 (6)
 
 ### API'nin iki eksik ucu (Faz 18.1)

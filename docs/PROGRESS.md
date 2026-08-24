@@ -713,7 +713,7 @@ En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi �
 |---|---|---|
 | 18.0 | **DONE** | API envanteri + Bearer sözleşmesinin ölçülmesi ve teste bağlanması |
 | 18.1 | **DONE** | Eksik iki uç: `GET /groups/[groupId]` ve tek harcamanın `GET`'i |
-| 18.2 | Sırada | `mobile/` Expo iskeleti + Clerk oturumu |
+| 18.2 | **DONE** | `mobile/` Expo iskeleti + Clerk oturumu |
 | 18.3 | Sırada | Grup listesi ekranı — ilk dikey dilim |
 | 18.4 | Sırada | Fiş ekranı |
 | 18.5 | Sırada | Satır içi harcama girişi |
@@ -730,7 +730,26 @@ tarafta aynı veri için iki ayrı çözümleyici yazmak demekti.
 
 **Platform sırası (ADR-030):** önce iOS, Android sonra.
 
-**Test:** 518 birim / 36 E2E.
+**18.2 ne kuruldu:** Expo SDK 57 + expo-router + `@clerk/clerk-expo` 2.20,
+oturum belirteci `expo-secure-store`'da (Keychain). Giriş ekranı e-posta +
+doğrulama kodu — Clerk'in Expo tarafında web'deki `<SignIn />` dengi yok,
+kancalarla kendimiz kurduk. Bundle ID / paket adı: `net.owezy.app`.
+
+**ADR-029'un dayanağı ölçüldü.** "Saf modüller olduğu gibi kullanılıyor"
+varsayımdı; artık değil. `src/lib/money.ts` mobil ekranda import ediliyor ve
+iOS paketinin içinde **doğrulandı**: `expo export --no-bytecode` çıktısında
+`formatBasisPoints`, `DEFAULT_LOCALE` ve `\u20ba` (₺) var. Metro depo kökünü
+izliyor (`watchFolders`) ve `@/` takma adını tsconfig'ten çözüyor.
+
+**HENÜZ ÖLÇÜLMEDİ:** `formatMoney` `Intl.NumberFormat` kullanıyor ve Hermes'in
+Intl davranışı **çalışan uygulamada** görülmedi — iOS Simulator runtime'ı
+kurulu değil. Paket doğru, çıktı henüz gözle görülmedi.
+
+**Bilinen boşluk:** CI mobil tarafı doğrulamıyor. Kök CI `npm ci` + tsc + lint
+koşuyor ve `mobile/` bağımlılıklarını kurmuyor. Tek ekranı olan bir uygulama
+için CI'a ikinci kurulum adımı eklemek erken; ekran sayısı artınca dönülecek.
+
+**Test:** 518 birim / 36 E2E. Mobil tarafın otomatik testi yok (18.2).
 
 ---
 

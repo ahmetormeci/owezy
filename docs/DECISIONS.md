@@ -550,6 +550,13 @@ yaptığı da zaten bu.
 **Geri alma penceresi YOK.** Clerk'te silme anında ve geri alınamaz; bizde
 30 günlük bir pencere kurmak, orada olmayan bir şeyi taklit etmek olurdu.
 
+**SIRALAMA — 2026-08-24 eki:** Clerk panelindeki "kullanıcılar hesabını
+silebilir" anahtarının **şu an açık** olduğu doğrulandı, yani silme bugün uçtan
+uca çalışıyor. Yukarıdaki "kapalı tutulacak" ifadesi **son durumu** tarif
+ediyor, geçişi değil: anahtar `DELETE /api/v1/me` yayına girene kadar **açık
+kalmalı**. Şimdi kapatmak, çalışan tek silme yolunu kaldırıp yerine hiçbir şey
+koymamak olurdu.
+
 **Bu ADR politikayı bağlıyor, uygulamayı değil.** Onay ekranı, uyarı metni ve
 testler yazılırken tasarım ayrıca konuşulacak.
 
