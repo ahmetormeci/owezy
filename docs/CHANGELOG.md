@@ -8,6 +8,25 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (10)
+
+### Satır içi harcama girişi mobilde (Faz 18.5)
+- **Fişin son satırı artık bir giriş.** Eşit bölüşüm, ödeyen sen, tarih
+  bugün; kategori gönderilmiyor, sunucu açıklamadan tahmin ediyor.
+  Varsayımlar gizlenmiyor, yazmaya başlayınca altta yazıyor.
+- **Toast yok:** hatalar satırın altında, başarının teyidi satırın fişte
+  belirmesi. React Native'de toast, modal bir `Alert` ya da ek paket
+  demekti.
+- **Klavye:** `KeyboardAvoidingView`, simülatörde yazılım klavyesi
+  açılarak doğrulandı.
+- **`GET /api/v1/me` grup ekranına eklendi** — `paidById` iç kimliğimizi
+  istiyor.
+- **`useApiGet` artık tazelemede veriyi koruyor.** Harcama eklendikten
+  sonra özet yeniden çekilirken bütün ekranın spinner'a düşmesi,
+  uygulamanın en sık yapılan işinin ardından sayfayı kaybettirirdi.
+- Doğrulama simülatörde uçtan uca: boş grupta ilk harcama, kategori
+  tahmininin ipucuyla aynı kaydedilmesi, doğrulama hatası, klavye.
+
 ## 2026-08-24 (9)
 
 ### Fiş ekranı mobilde (Faz 18.4)

@@ -15,57 +15,62 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (14)
+Updated: 2026-08-24 (15)
 
 Current task:
-  FAZ 18 - MOBIL UYGULAMA. 18.0-18.4 bitti. Oncelik iOS (ADR-030);
-  Android bilerek ertelendi.
+  FAZ 18 - MOBIL UYGULAMA. 18.0-18.5 BITTI, yani fazin planlanan butun
+  adimlari tamam. Oncelik iOS (ADR-030); Android bilerek ertelendi.
 
 Hemen sonraki adim:
-  18.5 - SATIR ICI HARCAMA GIRISI. Web'de fisin altinda duran, aciklama +
-  tutar alan ve kategoriyi ACIKLAMADAN TAHMIN EDEN satir (ADR-028).
-  Uc hazir: POST /api/v1/groups/[groupId]/expenses.
-  DIKKAT: web'de bu is 16.3'te ERISILEBILIRLIK CAKISMASI yaratmisti -
-  "Aciklama"/"Tutar" adlari sayfadaki mevcut adlarla cakisti ve TAM E2E
-  kosusunda 19 test dustu. Mobilde E2E yok ama ders ayni: yeni girdinin
-  adi ekranda benzersiz olmali.
+  YOK - KULLANICIDAN GOREV BEKLENIYOR.
+  Faz 18 planinda kalan is yok. PROGRESS.md'deki aday listesi bir plan
+  DEGIL, secenek listesidir - oradan bir sey kendiliginden baslatilmaz.
 
-  18.4 NE YAPTI - FIS EKRANI:
-    mobile/components/receipt.tsx  Receipt, ReceiptLine, Cap,
-                                   ReceiptPerforation, ReceiptDoubleRule,
-                                   TornEdge
-    Ekranda: harcama satirlari (aciklama · noktali ayrac · tutar, altinda
-    tarih · kategori · kim odedi), ay perforasyonlari, ay ara toplamlari,
-    cift cizgi + uc toplam, yirtik kenar. Gecmis aylar KATLI.
+  MOBILDE BUGUN NE VAR:
+    giris (e-posta + kod), grup listesi / tek grupta dogrudan gruba
+    yonlendirme, fis ekrani (harcama satirlari, ay perforasyonlari, ay
+    ara toplamlari, sayfalama, cift cizgi + toplamlar, yirtik kenar),
+    satir ici harcama girisi.
 
-  TEKNIKLER OLCULDU (tek kullanimlik deneme ekraniyla, silindi):
-    noktali ayrac : tekrarlanan "·" + ellipsizeMode="clip"
-    perfore       : borderStyle "dashed"
-    yirtik kenar  : border ucgen hilesi
-    react-native-svg GEREKMEDI.
-    IKI TUZAK: iOS'ta borderStyle "dotted" SESSIZCE DUZ CIZGIYE donuyor
-    ("dashed" donmuyor); React Native'in textTransform'u dil bilmiyor ve
-    Turkcede "SENIN" uretiyordu - buyuk harf artik
-    toLocaleUpperCase(locale) ile. Ayrinti CONVENTIONS.md "Mobil".
+  MOBILDE HENUZ YOK (bilincli kapsam disi, 18.x'te not edildi):
+    - harcama duzenleme/silme
+    - odesme plani ("hesap boyle kapanir") ve odesme kaydetme
+    - grup olusturma / uye davet etme / uye yonetimi
+    - bildirimler
+    - harcama basina "senin payin"
+    - dil secimi (cihaz dili okunuyor, kullanici degistiremiyor)
+    - marka isareti (web'de SVG; RN'de react-native-svg gerekirdi)
 
-  KAGIT GRENI YOK: web'de SVG filtresi, RN'de karsiligi PNG dosemek olurdu
-  ve %5 opaklikta bir doku telefonda gorunmuyor.
+  MOBILIN BILINEN ACIKLARI:
+    - CI mobil tarafi HIC dogrulamiyor (kok CI mobile/ bagimliliklarini
+      kurmuyor). Ekran sayisi artti, artik bakilmaya deger.
+    - Mobilin otomatik testi YOK. Dogrulama simulatorde elle yapiliyor.
+    - @clerk/clerk-expo DEPRECATED (asagida).
 
-  SAYFALAMA VAR VE TEST EDILDI: bir ayda 20'den fazla harcama varsa "daha
-  fazla" cikiyor. ARA TOPLAM HER ZAMAN AYIN GERCEGINI SOYLUYOR ("25
-  EXPENSES") - 20 satir gosterirken toplami 20 satira gore yazmak,
-  kendiyle celisen bir fis birakirdi.
+  18.5 NE YAPTI:
+    mobile/components/expense-composer.tsx - fisin son satiri bir giris.
+    Esit bolusum, odeyen sen, tarih bugun; KATEGORI GONDERILMIYOR,
+    sunucu aciklamadan tahmin ediyor (ADR-028). Varsayimlar gizlenmiyor.
+    TOAST YOK: hatalar satirin ALTINDA, basarinin teyidi satirin fiste
+    belirmesi. RN'de toast, modal Alert ya da ek paket demekti.
+    KLAVYE: KeyboardAvoidingView, simulatorde yazilim klavyesi acilarak
+    dogrulandi.
+    GET /api/v1/me eklendi - paidById ic kimligimizi istiyor.
+    useApiGet ARTIK TAZELEMEDE VERIYI KORUYOR: ayni adres yeniden
+    cekilirken eldeki veri duruyor, yoksa harcama ekledikten sonra butun
+    ekran spinner'a duserdi.
 
-  KAPSAM DISI BIRAKILANLAR (bilincli): odesme plani, harcama basina
-  "senin payin" (/api/v1/me gerektiriyordu, bakiye zaten en ustte).
+  SIMULATOR NOTU: donanim klavyesi ayarini test icin gecici kapatip GERI
+  ACTIM (defaults write com.apple.iphonesimulator ConnectHardwareKeyboard).
+  Yazilim klavyesini gormek gerekirse ayni komut -bool false ile.
 
-  TEST VERISI (gelistirme veritabaninda su an duruyor):
-    testuser1'in iki grubu: "Ev" ve "Bodrum tatili" (ikincisi BOS - bos
-    fis durumunu gormek icin). Ev'de iki uye ve 28 harcama:
-    2026-08(1), 2026-07(2), 2026-06(25 - sayfalama testi icin).
+  TEST VERISI (gelistirme veritabaninda duruyor):
+    testuser1'in iki grubu. "Ev": iki uye, 28 harcama
+    (2026-08/07/06, sonuncusunda 25 tane - sayfalama testi).
+    "Bodrum tatili": tek uye, bir harcama (18.5'te eklendi).
     Uretme yolu: playwright chromium + e2e/.auth/owner.json + sayfa
-    icinden fetch (storage state'teki __session kisa omurlu, ciplak
-    request context ile 401 doner; gercek tarayicida Clerk taziliyor).
+    icinden fetch (storage state'teki __session kisa omurlu; ciplak
+    request context ile 401 doner, gercek tarayicida Clerk taziliyor).
 
   BEKLEYEN IS - @clerk/expo GECISI (KULLANICI ONAYLADI, YAPILAMADI):
     Gecis DENENDI ve GERI ALINDI. Sebep bizde degil: @clerk/expo'nun

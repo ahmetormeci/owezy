@@ -32,19 +32,42 @@ export type ApiResult<T> =
  * React kancasi (useAuth().getToken) ve kanca bir bilesenin disinda cagrilamaz.
  */
 export async function apiGet<T>(path: string, token: string | null): Promise<ApiResult<T>> {
+  return send<T>(path, token, "GET");
+}
+
+/** Oturumlu POST. Govde JSON olarak gonderiliyor. */
+export async function apiPost<T>(
+  path: string,
+  token: string | null,
+  body: unknown,
+): Promise<ApiResult<T>> {
+  return send<T>(path, token, "POST", body);
+}
+
+async function send<T>(
+  path: string,
+  token: string | null,
+  method: "GET" | "POST",
+  body?: unknown,
+): Promise<ApiResult<T>> {
   const response = await fetch(`${apiBaseUrl()}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    method,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 
-  const body: unknown = await response.json().catch(() => null);
+  const payload: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
     const code =
-      body && typeof body === "object" && "code" in body && typeof body.code === "string"
-        ? body.code
+      payload && typeof payload === "object" && "code" in payload && typeof payload.code === "string"
+        ? payload.code
         : "server.unexpected";
     return { ok: false, status: response.status, code };
   }
 
-  return { ok: true, data: body as T };
+  return { ok: true, data: payload as T };
 }

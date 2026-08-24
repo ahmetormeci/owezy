@@ -1,7 +1,16 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate, formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
@@ -9,6 +18,7 @@ import { formatMoney, formatSignedMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../lib/i18n";
 import { useApiClient, useApiGet } from "../../lib/use-api";
 import { useTheme, type Theme } from "../../lib/theme";
+import { ExpenseComposer } from "../../components/expense-composer";
 import {
   Receipt,
   ReceiptDoubleRule,
@@ -49,6 +59,7 @@ type SummaryResponse = {
   byMonth: MonthSlice[];
 };
 type MembersResponse = { members: { userId: string; displayName: string }[] };
+type MeResponse = { user: { id: string } };
 type ExpensesResponse = { expenses: ExpenseItem[]; nextCursor: string | null };
 
 /**
@@ -72,7 +83,7 @@ export default function GroupScreen() {
   const locale = useLocale();
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
-  const get = useApiClient();
+  const { get } = useApiClient();
 
   const group = useApiGet<GroupResponse>(groupId ? `/api/v1/groups/${groupId}` : null);
   const summary = useApiGet<SummaryResponse>(
@@ -81,6 +92,9 @@ export default function GroupScreen() {
   const members = useApiGet<MembersResponse>(
     groupId ? `/api/v1/groups/${groupId}/members` : null,
   );
+  // Harcama eklerken paidById gerekiyor ve o BIZIM ic kimligimiz - Clerk'in
+  // kimligi degil. 18.4'te bu uc gereksizdi, 18.5'te zorunlu oldu.
+  const me = useApiGet<MeResponse>("/api/v1/me");
 
   // Acik ay: ozetin ilk ayi. Harcamalar ANCAK ozet gelince istenebiliyor,
   // cunku hangi ayin acilacagini ozet soyluyor.
@@ -142,6 +156,19 @@ export default function GroupScreen() {
       void loadMonth(openMonth);
     }
   }, [openMonth, months, loadMonth]);
+
+  /**
+   * Harcama eklendikten sonra.
+   *
+   * Ay onbellegi BOSALTILIYOR: acik ay bugunun ayi olmayabilir (fis en yeni
+   * aya aciliyor) ve kullanici az once ekledigi satiri goremezdi. Ozet
+   * yenilenince bugunun ayi en yeni ay olarak gelir ve kendiliginden acilir.
+   * Web'de ayni sey "?month=bugun" adresine giderek yapiliyor (Faz 16.2).
+   */
+  const handleAdded = useCallback(() => {
+    setMonths({});
+    summary.reload();
+  }, [summary]);
 
   const toggleMonth = useCallback(
     (month: string) => {
@@ -224,7 +251,11 @@ export default function GroupScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
-      <ScrollView contentContainerStyle={s.scroll}>
+      <KeyboardAvoidingView
+        style={s.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
         <Receipt>
           <Text style={s.groupName}>{group.state.data.group.name}</Text>
 
@@ -330,6 +361,17 @@ export default function GroupScreen() {
               </View>
             </>
           )}
+          {/* Fisin bir sonraki satiri. Toplamlardan SONRA duruyor: fis once
+              olani anlatir, sonra yenisini bekler. Bos grupta da var - ilk
+              harcamayi eklemenin yolu bu. */}
+          {members.state.kind === "ok" && me.state.kind === "ok" ? (
+            <ExpenseComposer
+              groupId={groupId}
+              memberIds={members.state.data.members.map((member) => member.userId)}
+              currentUserId={me.state.data.user.id}
+              onAdded={handleAdded}
+            />
+          ) : null}
         </Receipt>
 
         <View style={s.footer}>
@@ -345,6 +387,7 @@ export default function GroupScreen() {
           </Pressable>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -354,6 +397,7 @@ function createStyles(theme: Theme) {
     // Zemin fisten bir ton KOYU: kagidin bir yuzeyin uzerinde durdugunu
     // soyleyen sey bu.
     screen: { flex: 1, backgroundColor: theme.surface },
+    flex: { flex: 1 },
     scroll: { padding: 16, paddingBottom: 32 },
     centered: {
       flex: 1,

@@ -33,11 +33,22 @@ import { useTheme, type Theme } from "../lib/theme";
  * (dogrusu "SENİN"). Web'de bu sorun yok cunku CSS text-transform <html lang>
  * degerine bakiyor; mobilde o bilgi yok, biz vermek zorundayiz.
  */
-export function Cap({ children }: { children: string }) {
+export function Cap({
+  children,
+  tone = "muted",
+}: {
+  children: string;
+  /** "onBrand": kobalt bir zeminin uzerinde - gri metin orada okunmuyor. */
+  tone?: "muted" | "onBrand";
+}) {
   const locale = useLocale();
   const theme = useTheme();
   const s = styles(theme);
-  return <Text style={s.cap}>{children.toLocaleUpperCase(locale)}</Text>;
+  return (
+    <Text style={[s.cap, tone === "onBrand" && s.capOnBrand]}>
+      {children.toLocaleUpperCase(locale)}
+    </Text>
+  );
 }
 
 /** Fisin bir satiri: solda metin, sagda tutar, arada noktali ayrac. */
@@ -184,6 +195,7 @@ function styles(theme: Theme) {
     perfRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     dashed: { flex: 1, height: 1, borderTopWidth: 1, borderStyle: "dashed", borderColor: theme.border },
     cap: { fontFamily: "Menlo", fontSize: 11, letterSpacing: 1.6, color: theme.muted },
+    capOnBrand: { color: "#fff" },
 
     doubleRule: { gap: 2 },
     rule: { height: 1, backgroundColor: theme.border },

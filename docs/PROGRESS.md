@@ -697,7 +697,7 @@ ipucu yoksa null), 3'ü `createExpense`'in sınırları.
 
 ---
 
-## Faz 18 — Mobil uygulama · **BAŞLADI**
+## Faz 18 — Mobil uygulama · **BİTTİ**
 
 Projenin baştan beri hedefi. ADR-002 iş mantığını `/api/v1` altına bunun için
 koymuştu; bu faz o kararın karşılığını alıyor.
@@ -716,7 +716,7 @@ En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi �
 | 18.2 | **DONE** | `mobile/` Expo iskeleti + Clerk oturumu |
 | 18.3 | **DONE** | Uygulamanın girişi: 0 / 1 / 2+ grup — ilk dikey dilim |
 | 18.4 | **DONE** | Fiş ekranı |
-| 18.5 | Sırada | Satır içi harcama girişi |
+| 18.5 | **DONE** | Satır içi harcama girişi |
 
 **18.3 — ekran değil, GİRİŞ KARARI.** "Grup listesi ekranı" olarak
 planlanmıştı; yapılmadı. Sebep: `GET /api/v1/groups` bakiye döndürmüyor, yani
@@ -769,6 +769,26 @@ fazla" çıkıyor; ara toplam satırı her zaman **ayın gerçeğini** söylüyo
 
 **Kapsam dışı bırakılanlar:** ödeşme planı, harcama başına "senin payın"
 (`/api/v1/me` gerektiriyordu, bakiye zaten en üstte), satır içi giriş (18.5).
+
+**18.5 — fiş kendi kendine büyüyor.** Kâğıdın son satırı bir giriş:
+`+ Ne aldın? ······ 0,00`. Yalnızca en yaygın durum (eşit bölüşüm, ödeyen
+sensin, tarih bugün) ve kategori **gönderilmiyor** — sunucu açıklamadan tahmin
+ediyor (ADR-028). Varsayımlar gizlenmiyor: yazmaya başlayınca altta
+"Konaklama · Eşit bölünür · sen ödedin · bugün" beliriyor.
+
+**Mobilin kendi soruları ve verilen cevaplar:**
+- **Toast yok.** Web `sonner` kullanıyor; RN'de karşılığı modal bir `Alert`
+  ya da ek paket. Hatalar **satırın altında**, hatanın olduğu yere yakın.
+  Başarıda ayrı bildirim yok — eklenen satırın fişte belirmesi teyidin
+  kendisi.
+- **Klavye.** `KeyboardAvoidingView`; simülatörde yazılım klavyesi açılarak
+  doğrulandı, giriş satırı klavyenin üstünde kalıyor.
+- **`/api/v1/me` eklendi.** `paidById` bizim iç kimliğimizi istiyor.
+  Sunucuyu "ödeyeni varsayılan olarak çağıran yap" diye değiştirmek daha
+  kolaydı ama açık olan doğrusu ve o değişiklik web'i de etkilerdi.
+- **Tazelemede ekran kaybolmuyor.** Harcama eklenince özet yeniden çekiliyor;
+  `useApiGet` artık **aynı adresin** tazelenmesinde eldeki veriyi koruyor.
+  Yoksa en sık yapılan işin ardından sayfa spinner'a düşerdi.
 
 **18.4 için bilinen zorluk:** React Native'de CSS yok. Fişin noktalı ayracı
 (`border-bottom: 1px dotted`), perfore çizgisi ve yırtık kenarı web'deki
