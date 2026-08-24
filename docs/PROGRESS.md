@@ -767,6 +767,18 @@ kural [CONVENTIONS.md](CONVENTIONS.md) "Mobil" bölümüne yazıldı. **Bu hatay
 hiçbir statik kontrol göstermedi** — tsc temizdi, paket doğru derleniyordu;
 yalnızca uygulamayı açıp giriş yapınca çıktı.
 
+**`@clerk/expo` GEÇİŞİ DENENDİ VE ŞU AN YAPILAMIYOR.** Sebep bizde değil:
+`@clerk/expo`'nun yayınlanmış her sürümü (4.5.1, 4.5.2, 4.5.3 — `latest` dahil)
+dolaylı olarak **`@clerk/shared@^4.30.0`** istiyor ama npm'deki en yeni sürüm
+**4.29.3**. Yani paket kurulamıyor. Bir sürüm sabitlemesiyle aşılmıyor: zincir
+`@clerk/react` ve `@clerk/clerk-js` üzerinden de aynı yere çıkıyor, yani
+kırık bir yayın penceresinin etrafına büyüyen bir sabitleme listesi gerekirdi —
+auth katmanında yapılacak şey değil. Denendi, geri alındı, ağaç temiz.
+
+**TEKRAR DENEME KOŞULU:** `npm view @clerk/shared version` **4.30.0** ya da
+üstünü gösterdiğinde geçiş tek komutla yapılabilir. Kontrol tek satır:
+`npm view @clerk/shared version`.
+
 **BULUNAN SORUN — `@clerk/clerk-expo` DEPRECATED.** Uygulama açılışta uyarı
 basıyor: paket bırakılmış, yerine `@clerk/expo` geçmiş. Bu kozmetik değil,
 sürüm ayrışması: web (`@clerk/nextjs@7.5.22`) `@clerk/react@^6` yani **Core 3**

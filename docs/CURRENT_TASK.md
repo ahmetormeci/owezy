@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (11)
+Updated: 2026-08-24 (12)
 
 Current task:
   FAZ 18 - MOBIL UYGULAMA. 18.0, 18.1 ve 18.2 bitti. Onceligi iOS
@@ -24,7 +24,22 @@ Current task:
 Hemen sonraki adim:
   18.3 - Grup listesi ekrani (ilk dikey dilim). GET /api/v1/groups zaten var.
 
-  ONCE KARARA BAGLANMALI - 18.3'E GIRMEDEN:
+  BEKLEYEN IS - @clerk/expo GECISI (KULLANICI ONAYLADI, YAPILAMADI):
+    Gecis DENENDI ve GERI ALINDI. Sebep bizde degil: @clerk/expo'nun
+    yayinlanmis her surumu (4.5.1 / 4.5.2 / 4.5.3, latest dahil) dolayli
+    olarak @clerk/shared@^4.30.0 istiyor ama npm'deki en yeni surum
+    4.29.3. Surum sabitlemesiyle asilmiyor - zincir @clerk/react ve
+    @clerk/clerk-js uzerinden de ayni yere cikiyor, yani kirik bir yayin
+    penceresinin etrafina buyuyen bir override listesi gerekirdi.
+    TEKRAR DENEME KOSULU - tek satir:
+      npm view @clerk/shared version
+    4.30.0 ya da ustunu gosterdiginde:
+      cd mobile && npm uninstall @clerk/clerk-expo && npm install @clerk/expo
+      sonra 4 dosyada import yolunu degistir (_layout, sign-in, index,
+      token-cache) ve simulatorde giris yaparak dogrula.
+    O ana kadar @clerk/clerk-expo@2.20.0 CALISIYOR, yalnizca uyari basiyor.
+
+  ESKI NOT (gecerliligini koruyor):
     @clerk/clerk-expo DEPRECATED. Uygulama acilista uyari basiyor.
     Onemi kozmetik degil, SURUM AYRISMASI:
       web    @clerk/nextjs@7.5.22 -> @clerk/react@^6      = Core 3

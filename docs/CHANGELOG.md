@@ -36,6 +36,12 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
   (`Maximum update depth exceeded`) ve giriş sonrası ekranı kilitliyordu.
   Hiçbir statik kontrol göstermedi — tsc temizdi. Kural CONVENTIONS.md'ye
   "Mobil" başlığı altına yazıldı.
+- **`@clerk/expo` geçişi denendi, şu an mümkün değil.** Paketin
+  yayınlanmış her sürümü `@clerk/shared@^4.30.0` istiyor; npm'deki en
+  yeni sürüm 4.29.3. Sürüm sabitlemesiyle de aşılmıyor (zincir
+  `@clerk/react` ve `@clerk/clerk-js` üzerinden aynı yere çıkıyor).
+  Denendi ve geri alındı. Koşul sağlanınca tekrar denenecek:
+  `npm view @clerk/shared version` 4.30.0'ı gösterdiğinde.
 - **Bulundu: `@clerk/clerk-expo` deprecated.** Yerine `@clerk/expo`.
   Önemi sürüm ayrışması: web Core 3 (`@clerk/react@^6`), kurduğumuz
   paket Core 2 (`@clerk/clerk-js@5`). Geçiş kararı bekliyor.
