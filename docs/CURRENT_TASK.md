@@ -15,11 +15,11 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (4)
+Updated: 2026-08-24 (5)
 
 Current task:
-  YOK. Faz 17 (kategori tahmini) bitti ve dogrulandi.
-  Kullanici yeni gorev vermedi.
+  YOK. Faz 17'den sonra bagimlilik bakimi yapildi: npm audit fix ve
+  Next 16.2.11 -> 16.3.2. Kullanici yeni gorev vermedi.
 
 Hemen sonraki adim:
   Kullanicinin secmesi bekleniyor.
@@ -55,8 +55,13 @@ Status:
   Faz 15 canlida: https://owezy.net, Clerk production (pk_live_),
   GitHub + Google kendi OAuth uygulamalarimizla, webhook 200 donuyor.
 
-  Testler: 510 birim / 35 E2E. Faz 17 sonrasi hepsi kosuldu ve temiz:
-  510 birim, tsc, lint ve TAM E2E KOSUSU - 35/35, 6,4 dakika.
+  Testler: 510 birim / 35 E2E. Next 16.3.2 sonrasi hepsi kosuldu:
+  510 birim, tsc, lint, TAM E2E ve ayrica "npm run build".
+
+  DERLEME AYRICA KOSULDU cunku E2E "next dev" kullaniyor, Vercel ise
+  "next build" - cerceve yukseltmesinde ikisi ayri ayri kirilabilir.
+  24 rotanin tamami dinamik (f) cikti; Clerk kullanan bir uygulamada
+  dogru olan bu, hicbir sayfa yanlislikla statik uretime kaymamis.
 
   TAM KOSU SART - OLCULDU: 16.3'te hedefli kosular temiz gorunurken tam kosu
   19 test dusurdu. Sebep satir ici girisin erisilebilir adlarinin (Aciklama /

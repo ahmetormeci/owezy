@@ -706,6 +706,8 @@ ipucu yoksa null), 3'ü `createExpense`'in sınırları.
 | Migration'ların havuzsuz bağlantıya alınması (PgBouncer'da asılı kalan advisory lock) | `1f68d5c` |
 | GitHub Actions CI: `main`'e giden her değişiklikte tip kontrolü, lint ve birim testleri (E2E hariç, gerekçesi ADR-018) | `09d0e91` |
 | Talimat dosyalarındaki tekrarların temizlenmesi, PROJECT.md'deki bayat bilgiler (tek dil, eski test sayıları) ve hedefli E2E koşusu tarifi | `f700fbe` |
+| `npm audit fix`: 12 → 6 açık, 19 yama seviyesi güncelleme (`package.json` değişmedi) | `430e378` |
+| Next 16.2.11 → 16.3.2: kalan `postcss` ve `sharp` açıkları kapandı, 6 → 3 | *(bu commit)* |
 
 ---
 
@@ -716,7 +718,8 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Next 16.2.11 → 16.3.2** | Kalan `postcss` ve `sharp` açıklarını kapatır; `--force` ile değil bilinçli yükseltme olmalı |
+| **Fişin canlıda gözle görülmesi** | Uzun açıklamalarda noktalı ayraç ve çok aylı katlama yalnızca yapay veriyle sınandı |
+| **Mobil uygulama** | Projenin baştan beri hedefi; `/api/v1` mimarisi bunun için kuruldu |
 
 ## Bilinen teknik borç
 
@@ -724,22 +727,30 @@ karar vermemiştir.
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi
-- **`npm audit`: 6 yüksek açık** (önce 12'ydi). `npm audit fix` uygulandı:
+- **`next.config.ts`'teki `disableLogger: true` ölü olabilir.** Derlemede
+  Sentry uyarı veriyor: seçenek kullanımdan kaldırılmış, yerine
+  `webpack.treeshake.removeDebugLogging` öneriliyor **ve ikisi de
+  Turbopack'te desteklenmiyor**. Next 16 varsayılan olarak Turbopack
+  kullandığı için bu satır muhtemelen hiçbir şey yapmıyor. Dokunulmadı:
+  Sentry'nin debug loglarının bundle'dan gerçekten çıkıp çıkmadığını
+  ölçmeden değiştirmek, sessizce bundle büyütebilir. Ölçülüp karar verilmeli
+- **`npm audit`: 3 yüksek açık** (önce 12'ydi). Önce `npm audit fix`, sonra
+  Next 16.3.2 yükseltmesi uygulandı. `npm audit fix` ile kapananlar:
   `brace-expansion`, `fast-uri`, `js-yaml`, `find-my-way`, `valibot` ve
   Prisma'nın alt paketleri kapandı — 19 yama seviyesi güncelleme, hepsi
   beyan edilen aralık içinde, `package.json` değişmedi.
 
-  **Kalan altısı bilerek açık.** `npm audit fix --force` iki şey yapmak
-  istiyor: (1) `deepmerge-ts` ve `valibot` için Prisma'yı **7.9.1'den
-  6.12.0'a düşürmek** — majör geri gidiş, şema ve adapter 7 için yazılmış;
-  (2) `postcss` ve `sharp` için Next'i 16.3.2'ye çıkarmak. İkincisi
-  mantıklı ama `--force` ile değil, bilinçli bir yükseltme olarak
-  yapılmalı — ayrı bir iş.
+  **Next 16.3.2 ile `postcss` ve `sharp` de kapandı** (sharp 0.34.5 →
+  0.35.3, postcss 8.5.23/8.5.26). İkisi de zaten çalışan uygulamaya
+  ulaşmıyordu — `sharp` yalnızca `next/image` üzerinden çağrılıyor ve
+  `next/image` kod tabanında hiç kullanılmıyor, `postcss` derleme
+  zamanında çalışıyor — ama artık yamalılar.
 
-  **Hiçbiri çalışan uygulamaya ulaşmıyor** (Faz 14'te incelendi, hâlâ
-  geçerli): `sharp` yalnızca `next/image` üzerinden çağrılıyor ve
-  `next/image` kod tabanında hiç kullanılmıyor; `postcss` derleme
-  zamanında çalışıyor.
+  **Kalan üçü bilerek açık.** Üçü de aynı şeyi istiyor: `deepmerge-ts` ve
+  `valibot` için Prisma'yı **7.9.1'den 6.12.0'a düşürmek**. Majör bir geri
+  gidiş; şema, `prisma.config.ts` ve adapter'ın tamamı 7 için yazılmış. Bir
+  derleme aracındaki DoS açığını kapatmak için çalışan uygulamayı kırmak
+  takas değil.
 
   **Not:** "package-lock.json yazmaya kapalı" engeli sanıldığı kadar güçlü
   değilmiş — `.claude/settings.json`'daki kural Claude'un dosya düzenleme

@@ -8,6 +8,20 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (4)
+
+### Bağımlılıklar ve Next 16.3.2
+- **`npm audit`: 12 → 3 açık.** Önce `npm audit fix` (19 yama seviyesi
+  güncelleme, `package.json` değişmedi), sonra **Next 16.2.11 → 16.3.2**.
+- **Yükseltme `--force` ile değil, bilinçli yapıldı.** `npm audit fix --force`
+  aynı açıkları kapatmayı öneriyordu ama yanında Prisma'yı 6.12.0'a
+  düşürüyordu — majör bir geri gidiş.
+- **Kalan üç açık bilerek duruyor:** üçü de Prisma'nın düşürülmesini istiyor.
+  Hiçbiri çalışan uygulamaya ulaşmıyor.
+- **Sürüm sabitlemesi korundu.** `npm install` başına `^` eklemişti; bu repo
+  Next'i tam sürümle sabitliyor, çünkü CI ile yerelin aynı sürümde olması
+  bilinçli bir karar.
+
 ## 2026-08-24 (3)
 
 ### Kategori artık açıklamadan anlaşılıyor (Faz 17)
