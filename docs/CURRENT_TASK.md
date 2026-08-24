@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (7)
+Updated: 2026-08-24 (8)
 
 Current task:
   FAZ 18 - MOBIL UYGULAMA. 18.0 (API envanteri + Bearer sozlesmesi) ve 18.1
@@ -57,10 +57,29 @@ Hemen sonraki adim:
       uyelige bakiyor). IKINCI KEZ KAYIT OLUNMAYACAK.
     - Android BILEREK ERTELENDI. Play'in 14 gunluk kapali test kurali bir
       takvim kurali; o tarafa donulen gunden en az 2-3 hafta sonra yayin.
-    - KODU DEGISTIRECEK, HENUZ KARAR VERILMEDI (ADR-030'da yazili):
-        * uygulama icinden hesap silme (App Store Guideline 5.1.1)
-        * Sign in with Apple (Guideline 4.8)
-      Ikisi de 18.2'ye girmeden konusulmali.
+    - HESAP SILME KARARA BAGLANDI (ADR-031), HENUZ UYGULANMADI:
+        DELETE /api/v1/me yazilacak, Clerk'in kendi silme dugmesi KAPALI
+        kalacak, borcu olan da silebilecek (uyari gosterilir, engellenmez).
+        Isin zor kismi ZATEN YAZILI: markUserDeletedFromClerk
+        (src/lib/clerk-sync.ts) anonimlestirme + sahiplik devri + uyelik
+        kapatmayi yapiyor ve user.deleted webhook'una bagli. Eksik olan
+        yalnizca TETIK.
+        Sira: once Clerk'te sil, sonra markUserDeletedFromClerk'i cagir.
+        Ikinci adim duserse webhook ayni isi yapiyor (idempotent).
+
+    - SIGN IN WITH APPLE: HENUZ KARAR VERILMEDI. Karar iki Clerk ayarina
+      bagli ve o ayarlar PANELDE, kullanicinin bakmasi gerekiyor:
+        1. E-posta ile giris ACIK MI?  -> aciksa Guideline 4.8'i muhtemelen
+           zaten karsiliyoruz; kapaliysa Google/GitHub tek yol demektir ve
+           kural kesin devreye girer.
+        2. "Kullanicilar hesabini silebilir" anahtari acik mi? (ADR-031
+           geregi KAPALI olmali - kendi ucumuzu kullanacagiz.)
+      ASIL RISK UYUMLULUK DEGIL, CIFT HESAP: Apple'in "Hide My Email"i
+      xxxx@privaterelay.appleid.com veriyor. Google ile kaydolmus biri sonra
+      Apple ile girerse e-postalar eslesmez, Clerk IKINCI hesap acar ve
+      Owezy'de ayni insan grupta iki kez gorunur, bakiyesi ikiye bolunur.
+      Bir bolusme uygulamasinda bu kozmetik degil, YANLIS PARA. Karar
+      "eklensin mi" degil, "eklenirse cift hesap politikasi ne olacak".
     - owezy.net'te gizlilik politikasi ve destek sayfasi YOK; iki magaza da
       URL istiyor. Web isi, mobil kodu beklemiyor.
 
@@ -89,8 +108,8 @@ Hemen sonraki adim:
   yedekleri ve baglanti limitini vurur.
 
 Status:
-  COMMIT EDILMEMIS DEGISIKLIK VAR (Faz 18.1 + dokumanlar). Kullanicinin
-  "commitle" demesi bekleniyor. Kod commit'i oldugu icin PUSH DE SORULACAK.
+  Calisma agaci temiz, push edilmemis commit yok. main = origin/main.
+  Faz 18.1 canlida (b6643ca).
 
   CANLIDA: Faz 15, 16 ve 17 ile bagimlilik bakiminin tamami.
   https://owezy.net - Clerk production (pk_live_), GitHub + Google kendi

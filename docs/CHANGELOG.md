@@ -21,6 +21,16 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
   aynı — farklı bir şekil, mobil tarafta iki ayrı çözümleyici demekti.
 - Birim testi 510 → 518.
 
+### Hesap silme karara bağlandı (ADR-031)
+- **Silme uygulama içinden, kendi ucumuzla** (`DELETE /api/v1/me`);
+  Clerk'in kendi silme düğmesi kapalı kalacak. **Borcu olan da
+  silebilecek** — uyarı gösterilir, engellenmez.
+- İşin zor kısmının **zaten yazılı olduğu görüldü**: webhook'a bağlı
+  `markUserDeletedFromClerk` anonimleştirme, sahiplik devri, üyelik
+  kapatma ve grup arşivlemeyi yapıyor; bakiyelere dokunmuyor. Eksik olan
+  tek şey tetik.
+- Henüz uygulanmadı.
+
 ### Yayınlama kararı
 - **Önce iOS, Android sonra** (ADR-030). Gerekçe: Google'ın kişisel
   hesaplara dayattığı "kapalı testte 14 gün" kuralı bir takvim kuralı,

@@ -500,6 +500,61 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-031 — Hesap silme uygulama içinden, kendi ucumuzla; borç engel değil
+**Tarih:** 2026-08-24 · **Durum:** Kabul edildi — **HENÜZ UYGULANMADI**
+
+**Karar:** Kullanıcı hesabını uygulama içinden silebilecek. Silme **kendi
+ucumuzdan** yapılacak (`DELETE /api/v1/me`), Clerk'in kendi silme düğmesi
+**kapalı** tutulacak. **Borcu ya da alacağı olan da silebilecek**; ekranda
+uyarı gösterilir ama engellenmez.
+
+**Neden gerekti:** App Store Guideline 5.1.1, hesap açılabilen uygulamalarda
+uygulama içi hesap silmeyi zorunlu kılıyor (ADR-030).
+
+**Zaten var olanın envanteri — yeniden yazılmayacak:** İşin zor kısmı
+`markUserDeletedFromClerk` (`src/lib/clerk-sync.ts`) içinde yazılı ve
+`user.deleted` webhook'una bağlı. Kişisel veriyi temizliyor (e-posta
+`deleted+<id>@deleted.invalid`, ad "Silinmiş kullanıcı", avatar null),
+`deletedAt` işaretliyor, `clerkId`'yi koruyor, grup sahibiyse sahipliği en
+eski aktif üyeye devrediyor, üyelikleri kapatıyor, gruptaki son kişiyse grubu
+arşivliyor. Harcama ve ödeme kayıtlarına dokunmuyor — **bakiyeler bozulmuyor.**
+Eksik olan tek şey **tetik**: kullanıcının basacağı düğme.
+
+**Neden kendi ucumuz, Clerk'in hazır akışı değil:**
+1. **Mobil.** Clerk'in Expo tarafında web'deki `UserProfile`'ın dengi hazır
+   ekran yok. Clerk'in akışını seçsek bile 18.x'te kendi ekranımızı yazmak
+   gerekecekti — o zaman ucu bir kez yazıp ikisinde de kullanmak daha ucuz
+   (ADR-002).
+2. **Senkronluk.** Webhook asenkron: Clerk'te silinmiş ama bizde henüz duran
+   bir aralık oluşuyor. Kendi ucumuz o aralığı kapatıyor.
+
+**Neden Clerk'in düğmesi kapalı kalıyor:** İki silme yolu iki farklı davranış
+demek — biri senkron biri asenkron. Altı ay sonra hangisinin ne yaptığını
+kimse hatırlamaz.
+
+**Sıra ve emniyet ağı:** Önce Clerk'teki kullanıcı silinir, sonra
+`markUserDeletedFromClerk` doğrudan çağrılır. Bu sıra bilinçli: ikinci adım
+düşerse `user.deleted` webhook'u zaten aynı işi yapıyor ve fonksiyon
+**idempotent** (`clerkId` korunduğu için "zaten silinmiş" diyebiliyor). Ters
+sırada — önce bizde anonimleştirip sonra Clerk'te silmeye çalışsak — Clerk
+adımı düştüğünde kullanıcı hâlâ giriş yapabilen ama verisi silinmiş bir
+duruma düşerdi.
+
+**Neden borç engel değil:** `leaveGroup` bakiye sıfır değilse ayrılmayı
+reddediyor (`assertBalanceIsSettled`) ama silme için aynı kural uygulanmayacak.
+Sebep: arkadaşı hiç ödeşmeyen biri hesabına süresiz mahkûm kalırdı, ve Apple
+silmenin gerçekten çalışmasını istiyor — ön koşullu bir silme reddedilebilir.
+Borç, grupta "Silinmiş kullanıcı" adına durmaya devam eder; bugün webhook'un
+yaptığı da zaten bu.
+
+**Geri alma penceresi YOK.** Clerk'te silme anında ve geri alınamaz; bizde
+30 günlük bir pencere kurmak, orada olmayan bir şeyi taklit etmek olurdu.
+
+**Bu ADR politikayı bağlıyor, uygulamayı değil.** Onay ekranı, uyarı metni ve
+testler yazılırken tasarım ayrıca konuşulacak.
+
+---
+
 ## ADR-030 — Önce iOS; mağaza gerekleri koda giriyor
 **Tarih:** 2026-08-24 · **Durum:** Kabul edildi
 
@@ -526,12 +581,7 @@ Aşağıdakiler mağaza incelemesinin dayattığı ve **kodu değiştirecek** ko
 Hiçbiri karara bağlanmadı — bu ADR onları yalnızca kayda geçiriyor ki
 unutulmasınlar:
 
-- **Uygulama içinden hesap silme.** App Store Guideline 5.1.1, hesap
-  açılabilen uygulamalarda uygulama içi hesap silmeyi **zorunlu** kılıyor.
-  Bizde böyle bir yol yok. "Finansal kayıtlar fiziksel olarak silinmez"
-  kuralıyla çelişmiyor (Apple hesabın silinmesini istiyor, grubun geçmişinin
-  yok edilmesini değil) ama **borcu/alacağı olan bir üye hesabını silerse o
-  bakiyenin ne olacağı** kararlaştırılmadı. Şemayı ve API'yi etkiler.
+- ~~Uygulama içinden hesap silme.~~ **KARARA BAĞLANDI — ADR-031.**
 - **Sign in with Apple.** Guideline 4.8, üçüncü taraf girişi sunan
   uygulamalardan gizlilik korumalı bir alternatif de istiyor. Bizde Google ve
   GitHub girişi var. Kendi e-posta girişimiz şartı karşılıyor olabilir ama
