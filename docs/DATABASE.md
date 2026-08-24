@@ -182,10 +182,13 @@ Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 - [ ] **`Notification` için saklama/temizleme politikası yok.** Kayıtlar
       sonsuza kadar birikir. Eski okunmuşları silen bir mekanizma
       tasarlanmadı.
-- [ ] **Optimistic locking yok.** `Expense`/`Settlement` üzerinde `version`
-      alanı bulunmuyor; aynı kullanıcının iki cihazdan eş zamanlı düzenlemesi
-      son yazana göre sonuçlanır. Mobil aşamasına bilinçli olarak ertelendi
-      (bkz. ADR-010).
+- [ ] **Optimistic locking yok — ERTELEME KOŞULU ARTIK DOLDU.**
+      `Expense`/`Settlement` üzerinde `version` alanı bulunmuyor; eş zamanlı
+      düzenleme **son yazana** göre sonuçlanır. ADR-010 bunu "mobil aşamasına"
+      ertelemişti çünkü gerekçesi *tek istemcili web aşamasında nadir*
+      olmasıydı. **Faz 18 bitti: iki istemci var ve ikisinde de harcama
+      düzenlenebiliyor.** Yani bugün telefondan ve tarayıcıdan aynı harcamaya
+      dokunulursa biri diğerini sessizce eziyor.
 - [ ] **Hesap silmede bildirimler temizlenmiyor.** `Notification` satırları
       anonimleştirilmiş kullanıcıya bağlı kalır.
 - [ ] **`schema.prisma` başındaki yorum bloğu güncel değil**: "bu dosya henüz

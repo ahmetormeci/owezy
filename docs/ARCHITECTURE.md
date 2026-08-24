@@ -26,13 +26,22 @@ src/
 ├─ instrumentation-client.ts    Sentry (tarayıcı)
 └─ proxy.ts                     clerkMiddleware() — koruma YAPMAZ, bkz. auth
 
-e2e/                            Playwright
+mobile/                         Expo / React Native uygulaması (Faz 18)
+├─ app/                         expo-router: dosya tabanlı rotalar
+│  ├─ index.tsx                 YALNIZCA yönlendirme (0 / 1 / 2+ grup)
+│  ├─ sign-in.tsx               e-posta + doğrulama kodu (kendi ekranımız)
+│  └─ groups/                   liste, fiş, üyeler, ödemeler, harcama detayı
+├─ components/                  fiş parçaları, besteci, grup oluşturucu
+├─ lib/                         API istemcisi, tema, i18n taşıyıcı
+└─ metro.config.js              depo kökünü izler (paylaşılan modüller için)
+
+e2e/                            Playwright (YALNIZCA web)
 prisma/                         schema.prisma + migrations
 docs/                           Bu dokümanlar
 ```
 
 **`/api/webhooks/clerk` neden `/api/v1` altında değil:** `/api/v1` bizim
-istemcilerimizin (web, ileride mobil) kullandığı, sözleşmesini bizim
+istemcilerimizin (web ve mobil) kullandığı, sözleşmesini bizim
 belirlediğimiz ve versiyonladığımız yüzeydir. Webhook ise dışarıdan çağrılan,
 sözleşmesini Clerk'in belirlediği ayrı bir yüzeydir.
 
@@ -53,7 +62,7 @@ Route Handler ────┘
 |---|---|
 | `lib/*` **asla** route handler'a import etmez | Bağımlılık tek yönlü; servis HTTP'den bağımsız kalır |
 | Route handler **asla** doğrudan `prisma` kullanmaz | İş mantığı ve yetki kontrolü servis katmanında toplanır |
-| Server Component **yazma** yapmaz, yalnızca okur | Yazma yolu tek: `/api/v1` (mobil de aynısını kullanacak) |
+| Server Component **yazma** yapmaz, yalnızca okur | Yazma yolu tek: `/api/v1` (mobil de aynısını kullanıyor) |
 | `components/ui/*` elle düzenlenmez | shadcn tarafından üretilir; değişiklik güncellemede kaybolur |
 | `"use server"` **kullanılmaz** | Server Actions mobil istemciden çağrılamaz |
 | Şema dosyaları (`*-schemas.ts`) servisten import **etmez** | Servisi mock'layan route testleri şemayı da bozardı |
@@ -126,6 +135,33 @@ kazandı" sinyali olarak ele alınır ve kazananın kaydı okunup döndürülür
 
 Webhook (`/api/webhooks/clerk`) bu yolun yerini **almaz**: webhook birkaç
 saniye gecikebilir. İkisi birlikte çalışır, ikisi de idempotenttir.
+
+## Mobil istemci (Faz 18)
+
+`mobile/` kendi `package.json`'ı ile aynı repoda duruyor; monorepo'ya
+geçilmedi (ADR-029). Web ile ilişkisi üç maddeyle özetlenebilir:
+
+**Aynı API'yi çağırıyor.** Web oturumu çerezle taşıyor, mobil
+`Authorization: Bearer` ile. Bu bir varsayım değil, ölçüldü ve kalıcı bir E2E
+testine bağlandı (`e2e/auth.spec.ts`) — biri ileride çerez varsayan bir
+kontrol eklerse mobil sözleşme sessizce kırılırdı.
+
+**Saf modülleri paylaşıyor, React bileşenlerini PAYLAŞMIYOR.** `money.ts`,
+`split.ts`, `messages.ts`, `dates.ts`, `expense-category-guess.ts` mobilde
+`@/lib/...` ile doğrudan import ediliyor; takma ad `mobile/tsconfig.json`'dan,
+kök izleme `mobile/metro.config.js`'ten geliyor. React bileşenleri geçemiyor:
+mobil ağacın dışındaki bir dosyadan `react` çözülünce kökteki kopya bulunuyor
+ve iki React kopyası kancaları boş bir dispatcher'a gönderiyor. Ayrıntı ve
+kural [CONVENTIONS.md](CONVENTIONS.md) "Mobil" bölümünde.
+
+**Otomatik testi yok.** E2E yalnızca web'i kapsıyor ve CI `mobile/`
+bağımlılıklarını kurmuyor. Mobil doğrulaması bugün iOS Simulator'da elle
+yapılıyor. Bilinen açık.
+
+**Rotalar:** `/` yalnızca yönlendirir (0 grup → liste, 1 grup → doğrudan
+gruba, 2+ → liste); `/groups` her zaman listeyi gösterir. İkisinin ayrı
+olması bir hatanın sonucu: aynı dosyadayken "Gruplarım" bağlantısı tek gruplu
+kullanıcıda kendi ekranına geri yönlendiriyordu.
 
 ## Error handling
 

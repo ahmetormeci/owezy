@@ -962,7 +962,7 @@ kapatır**. Karar bekliyor — henüz yapılmadı.
 koşuyor ve `mobile/` bağımlılıklarını kurmuyor. Tek ekranı olan bir uygulama
 için CI'a ikinci kurulum adımı eklemek erken; ekran sayısı artınca dönülecek.
 
-**Test:** 518 birim / 36 E2E. Mobil tarafın otomatik testi yok (18.2).
+**Test:** 518 birim / 36 E2E — **ikisi de yalnızca web'i kapsıyor.** Mobilin otomatik testi yok, doğrulama simülatörde elle yapılıyor.
 
 ---
 
@@ -987,6 +987,11 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
+| **Optimistic locking (ADR-010)** | Erteleme koşulu doldu: iki istemci var, ikisinde de harcama düzenlenebiliyor, ve bugün **son yazan sessizce diğerini eziyor** |
+| **CI mobili doğrulasın** | Sekiz ekranlık bir uygulama var ve CI hiçbirine bakmıyor; `mobile/` bağımlılıkları bile kurulmuyor |
+| **Mobilde otomatik test** | Bugün tek doğrulama simülatörde elle bakmak |
+| **Silineni geri alma arayüzü** | `restore` ucu var, hiçbir istemci kullanmıyor |
+| **Mobilde bildirimler / dil seçimi / grup düzenleme** | Web'de var, mobilde yok |
 | **Fişin canlıda gözle görülmesi** | Uzun açıklamalarda noktalı ayraç ve çok aylı katlama yalnızca yapay veriyle sınandı |
 | **`disableLogger` ölçümü** | `next.config.ts`'teki satır Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 

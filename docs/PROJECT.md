@@ -50,10 +50,14 @@ hesaptan okunur (`User.locale`).
 **Tek Next.js uygulaması.** Ayrı bir backend servisi yok.
 
 **İş mantığı `/api/v1` Route Handler'larında, Server Actions'ta değil.**
-Bunun tek sebebi var: proje sonraki aşamada **native mobil uygulamaya**
-dönüşecek. Server Actions yalnızca aynı Next.js istemcisinden çağrılabilir;
-Route Handler'ları mobil istemci de aynı şekilde çağırabilir. Kod tabanında
-hiç `"use server"` yoktur ve olmamalıdır.
+Bunun tek sebebi var: projenin bir **mobil uygulaması** olacaktı.
+Server Actions yalnızca aynı Next.js istemcisinden çağrılabilir; Route
+Handler'larını mobil istemci de aynı şekilde çağırabilir. Kod tabanında hiç
+`"use server"` yoktur ve olmamalıdır.
+
+**O uygulama artık var** (Faz 18): `mobile/` altında Expo / React Native ile
+yazıldı — native değil, çünkü bölüşüm ve para aritmetiğini üç kez yazmamak
+için (ADR-029).
 
 Bu gerekçe artık **ölçülmüş durumda**: çerez taşımayan bir istemci
 `Authorization: Bearer` ile `/api/v1`'i çağırabiliyor (token yokken 401,
@@ -81,8 +85,9 @@ Detay: [ARCHITECTURE.md](ARCHITECTURE.md).
    zorlar.
 6. **Ayrılmış üyenin borcu kaybolmaz.** Bakiyesi sıfırlanmamış eski üyeler
    listede kalmaya devam eder.
-7. **Mobil geleceği bugünkü kararları belirler.** Bir seçim mobil tarafı
-   zorlaştıracaksa alternatifi tercih edilir.
+7. **Mobil, kararların ortağı.** Bir seçim mobil tarafı zorlaştıracaksa
+   alternatifi tercih edilir. Bu artık bir tahmin değil: mobil uygulama var
+   ve aynı `/api/v1` uçlarını çağırıyor.
 
 ## Güvenlik prensipleri
 
