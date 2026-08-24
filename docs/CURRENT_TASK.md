@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (16)
+Updated: 2026-08-24 (17)
 
 Current task:
   FAZ 18 - MOBIL UYGULAMA. 18.0-18.5 BITTI, yani fazin planlanan butun
@@ -213,14 +213,17 @@ Hemen sonraki adim:
       hesap aciyor ve ayni insan grupta iki kez gorunuyor.
     - owezy.net'te gizlilik politikasi ve destek sayfasi HALA YOK.
 
-  KARAR BEKLEYEN - SILME METNI OLMAYAN BIR SEYI VAAT EDIYOR:
-    ui.delete_expense_hint "kayit silinmiyor, gerekirse geri alinabilir"
-    diyor. restore ucu sunucuda VAR ama onu kullanan hicbir arayuz YOK -
-    web'de de yok. Yani kullanici geri alamiyor. Iki secenek:
-      (a) geri alma arayuzunu ekle (once web, sonra mobil)
-      (b) metni gerceklige uydur
-    METIN DE ARAYUZ DE DEGISTIRILMEDI: ikisi de web'i etkiliyor,
-    kullaniciya soruldu.
+  SILME METNI GERCEGE UYDURULDU (karar verildi): eskiden "Kayit tamamen
+  yok olmaz; gerekirse geri yuklenebilir" diyordu ama restore ucunu cagiran
+  hicbir arayuz YOK - web'de de yok. Artik "Bu islem geri alinamaz." diyor.
+  Yikici bir dokunustan once kullanicinin ihtiyaci olan tek bilgi bu;
+  yumusak silme ve denetim kaydi bir uygulama ayrintisi ve o anda
+  soylenmesi "o zaman nasil geri alirim" sorusunu doguruyordu.
+
+  HALA GECERLI: restore ucu (POST .../expenses/[id]/restore) sunucuda VAR
+  ama HICBIR ARAYUZ kullanmiyor - ne web ne mobil. Artik yanlis bir vaat
+  degil, ama kullanilmayan bir uc. Geri alma arayuzu istenirse once web'de
+  yapilmali.
 
   ACIK KALANLAR (yeni gorev degil, akilda tutulacaklar):
 

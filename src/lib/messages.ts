@@ -262,7 +262,7 @@ export const MESSAGES_TR = {
   "ui.participant_amount_label": "{name} tutarı",
   "ui.participant_percentage_label": "{name} yüzdesi",
   "ui.delete_expense_hint":
-    "“{description}” kaydı silinecek ve bakiyelerden düşülecek. Kayıt tamamen yok olmaz; gerekirse geri yüklenebilir.",
+    "“{description}” kaydı silinecek ve bakiyelerden düşülecek. Bu işlem geri alınamaz.",
 
   // --- Odeme kaydi ---
   "ui.settlements": "Kaydedilen ödemeler",
@@ -614,7 +614,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.participant_amount_label": "{name} amount",
   "ui.participant_percentage_label": "{name} percentage",
   "ui.delete_expense_hint":
-    "“{description}” will be removed and deducted from the balances. The record is not erased; it can be restored if needed.",
+    "“{description}” will be removed and deducted from the balances. This cannot be undone.",
 
   // --- Settlements ---
   "ui.settlements": "Recorded settlements",

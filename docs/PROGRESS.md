@@ -807,6 +807,11 @@ sunucu gönderilmediğinde mevcut tarihi koruyor, yani düzenleme tarihi sessizc
 bugüne kaydırmıyor. Tarih ve bölüşüm tipi kapsam dışı (biri yeni bağımlılık,
 diğeri çok daha büyük bir form).
 
+**Silme metni düzeltildi.** 18.6'da bulunan sorun — metnin olmayan bir geri
+almayı vaat etmesi — karara bağlandı ve metin gerçeğe uyduruldu:
+"Bu işlem geri alınamaz." `restore` ucu hâlâ duruyor ama hiçbir arayüz
+kullanmıyor; artık yanlış bir vaat değil, yalnızca kullanılmayan bir uç.
+
 **Silmede modal kullanıldı** — 18.5'te doğrulama hataları için modal'dan
 kaçınılmıştı; geri alınamaz görünen bir işlemde kesinti istenen şeydir.
 

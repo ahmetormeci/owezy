@@ -8,6 +8,20 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (12)
+
+### Silme metni gerçeğe uyduruldu
+- Eskiden "Kayıt tamamen yok olmaz; gerekirse geri yüklenebilir" diyordu.
+  `restore` ucu sunucuda var ama **onu çağıran hiçbir arayüz yok** — web'de
+  de yok — yani kullanıcı geri alamıyordu. Metin olmayan bir şeyi vaat
+  ediyordu.
+- Artık: **"Bu işlem geri alınamaz."** Yıkıcı bir dokunuştan önce
+  kullanıcının ihtiyacı olan tek bilgi bu. Yumuşak silme ve denetim kaydı
+  bir uygulama ayrıntısı; o anda söylenmesi "o zaman nasıl geri alırım"
+  sorusunu doğuruyordu.
+- İki dilde de değişti. Davranış aynı: silme hâlâ yumuşak, kayıt hâlâ
+  fiziksel olarak silinmiyor. Değişen yalnızca kullanıcıya söylenen şey.
+
 ## 2026-08-24 (11)
 
 ### Harcama düzenleme ve silme, mobilde (Faz 18.6)
