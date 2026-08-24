@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate, formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { formatMoney, formatSignedMoney } from "@/lib/money";
+import type { Locale } from "@/lib/locale";
 import { useLocale, useTranslate } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
@@ -60,6 +61,8 @@ type SummaryResponse = {
 };
 type MembersResponse = { members: { userId: string; displayName: string }[] };
 type MeResponse = { user: { id: string } };
+type SuggestedTransfer = { fromUserId: string; toUserId: string; amount: number };
+type BalancesResponse = { suggestedTransfers: SuggestedTransfer[] };
 type ExpensesResponse = { expenses: ExpenseItem[]; nextCursor: string | null };
 
 /**
@@ -96,6 +99,9 @@ export default function GroupScreen() {
   // Harcama eklerken paidById gerekiyor ve o BIZIM ic kimligimiz - Clerk'in
   // kimligi degil. 18.4'te bu uc gereksizdi, 18.5'te zorunlu oldu.
   const me = useApiGet<MeResponse>("/api/v1/me");
+  const balances = useApiGet<BalancesResponse>(
+    groupId ? `/api/v1/groups/${groupId}/balances` : null,
+  );
 
   // Acik ay: ozetin ilk ayi. Harcamalar ANCAK ozet gelince istenebiliyor,
   // cunku hangi ayin acilacagini ozet soyluyor.
@@ -245,6 +251,16 @@ export default function GroupScreen() {
   const { currency, myBalance, myShare, myPaid, totalAmount, byMonth } = summary.state.data;
   const isEmpty = summary.state.data.expenseCount === 0;
 
+  const currentUserId = me.state.kind === "ok" ? me.state.data.user.id : null;
+  const suggestions =
+    balances.state.kind === "ok" ? balances.state.data.suggestedTransfers : [];
+  const iPay = suggestions.filter((transfer) => transfer.fromUserId === currentUserId);
+  const iReceive = suggestions.filter((transfer) => transfer.toUserId === currentUserId);
+  const others = suggestions.filter(
+    (transfer) =>
+      transfer.fromUserId !== currentUserId && transfer.toUserId !== currentUserId,
+  );
+
   const nameByUserId: Record<string, string> = {};
   if (members.state.kind === "ok") {
     for (const member of members.state.data.members) {
@@ -297,6 +313,63 @@ export default function GroupScreen() {
               <Text style={s.balanceLabel}>
                 {settled ? t("ui.settled_up") : owed ? t("ui.owed_to_you") : t("ui.you_owe")}
               </Text>
+            </View>
+          ) : null}
+
+          {/* Odesme plani. Bakiyenin hemen ardindan: ADR-016 sayfayi bakiyenin
+              etrafinda kuruyor ve plan "bu bakiyeyle ne yapacagim" sorusunun
+              cevabi. Fiil BASLIKTA, satirda degil - Turkcede "{isim}'e ode"
+              yer tutucuyla dogru yazilamiyor (ek son harfe gore degisiyor). */}
+          {!isEmpty && suggestions.length > 0 ? (
+            <View style={s.planBlock}>
+              <Cap>{t("ui.settle_plan")}</Cap>
+
+              <SuggestionGroup
+                styles={s}
+                title={t("ui.you_should_pay")}
+                transfers={iPay}
+                nameOf={(transfer) => nameByUserId[transfer.toUserId] ?? t("ui.unknown_user")}
+                currency={currency}
+                locale={locale}
+                onPress={(transfer) =>
+                  router.push(
+                    `/groups/${groupId}/settlements?to=${transfer.toUserId}&amount=${transfer.amount}`,
+                  )
+                }
+              />
+              <SuggestionGroup
+                styles={s}
+                title={t("ui.will_be_paid_to_you")}
+                transfers={iReceive}
+                nameOf={(transfer) => nameByUserId[transfer.fromUserId] ?? t("ui.unknown_user")}
+                currency={currency}
+                locale={locale}
+                onPress={(transfer) =>
+                  router.push(
+                    `/groups/${groupId}/settlements?from=${transfer.fromUserId}&amount=${transfer.amount}`,
+                  )
+                }
+              />
+
+              {/* Beni ilgilendirmeyen transferler: ayni blokta ama en altta ve
+                  soluk. Grubun takas plani dogru bir bilgi, ama benim isim
+                  degil - o yuzden dokunulabilir de degil. */}
+              {others.length > 0 ? (
+                <View style={s.planGroup}>
+                  <Text style={s.planTitle}>{t("ui.other_suggested_payments")}</Text>
+                  {others.map((transfer) => (
+                    <Text
+                      key={`${transfer.fromUserId}-${transfer.toUserId}`}
+                      style={s.otherRow}
+                      numberOfLines={1}
+                    >
+                      {`${nameByUserId[transfer.fromUserId] ?? t("ui.unknown_user")} → ${
+                        nameByUserId[transfer.toUserId] ?? t("ui.unknown_user")
+                      }  ${formatMoney(transfer.amount, currency, locale)}`}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
             </View>
           ) : null}
 
@@ -405,6 +478,11 @@ export default function GroupScreen() {
               <Text style={s.footerText}>{t("ui.my_groups")}</Text>
             </Pressable>
           </Link>
+          <Link href={`/groups/${groupId}/settlements`} asChild>
+            <Pressable>
+              <Text style={s.footerText}>{t("ui.settlements")}</Text>
+            </Pressable>
+          </Link>
           <Link href={`/groups/${groupId}/members`} asChild>
             <Pressable>
               <Text style={s.footerText}>{t("ui.manage_members")}</Text>
@@ -417,6 +495,54 @@ export default function GroupScreen() {
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+
+/**
+ * Odesme onerilerinin bir grubu.
+ *
+ * FIIL BASLIKTA, SATIRDA DEGIL. Turkcede "{isim}'e ode" yer tutucuyla dogru
+ * yazilamiyor - ek ismin son harfine gore degisiyor (Ayse'ye / Ahmet'e).
+ * Web'de de ayni kural gecerli.
+ */
+function SuggestionGroup({
+  styles: s,
+  title,
+  transfers,
+  nameOf,
+  currency,
+  locale,
+  onPress,
+}: {
+  styles: ReturnType<typeof createStyles>;
+  title: string;
+  transfers: SuggestedTransfer[];
+  nameOf: (transfer: SuggestedTransfer) => string;
+  currency: string;
+  locale: Locale;
+  onPress: (transfer: SuggestedTransfer) => void;
+}) {
+  if (transfers.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={s.planGroup}>
+      <Text style={s.planTitle}>{title}</Text>
+      {transfers.map((transfer) => (
+        <Pressable
+          key={`${transfer.fromUserId}-${transfer.toUserId}`}
+          style={s.planRow}
+          onPress={() => onPress(transfer)}
+        >
+          <Text style={s.planName} numberOfLines={1}>
+            {nameOf(transfer)}
+          </Text>
+          <Text style={s.planAmount}>{formatMoney(transfer.amount, currency, locale)}</Text>
+        </Pressable>
+      ))}
+    </View>
   );
 }
 
@@ -440,6 +566,19 @@ function createStyles(theme: Theme) {
     balanceAmount: { fontSize: 26, fontWeight: "500", fontVariant: ["tabular-nums"] },
     balanceLabel: { fontSize: 12, color: theme.muted, textAlign: "right" },
     emptyText: { color: theme.muted, lineHeight: 22 },
+    planBlock: {
+      gap: 10,
+      borderTopWidth: 1,
+      borderStyle: "dashed",
+      borderColor: theme.border,
+      paddingTop: 16,
+    },
+    planGroup: { gap: 4 },
+    planTitle: { fontSize: 12, color: theme.muted },
+    planRow: { flexDirection: "row", alignItems: "baseline", gap: 8, paddingVertical: 3 },
+    planName: { flex: 1, fontSize: 14, color: theme.foreground },
+    planAmount: { fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
+    otherRow: { fontSize: 13, color: theme.muted, paddingVertical: 2 },
     monthBlock: { gap: 4 },
     monthLoading: { paddingVertical: 12 },
     loadMore: { color: theme.brand, fontSize: 13, paddingVertical: 8 },
@@ -447,7 +586,9 @@ function createStyles(theme: Theme) {
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
     buttonText: { color: "#fff", fontSize: 15 },
-    footer: { flexDirection: "row", gap: 24, paddingTop: 24 },
+    // flexWrap SART: alt bilgide dort giris var ve tek satira sigmiyor.
+    // Sarmadan once sonuncusu ("cikis yap") ekranin disinda kaliyordu.
+    footer: { flexDirection: "row", flexWrap: "wrap", rowGap: 12, columnGap: 24, paddingTop: 24 },
     footerText: { color: theme.muted, fontSize: 14 },
   });
 }

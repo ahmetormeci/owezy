@@ -280,7 +280,9 @@ export const MESSAGES_TR = {
   "ui.use_suggested_amount": "Önerilen tutarı kullan: {amount}",
   "ui.no_settlements":
     "Henüz kaydedilmiş bir ödeme yok. Borç kapatınca buraya ekleyebilirsin.",
-  "ui.cancel_settlement": "İptal et",
+  // Neyi iptal ettigini SOYLUYOR. Onay penceresinde "Vazgec" ile yan yana
+  // duruyor; kisa hali Ingilizcede iki ayni "Cancel" dugmesi uretiyordu.
+  "ui.cancel_settlement": "Ödemeyi iptal et",
   "ui.cancelling": "İptal ediliyor...",
   "ui.cancel_settlement_question": "Ödeme kaydı iptal edilsin mi?",
   "ui.cancel_settlement_hint":
@@ -636,7 +638,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.use_suggested_amount": "Use the suggested amount: {amount}",
   "ui.no_settlements":
     "No settlements recorded yet. Once you pay someone back, add it here.",
-  "ui.cancel_settlement": "Cancel",
+  "ui.cancel_settlement": "Cancel settlement",
   "ui.cancelling": "Cancelling...",
   "ui.cancel_settlement_question": "Cancel this settlement?",
   "ui.cancel_settlement_hint":

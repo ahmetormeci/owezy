@@ -719,6 +719,7 @@ En riskli varsayım — çerezsiz bir istemcinin `/api/v1`'i çağırabilmesi �
 | 18.5 | **DONE** | Satır içi harcama girişi |
 | 18.6 | **DONE** | Harcama detayı: düzenleme ve silme |
 | 18.7 | **DONE** | Grup oluşturma, üyeler ve davet linki |
+| 18.8 | **DONE** | Ödeşme: plan, ödeme kaydı, iptal |
 
 **18.3 — ekran değil, GİRİŞ KARARI.** "Grup listesi ekranı" olarak
 planlanmıştı; yapılmadı. Sebep: `GET /api/v1/groups` bakiye döndürmüyor, yani
@@ -852,6 +853,42 @@ ile **aynı adı taşıyordu** ama farklı iş yapıyordu; ayrı bir anahtar ald
 
 **Kapsam dışı (bilinçli):** daveti iptal etme, üye çıkarma, sahiplik devri,
 grup adı/açıklaması düzenleme.
+
+**18.8 — ödeşme.** Fişe **ödeşme planı** geldi (18.4'te kapsam dışıydı),
+bakiyenin hemen ardında: ADR-016 sayfayı bakiyenin etrafında kuruyor ve plan
+"bu bakiyeyle ne yapacağım" sorusunun cevabı. Web'in üçlü ayrımı korundu —
+ödemen gerekenler / sana ödenecekler / diğerleri (soluk ve dokunulamaz: grubun
+takas planı doğru bilgi ama senin işin değil). **Fiil başlıkta**, satırda
+değil; Türkçede "{isim}'e öde" yer tutucuyla doğru yazılamıyor.
+
+**Ödemeler kendi ekranında** (`/groups/[id]/settlements`): kaydetme **ve**
+geçmiş **ve** iptal, üçü birlikte. Ayırmak daha küçük bir adım olurdu ama o
+zaman yanlış kaydedilen bir ödeme görülemez ve iptal edilemezdi — bu fazda iki
+kez düzeltilen tuzağın aynısı.
+
+**Yön seçimi arayüzde** ("Ben ödedim" / "Bana ödendi") ve bu yalnızca kolaylık
+değil: *ödemeyi ancak taraflardan biri kaydedebilir* kuralını arayüze taşıyor,
+yani geçersiz bir istek oluşturmak mümkün değil.
+
+**Yakalanan hata — async veriden `useState` başlatmak.** Yön, `/api/v1/me`
+gelmeden hesaplanıyordu; `useState`'in başlangıç ifadesi yalnızca ilk
+render'da çalıştığı için `currentUserId` o an `null` oluyor ve "sana
+ödenecek" önerisine dokununca ekran "ben ödedim" diye açılıyordu. Yön artık
+parametrenin **adından** okunuyor, kimlik karşılaştırması yok.
+
+**Web'de de olan bir hata bulundu ve düzeltildi.** Ödeme iptali onay
+penceresinde `ui.cancel` ile `ui.cancel_settlement` yan yana duruyor ve
+İngilizcede **ikisi de "Cancel"** oluyordu — zıt anlamlı iki aynı düğme,
+üstelik yıkıcı bir işlemde. Etiket artık neyi iptal ettiğini söylüyor
+("Ödemeyi iptal et" / "Cancel settlement"). **Mobili yazarken web'de bulunan
+ilk hata.**
+
+**Bilinen imlâ pürüzü (iki istemcide de):** karşı taraf başlığı her iki yönde
+de "Kime ödedin?" diyor; "Bana ödendi" seçiliyken teknik olarak yanlış. Seçilen
+kişi her iki durumda da karşı taraf olduğu için kullanıcıyı yanlış yönlendirmiyor.
+
+**Kapsam dışı:** ödeme düzenleme (API'de de yok), tarih seçimi (bugüne sabit),
+ödeşme planında avatarlar.
 
 **18.4 için bilinen zorluk:** React Native'de CSS yok. Fişin noktalı ayracı
 (`border-bottom: 1px dotted`), perfore çizgisi ve yırtık kenarı web'deki

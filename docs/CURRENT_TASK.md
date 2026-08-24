@@ -15,10 +15,10 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-24 (18)
+Updated: 2026-08-24 (19)
 
 Current task:
-  FAZ 18 - MOBIL UYGULAMA. 18.0-18.7 bitti (18.6 ve 18.7 plana sonradan
+  FAZ 18 - MOBIL UYGULAMA. 18.0-18.8 bitti (18.6, 18.7 ve 18.8 plana sonradan
   eklendi). Oncelik iOS (ADR-030); Android bilerek ertelendi.
 
 Hemen sonraki adim:
@@ -39,6 +39,7 @@ Hemen sonraki adim:
     /groups                 liste - HER ZAMAN gorunur
     /groups/[id]            fis
     /groups/[id]/members    uyeler + davet
+    /groups/[id]/settlements  odeme kaydi + gecmis + iptal
     /groups/[id]/expenses/[id]  harcama detayi
     Giris ile listenin AYRILMA sebebi bir hataydi: ikisi ayni dosyadayken
     grup ekranindaki "Gruplarim" tek gruplu kullanicida hicbir sey
@@ -46,7 +47,6 @@ Hemen sonraki adim:
     dolayisiyla "grup olustur"a hic ulasamiyordu.
 
   MOBILDE HENUZ YOK (bilincli kapsam disi, 18.x'te not edildi):
-    - odesme plani ("hesap boyle kapanir") ve odesme kaydetme
     - bildirimler
     - EXACT/PERCENTAGE bolusumun mobilde duzenlenmesi (bilincli:
       tutari degistirmek paylarla celisirdi)
@@ -55,6 +55,9 @@ Hemen sonraki adim:
     - DAVETI KABUL ETME (link owezy.net/join/<kod>'a gidiyor; uygulama
       icinde acmak universal link ister, o da ONAYLANMIS Apple hesabi
       gerektiriyor - bekleniyor). Davet edilen web'den katiliyor.
+    - odeme DUZENLEME (API'de de yok, yalnizca iptal var)
+    - odemede tarih secimi (bugune sabit - tarih secici yeni bagimlilik)
+    - odesme planinda avatarlar (mobilde kisi gorseli hic yok)
     - daveti iptal etme, uye cikarma, sahiplik devri
     - grup adi/aciklamasi duzenleme (aciklama mobilde HIC girilemiyor)
     - dil secimi (cihaz dili okunuyor, kullanici degistiremiyor)
@@ -241,6 +244,12 @@ Hemen sonraki adim:
   ama HICBIR ARAYUZ kullanmiyor - ne web ne mobil. Artik yanlis bir vaat
   degil, ama kullanilmayan bir uc. Geri alma arayuzu istenirse once web'de
   yapilmali.
+
+  BILINEN IMLA PURUZU (IKI ISTEMCIDE DE): odeme kaydinda karsi taraf
+  basligi her iki yonde de "Kime odedin?" diyor; "Bana odendi" seciliyken
+  teknik olarak yanlis. Secilen kisi her iki durumda da karsi taraf oldugu
+  icin kullaniciyi yanlis yonlendirmiyor - duzeltmek iki ayri anahtar
+  ister, deger mi diye bakilmadi.
 
   ACIK KALANLAR (yeni gorev degil, akilda tutulacaklar):
 

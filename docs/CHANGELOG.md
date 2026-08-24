@@ -8,6 +8,26 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-24 (14)
+
+### Ödeşme mobilde (Faz 18.8)
+- **Fişe ödeşme planı geldi**, bakiyenin hemen ardında. Öneriye
+  dokununca ödeme kaydı ekranı dolu açılıyor.
+- **Ödemeler kendi ekranında**: kaydetme, geçmiş ve iptal birlikte —
+  ayırmak, yanlış kaydedilen bir ödemenin görülememesi demekti.
+- **Yön seçimi arayüzde**, çünkü "ödemeyi ancak taraflardan biri
+  kaydedebilir" kuralını oraya taşıyor.
+- **Yakalanan hata:** yön `/api/v1/me` gelmeden hesaplanıyordu.
+  `useState`'in başlangıç ifadesi yalnızca ilk render'da çalışıyor, o an
+  `currentUserId` null. "Sana ödenecek" önerisine dokununca ekran "ben
+  ödedim" diye açılıyordu. Yön artık parametrenin adından okunuyor.
+
+### Web'de de olan bir hata düzeltildi
+- Ödeme iptali onayında `ui.cancel` ile `ui.cancel_settlement` yan yana
+  duruyor ve **İngilizcede ikisi de "Cancel"** oluyordu — zıt anlamlı iki
+  aynı düğme, yıkıcı bir işlemde. Etiket artık neyi iptal ettiğini
+  söylüyor. Mobili yazarken web'de bulunan ilk hata.
+
 ## 2026-08-24 (13)
 
 ### Mobilde grup oluşturma ve davet (Faz 18.7)
