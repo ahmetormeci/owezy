@@ -15,26 +15,25 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25
+Updated: 2026-08-25 (2)
 
 Current task:
-  FAZ 19 - ES ZAMANLI DUZENLEME. BITTI.
-  Expense.version optimistic locking sayaci eklendi; cakismada 409 doniyor,
-  kullanicinin yazdiklari duruyor ve neyin degistigi yaziliyor. Gerekce ve
-  kapsam disi birakilanlar: DECISIONS.md ADR-032.
+  FAZ 20 - CI MOBILI DE DOGRULUYOR. BITTI.
+  Mevcut CI isine dort adim eklendi: mobil "npm ci", tsc, expo-doctor,
+  expo export. Ayri job DEGIL (mobil tsc kokun Prisma client'ina bagli),
+  kosullu DEGIL (src/lib degisikligi mobili kirabiliyor).
 
 Hemen sonraki adim:
-  CI MOBIL TARAFI DOGRULASIN.
+  @clerk/expo GECISI.
   Kullanici uc isi SU SIRAYLA yapmayi onayladi:
-    1. Optimistic locking          BITTI (bu commit)
-    2. CI mobili dogrulasin        SIRADA
-    3. @clerk/expo gecisi          engel kalkti (asagida)
+    1. Optimistic locking          BITTI (51bc3c4)
+    2. CI mobili dogrulasin        BITTI (bu commit)
+    3. @clerk/expo gecisi          SIRADA
   Bu sira KULLANICININ VERDIGI bir plandir - PROGRESS.md'deki aday
   listesinden farkli, oradan bir sey kendiliginden baslatilmaz.
 
-  2. ADIMIN DURUMU: kok CI "npm ci" + tsc + lint kosuyor ve mobile/
-  bagimliliklarini HIC kurmuyor. Yani sekiz ekranlik bir uygulamayi hicbir
-  otomatik kontrol gormuyoruz; mobil tsc yalnizca elle kosuluyor.
+  AYRICA: Apple Developer hesabi ONAYLANDI (25 Agustos). Yayin adimlari
+  asagida "YAYIN DURUMU" altinda, sirasiyla.
 
   3. ADIMIN DURUMU - ENGEL KALKTI (25 Agustos'ta dogrulandi):
     @clerk/clerk-expo DEPRECATED, uygulama acilista uyari basiyor. Gecis
@@ -91,9 +90,21 @@ MOBILDE HENUZ YOK (bilincli kapsam disi):
   - marka isareti (web'de SVG; RN'de react-native-svg gerekirdi)
 
 MOBILIN BILINEN ACIKLARI:
-  - CI mobil tarafi HIC dogrulamiyor (sonraki is).
-  - Mobilin otomatik testi YOK. Dogrulama simulatorde elle yapiliyor.
+  - Mobilin DAVRANIS testi YOK. CI artik derleniyor mu diye bakiyor ama
+    ekranlarin ne yaptigina bakan hicbir sey yok; dogrulama simulatorde
+    elle yapiliyor.
   - @clerk/clerk-expo deprecated (yukarida).
+
+CI MOBILDE NE KOSUYOR (Faz 20):
+  mobil npm ci -> tsc -> expo-doctor -> expo export --clear
+  Ikisinin kirmiziya dusebildigi KANITLANDI: bagimlilik gecici kaldirilinca
+  expo-doctor 1 dondu, bozuk import eklenince expo export 1 dondu.
+
+  YAYIN DERLEMESI ICIN ONEMLI BULGU: EXPO_PUBLIC_* degerleri pakete
+  GOMULUYOR ve Metro'nun onbellegi env degisikligini GORMUYOR - ayni komut,
+  .env.local varken ve yokken BIREBIR AYNI paket hash'ini uretti. Yani
+  yanlis API adresi gomulmus bir derleme sessizce cikabilir.
+  TestFlight derlemesinde "--clear" SART.
 
 CALISTIRMA (dogrulandi):
   1. Kokte:          npm run dev          (port 3000, ayakta olmali)
@@ -128,8 +139,37 @@ TEST VERISI (gelistirme veritabaninda duruyor):
   context ile 401 doner, gercek tarayicida Clerk taziliyor).
 
 YAYIN DURUMU (ayrinti: PROJECT.md "Yayinlama", kararlar: ADR-030/031):
-  - Apple Developer Program basvurusu ONAY BEKLIYOR.
+  - APPLE DEVELOPER HESABI ONAYLANDI (25 Agustos 2026).
   - Android BILEREK ERTELENDI.
+
+  SIRA - NEYIN NEYI BEKLEDIGI:
+    TestFlight INTERNAL'i hicbiri bloke etmiyor (100 kisi, inceleme yok,
+    dakikalar). Asagidakiler ancak APP STORE INCELEMESINDE kapi oluyor.
+
+    A) Kod beklemeyenler, bekleme suresi olanlar:
+       1. App Store Connect'te uygulama kaydi + "Owezy" adi rezervasyonu.
+          Isimler ilk gelene. Bundle ID net.owezy.app KALICI (app.json).
+       2. owezy.net'e gizlilik politikasi + destek sayfasi. IKISI DE
+          ZORUNLU, IKISI DE BUGUN YOK.
+    B) Kod isteyenler:
+       3. Hesap silme (DELETE /api/v1/me) - Guideline 5.1.1. Karar
+          ADR-031'de, uygulanmadi. Zor kismi zaten yazili (asagida).
+       4. Demo hesap + icinde ornek grup ve harcamalar (App Review
+          Information). Inceleyici giris duvarini asamazsa hicbir sey
+          goremez.
+    C) Sonra: EAS build -> TestFlight Internal -> (istenirse) External
+       (Beta App Review ~1 gun) -> App Store gonderimi (ekran
+       goruntuleri, aciklama, App Privacy formu, yas siniri, kategori).
+
+    DERLEME ONCESI ZORUNLU AYAR: mobile/.env.local bugun pk_test_ ve
+    localhost:3000 kullaniyor. Bu ayarla cikan bir TestFlight derlemesinde
+    HICBIR SEY YUKLENMEZ - cihazin localhost'u kendisidir. Uretim anahtari
+    ve https://owezy.net gerekiyor. Degerleri KULLANICI girer.
+    Ayrica "--clear" SART (yukaridaki Metro onbellek bulgusu).
+
+    EAS derlemesi Expo'nun sunucularinda calisiyor, yani kodu disari
+    gonderiyor - oraya gelmeden kullaniciya SORULACAK.
+
   - HESAP SILME KARARA BAGLANDI (ADR-031), HENUZ UYGULANMADI:
       DELETE /api/v1/me yazilacak. Isin zor kismi ZATEN YAZILI:
       markUserDeletedFromClerk (src/lib/clerk-sync.ts).
@@ -199,7 +239,13 @@ Verify with:
   npm run lint
   npm test          # beklenen: 535
   npm run test:e2e  # beklenen: 37, ~6-7 dk, kosarken dosyalara dokunma
-  cd mobile && npx tsc --noEmit    # CI bunu KOSMUYOR, elle
+
+  Mobil (CI de AYNISINI kosuyor, Faz 20'den beri):
+    cd mobile
+    npm ci                  # ~9 sn
+    npx tsc --noEmit        # ~1 sn
+    npx expo-doctor         # ~2 sn
+    npx expo export --platform ios --clear --output-dir /tmp/x   # ~7 sn
 
   Prisma 7'de postinstall YOK: sema degistiginde "npx prisma generate"
   calistirilmadan tsc eski tipleri gorur ve var olmayan hatalar uretir.

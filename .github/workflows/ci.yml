@@ -1,5 +1,6 @@
-# Surekli entegrasyon: main'e giden her degisiklikte tip kontrolu, lint ve
-# birim testleri calisir.
+# Surekli entegrasyon: main'e giden her degisiklikte web tarafinda tip
+# kontrolu, lint ve birim testleri; mobil tarafta tip kontrolu, Expo
+# tanilamasi ve paket derlemesi calisir.
 #
 # NEDEN VAR: main'e push, Vercel'de production deploy tetikliyor. Bu dosyadan
 # once o yolun onunde otomatik hicbir kapi yoktu; her dogrulama elle
@@ -30,7 +31,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Tip, lint ve birim testleri
+    name: Web ve mobil dogrulama
     runs-on: ubuntu-latest
 
     env:
@@ -54,6 +55,12 @@ jobs:
           # klasik kaynagi.
           node-version: 24
           cache: npm
+          # IKI lock dosyasi da onbellek anahtarina giriyor. Yalnizca koktekini
+          # yazsaydik mobil bagimliliklari her kosuda sifirdan indirilirdi
+          # (808 paket) ve mobil lock degistiginde onbellek yenilenmezdi.
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
 
       - name: Bagimliliklari kur
         # "npm ci" package-lock.json'i birebir uygular ve lock dosyasi
@@ -80,3 +87,55 @@ jobs:
         # ait ve buraya dahil degil. Testlerin tamami Prisma'yi mock'ladigi
         # icin gercek bir veritabani gerekmiyor - dogrulandi.
         run: npm test
+
+      # ---- Mobil ----
+      #
+      # NEDEN AYRI BIR JOB DEGIL: mobil tip kontrolu KOKUN uretilmis Prisma
+      # client'ina bagli. mobile/tsconfig.json "@/*" takma adini "../src/*"a
+      # esliyor ve src/lib/expense-labels.ts ile expense-category-guess.ts
+      # "@prisma/client"tan tip aliyor; mobile/node_modules'ta @prisma yok,
+      # yani cozum koke cikiyor. Ayri bir job kok kurulumunu ve
+      # "prisma generate"i bastan yapmak zorunda kalirdi.
+      #
+      # NEDEN KOSULLU DEGIL ("yalnizca mobile/ degistiyse"): src/lib'deki bir
+      # degisiklik mobili kirabiliyor - paylasilan saf moduller iki agacta da
+      # derleniyor. Kapatmaya calistigimiz boslugun adi zaten "bazen
+      # bakilmiyor"; kosullu kosmak onu geri getirirdi.
+
+      - name: Mobil bagimliliklari kur
+        run: npm ci
+        working-directory: mobile
+
+      - name: Mobil tip kontrolu
+        # mobile/ kok tsconfig'in exclude'unda, yani "npx tsc --noEmit" kokte
+        # mobil dosyalara HIC bakmiyor. Bu adim eklenene kadar mobil kodun
+        # tipleri CI'da hicbir zaman kontrol edilmedi.
+        run: npx tsc --noEmit
+        working-directory: mobile
+
+      - name: Expo tanilamasi
+        # Bagimliliklarin SDK ile uyumunu ve eksik native es bagimliliklari
+        # kontrol ediyor. Ilk kosuldugunda gercek bir sey buldu: ClerkProvider
+        # expo-web-browser'i kosulsuz require ediyor ama paket yalnizca DOLAYLI
+        # kuruluydu. Expo Go'da sorun cikmiyor, native derlemede native modul
+        # baglanmayabiliyor - yani tam da TestFlight'ta.
+        run: npx expo-doctor
+        working-directory: mobile
+
+      - name: Mobil paket derleniyor mu
+        # tsc'nin GOREMEDIGI katman: Metro'nun depo kokunu izleyip "@/lib"
+        # takma adini gercekten cozebilmesi, varliklarin bulunmasi, paketin
+        # kurulabilmesi. Faz 18'de alti gercek hatanin hicbirini tsc
+        # gostermedi; bu adim onlarin bir kismini gosterirdi. ~5 saniye.
+        #
+        # mobile/.env.local CI'DA YOK ve olmasi da gerekmiyor: EXPO_PUBLIC_*
+        # degiskenleri pakete GOMULUYOR, tanimli degillerse undefined olarak
+        # gomuluyorlar ve export yine basariyla bitiyor. Olculdu.
+        #
+        # --clear BILEREK: Metro'nun onbellegi env degisikligini gormuyor.
+        # Ayni komut, .env.local varken ve yokken, BIREBIR AYNI paket hash'ini
+        # uretti. Yayin derlemesinde bunun bedeli yanlis API adresi gomulmus
+        # bir uygulamadir; burada da onbellegi kapatip her kosuyu sifirdan
+        # derletmek dogrusu.
+        run: npx expo export --platform ios --clear --output-dir /tmp/expo-export-ci
+        working-directory: mobile

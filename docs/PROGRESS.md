@@ -993,6 +993,46 @@ giren kişi düzenleyebiliyor. Aynı andaki yarışı Postgres'in satır kilidi
 
 ---
 
+## Faz 20 — CI mobili de doğruluyor · **BİTTİ**
+
+Faz 18 sekiz ekranlık bir uygulama bıraktı ve CI hiçbirine bakmıyordu;
+`mobile/` bağımlılıkları bile kurulmuyordu. Mevcut işe dört adım eklendi:
+bağımlılık kurulumu, tip kontrolü, `expo-doctor`, `expo export`.
+
+**Ayrı job değil**, çünkü mobil tip kontrolü **kökün üretilmiş Prisma
+client'ına bağlı**: `mobile/tsconfig.json` `@/*`'ı `../src/*`'a eşliyor ve
+paylaşılan modüllerden ikisi `@prisma/client`'tan tip alıyor. Ayrı bir job
+kök kurulumunu ve `prisma generate`'i baştan yapmak zorunda kalırdı.
+
+**Koşullu da değil** ("yalnızca `mobile/` değiştiyse"): `src/lib`'deki bir
+değişiklik mobili kırabiliyor — kapatılan boşluğun adı zaten "bazen
+bakılmıyor".
+
+**`expo-doctor` ilk koşuşunda gerçek bir şey buldu:** `ClerkProvider`
+`expo-web-browser`'ı koşulsuz `require` ediyor ama paket yalnızca **dolaylı**
+kuruluydu. Expo Go'da görünmüyor; native derlemede autolinking uygulamanın
+kendi bağımlılık listesine baktığı için native modül bağlanmayabiliyor —
+yani tam da TestFlight'ta. `expo-web-browser` ve `expo-auth-session` artık
+doğrudan bağımlılık, `expo-web-browser` ayrıca config plugin olarak eklendi.
+
+**Ölçülen süreler:** `npm ci` 9 sn, tsc 1 sn, doctor 2 sn, export 7 sn.
+
+**İki kapının kırmızıya düşebildiği kanıtlandı**, çünkü düşemeyen bir kapı
+kapı değildir: bağımlılık geçici olarak kaldırılınca `expo-doctor` **1**
+döndü, bozuk bir import eklenince `expo export` **1** döndü.
+
+**Yan bulgu — yayın derlemesi için önemli:** `EXPO_PUBLIC_*` değerleri pakete
+**gömülüyor**, ve Metro'nun önbelleği env değişikliğini görmüyor: aynı komut,
+`.env.local` varken ve yokken **birebir aynı paket hash'ini** üretti. Yayın
+derlemesinde bunun bedeli yanlış API adresi gömülü bir uygulama olur.
+CI `--clear` kullanıyor; TestFlight derlemesinde de kullanılmalı.
+
+**Kapsam dışı:** mobil lint (bugün yok; eklemek yeni devDependency ister ve
+Faz 18'deki altı gerçek hatanın hiçbirini yakalamazdı) ve mobil birim testi
+(ayrı aday olarak duruyor).
+
+---
+
 ## Faz dışı düzeltmeler
 
 | İş | Commit |
@@ -1014,8 +1054,7 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **CI mobili doğrulasın** | Sekiz ekranlık bir uygulama var ve CI hiçbirine bakmıyor; `mobile/` bağımlılıkları bile kurulmuyor |
-| **Mobilde otomatik test** | Bugün tek doğrulama simülatörde elle bakmak |
+| **Mobilde otomatik test** | CI artık derleniyor mu diye bakıyor ama **davranışa** bakan hiçbir şey yok; mobilin doğrulaması hâlâ simülatörde elle |
 | **Silineni geri alma arayüzü** | `restore` ucu var, hiçbir istemci kullanmıyor |
 | **Mobilde bildirimler / dil seçimi / grup düzenleme** | Web'de var, mobilde yok |
 | **Fişin canlıda gözle görülmesi** | Uzun açıklamalarda noktalı ayraç ve çok aylı katlama yalnızca yapay veriyle sınandı |

@@ -8,6 +8,28 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-25 (2)
+
+### CI mobil tarafa da bakıyor (Faz 20)
+- Mevcut işe dört adım eklendi: `npm ci`, `tsc`, `expo-doctor`,
+  `expo export`. Ölçülen süreler 9 / 1 / 2 / 7 saniye.
+- **Ayrı job değil**, çünkü mobil tip kontrolü kökün üretilmiş Prisma
+  client'ına bağlı. **Koşullu da değil**, çünkü `src/lib`'deki bir
+  değişiklik mobili kırabiliyor.
+- **`expo-doctor` ilk koşuşunda gerçek bir şey buldu:** `ClerkProvider`
+  `expo-web-browser`'ı koşulsuz `require` ediyor ama paket yalnızca
+  dolaylı kuruluydu. Native derlemede autolinking bunu kaçırabilirdi —
+  yani TestFlight'ta çökme. `expo-web-browser` ve `expo-auth-session`
+  artık doğrudan bağımlılık.
+- **İki kapının kırmızıya düşebildiği kanıtlandı**: bağımlılık geçici
+  kaldırılınca doctor 1 döndü, bozuk import eklenince export 1 döndü.
+- **Yayın derlemesi için not:** `EXPO_PUBLIC_*` pakete gömülüyor ve
+  Metro'nun önbelleği env değişikliğini görmüyor — aynı komut,
+  `.env.local` varken ve yokken aynı paket hash'ini üretti. CI `--clear`
+  kullanıyor; TestFlight derlemesinde de kullanılmalı.
+- Mobil lint eklenmedi (yeni devDependency ister, Faz 18'deki altı
+  gerçek hatanın hiçbirini yakalamazdı).
+
 ## 2026-08-25
 
 ### Eş zamanlı düzenleme artık sessizce kaybolmuyor (ADR-032)

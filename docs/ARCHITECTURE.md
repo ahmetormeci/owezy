@@ -161,9 +161,17 @@ mobil ağacın dışındaki bir dosyadan `react` çözülünce kökteki kopya bu
 ve iki React kopyası kancaları boş bir dispatcher'a gönderiyor. Ayrıntı ve
 kural [CONVENTIONS.md](CONVENTIONS.md) "Mobil" bölümünde.
 
-**Otomatik testi yok.** E2E yalnızca web'i kapsıyor ve CI `mobile/`
-bağımlılıklarını kurmuyor. Mobil doğrulaması bugün iOS Simulator'da elle
-yapılıyor. Bilinen açık.
+**Otomatik testi yok, ama CI artık ona da bakıyor.** E2E ve birim testleri
+hâlâ yalnızca web'i kapsıyor; mobilin **davranışını** doğrulayan hiçbir şey
+yok ve doğrulama iOS Simulator'da elle yapılıyor. CI (Faz 20) mobil tarafta
+dört şey koşuyor: bağımlılık kurulumu, `tsc`, `expo-doctor` ve
+`expo export`. Sonuncusu tip sisteminin göremediği katmanı kapsıyor —
+Metro'nun depo kökü üzerinden `@/lib` takma adını gerçekten çözebilmesi ve
+paketin kurulabilmesi.
+
+Mobil adımlar **ayrı bir job değil**: mobil `tsc`, kökün üretilmiş Prisma
+client'ına bağlı (paylaşılan modüllerden ikisi `@prisma/client`'tan tip
+alıyor ve `mobile/node_modules`'ta `@prisma` yok, çözüm köke çıkıyor).
 
 **Rotalar:** `/` yalnızca yönlendirir (0 grup → liste, 1 grup → doğrudan
 gruba, 2+ → liste); `/groups` her zaman listeyi gösterir. İkisinin ayrı
