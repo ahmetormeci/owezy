@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (11)
+Updated: 2026-08-25 (12)
 
 Current task:
   FAZ 25 - CLERK'TEN BETTER AUTH'A GEC. Karar kullanicinin: 2FA Clerk'te bir
@@ -28,7 +28,7 @@ Current task:
     25.1  Sema ve iskelet                    BITTI  aa6f6cb
     25.2  Resend + sendVerificationOTP       BITTI  6dbb997
     25.3  Sunucu kimligi (auth.ts, /api/v1)  BITTI  bd9ae88
-    25.4  Web arayuzleri (giris/kayit)       BITTI  (commit bekliyor)
+    25.4  Web arayuzleri (giris/kayit)       BITTI  0952ad2
     25.5  Mobil (bearer + ekranlar)
     25.6  2FA (TOTP + yedek kod + trustDevice)
     25.7  Clerk'in sokulmesi
@@ -562,13 +562,44 @@ Verify with:
   390 ve 768 px'te olculuyor. Yeni bir duzen eklendiginde ayni olcum oraya da
   konmali.
 
-  IZLENECEK - ARALIKLI E2E HATASI (macOS'ta bes tam kosu temiz gecti, yani
-  tekrarlamadi): Faz 14 sonrasi ardarda uc tam kosudan BIRINDE bir test
-  "toBeVisible" ile dustu. Hangi test oldugu belirlenemedi, cunku sonraki
-  kosu test-results'i temizliyor. Tekrarlarsa: kosuyu dosyaya al
-  (npm run test:e2e > out.txt), hangi test oldugunu bul, sonra ya o iddiayi
-  daha kesin bir sinyale bagla ya da timeout'u YALNIZCA orada yukselt.
-  Suite'in tamamina timeout eklemek gercek yavaslamalari gizler.
+  ARALIKLI E2E HATASI: BULUNDU VE DUZELTILDI (25 Agustos).
+  Dosyada uzun suredir "tekrarlarsa arastirilacak" diye duruyordu; tekrarladi.
+
+  TEST: expenses.spec.ts:106 "yuzdeli harcama duzenlenirken yuzdeler dolu
+  gelir". Uc farkli hata mesaji goruldu (toBeVisible, waitForURL, element
+  not found) ama hepsi AYNI seyin farkli yerlerde yakalanmis haliydi:
+  "Test timeout of 60000ms exceeded".
+
+  SEBEP - bir yaris:
+    joinViaInvite() sayfayi acip "Gruba katil" butonuna GORUNDUGU ANDA
+    basiyordu. O butonu SUNUCU render ediyor, yani HTML'de aninda var. Ama
+    basinca calisan sey ISTEMCIDEN /api/v1/invites/accept'e giden bir fetch,
+    ve Clerk'in __session cerezi KISA OMURLU - tarayicidaki SDK tazeliyor.
+    Tiklama tazelemenin arasina denk gelirse istek 401 doner, katilma olmaz,
+    waitForURL sonsuza kadar bekler.
+    Belirti kanitli: dusen kosunun sayfa goruntusunde GIRISLI bir kullanicida
+    "Bu islem icin giris yapman gerekiyor" yaziyordu.
+
+  NEDEN YALNIZCA BU TEST: davet akisi, sayfa yuklendikten HEMEN SONRA
+  istemciden kimlikli istek atan tek yer. Digerleri form gonderiyor, yani
+  sunucudan geciyor ve orada bayat cerez sorun degil.
+
+  COZUM: joinViaInvite icinde tiklamadan once clerk.loaded({ page }).
+  global.setup.ts zaten ayni araci kullaniyordu.
+
+  DOGRULAMA: duzeltmeden ONCE bu dosyanin dort kosusunun IKISI dustu.
+  SONRA uc kosu temiz ve sureler oturdu (26.5 / 26.7 / 27.1 sn - onceden
+  25 sn ile 60+ sn arasinda gidip geliyordu). Ardindan tam kosu 43/43.
+  NOT: aralikli bir hatada uc temiz kosu KANIT DEGIL, guclu bir isarettir.
+
+  25.8'DE KENDILIGINDEN KALKACAK: Better Auth'un oturum cerezi uzun omurlu
+  ve tarayicida tazelenmesi gerekmiyor, yani yarisin kaynagi yok oluyor.
+  clerk.loaded cagrisi da o zaman silinecek.
+
+  YANLIS BIR TESHIS DE YAPILDI, kayda geciyor: once "sebep UserMenu'nun
+  authClient importu" sanildi. Sebep, 3 testlik bir "-g" kosusunu 15
+  testlik tam dosya kosusuyla karsilastirmakti - esit olmayan iki sey.
+  Ders: bir testi izole ederken KAPSAMI da degistirme.
 
   KURULUM ADIMI DA DUSEBILIYOR - 25 Agustos'ta yasandi: global.setup
   "test kullanicilarinin oturumlarini hazirla" adimi dustu, hemen ardindan
