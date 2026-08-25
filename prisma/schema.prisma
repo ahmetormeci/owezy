@@ -71,20 +71,16 @@ enum NotificationType {
 model User {
   id          String    @id @default(uuid()) @db.Uuid
 
-  // NULLABLE OLDU (Faz 25.1). Better Auth bir kullanici yarattiginda clerkId
-  // yazmaz; NOT NULL kalsaydi her yeni kayit kisit ihlaliyle duserdi.
-  // Sutunun tamami 25.7'de, Clerk sokulurken kaldirilacak.
-  clerkId     String?   @unique
-
-  // @unique EKLENDI. Better Auth kimligi e-postadan cozuyor; kisit olmadan
+  // @unique (Faz 25.1). Better Auth kimligi e-postadan cozuyor; kisit olmadan
   // ayni adrese birden fazla satir dusebiliyor - nitekim DUSMUSTU: E2E
-  // veritabaninda uc test kullanicisinin her biri iki kez vardi, cunku
-  // Clerk tarafinda kullanici yeniden yaratilinca clerkId degisiyor ve
-  // "clerkId ile ara, yoksa olustur" ikinci satiri aciyordu.
+  // veritabaninda uc test kullanicisinin her biri iki kez vardi. Sebebi
+  // Clerk'e ozguydu: orada kullanici yeniden yaratilinca clerkId degisiyor
+  // ve "clerkId ile ara, yoksa olustur" ikinci bir satir aciyordu. O sutun
+  // 25.7'de dustu ama kisit KALICI - e-posta kimligin kendisi.
   email       String    @unique
 
-  // Better Auth'un cekirdek alani. Bizde karsiligi yoktu cunku dogrulamayi
-  // Clerk yapiyordu ve biz sonucunu hic saklamiyorduk.
+  // Better Auth'un cekirdek alani. Faz 25 oncesinde karsiligi yoktu cunku
+  // dogrulamayi Clerk yapiyordu ve biz sonucunu hic saklamiyorduk.
   emailVerified Boolean @default(false)
 
   displayName String
@@ -92,12 +88,6 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
-
-  // Clerk'teki kaydin son guncellenme zamani (webhook olayindan gelir).
-  // Webhook'lar sirasiz gelebildigi icin, elimizdekinden ESKI bir olayi
-  // uygulamamak adina saklaniyor. Bizim updatedAt'imizden farklidir:
-  // o bizim satirimizin, bu Clerk'teki kaydin zamani.
-  clerkUpdatedAt DateTime?
 
   // Arayuz dili tercihi ("tr" / "en").
   //
@@ -110,16 +100,21 @@ model User {
   // Kolon String cunku dil listesi buyudukce migration gerektirmesin.
   locale String?
 
-  // Kullanici Clerk'e GERCEKTEN bir fotograf yukledi mi?
+  // Kullanici GERCEKTEN bir fotograf yukledi mi?
   //
   // NEDEN AYRI BIR ALAN: Clerk, fotograf yuklememis kullaniciya da bir
-  // image_url veriyor - kendi urettigi bas-harf gorseli. avatarUrl'e bakip
+  // image_url veriyordu - kendi urettigi bas-harf gorseli. avatarUrl'e bakip
   // "varsa fotografi bas" deseydik, fotografi olanlar gercek yuz, olmayanlar
   // CLERK'IN tasarimiyla gorunurdu; bizim bas-harf dairelerimizle yan yana
   // iki ayri gorsel sistem olurdu.
   //
-  // Nullable: webhook'tan bu alani tasimayan eski bir olay gelirse "bilmiyorum"
-  // diyebilmeliyiz. null, false gibi davraniyor (bas harf gosteriliyor).
+  // FAZ 25.7 SONRASI IKISINI DE YAZAN YOK: Clerk gitti, yeni kayit akisi
+  // fotograf sormuyor. Sutunlar duruyor cunku eski satirlarda deger var ve
+  // bir profil fotografi ozelligi geldiginde ayni ayrim yine gerekecek
+  // (bkz. components/person-avatar.tsx).
+  //
+  // Nullable: "bilmiyorum" diyebilmek icin. null, false gibi davraniyor
+  // (bas harf gosteriliyor).
   hasImage Boolean?
 
   // Bu kullanicinin olusturdugu gruplar
