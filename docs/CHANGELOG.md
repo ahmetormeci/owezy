@@ -8,6 +8,54 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-26 (2) — Clerk söküldü (hâlâ `better-auth` dalında)
+
+### Kimlik doğrulamayı artık tamamen biz yapıyoruz
+- **E2E önce taşındı, Clerk sonra söküldü** — sıra bilerek böyle. Kurulum
+  Clerk'in tarayıcı SDK'sıyla giriş yapıyordu; tersi sırada 43 test birden
+  düşer ve sökmeyi doğrulayacak hiçbir şey kalmazdı.
+- E2E kurulumu yarı yarıya küçüldü: bot koruması, `window.Clerk.signIn`,
+  sabit `424242` kodu ve `+clerk_test` adresleri gitti. Test kullanıcılarını
+  **kurulum kendisi yaratıyor**, yani E2E veritabanı elle hazırlık istemiyor.
+- Kimlik kapısı tek fonksiyona indi: `findCurrentUser`. `getOrCreateCurrentUser`
+  ve onunla birlikte "lazy sync" (ADR-011), yarış için yazılmış `P2002`
+  ele alması, webhook ve `clerk-sync` gitti. Hepsi Clerk'in kendi kullanıcı
+  tablosunu tutmasından doğuyordu.
+- `src/proxy.ts` **tamamen silindi**. Tek işi Clerk'in oturum bağlamını her
+  isteğe eklemekti; hiçbir route'u korumuyordu — koruma her zaman
+  `(app)/layout.tsx`'teydi ve orada kalıyor.
+- `User.clerkId` ve `User.clerkUpdatedAt` sütunları düştü.
+
+### ADR-007 karşılığını verdi
+"Kimlik sağlayıcısı değiştirilebilir olmalı" diye yazılmıştı ve bir
+varsayımdı. Sınandı: `Expense`, `Settlement`, `GroupMember`, `Notification` —
+hepsi `User.id`'ye bağlıydı ve **hiçbirine dokunulmadı**. Göç tek bir
+`ALTER TABLE "User" DROP COLUMN "clerkId"` ile bitti. `clerkId` her yere
+foreign key olarak yayılsaydı, aynı iş veri modelini baştan yazmak olurdu.
+
+### Gizlilik politikası yanlış olmuştu, düzeltildi
+"Parolan bize hiç ulaşmaz; girişi Clerk yönetiyor" cümlesi 25.4'ten beri
+doğru değildi: parola artık **bizim** sunucumuza geliyor, hash'lenip
+veritabanımıza yazılıyor. Aynı cümle "toplamadıklarımız" listesinde de
+duruyordu — bir gizlilik politikasındaki en kötü hata türü: tutmadığımızı
+söylediğimiz bir şeyi tutmak. **Resend yeni bir veri işleyici** olarak
+eklendi (giriş kodu e-postaları), Clerk listeden çıktı.
+
+### Sökme bir boşluk açtı, aynı fazda kapatıldı
+Görünen adı değiştirmenin tek yolu Clerk'in profil arayüzüydü. Kalksaydı,
+e-posta koduyla giren birinin adı sonsuza kadar e-posta adresi olarak
+kalırdı — üye listesinde, bakiyelerde, fişte. `PATCH /api/v1/me` artık
+`displayName` de kabul ediyor; düzenleme başlıktaki kullanıcı menüsünde,
+ayrı bir hesap ekranı açılmadan. E-posta hâlâ değiştirilemez ve bu kasıtlı.
+
+### Ölçüm bir hatayı yakaladı
+`prisma migrate diff` çıktısını okurken, bir yorumu düzenlerken `hasImage`
+alanının kendisini de sildiğim görüldü. `tsc` bunu göremezdi: üretilmiş
+Prisma client hâlâ eski tipi taşıyordu. Şema değişikliklerinde tek gerçek
+kontrol, üretilen SQL'i okumak.
+
+---
+
 ## 2026-08-26 (1) — `better-auth` dalı, `main`'e girmedi
 
 Faz 25'in ilk beş adımı. Bu kayıt tek girişte toplandı çünkü adımlar bir

@@ -143,10 +143,20 @@ demek olurdu. Ayrıca dış sistemin kimlik formatı bizim şemamızı belirleme
 **Alternatifler:** `clerkId`'yi doğrudan birincil anahtar yapmak (daha az
 tablo, daha az sorgu).
 
-**Sonuç:** Her istekte bir `User` araması gerekiyor
-(`getOrCreateCurrentUser`). Karşılığında kimlik sağlayıcısı bir tek tabloya
-izole edildi ve hesap silmede kaydı anonimleştirip **finansal geçmişi
-korumak** mümkün oldu.
+**Sonuç:** Her istekte bir `User` araması gerekiyor (`findCurrentUser`).
+Karşılığında kimlik sağlayıcısı bir tek tabloya izole edildi ve hesap silmede
+kaydı anonimleştirip **finansal geçmişi korumak** mümkün oldu.
+
+**BU KARAR FAZ 25'TE KARŞILIĞINI VERDİ ve gerekçesi kelimesi kelimesine
+gerçekleşti.** "Kimlik sağlayıcısı değiştirilebilir olmalı" bir varsayımdı;
+Clerk'ten Better Auth'a geçilirken sınandı. `Expense`, `Settlement`,
+`GroupMember`, `Notification` — hepsi `User.id`'ye bağlıydı ve **hiçbirine
+dokunulmadı**. Göç, tek bir sütunun düşürülmesiyle bitti:
+`ALTER TABLE "User" DROP COLUMN "clerkId"` (migration
+`20260826020000_drop_clerk_columns`).
+
+`clerkId` her yere foreign key olarak yayılsaydı, aynı iş veri modelini baştan
+yazmak olurdu — ve uygulamanın canlıda olduğu bir anda.
 
 ---
 
@@ -231,8 +241,19 @@ iki katman: `clerkUpdatedAt` karşılaştırması ve "silme kalıcıdır" kural�
 payload'ında zaman damgası yoktur, o yüzden zamanla korunamaz).
 
 Hesap silme: satır **silinmez**, anonimleştirilir (e-posta, ad, avatar
-temizlenir, `clerkId` korunur). Finansal geçmiş bu satıra bağlıdır; ayrılmış
-ama borcu duran üye bakiye listesinde kalmaya devam eder.
+temizlenir). Finansal geçmiş bu satıra bağlıdır; ayrılmış ama borcu duran üye
+bakiye listesinde kalmaya devam eder.
+
+**GEÇERSİZ (Faz 25.7).** Bu ADR'nin tarif ettiği makinenin tamamı kalktı:
+webhook silindi, `clerkUpdatedAt` sütunu düştü, `getOrCreateCurrentUser` ise
+`findCurrentUser`'a indi ve içinde kayıt yaratan hiçbir kod kalmadı. Sebep
+kararın yanlış olması değil, **dayandığı koşulun yok olması**: Better Auth
+bizim `User` tablomuza yazıyor, yani "oturum var ama satır yok" durumu
+oluşamıyor. Senkronize edilecek ikinci bir kullanıcı kaydı yok.
+
+Hesap silmenin anonimleştirme kararı **duruyor** ve ADR-031'in işi. Bir
+ayrıntı değişti: `email` artık UNIQUE, yani anonim adres satır başına
+benzersiz üretilmeli (bkz. DATABASE.md).
 
 ---
 
@@ -1285,6 +1306,14 @@ düzeltmeye çalıştığı hatanın aynısı: aynı ekranda iki dil.
 Ölçüldü, tahmin edilmedi: `router.refresh()` sonrası form Türkçe kalıyordu,
 tam yeniden yüklemede doğru dil geliyordu. Düzeltmeden sonra iki yön de
 tarayıcıda doğrulandı.
+
+**GEREKÇESİ DÜŞTÜ, DAVRANIŞ DURUYOR (Faz 25.7).** Bu kararın dayandığı tek şey
+Clerk'in bileşenlerinin `localization`'ı yalnızca mount'ta okumasıydı. Giriş ve
+kayıt formları artık **bizim** ve metinleri `messages.ts`'ten geliyor, yani
+`router.refresh()` onları da tazeliyor. Tam yeniden yüklemenin hâlâ gerekip
+gerekmediği **ölçülmedi** — ve ölçmeden değiştirmek, 12.2'de kapatılan hatayı
+geri açma riski taşır. Bu bir sadeleştirme işi; sırası geldiğinde tarayıcıda
+sınanmalı.
 
 **Neden her yerde değil:** `router.refresh()` istemci state'ini koruyor —
 açık pencereler, yarım kalmış harcama formu. Uygulama içi sayfalarda Clerk

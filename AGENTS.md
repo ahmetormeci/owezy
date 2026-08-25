@@ -121,7 +121,6 @@ Bunlar tartışılmış ve karara bağlanmıştır (gerekçeler DECISIONS.md'de)
   çalışmayı reddeder.
 - Tam E2E koşusu ~5–6 dakika sürer ve gerçek bir dev sunucusu başlatır (3100).
   **Koşu sürerken proje dosyalarına dokunma.**
-- E2E çıktısındaki `[WebServer]` satırları dev sunucusunun stderr'i: Clerk'in
-  "development keys" uyarısı ve tarayıcı kapanınca çıkan `ECONNRESET` /
-  `Error: aborted` gürültüdür. Playwright'ta `stdout` zaten kapalı; `stderr`
+- E2E çıktısındaki `[WebServer]` satırları dev sunucusunun stderr'i: tarayıcı
+  kapanınca çıkan `ECONNRESET` / `Error: aborted` gürültüsüdür. Playwright'ta `stdout` zaten kapalı; `stderr`
   **bilerek açık** çünkü gerçek sunucu hataları da oradan geliyor.

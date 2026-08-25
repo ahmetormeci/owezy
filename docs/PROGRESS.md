@@ -8,12 +8,13 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 24 faz tamamlandı, **Faz 25 sürüyor** (`better-auth` dalında, `main`'e
-girmedi). Uygulama canlıda ve `main`'e giden her değişiklik CI'dan geçiyor.
+**Özet:** 24 faz tamamlandı, **Faz 25 uygulama tarafında bitti** (`better-auth`
+dalında; `main`'e alınması bir kontrol listesine bağlı, bkz. CURRENT_TASK).
+Uygulama canlıda ve `main`'e giden her değişiklik CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 539 | ✅ tümü geçiyor |
+| Birim (Vitest) | 510 | ✅ tümü geçiyor |
 | E2E (Playwright) | 43 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -1112,13 +1113,14 @@ Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yarama
 
 ---
 
-## Faz 25 — Clerk'ten Better Auth'a geçiş · **SÜRÜYOR**
+## Faz 25 — Clerk'ten Better Auth'a geçiş · **UYGULAMA TARAFINDA BİTTİ**
 
-`better-auth` dalında. **`main`'e girmedi** ve girmeyecek: `betterAuth()`
-`BETTER_AUTH_SECRET` yokken **modül yüklenirken** fırlatıyor, `src/lib/auth.ts`
-onu neredeyse her sayfaya taşıyor — yani Vercel değişkenleri girilmeden bir
-push, uygulamanın tamamını 500 yapardı. Ayrıca yeni `/sign-in` yalnızca Better
-Auth konuşuyor ve App Review demo hesabı Clerk production'da.
+`better-auth` dalında ve **`main`'e henüz girmedi.** Girmesi bir sıraya bağlı:
+`betterAuth()` `BETTER_AUTH_SECRET` yokken **modül yüklenirken** fırlatıyor ve
+`src/lib/auth.ts` onu neredeyse her sayfaya taşıyor — yani Vercel değişkenleri
+girilmeden bir push, uygulamanın tamamını 500 yapar. Ayrıca App Review demo
+hesabı Clerk production'da duruyor ve merge'den sonra işe yaramaz; yeniden
+kurulması gerekiyor. Tam kontrol listesi CURRENT_TASK'ta.
 
 Yayından **önce** yapılıyor: production'da sıfır kullanıcı var. Sonra yapmak
 herkese parola sıfırlatmak demekti (Clerk parola hash'ini dışarı vermiyor).
@@ -1130,9 +1132,16 @@ herkese parola sıfırlatmak demekti (Clerk parola hash'ini dışarı vermiyor).
 | 25.3 Sunucu kimliği (`auth.ts`, `/api/v1`) | ✅ | `bd9ae88` |
 | 25.4 Web arayüzleri (giriş/kayıt/menü) | ✅ | `0952ad2`, `e8163e6`, `c4107b2` |
 | 25.5 Mobil | ✅ | `b3156e9` |
-| 25.6 İkinci faktör (`twoFactor`) | — | |
-| 25.7 Clerk'in sökülmesi | — | |
-| 25.8 E2E yeniden kurulur | — | |
+| 25.8 E2E Better Auth'a geçti | ✅ | `fb4e167` |
+| 25.7 Clerk'in sökülmesi | ✅ | `d10146f`, `c9a8869`, `eddace3`, `980c76d`, `a23dc5a` |
+| 25.6 İkinci faktör | ⏸ ertelendi | |
+
+**Sıra bilerek değişti (kullanıcı kararı).** E2E kurulumu Clerk'in tarayıcı
+SDK'sıyla giriş yapıyordu; Clerk önce sökülseydi 43 test birden düşer ve
+sökmeyi doğrulayacak hiçbir şey kalmazdı. 2FA ise ertelendi çünkü ölçüldüğünde
+"eklentiyi tak" işi olmadığı görüldü — Better Auth'un 2FA kancası
+`/sign-in/email-otp`'yi hiç görmüyor ve meydan okuma çerezle taşınıyor
+(mobil çerez taşımıyor). Ayrıntı ve üç seçenek CURRENT_TASK'ta.
 
 **Kazanç şimdiden görülüyor:** kendi `User` tablomuz devralındı (`modelName` +
 `fields`), yani `Expense`/`Settlement`/`GroupMember`/`Notification`'ın tamamı
@@ -1151,7 +1160,28 @@ id üreteci UUID değil; `prisma migrate diff` çıktısı olduğu gibi alınam�
 şemasını üretti ve `Account.issuer` atlandı. Şema artık `getAuthTables()`
 çağrılarak doğrulanıyor.
 
-**Test:** Birim 539 ✅ · E2E 43 ✅ · `tsc`/lint ✅ · mobil uçtan uca simülatörde ✅
+**25.7 — Clerk'in sökülmesi.** Kimlik kapısı tek fonksiyona indi
+(`findCurrentUser`); `getOrCreateCurrentUser`, "lazy sync" (ADR-011), webhook,
+`clerk-sync`, `ClerkProvider` ve `src/proxy.ts` gitti. `src/proxy.ts` tamamen
+silindi: tek işi Clerk'in oturum bağlamını taşımaktı, hiçbir route'u
+korumuyordu. `User.clerkId` ve `User.clerkUpdatedAt` sütunları düştü.
+
+**ADR-007 karşılığını verdi.** "Kimlik sağlayıcısı değiştirilebilir olmalı"
+bir varsayımdı; sınandı. `Expense`, `Settlement`, `GroupMember`,
+`Notification` — hepsi `User.id`'ye bağlıydı ve **hiçbirine dokunulmadı**.
+Göç tek bir `DROP COLUMN` ile bitti.
+
+**Gizlilik politikası yanlış olmuştu.** "Parolan bize hiç ulaşmaz; girişi
+Clerk yönetiyor" cümlesi 25.4'ten beri doğru değildi — parola artık bizim
+sunucumuza geliyor ve hash'lenip veritabanımıza yazılıyor. Düzeltildi; Resend
+yeni bir veri işleyici olarak eklendi, Clerk listeden çıktı.
+
+**Sökme bir boşluk açtı ve aynı fazda kapatıldı:** görünen adı değiştirmenin
+tek yolu Clerk'in profil arayüzüydü. `PATCH /api/v1/me` artık `displayName`
+de kabul ediyor.
+
+**Test:** Birim 510 ✅ · E2E 43 ✅ · `tsc`/lint ✅ · `expo-doctor` 21/21 ✅ ·
+`expo export` ✅ · mobil uçtan uca simülatörde ✅
 
 ---
 

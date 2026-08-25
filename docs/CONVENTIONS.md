@@ -62,7 +62,8 @@ const expense = await prisma.expense.create({ ... });
 ## Auth
 
 - Kimlik doğrulama route'ta, **yetkilendirme serviste**.
-- Servise her zaman bizim `User.id`'miz geçer, `clerkId` değil.
+- Servise her zaman bizim `User.id`'miz geçer. (Faz 25'e kadar bunun bir de
+  karşıtı vardı — `clerkId`; o sütun 25.7'de düştü.)
 - Yetki mantığı `src/lib/group-access.ts` içinde tek yerde durur; harcama ve
   ödeme kayıtları aynı fonksiyonu kullanır.
 - Arayüzde buton gizlemek yetkilendirme **değildir**, yalnızca kolaylıktır.
@@ -143,7 +144,7 @@ dokunursa biri diğerini sessizce ezer mi?
 kontrolünün varlığı ve doğrulama davranışıdır.
 
 **E2E (Playwright)** — gerçek tarayıcı, gerçek veritabanı (ayrı Neon),
-3 gerçek Clerk kullanıcısı.
+3 test kullanıcısı — kurulum onları her koşuda kendisi yaratıyor.
 
 Kurallar:
 
@@ -254,7 +255,7 @@ kodu göreli yolla import edilir — `@/` yalnızca web ile paylaşılanı göst
 - Yeni paket eklemeden önce mevcut bağımlılıkların yeterli olup olmadığına
   bak (örn. webhook doğrulaması için ek paket gerekmedi).
 - `src/components/ui/*` shadcn tarafından üretilir; **elle düzenlenmez**.
-- Next.js/Prisma/Clerk sürümleri eğitim verisinden farklı olabilir —
+- Next.js/Prisma/Better Auth sürümleri eğitim verisinden farklı olabilir —
   yazmadan önce `node_modules` içindeki tip tanımlarını veya dokümanı oku.
   Bu, `AGENTS.md`'de de yazılı bir kuraldır.
 

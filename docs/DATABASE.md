@@ -18,27 +18,41 @@ PostgreSQL (Neon). 9 model, 5 enum, 3 migration.
 ## Modeller
 
 ### User
-Clerk kimliğinin bizim tarafımızdaki karşılığı. `clerkId` UNIQUE, `email`
-indexli (UNIQUE **değil** — hesap silmede anonimleştirme çakışma yaratmasın).
+Kimliğin tek kaynağı. `email` **UNIQUE** (Faz 25.1) — Better Auth kimliği
+e-postadan çözüyor ve kısıt olmadan aynı adrese birden fazla satır düşüyordu;
+nitekim düşmüştü.
+
+**Bir gerilim var ve hesap silme yazılırken çözülmeli:** bu doküman bir ara
+"`email` UNIQUE **değil**, çünkü hesap silmede anonimleştirme çakışma
+yaratmasın" diyordu. O gerekçe hâlâ geçerli — iki hesabı aynı yer tutucu
+adrese çevirmek artık kısıtı ihlal eder. `DELETE /api/v1/me` henüz yazılmadı
+(ADR-031); yazılırken anonim adres **satır başına benzersiz** üretilmeli
+(örneğin `deleted+<id>@owezy.invalid`).
 
 `deletedAt` — hesap kapatma (anonimleştirme) işareti.
-`clerkUpdatedAt` — Clerk'teki kaydın son güncellenme zamanı; sırasız gelen
-webhook olaylarında eski veriyle üzerine yazmayı engeller. Bizim `updatedAt`
-alanımızdan farklıdır (o bizim satırımızın zamanı).
+
+`emailVerified` — Better Auth'un çekirdek alanı. Faz 25 öncesinde karşılığı
+yoktu; doğrulamayı Clerk yapıyordu ve sonucunu saklamıyorduk.
+
+**Kaldırılan sütunlar (Faz 25.7):** `clerkId` (ADR-007'nin taşıdığı eşleme) ve
+`clerkUpdatedAt` (sırasız webhook olaylarına karşı tutulan zaman damgası).
+İkisi de yalnızca Clerk'e giden bir işaret taşıyordu.
 
 `locale` — arayüz dili tercihi (`"tr"` / `"en"`). **Nullable ve
 varsayılansız**, bilerek: `@default("tr")` mevcut her kullanıcının Türkçe
 *seçtiğini* iddia ederdi, oysa hiçbiri seçmedi. `null` = "tercih belirtmedi"
 ve okuma sırası bunu doğal karşılıyor: çerez → hesap → varsayılan (ADR-019).
 
-`hasImage` — kullanıcı Clerk'e **gerçekten** bir fotoğraf yükledi mi?
-Nullable ve bilerek `avatarUrl`'den ayrı: Clerk, fotoğraf yüklememiş
-kullanıcıya da bir `image_url` veriyor (kendi ürettiği baş-harf görseli).
-`avatarUrl`'in varlığına bakıp fotoğraf basmak, fotoğrafı olanları gerçek
-yüzle, olmayanları **Clerk'in tasarımıyla** gösterirdi — aynı listede iki
-ayrı görsel sistem. `null` = "bilmiyorum" (bu alanı taşımayan eski bir
-webhook olayı); arayüzde `false` gibi davranıyor. Hesap silinince
-`avatarUrl` ile birlikte `null`'a çekiliyor.
+`hasImage` — kullanıcı **gerçekten** bir fotoğraf yükledi mi? Nullable ve
+bilerek `avatarUrl`'den ayrı: Clerk, fotoğraf yüklememiş kullanıcıya da bir
+`image_url` veriyordu (kendi ürettiği baş-harf görseli). `avatarUrl`'in
+varlığına bakıp fotoğraf basmak, fotoğrafı olanları gerçek yüzle,
+olmayanları **Clerk'in tasarımıyla** gösterirdi — aynı listede iki ayrı
+görsel sistem. `null` = "bilmiyorum"; arayüzde `false` gibi davranıyor.
+
+**Faz 25.7 sonrası ikisini de yazan yok:** Clerk gitti, yeni kayıt akışı
+fotoğraf sormuyor. Sütunlar duruyor — eski satırlarda değer var ve bir profil
+fotoğrafı özelliği geldiğinde aynı ayrım yine gerekecek.
 
 `locale` kolonu `String`, enum değil — dil listesi büyüdüğünde migration
 gerektirmesin.
@@ -105,9 +119,31 @@ saklanmaz**, kullanıcıya bir kez gösterilir. `maxUses` / `useCount` / `expire
 `payload` JsonB — anlık görüntü (grup adı, işlemi yapanın adı, tutar).
 Tutar burada da **kuruş cinsinden tam sayıdır**.
 
+### Session / Account / Verification
+Better Auth'un yönettiği üç tablo (Faz 25.1). **Şemayı biz yazmıyoruz** —
+alanların kanonik listesi kütüphanenin `getAuthTables()` çağrısından gelir ve
+şema ona göre doğrulanır. Bu bir tercih değil, ödenmiş bir bedel: 25.4'te şema
+eski bir CLI sürümüyle üretildi, `Account.issuer` atlandı ve kayıt formu ilk
+gerçek denemede düştü.
+
+- **Session** — açık oturumlar. Mobil bunu `Authorization: Bearer` ile taşıyor,
+  web çerezle; ikisi de aynı tabloya bakıyor (ADR-029).
+- **Account** — giriş yöntemleri. Parolayla kayıt olan kullanıcının parola
+  hash'i burada (`providerId: "credential"`, `issuer: "local:credential"`).
+- **Verification** — tek seferlik kodlar ve süreli doğrulama kayıtları.
+
+`id` sütunları `@default(uuid())` ve bu **gerekliydi**: belgeler Better Auth'un
+varsayılan olarak UUID ürettiğini söylüyor ama kaynak öyle demiyor — gerçek
+üretici nanoid tarzı bir metin. Sütunlar `@db.Uuid` yazılıp ona güvenilseydi
+ilk `INSERT` patlardı.
+
+Üçü de `User`'a bağlı ve **cascade** siliniyor — şemadaki tek yer. Bunlar
+finansal kayıt değil, oturum artifaktı; "finansal kayıtlar fiziksel olarak
+silinmez" kuralı onları bağlamıyor.
+
 ## İlişkiler ve silme davranışı
 
-**Tüm foreign key'ler `onDelete: Restrict`.** Hiçbir kayıt, kendisine bağlı
+**Finansal tarafta tüm foreign key'ler `onDelete: Restrict`.** Hiçbir kayıt, kendisine bağlı
 kayıtlar varken silinemez. Bu bilinçlidir: finansal geçmiş cascade ile
 silinememelidir. Silme işlemleri her yerde soft delete olarak yapılır.
 
@@ -172,8 +208,8 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | Harcama katılımcıları grubun **aktif** üyesi olmalı | `src/lib/expenses.ts` |
 | Ödeme tarafları üye olmalı (aktif olmak zorunda değil — borç kapatılabilmeli) | `src/lib/settlements.ts` |
 | Gruptan ayrılmadan önce bakiye kapatılmalı | `src/lib/groups.ts` |
-| Her grupta her zaman bir OWNER bulunur | `src/lib/groups.ts`, `src/lib/clerk-sync.ts` |
-| Son aktif üye ayrılınca grup arşivlenir | `src/lib/groups.ts`, `src/lib/clerk-sync.ts` |
+| Her grupta her zaman bir OWNER bulunur | `src/lib/groups.ts` |
+| Son aktif üye ayrılınca grup arşivlenir | `src/lib/groups.ts` |
 | `currency` istemciden alınmaz, gruptan türetilir | `src/lib/expenses.ts`, `src/lib/settlements.ts` |
 | Bildirim yalnızca kendi sahibi tarafından okundu işaretlenebilir | `src/lib/notifications.ts` |
 
@@ -189,6 +225,9 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260812214219_add_expense_participant_basis_points` | `ExpenseParticipant.basisPoints` (nullable) + `0..10000` aralık kısıtı. Kullanıcının **girdiği** yüzde saklanıyor; paylardan geri hesaplamak yuvarlama yüzünden her zaman mümkün değil |
 | `20260813120000_add_expense_description_fold` | `Expense.descriptionFold` — `GENERATED ALWAYS ... STORED`. Türkçe harfleri ASCII'ye indirip küçülten arama sütunu; değeri Postgres üretiyor, Prisma bilmiyor |
 | `20260825090000_add_expense_version` | `Expense.version` (`INTEGER NOT NULL DEFAULT 1`). Optimistic locking sayacı — bkz. [DECISIONS.md](DECISIONS.md) ADR-032 |
+| `20260825170000_add_better_auth` | `Session`, `Account`, `Verification` tabloları; `User.clerkId` nullable oldu, `User.email` UNIQUE oldu, `User.emailVerified` eklendi |
+| `20260825200000_add_account_issuer` | `Account.issuer`. Better Auth hesap satırına zorunlu bir issuer yazıyor (`local:credential`); sütun şemada yoktu çünkü şema eski bir CLI sürümüyle üretilmişti |
+| `20260826020000_drop_clerk_columns` | `User.clerkId` ve `User.clerkUpdatedAt` düştü (Faz 25.7). E-postanın UNIQUE kısıtı kalıyor ve asıl kimlik kısıtı artık o |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 [DECISIONS.md](DECISIONS.md) ADR-012.

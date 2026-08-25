@@ -25,7 +25,7 @@ hesaptan okunur (`User.locale`).
 | Ödeme (settlement) kaydı ve iptali | ✅ |
 | Gruptan ayrılma, üye çıkarma, sahiplik devri | ✅ |
 | Bildirimler (6 olay, zil menüsü) | ✅ |
-| Clerk webhook ile kullanıcı senkronizasyonu | ✅ |
+| Kimlik doğrulama: e-posta kodu ya da parola (web + mobil, kendi uçlarımız) | ✅ |
 | Hesap silme (anonimleştirme) | ✅ |
 | İki dil (TR/EN), açık/koyu tema, avatarlar | ✅ |
 
@@ -38,10 +38,11 @@ hesaptan okunur (`User.locale`).
 | UI | React 19.2.4, Tailwind CSS 4, shadcn/ui (**Base UI** preset, "Nova") | Radix değil |
 | Veritabanı | PostgreSQL (Neon serverless) | |
 | ORM | Prisma 7.9.0 + `@prisma/adapter-neon` | |
-| Kimlik doğrulama | Clerk 7.5.22 | |
+| Kimlik doğrulama | Better Auth 1.7.1 | kendi `User` tablomuzun üstünde; ADR-038 |
+| E-posta | Resend 6.22.1 | tek seferlik giriş kodları |
 | Doğrulama | Zod 4.4.3 | sunucu ve istemci aynı şemayı paylaşır |
 | Birim test | Vitest | sayı: PROGRESS.md |
-| E2E test | Playwright | 3 gerçek Clerk kullanıcısı; sayı: PROGRESS.md |
+| E2E test | Playwright | 3 test kullanıcısı, kurulum onları kendisi yaratıyor; sayı: PROGRESS.md |
 | Hata takibi | Sentry (`@sentry/nextjs` 10.70) | |
 | Hosting | Vercel | |
 
@@ -179,8 +180,9 @@ User ──< GroupMember >── Group
 User ──< Notification
 ```
 
-- **User** — Clerk'teki kimlikle `clerkId` üzerinden eşleşir. Uygulamanın geri
-  kalanı **her zaman** kendi `User.id`'mizi kullanır, `clerkId`'yi değil.
+- **User** — kimliğin tek kaynağı. Better Auth aynı tabloya yazıyor, yani
+  oturumun verdiği kimlik **doğrudan** bizim `User.id`'miz; arada eşleme yok.
+  Faz 25'e kadar bir `clerkId` sütunu vardı ve göçün amacı onu kaldırmaktı.
 - **Group** — tek para birimi taşır; oluşturulduktan sonra değiştirilemez.
 - **GroupMember** — `leftAt` ile geçmiş üyelikler korunur; aynı kişi ayrılıp
   tekrar katılabilir.

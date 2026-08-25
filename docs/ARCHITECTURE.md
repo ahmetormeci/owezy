@@ -13,12 +13,11 @@ src/
 │  │  └─ groups/...             Grup, harcama, üye sayfaları
 │  ├─ api/
 │  │  ├─ v1/                    Kendi versiyonladığımız API (web + mobil)
-│  │  ├─ auth/[...all]/         Better Auth'un uçları (web + mobil, v1 DEĞİL)
-│  │  └─ webhooks/clerk/        Clerk'ten gelen olaylar (v1 DEĞİL, bkz. aşağı)
+│  │  └─ auth/[...all]/         Better Auth'un uçları (web + mobil, v1 DEĞİL)
 │  ├─ join/[token]/             Davet kabul sayfası (giriş gerektirmez)
 │  ├─ privacy/, support/        Gizlilik ve destek (giriş gerektirmez, mağazalar zorunlu tutuyor)
 │  ├─ sign-in/, sign-up/        Bizim giriş/kayıt sayfalarımız (Faz 25.4)
-│  ├─ layout.tsx                Kök layout, ClerkProvider (25.7'de çıkıyor)
+│  ├─ layout.tsx                Kök layout: dil, tema, Toaster
 │  └─ page.tsx                  Karşılama sayfası
 ├─ components/
 │  ├─ ui/                       shadcn/ui (Base UI) primitifleri — elle düzenlenmez
@@ -26,8 +25,7 @@ src/
 ├─ content/legal/               Doküman METİNLERİ — sözlükte değil, bkz. ADR-034
 ├─ lib/                         SERVİS KATMANI + saf mantık
 ├─ instrumentation.ts           Sentry (sunucu)
-├─ instrumentation-client.ts    Sentry (tarayıcı)
-└─ proxy.ts                     clerkMiddleware() — koruma YAPMAZ, bkz. auth
+└─ instrumentation-client.ts    Sentry (tarayıcı)
 
 mobile/                         Expo / React Native uygulaması (Faz 18)
 ├─ app/                         expo-router: dosya tabanlı rotalar
@@ -43,10 +41,15 @@ prisma/                         schema.prisma + migrations
 docs/                           Bu dokümanlar
 ```
 
-**`/api/webhooks/clerk` neden `/api/v1` altında değil:** `/api/v1` bizim
-istemcilerimizin (web ve mobil) kullandığı, sözleşmesini bizim
-belirlediğimiz ve versiyonladığımız yüzeydir. Webhook ise dışarıdan çağrılan,
-sözleşmesini Clerk'in belirlediği ayrı bir yüzeydir.
+**`/api/auth` neden `/api/v1` altında değil:** `/api/v1` bizim istemcilerimizin
+(web ve mobil) kullandığı, sözleşmesini **bizim** belirlediğimiz ve
+versiyonladığımız yüzeydir. `/api/auth` ise sözleşmesini Better Auth'un
+belirlediği ayrı bir yüzey; onu `v1`'in altına koymak, kendi
+versiyonlayamadığımız bir şeye kendi versiyon numaramızı vermek olurdu.
+
+**`src/proxy.ts` YOK ve olmaması bilinçli.** Faz 25.7'ye kadar vardı ve tek işi
+Clerk'in oturum bağlamını her isteğe eklemekti; hiçbir route'u korumuyordu.
+Korumanın nerede olduğu aşağıda.
 
 ## Katmanlar ve bağımlılık kuralları
 
@@ -98,7 +101,7 @@ export async function POST(request: NextRequest, { params }) {
 
 Sıra sabittir: **kimlik → parametre → doğrulama → servis → cevap**.
 
-Servise her zaman **bizim `User.id`'miz** geçer, `clerkId` değil.
+Servise her zaman **bizim `User.id`'miz** geçer. (Faz 25'e kadar bunun bir de karşıtı vardı — `clerkId`; o sütun 25.7'de düştü.)
 
 ### Cevap sözleşmesi
 
@@ -120,37 +123,30 @@ Mobil tarafta karşılığı `mobile/lib/api.ts`: fırlatmak yerine
 
 ```
 İstek
- └─► proxy.ts — clerkMiddleware()
-      Yalnızca oturum bilgisini isteğe ekler. HİÇBİR ROUTE'U KORUMAZ.
- └─► (app)/layout.tsx — auth() → userId yoksa redirect("/sign-in")
- └─► Sayfa/route — getOrCreateCurrentUser() → bizim User kaydımız
+ └─► (app)/layout.tsx — findCurrentUser() yoksa redirect("/sign-in")
+ └─► Sayfa/route — findCurrentUser() → bizim User kaydımız
 ```
 
-**Koruma neden proxy'de değil:** Proxy yol eşleştirmesine dayanır ve Next.js'in
-gerçek yönlendirmesinden sapabilir; bu, korunması gereken bir sayfanın açıkta
-kalmasına yol açabilir. Clerk'in kendi dokümantasyonu da korumayı sayfada
-yapmayı önerir. (`createRouteMatcher` deprecated'dır.)
+**Koruma neden bir proxy'de değil:** Proxy yol eşleştirmesine dayanır ve
+Next.js'in gerçek yönlendirmesinden sapabilir; bu, korunması gereken bir
+sayfanın açıkta kalmasına yol açabilir. Koruma sayfanın kendisinde.
 
-Dosya Next 16'ya kadar `middleware.ts` adını taşıyordu; özellik aynı, yalnızca
-dosya kuralı yeniden adlandırıldı (bkz. sürüm tuzakları).
+### `findCurrentUser()` (`src/lib/auth.ts`)
 
-### `getOrCreateCurrentUser()` (`src/lib/auth.ts`)
+Uygulamanın **tek kimlik kapısı**; doksanın üzerinde çağrı noktası buradan
+geçiyor ve hiçbiri oturumun nasıl taşındığını bilmiyor — çerez de Bearer da
+aynı fonksiyondan geçer (ADR-029).
 
-**Faz 25 sürerken iki kimlik sistemi yan yana çalışıyor** (`better-auth`
-dalında): önce Better Auth oturumu sorulur, bulunamazsa Clerk. Yeni olan
-kazanır — tersi göçü geri alırdı, çünkü bir kullanıcının ikisinde birden
-oturumu olabilir. Better Auth yolunda `session.user.id` **doğrudan** bizim
-`User.id`'miz; arada eşleme yok. Aşağıdaki anlatım Clerk dalını tarif ediyor
-ve o dal 25.7'de siliniyor.
+`session.user.id` **doğrudan** bizim `User.id`'miz; arada eşleme yok. Better
+Auth kendi kullanıcı tablosunu açmıyor, bizimkine yazıyor. Faz 25'in bütün
+mesele ettiği şey buydu: Clerk döneminde taşınan `clerkId → User.id` eşlemesi
+(ADR-007) artık hiç oluşmuyor.
 
-Clerk kimliğini bizim `User` satırımıza bağlar. Kayıt yoksa oluşturur
-("lazy sync"). **Yarışa dayanıklıdır:** bir sayfa açılışında tarayıcı eş
-zamanlı birden fazla istek atar; hepsi "kayıt yok" görüp oluşturmaya
-çalışabilir. `P2002` (benzersizlik ihlali) bir hata değil, "yarışı başkası
-kazandı" sinyali olarak ele alınır ve kazananın kaydı okunup döndürülür.
-
-Webhook (`/api/webhooks/clerk`) bu yolun yerini **almaz**: webhook birkaç
-saniye gecikebilir. İkisi birlikte çalışır, ikisi de idempotenttir.
+**"Oturum var ama satır yok" durumu OLUŞAMAZ**, o yüzden burada kayıt yaratan
+bir kod da yok. Faz 25.7'ye kadar vardı (`getOrCreateCurrentUser`, "lazy sync",
+ADR-011) ve yarışa dayanıklı olmak zorundaydı: `P2002` bir hata değil "yarışı
+başkası kazandı" sinyali olarak ele alınıyordu. Hepsi Clerk'in kendi kullanıcı
+tablosunu tutmasından doğuyordu.
 
 ## Mobil istemci (Faz 18)
 
@@ -299,7 +295,7 @@ take: limit + 1,                                  // "daha var mı" için
 | Paket | Tuzak |
 |---|---|
 | Prisma 7 | `datasource.url` **schema'da yasak**; bağlantı `prisma.config.ts`'te. `@prisma/client`'ta **postinstall yok** → build'de `prisma generate` şart. Migration'lar **havuzsuz** bağlantı ister (`prisma-url.ts`). |
-| Clerk 7 | `SignedIn`/`SignedOut` yok → `<Show when="signed-in">`. `createRouteMatcher` deprecated. Webhook doğrulaması `standardwebhooks` ile (ek paket gerekmez). |
+| Better Auth 1.7 | Belgeler "varsayılan olarak UUID üretir" diyor, kaynak demiyor — gerçek üretici nanoid tarzı bir metin. Eklenti eşleşmesi zorunlu: sunucuda `emailOTP` varsa istemcide `emailOTPClient` olmalı. CSRF kontrolü Origin'in yokluğuna değil **çerezin varlığına** bakar (ADR-038). |
 | Base UI (shadcn) | Radix değil. `Button render={<Link/>}` **çalışmaz** — bileşen native `<button>` bekler, aksi halde React ağacı çöker ve sayfa boş kalır. Link için `buttonVariants({...})` sınıfları doğrudan `<Link>` üzerine verilir. `sentry.client.config.ts` Turbopack ile çalışmaz → `instrumentation-client.ts`. |
 | Next.js 16 | `middleware.ts` → **`proxy.ts`** (Faz 12.4'te taşındı). Özellik aynı, isim değişti. Proxy **Node.js runtime'ında** çalışır ve `runtime` config seçeneği burada **kullanılamaz** — verilirse Next hata fırlatır. Dosya `app/` ile aynı seviyede olmak zorunda (`src/proxy.ts`). |
 
