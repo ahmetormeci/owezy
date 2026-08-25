@@ -502,6 +502,44 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-035 — Mobilde parolayla giriş: ikincil yol, sebebi App Store incelemesi
+**Tarih:** 2026-08-25 · **Durum:** Kabul edildi ve uygulandı — **ADR-030'u genişletir**
+
+**Karar:** Mobil giriş ekranına parolayla giriş eklendi. **Birincil yol yine
+e-posta kodu**; parola ikincil bir bağlantının arkasında.
+
+**Neden gerekti:** App Store incelemesi. İnceleyici uygulamaya girmek zorunda
+ve tek yolumuz e-posta koduydu — bu, ona **okuyabileceği bir posta kutusu**
+vermemizi gerektirirdi. O zaman gönderimin kaderi bizim kontrol etmediğimiz
+bir posta sağlayıcısına bağlanırdı: sağlayıcı inceleyicinin girişini
+engellerse uygulama "giriş yapamadım" diye reddedilir. OTP ile giriş yapan
+uygulamaların klasik red sebebi budur. Parola o bağımlılığı kaldırıyor.
+
+**Aslında yeni bir şey değil.** Parola web'de zaten çalışıyordu: Clerk'in
+`<SignIn />` bileşeni açıkken alanı kendisi gösteriyor ve
+`e2e/global.setup.ts` üç test kullanıcısını **baştan beri parolayla**
+girdiriyor (`signIn.create({ strategy: "password" })`). Yani development
+instance'ında parola açıktı; eksik olan yalnızca mobil ekrandı.
+
+**Neden ikincil:** birincil akışı değiştirmek, var olan kullanıcıların
+alışkanlığını bozardı ve parola en zayıf yöntem. Ekranda önce "Kod gönder"
+duruyor, altında "Parolayla gir" bağlantısı.
+
+**Parola sıfırlama EKLENMEDİ:** parolasını unutan kullanıcı e-posta koduyla
+girebiliyor — birincil yol zaten o. Ayrı bir sıfırlama akışı, çözülmemiş bir
+sorunu çözmek olurdu.
+
+**Alternatifler:** (a) İnceleyiciye ayrı bir posta kutusu vermek — yukarıdaki
+kırılganlık; (b) Sign in with Apple — ADR-030'da çift hesap riski nedeniyle
+elenmişti, karar değişmedi.
+
+**BİLİNEN AÇIK — `needs_client_trust`:** Clerk'te "Device Trust" açıksa doğru
+parola bile yetmiyor; tanınmayan cihazdan girişte ek bir doğrulama isteniyor
+ve o doğrulama e-posta koduyla yapılıyor. Yani Device Trust production'da
+açıksa bu çözüm inceleyiciyi kurtarmaz. Panelden kontrol edilmeli.
+
+---
+
 ## ADR-034 — Doküman metinleri `messages.ts`'e girmez; `src/content/` altında durur
 **Tarih:** 2026-08-25 · **Durum:** Kabul edildi ve uygulandı
 

@@ -8,6 +8,38 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-25 (5)
+
+### Mobilde parolayla giriş (ADR-035)
+- **Sebebi App Store incelemesi:** tek giriş yolumuz e-posta koduydu, bu
+  da inceleyiciye **okuyabileceği bir posta kutusu** vermek demekti —
+  gönderimin kaderi kontrol etmediğimiz bir posta sağlayıcısına bağlanırdı.
+- **Birincil yol değişmedi.** Ekranda önce "Kod gönder"; parola ikincil
+  bir bağlantının arkasında.
+- **Web'de zaten çalışıyordu:** `e2e/global.setup.ts` test kullanıcılarını
+  baştan beri parolayla girdiriyor. Eksik olan yalnızca mobil ekrandı.
+- Parola sıfırlama eklenmedi: unutan kullanıcı e-posta koduyla girebilir.
+- **Simülatörde uçtan uca doğrulandı:** çıkış → parolayla giriş →
+  grupların yüklenmesi. iOS'un parola kaydetme teklifi de alanın doğru
+  tanındığının kanıtı.
+
+### Mobil giriş ekranı sözlüğe taşındı
+- Bu ekran mobildeki **tek sabit metinli** ekrandı; yeni metin eklemek onu
+  daha da bozardı. Metinlerin hepsi `messages.ts`'e taşındı (iki dilde) ve
+  ekran artık `useTranslate` kullanıyor.
+- `describeError` artık bilmediği bir hata şekli için **null** dönüyor;
+  cümleyi çağıran taraf sözlükten koyuyor. Fonksiyon bileşenin dışında ve
+  çeviriciye erişemiyor.
+- Tamamlanmamış giriş durumları (`needs_second_factor`,
+  `needs_client_trust`) artık ham durum adı basmıyor; kullanıcıyı
+  **çalışan yola** — web'e — yönlendiren bir cümle gösteriyor.
+
+### Bulunan açık
+- **`needs_client_trust`:** Clerk'te Device Trust açıksa doğru parola bile
+  yetmiyor, tanınmayan cihazda ek doğrulama isteniyor ve o doğrulama
+  e-posta koduyla yapılıyor. Yani Device Trust production'da açıksa demo
+  hesap çözümü inceleyiciyi kurtarmaz. Panelden kontrol edilmeli.
+
 ## 2026-08-25 (4)
 
 ### Gizlilik politikası ve destek sayfası (Faz 22, ADR-034)

@@ -1112,6 +1112,39 @@ Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yarama
 
 ---
 
+## Faz 23 — Mobilde parolayla giriş · **BİTTİ**
+
+App Store incelemesinin açtığı bir iş. Tek giriş yolumuz e-posta koduydu ve
+bu, inceleyiciye **okuyabileceği bir posta kutusu** vermek demekti — yani
+gönderimin kaderi bizim kontrol etmediğimiz bir posta sağlayıcısına
+bağlanırdı. Parola o bağımlılığı kaldırdı. Gerekçeler ADR-035'te.
+
+**Aslında yarısı zaten vardı:** `e2e/global.setup.ts` test kullanıcılarını
+**baştan beri parolayla** girdiriyor, yani development instance'ında parola
+açık. Web'de de Clerk'in kendi formu alanı gösteriyor. Eksik olan yalnızca
+mobil ekrandı.
+
+**Birincil yol değişmedi.** Ekranda önce "Kod gönder", altında ikincil bir
+"Parolayla gir" bağlantısı.
+
+**Yan iş — mobil giriş ekranı sözlüğe taşındı.** Bu ekran mobildeki **tek**
+sabit metinli ekrandı; yeni metin eklemek kuralı daha da bozardı. Metinler
+`messages.ts`'e taşındı, `describeError` bilmediği şekilde artık `null`
+dönüyor ve cümleyi çağıran taraf sözlükten koyuyor. Tamamlanmamış giriş
+durumları da ham durum adı basmak yerine kullanıcıyı çalışan yola (web'e)
+yönlendiriyor.
+
+**Bulunan açık — `needs_client_trust`:** Clerk'te Device Trust açıksa doğru
+parola bile yetmiyor; tanınmayan cihazda ek doğrulama isteniyor ve o
+doğrulama e-posta koduyla yapılıyor. Yani Device Trust production'da açıksa
+bu çözüm inceleyiciyi kurtarmaz. Panelden kontrol edilmeli.
+
+**Doğrulama simülatörde uçtan uca:** çıkış → parolayla giriş → grupların
+yüklenmesi. iOS'un parola kaydetme teklifi de alanın doğru tanındığının
+kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
+
+---
+
 ## Faz dışı düzeltmeler
 
 | İş | Commit |

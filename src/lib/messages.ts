@@ -133,6 +133,24 @@ export const MESSAGES_TR = {
   // --- Herkese acik alt baglantilar (gizlilik / destek) ---
   "ui.privacy": "Gizlilik",
   "ui.support": "Destek",
+
+  // --- Mobil giris ekrani ---
+  // Bu ekran mobildeki TEK sabit metinli ekrandi; metinler buraya tasindi.
+  "ui.email": "E-posta",
+  "ui.email_placeholder": "ornek@owezy.net",
+  "ui.send_code": "Kod gönder",
+  "ui.verification_code": "Doğrulama kodu",
+  "ui.code_sent_to": "{email} adresine gönderildi.",
+  "ui.code_placeholder": "000000",
+  "ui.change_email": "E-postayı değiştir",
+  "ui.password": "Parola",
+  "ui.sign_in_with_password": "Parolayla gir",
+  "ui.sign_in_with_code": "Kodla gir",
+  // Ikinci faktor / cihaz guveni gibi tamamlanmamis durumlar. Mobil giris
+  // ekrani bunlari HENUZ yurutmuyor, o yuzden kullaniciyi cikmaza birakmak
+  // yerine calisan yola yonlendiriyoruz.
+  "ui.sign_in_needs_web": "Bu giriş ek bir doğrulama istiyor. Şimdilik web üzerinden giriş yapman gerekiyor: owezy.net",
+  "ui.sign_in_failed": "Bir şeyler ters gitti. Tekrar dener misin?",
   "ui.sample_title": "Kahvaltı",
   "ui.theme_toggle": "Temayı değiştir",
   // Dil dugmesi. Kisa etiketler ("TR" / "EN") her dilde ayni yazilir ama yine
@@ -525,6 +543,19 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
 
   "ui.privacy": "Privacy",
   "ui.support": "Support",
+
+  "ui.email": "Email",
+  "ui.email_placeholder": "you@owezy.net",
+  "ui.send_code": "Send code",
+  "ui.verification_code": "Verification code",
+  "ui.code_sent_to": "Sent to {email}.",
+  "ui.code_placeholder": "000000",
+  "ui.change_email": "Change email",
+  "ui.password": "Password",
+  "ui.sign_in_with_password": "Sign in with a password",
+  "ui.sign_in_with_code": "Sign in with a code",
+  "ui.sign_in_needs_web": "This sign-in needs another verification step. For now, please sign in on the web: owezy.net",
+  "ui.sign_in_failed": "Something went wrong. Care to try again?",
   "ui.sample_title": "Breakfast",
   "ui.theme_toggle": "Switch theme",
   "ui.language_short_tr": "TR",

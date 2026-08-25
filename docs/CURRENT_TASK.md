@@ -15,18 +15,37 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (4)
+Updated: 2026-08-25 (5)
 
 Current task:
-  FAZ 22 - GIZLILIK POLITIKASI VE DESTEK SAYFASI. BITTI.
-  /privacy ve /support eklendi; giris gerektirmiyorlar, iki dilde, karsilama
-  sayfasindan baglantili. Metin src/content/legal/ altinda (ADR-034), cunku
-  messages.ts istemciye gidiyor.
+  FAZ 23 - MOBILDE PAROLAYLA GIRIS (ADR-035). BITTI.
+  Sebebi App Store incelemesi: tek giris yolumuz e-posta koduydu ve bu,
+  inceleyiciye OKUYABILECEGI bir posta kutusu vermek demekti. Parola o
+  bagimliligi kaldirdi. Birincil yol degismedi - parola ikincil.
+  Ayrica mobil giris ekraninin metinleri sozluge tasindi (mobildeki TEK
+  sabit metinli ekrandi).
 
-  SENDE KALAN TEK IS: destek@owezy.net kutusu. Adres iki sayfada da yazili
-  ama kutu ACILMADI - Cloudflare Email Routing ile birkac dakika (DNS zaten
-  orada, ADR-026). Kutu olmadan destek sayfasi ise yaramaz ve App Store
-  "Support URL" alani calisan bir yol bekliyor.
+  BUNDAN ONCE: Faz 22 - /privacy ve /support (ADR-034).
+
+  SENDE KALAN ISLER:
+  1. destek@owezy.net kutusu - Cloudflare Email Routing (DNS zaten orada,
+     ADR-026). Adres iki sayfada da yazili; kutu acilmazsa sayfa ise yaramaz.
+  2. Clerk PRODUCTION'da Password'u etkinlestir. Development'ta ZATEN ACIK
+     (e2e/global.setup.ts kullanicilari parolayla giriyor), production
+     bilinmiyor.
+  3. Clerk production -> Users -> Create user ile demo hesabi olustur ve
+     PAROLA VER. Neon'dan YAPILMAZ: kimligi Clerk tutuyor, elle eklenen bir
+     User satiriyla giris yapilamaz (bizim satirimiz zaten ilk giriste
+     kendiliginden olusuyor).
+  4. O hesapla uygulamaya girip ORNEK VERI olustur - bir grup, birkac
+     harcama, bir odesme. Production veritabani 24 Agustos'ta temizlendi,
+     yani bombos; inceleyici bos ekran gorurse "calismiyor" der.
+
+  DIKKAT - BU COZUMU BOZABILECEK TEK SEY: Clerk'te "Device Trust" acik olursa
+  dogru parola bile yetmiyor, taninmayan cihazda ek dogrulama isteniyor ve o
+  dogrulama E-POSTA KODUYLA yapiliyor (durum: needs_client_trust). Yani
+  Device Trust production'da acikSA inceleyici yine kilitlenir. PANELDEN
+  KONTROL ET.
 
 Hemen sonraki adim:
   2FA - MOBIL IKINCI FAKTOR ADIMI, SONRA PANELDEN ACMA.
@@ -75,7 +94,7 @@ FAZ 21'DEN AKILDA TUTULACAKLAR:
     silmek, bir sey bozulunca hangisinin bozdugunu bilinmez yapardi.
 
 MOBILDE BUGUN NE VAR:
-  giris (e-posta + kod), grup listesi / tek grupta dogrudan gruba
+  giris (e-posta + kod, ya da parolayla - ikincil), grup listesi / tek grupta dogrudan gruba
   yonlendirme, grup olusturma (satir ici), uyeler + davet linki (iOS
   paylasim sayfasi), fis ekrani (harcama satirlari, ay perforasyonlari, ay
   ara toplamlari, sayfalama, cift cizgi + toplamlar, yirtik kenar), satir
@@ -119,6 +138,10 @@ MOBILIN BILINEN ACIKLARI:
     sonra "girisli mi" diye bakiyordu; cikista istek hic atilmadigi icin
     durum sonsuza kadar "loading" kaliyordu). Ders: mobilde bir yolu
     denemediysen o yol CALISMIYOR olabilir - tsc de CI de gostermez.
+  - IKINCI FAKTOR HALA ELE ALINMIYOR. Giris ekrani "complete" disindaki her
+    durumda (needs_second_factor, needs_client_trust) kullaniciyi web'e
+    yonlendiriyor - ham durum adi basmiyor ama adimi da yurutmuyor.
+    2FA acilmadan once bu yapilmali (siradaki is).
 
 CI MOBILDE NE KOSUYOR (Faz 20):
   mobil npm ci -> tsc -> expo-doctor -> expo export --clear
