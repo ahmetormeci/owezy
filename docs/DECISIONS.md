@@ -502,6 +502,87 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-037 — Oturum koruması tek yerde: kök yerleşimde, ekranlarda değil
+**Tarih:** 2026-08-25 · **Durum:** Kabul edildi
+
+**Karar:** Girişi olmayan kullanıcıyı giriş ekranına gönderen kontrol
+`mobile/app/_layout.tsx` içindeki `AuthGuard` bileşeninde durur. Ekranlar
+kendi oturum kontrollerini yapmaz.
+
+**Neden:** Bu koruma yalnızca `app/index.tsx`'te (`/`) vardı. Diğer
+ekranların hiçbirinde yoktu — `/groups`, `/groups/[id]`, `/members`,
+`/settlements`, `/expenses/[id]`. Görünen sonucu şuydu: kullanıcı
+"Çıkış yap"a basıyor, oturum kapanıyor, **ekran olduğu yerde kalıyor** —
+yani düğme çalışmıyor gibi görünüyordu. Simülatörde ölçüldü.
+
+Her ekrana ayrı `Redirect` koymak, bir sonraki ekranda yine unutulacak
+bir şey demekti; nitekim `/` düzeltildiğinde (Faz 21) diğerleri geride
+kalmıştı.
+
+**Alternatifler:** Her ekranda `Redirect` (unutulmaya açık); expo-router
+grup yerleşimi `(app)/` ile ayırmak — daha temiz ama bütün rotaları
+taşımak gerekiyordu ve bu, çalışan yönlendirmeyi gereksiz yere riske
+atardı.
+
+**Sonuç:** `<Slot />` **her zaman** render ediliyor, yönlendirme bir etkiyle
+yapılıyor: kök yerleşim `<Slot />` yerine başka bir şey dönerse gezinme
+bağlamı hiç kurulmaz ve `router.replace` çağrılacak yeri bulamaz.
+`isLoaded` bekleniyor, yoksa girişli kullanıcı da her açılışta bir an için
+giriş ekranına atılırdı. Giriş ekranının kendisi muaf.
+
+---
+
+## ADR-036 — İkinci faktör mobilde yürütülür; SMS dalı yazılmaz
+**Tarih:** 2026-08-25 · **Durum:** Kabul edildi
+
+**Karar:** Mobil giriş ekranı `needs_second_factor` ve `needs_client_trust`
+durumlarını kendisi yürütür. Desteklenen faktörler: **authenticator (TOTP)**,
+**e-posta kodu**, **yedek kod**. `phone_code` (SMS) dalı **yazılmaz**.
+
+**Neden:** Giriş ekranını biz yazdık ve `"complete"` dışındaki her durumda
+kullanıcıyı web'e gönderiyordu. 2FA açıldığı anda, 2FA'yı etkinleştiren her
+kullanıcı mobilden **kilitlenirdi**. Web'de böyle bir sorun yok — orada
+Clerk'in kendi `<SignIn />` bileşeni bütün adımları biliyor.
+
+İki durum da aynı metotlarla çözülüyor; bu bir çıkarım değil, kaynakta
+doğrulandı: `clerk-js` içinde `needs_client_trust` doğrudan
+`prepareSecondFactor`'a gidiyor.
+
+**SMS neden yok:** SMS örnek genelinde kapalı (mesaj başına maliyet +
+SIM-swap). Test edemediğimiz bir yolu yazmak, çalıştığını sanmak olurdu.
+Yalnızca `phone_code` destekleniyorsa ekran boş kalmıyor, mevcut "web'den
+gir" mesajına düşüyor.
+
+**Hangi faktör:** Sunucu söylüyor (`supportedSecondFactors`), biz tahmin
+etmiyoruz. Sıra: authenticator → e-posta kodu → yalnızca yedek kod. Yedek
+kod normalde bir **çıkış kapısı**, ilk seçenek değil.
+
+**Yedek kodlar isteğe bağlı değil:** TOTP açılıyorsa yedek kodlar da
+açılmalı. Telefonunu kaybeden kullanıcının başka yolu yok ve onu
+kurtaracak bir destek masamız da yok. (Clerk paneli de bunu zorunlu
+tutuyor: yedek kodlar TOTP'ye bağlı.)
+
+**Kurulum mobilde YOK:** kullanıcı 2FA'yı web'de, `<UserButton />` →
+Security'den kuruyor. Mobilde profil ekranı hiç yok; QR kod göstermek
+`react-native-svg` demek, yani yeni bağımlılık.
+
+**Production'da KAPALI:** Clerk'te MFA bir **Pro** özelliği ($25/ay).
+Development'ta ücretsiz olduğu için orada açıldı ve test edildi. Uygulamanın
+henüz kullanıcısı ve geliri yokken bu maliyet üstlenilmedi; kod hazır
+duruyor, Pro'ya geçildiği gün panelden bir anahtar açmakla bitiyor.
+
+**Sonuç:** Kod ücretsiz planda da işe yarıyor — `needs_client_trust`
+(Device Trust) production'da **zaten** karşımıza çıkıyor ve o ekran artık
+çıkmaz değil.
+
+**DİKKAT — demo hesabı kurtarmıyor:** Bir ara CURRENT_TASK'ta "bu iş
+`bypass_client_trust`'a bağımlılığı azaltıyor" yazıyordu; **yanlıştı**.
+Device Trust ekranının istediği şey e-posta kodu; App Review inceleyicisinin
+demo hesabın posta kutusuna erişimi yok. Muafiyet hâlâ gerekli ve her
+gönderimden önce doğrulanmalı.
+
+---
+
 ## ADR-035 — Mobilde parolayla giriş: ikincil yol, sebebi App Store incelemesi
 **Tarih:** 2026-08-25 · **Durum:** Kabul edildi ve uygulandı — **ADR-030'u genişletir**
 

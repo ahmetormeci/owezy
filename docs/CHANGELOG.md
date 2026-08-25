@@ -8,6 +8,49 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-25 (6)
+
+### Mobilde ikinci faktör (ADR-036)
+- **Neden gerekliydi:** giriş ekranı `"complete"` dışındaki her durumda
+  kullanıcıyı web'e gönderiyordu. 2FA açıldığı anda, 2FA'yı etkinleştiren
+  her kullanıcı **mobilden kilitlenirdi**.
+- Yeni adım `components/second-factor.tsx`'te. Üç yol: **authenticator
+  (TOTP)**, **e-posta kodu** (Device Trust burada), **yedek kod**.
+- Hangi faktörün kullanılacağını **sunucu söylüyor**
+  (`supportedSecondFactors`), biz tahmin etmiyoruz.
+- **SMS dalı bilerek yazılmadı** — SMS örnek genelinde kapalı; test
+  edilemeyen bir yolu yazmak çalıştığını sanmak olurdu.
+- `describeError` → `lib/clerk-errors.ts`'e taşındı (iki dosya kullanıyor).
+- "Başa dön" artık `signIn.reset()` de çağırıyor: yarım kalan doğrulama
+  Clerk tarafında duruyordu.
+- **Simülatörde uçtan uca doğrulandı:** e-posta kodu → ikinci faktör ekranı
+  → gerçek TOTP koduyla giriş; ayrıca "yedek kod kullan" → gerçek yedek
+  kodla giriş. Kod üreteci RFC 6238'in altı test vektörünü geçti.
+- **Device Trust dalı SINANMADI:** o parolayla girişte tetikleniyor.
+
+### Çıkış yapmak gerçekten çıkış yapıyor
+İki ayrı hata birlikte "çıkış düğmesi çalışmıyor" görüntüsü veriyordu.
+İkisi de Faz 21'de düzeltilen "çıkışta donan uygulama" hatasının aynı
+ailesinden — o zaman `/` düzeltilmiş, gerisi geride kalmıştı.
+
+- **Belirteç Keychain'de kalıyordu.** `lib/token-cache.ts`, Clerk'in
+  `TokenCache` arayüzündeki **opsiyonel** `clearToken`'ı uygulamıyordu;
+  yazdığımız belirteci silen hiçbir şey yoktu. Opsiyonel olması "gereksiz"
+  demek değil: bellekte tutan bir önbellek için gereksiz, **kalıcı yazan**
+  her önbellek için zorunlu.
+- **Ekranların oturum koruması yoktu** (ADR-037). Yalnızca `/` korunuyordu.
+- **Ölçüldü, tahmin edilmedi:** düzeltmeden önce çıkış sonrası uygulama
+  yeniden açıldığında hâlâ girişliydi; düzeltmeden sonra giriş ekranı
+  geliyor ve yeniden açılışta da çıkmış kalıyor.
+
+### Clerk MFA panelde açıldı — yalnızca development
+- `authenticator_app` ve `backup_code` **development**'ta açık
+  (`second_factors: ["backup_code","totp"]`), **isteğe bağlı**.
+- **Production'da kapalı:** MFA Clerk'te **Pro** özelliği ($25/ay).
+  Development'ta ücretsiz. Karar ADR-036'da.
+
+---
+
 ## 2026-08-25 (5)
 
 ### Mobilde parolayla giriş (ADR-035)

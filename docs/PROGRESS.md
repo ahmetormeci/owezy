@@ -8,13 +8,13 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 17 faz tamamlandı, 18. faz (mobil) başladı. Uygulama canlıda ve `main`'e giden her değişiklik
+**Özet:** 24 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 510 | ✅ tümü geçiyor |
-| E2E (Playwright) | 36 | ✅ tümü geçiyor |
+| Birim (Vitest) | 535 | ✅ tümü geçiyor |
+| E2E (Playwright) | 43 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -1109,6 +1109,41 @@ genişletirse uygulama mağazadan döner ve sebebi hiçbir yerde görünmez.
 
 **Yayına almadan önce SENDE kalan:** `destek@owezy.net` kutusu (Cloudflare
 Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yaramaz.
+
+---
+
+## Faz 24 — Mobilde ikinci faktör ve çıkışın gerçekten çıkış yapması · **BİTTİ**
+
+İki iş bir arada, ikisi de kimlik doğrulama. Gerekçeler ADR-036 ve ADR-037'de.
+
+**İkinci faktör.** Giriş ekranını biz yazdık ve `"complete"` dışındaki her
+durumda kullanıcıyı web'e gönderiyordu. 2FA açıldığı anda, 2FA'yı
+etkinleştiren her kullanıcı **mobilden kilitlenirdi**. Yeni adım
+`components/second-factor.tsx`'te; üç yol destekleniyor (TOTP, e-posta kodu,
+yedek kod), SMS dalı bilerek yazılmadı.
+
+**Panelde MFA açıldı — yalnızca development.** Clerk'te MFA bir **Pro**
+özelliği ($25/ay); development'ta ücretsiz. Uygulamanın henüz kullanıcısı
+ve geliri yokken maliyet üstlenilmedi. Kod hazır duruyor.
+
+**Kod ücretsiz planda da işe yarıyor:** `needs_client_trust` (Device Trust)
+production'da zaten karşımıza çıkıyor ve o ekran artık çıkmaz değil.
+
+**Çıkış hatası — verifikasyon sırasında bulundu.** Çıkış düğmesi
+çalışmıyordu ve sebebi ikiydi: (1) `lib/token-cache.ts` Clerk'in
+**opsiyonel** `clearToken`'ını uygulamıyordu, yani belirteç Keychain'de
+kalıyordu; (2) `/` dışındaki hiçbir ekranın oturum koruması yoktu. İkisi de
+Faz 21'de düzeltilen "çıkışta donan uygulama" hatasının aynı ailesinden.
+
+**Doğrulama simülatörde, gerçek kodlarla:** e-posta kodu → ikinci faktör
+ekranı → **gerçek TOTP koduyla** giriş; ayrıca **gerçek yedek kodla** giriş.
+Kod üreteci RFC 6238'in altı test vektörünü geçti, yani ürettiği sayı
+doğrulanmış. Çıkış için: düzeltmeden önce yeniden açılışta hâlâ girişliydi,
+sonra çıkmış kalıyor.
+
+**SINANMADI:** Device Trust dalı. O durum parolayla girişte tetikleniyor.
+
+**Test:** Birim 535 ✅ · E2E 43 ✅ · mobil `tsc`/`expo-doctor`/`expo export` ✅
 
 ---
 

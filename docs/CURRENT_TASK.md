@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (6)
+Updated: 2026-08-25 (7)
 
 Current task:
   YOK - KULLANICIDAN GOREV BEKLENIYOR.
@@ -28,6 +28,9 @@ Current task:
     Faz 23  Mobilde parolayla giris (ADR-035)     856b034
             Device Trust bulgusu (dokuman)        07ab975
             Dil degisince Clerk menusu duzeltmesi ab80386
+            Export compliance                     edfb500
+    Faz 24  Mobilde ikinci faktor (ADR-036)       6ba6144
+            Cikis gercekten cikis yapiyor (ADR-037)
 
   APP STORE HAZIRLIGI - NEREDE KALDIK:
     BITTI (kullanici dogruladi):
@@ -63,56 +66,54 @@ Current task:
     NOT: ios/ klasoru repoda YOK (managed workflow); Info.plist derleme
     aninda app.json'dan uretiliyor. Dogru yer burasi.
 
-  DEVICE TRUST ENGELI CIKTI VE ASILDI (25 Agustos):
-  Clerk'in Device Trust korumasi, dogru paroladan sonra bile ek dogrulama
-  istiyordu (needs_client_trust) ve o dogrulama e-posta koduyla yapiliyor -
-  yani demo hesap kilitleniyordu. Cozum kullanici bazinda muafiyet:
+Hemen sonraki adim:
+  YOK - KULLANICIDAN GOREV BEKLENIYOR.
 
-    PATCH https://api.clerk.com/v1/users/user_3IPH520z2gWytNtqkHrg1xP1kYP
-    { "bypass_client_trust": true }        -> true dondu, calisti
+  ONERILEN SIRADAKI IS (kullanici daha once onaylamisti, sirasi geldi):
+  GUVENLIK BASLIKLARI + HIZ SINIRI.
+    - next.config.ts'te HIC guvenlik basligi yok: Strict-Transport-Security,
+      X-Content-Type-Options, CSP.
+    - /api/v1 icin hiz siniri HIC yok.
+    Gizlilik politikasindaki "makul teknik tedbirler" cumlesini gercek
+    yapan is bu - ve MFA'nin aksine UCRETSIZ.
 
-  Boylece Device Trust HERKESTE ACIK KALDI; ornek genelinde kapatmadik.
+2FA - NEREDE DURUYOR (Faz 24 bitti):
+  KOD HAZIR VE SIMULATORDE DOGRULANDI. Mobil giris ekrani ikinci faktoru
+  yurutuyor: TOTP, e-posta kodu, yedek kod. SMS dali BILEREK YOK.
 
-  AMA BU ALAN BELGELENMEMIS. Sessizce calismayi birakabilir ve sonucu, bir
-  sonraki incelemede inceleyicinin iceri girememesi olur.
-  HER GONDERIMDEN ONCE DOGRULA:
-    1. GET .../v1/users/<id> -> bypass_client_trust hala true mu
+  PANEL DURUMU:
+    development : authenticator_app + backup_code ACIK, ISTEGE BAGLI
+                  (second_factors: ["backup_code","totp"])
+    production  : KAPALI. Clerk'te MFA bir PRO ozelligi - $25/ay
+                  ($20/ay yillik). Kullanici acmama karari verdi:
+                  uygulamanin henuz kullanicisi ve geliri yok.
+    Acmak istendiginde: panelden iki anahtar, KOD DEGISIKLIGI GEREKMIYOR.
+
+  DEV TEST KULLANICISI: mfa+clerk_test@example.com
+    Ilk faktor e-posta kodu 424242 (gercek posta kutusu yok).
+    TOTP gizli anahtari ve yedek kodlar REPOYA YAZILMADI; oturumun
+    scratchpad'inde. Kaybolursa panelden 2FA kaldirilip yeniden kurulur.
+
+  SINANMADI: needs_client_trust (Device Trust) dali. O durum PAROLAYLA
+  giriste tetikleniyor; parola forma yazilmadigi icin denenemedi. Kod yolu
+  ayni metotlari kullaniyor (mfa.*) ama bu bir CIKARIM, olcum degil.
+
+DEVICE TRUST - DEMO HESAP ICIN MUAFIYET HALA GEREKLI:
+  DIKKAT: bu dosyada bir ara "ikinci faktor isi bypass_client_trust'a
+  bagimliligi azaltiyor" yaziyordu. YANLISTI ve duzeltildi.
+  Device Trust ekraninin istedigi sey E-POSTA KODU; App Review
+  inceleyicisinin demo hesabin posta kutusuna erisimi YOK. Yani ikinci
+  faktor ekrani o hesabi KURTARMIYOR - yalnizca olu ekrani konusan bir
+  ekrana ceviriyor (gercek kullanicilar icin degerli, inceleyici icin
+  degil).
+
+  MUAFIYET DURUYOR ve HER GONDERIMDEN ONCE DOGRULANMALI:
+    1. GET https://api.clerk.com/v1/users/user_3IPH520z2gWytNtqkHrg1xP1kYP
+       -> bypass_client_trust hala true mu
     2. GIZLI PENCEREDE owezy.net'e demo bilgileriyle gir. Gizli pencere
        Clerk icin YENI ISTEMCI demek, yani Device Trust'i tetikleyecek kosul.
        Kod istenmeden giriyorsan muafiyet calisiyor.
   Bozulursa yedek plan: Protect -> Rules -> Device Trust -> Enable kapat.
-
-Hemen sonraki adim:
-  2FA - MOBIL IKINCI FAKTOR ADIMI, SONRA PANELDEN ACMA.
-  Kullanici sirayi boyle onayladi: once sayfalar (bitti), sonra 2FA.
-
-  BU IS ARTIK IKI SEY BIRDEN COZUYOR. Ikinci faktor adimi mobile gelince
-  needs_client_trust de tamamlanabilir hale geliyor - yani demo hesabin
-  BELGELENMEMIS bypass_client_trust alanina bagimliligimiz azaliyor.
-  O alan sessizce bozulursa yedegimiz olur.
-
-  NEDEN ONCE MOBIL: mobil giris ekranini BIZ yazdik ve ikinci faktoru ELE
-  ALMIYOR. Bugunku kod:
-      if (signIn.status !== "complete") { setError(...); return; }
-  2FA acilirsa Clerk "needs_second_factor" donuyor ve ekran orada duruyor -
-  yani 2FA'yi etkinlestiren her kullanici mobilden KILITLENIR.
-  Yeni @clerk/expo API'si gerekli her seyi veriyor:
-      mfa.verifyTOTP, mfa.verifyBackupCode,
-      mfa.sendEmailCode / verifyEmailCode,
-      mfa.sendPhoneCode / verifyPhoneCode
-  Is: app/sign-in.tsx'e ucuncu bir adim ("email" | "code" | "mfa").
-
-  SONRA PANELDEN: TOTP + yedek kodlar ISTEGE BAGLI olarak acilir.
-  - ZORUNLU YAPILMAYACAK: para tasimayan bir defter uygulamasinda zorunlu
-    2FA kullanici kaybettirir.
-  - SMS KAPALI KALSIN: mesaj basina maliyeti var ve SIM-swap'a acik.
-  - Clerk'in ucretsiz planinda TOTP'nin dahil oldugunu KULLANICI teyit
-    edecek (fiyatlandirma sayfasindan).
-
-  ARDINDAN (kullanici onayladi, sirasi gelmedi): guvenlik basliklari
-  (Strict-Transport-Security, X-Content-Type-Options, CSP - next.config.ts'te
-  HIC YOK) ve /api/v1 icin hiz siniri (HIC YOK). Gizlilik politikasindaki
-  "makul teknik tedbirler" cumlesini gercek yapan is bu.
 
 FAZ 21'DEN AKILDA TUTULACAKLAR:
   - useSignIn'in SOZLESMESI DEGISTI ve tsc yakaladi:
@@ -178,10 +179,13 @@ MOBILIN BILINEN ACIKLARI:
     sonra "girisli mi" diye bakiyordu; cikista istek hic atilmadigi icin
     durum sonsuza kadar "loading" kaliyordu). Ders: mobilde bir yolu
     denemediysen o yol CALISMIYOR olabilir - tsc de CI de gostermez.
-  - IKINCI FAKTOR HALA ELE ALINMIYOR. Giris ekrani "complete" disindaki her
-    durumda (needs_second_factor, needs_client_trust) kullaniciyi web'e
-    yonlendiriyor - ham durum adi basmiyor ama adimi da yurutmuyor.
-    2FA acilmadan once bu yapilmali (siradaki is).
+  - IKINCI FAKTOR ARTIK ELE ALINIYOR (Faz 24). Geriye yalnizca
+    DESTEKLENMEYEN yollar web'e yonlendiriliyor: SMS ikinci faktoru ve
+    needs_new_password gibi tamamlanmamis durumlar.
+  - CIKIS HATASI BULUNDU VE DUZELTILDI (Faz 24). Iki sebep birden vardi:
+    token-cache clearToken'i uygulamiyordu (belirtec Keychain'de kaliyordu)
+    ve "/" disinda hicbir ekranin oturum korumasi yoktu. Ders yine ayni:
+    mobilde bir yolu DENEMEDIYSEN o yol calismiyor olabilir.
 
 CI MOBILDE NE KOSUYOR (Faz 20):
   mobil npm ci -> tsc -> expo-doctor -> expo export --clear
@@ -214,6 +218,15 @@ DIKKAT - E2E ILE MOBIL DEV SUNUCUSU AYNI ANDA CALISMAZ:
 
 SIMULATOR NOTLARI:
   - Xcode 26.6 + iOS 26.5 runtime kurulu, iPhone 17 Pro calisiyor.
+  - "expo start --ios" ACTIGI Simulator.app kapaninca CIHAZI DA DUSURUYOR
+    ve ekran goruntusu araci son kareyi doner - yani calisiyormus gibi
+    gorunur. GUVENILIR YOL: once "xcrun simctl boot <udid>" (bassiz),
+    sonra "npx expo start" (--ios YOK), sonra uygulamayi
+    "open_url exp://127.0.0.1:8081" ile ac.
+  - OTURUMU SIFIRLAMAK: Expo Go'yu kaldirip yeniden kurmak yetiyor.
+      xcrun simctl uninstall <udid> host.exp.Exponent
+      xcrun simctl install <udid> ~/.expo/ios-simulator-app-cache/Expo-Go-*.app
+    Indirmeye gerek yok, onbellekte duruyor.
   - MCP simulator araci CALISIYOR (kullanici sudo xcode-select calistirdi).
     UYARI: o komut CoreSimulator'i yeniden baslatir ve ACIK simulatoru
     kapatir.

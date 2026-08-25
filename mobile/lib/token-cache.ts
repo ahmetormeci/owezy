@@ -32,4 +32,25 @@ export const tokenCache = {
       console.error("Oturum belirteci saklanamadi", error);
     }
   },
+
+  /**
+   * CIKISTA CAGRILIYOR. Clerk'in TokenCache arayuzunde bu alan OPSIYONEL
+   * (clearToken?: ...) ve bizde YOKTU - yani yazdigimiz belirteci silen
+   * hicbir sey yoktu. Cikis yapan kullanicinin oturum belirteci cihazin
+   * Keychain'inde kaliyordu.
+   *
+   * Opsiyonel olmasi "gereksiz" demek degil: bellekte tutan bir onbellek
+   * icin gercekten gereksiz (uygulama kapaninca zaten gidiyor). KALICI
+   * yazan her onbellek icin ZORUNLU.
+   */
+  async clearToken(key: string): Promise<void> {
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch (error) {
+      // Burada da firlatmiyoruz - firlatmak Clerk'in cikis akisini yarida
+      // keserdi ve kullanici hicbir sey soylenmeden girisli kalirdi.
+      // Yutmuyoruz ama: silinemeyen bir belirtec loga dusmeli.
+      console.error("Oturum belirteci silinemedi", error);
+    }
+  },
 };

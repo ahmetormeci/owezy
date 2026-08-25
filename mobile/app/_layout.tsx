@@ -1,5 +1,6 @@
-import { ClerkProvider } from "@clerk/expo";
-import { Slot } from "expo-router";
+import { ClerkProvider, useAuth } from "@clerk/expo";
+import { Slot, useRouter, useSegments } from "expo-router";
+import { useEffect } from "react";
 import { LocaleProvider } from "../lib/i18n";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";
 import { tokenCache } from "../lib/token-cache";
@@ -30,6 +31,41 @@ function deviceLocale() {
   }
 }
 
+/**
+ * Girisi olmayani giris ekranina gonderir.
+ *
+ * NEDEN BURADA, EKRANLARIN ICINDE DEGIL: bu koruma yalnizca app/index.tsx'te
+ * ("/") vardi. Diger ekranlarin hicbirinde YOKTU - /groups, /groups/[id],
+ * /members, /settlements, /expenses/[id]. Sonucu su oluyordu: kullanici
+ * "Cikis yap"a basiyor, oturum kapaniyor, ama ekran oldugu yerde kaliyor -
+ * yani dugme calismiyor gibi gorunuyor. Her ekrana ayri ayri Redirect
+ * koymak, bir sonraki ekranda yine unutulacak bir sey demekti.
+ *
+ * SLOT HER ZAMAN RENDER EDILIYOR, yonlendirme etkiyle yapiliyor: kok
+ * yerlesim <Slot /> yerine baska bir sey donerse gezinme baglami hic
+ * kurulmamis olur ve router.replace cagrilacak bir yer bulamaz.
+ *
+ * isLoaded BEKLENIYOR: Clerk yuklenmeden isSignedIn false gorunuyor, yani
+ * beklemeden yonlendirseydik girisli kullaniciyi da her aciliste bir an
+ * icin giris ekranina atardik.
+ */
+function AuthGuard() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    // Giris ekraninin KENDISI korumasiz olmali; yoksa kendine yonlendirir.
+    const onSignIn = segments[0] === "sign-in";
+    if (!isSignedIn && !onSignIn) {
+      router.replace("/sign-in");
+    }
+  }, [isLoaded, isSignedIn, segments, router]);
+
+  return <Slot />;
+}
+
 export default function RootLayout() {
   if (!publishableKey) {
     // Sessizce devam etmek daha kotu olurdu: Clerk anahtarsiz da yukleniyor
@@ -46,7 +82,7 @@ export default function RootLayout() {
           ayrisirdi; ADR-020'nin "eksik ceviri = derleme hatasi" garantisi
           boylece mobilde de gecerli. */}
       <LocaleProvider locale={deviceLocale()}>
-        <Slot />
+        <AuthGuard />
       </LocaleProvider>
     </ClerkProvider>
   );
