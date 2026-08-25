@@ -15,31 +15,45 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (5)
+Updated: 2026-08-25 (6)
 
 Current task:
-  FAZ 23 - MOBILDE PAROLAYLA GIRIS (ADR-035). BITTI.
-  Sebebi App Store incelemesi: tek giris yolumuz e-posta koduydu ve bu,
-  inceleyiciye OKUYABILECEGI bir posta kutusu vermek demekti. Parola o
-  bagimliligi kaldirdi. Birincil yol degismedi - parola ikincil.
-  Ayrica mobil giris ekraninin metinleri sozluge tasindi (mobildeki TEK
-  sabit metinli ekrandi).
+  YOK - KULLANICIDAN GOREV BEKLENIYOR.
 
-  BUNDAN ONCE: Faz 22 - /privacy ve /support (ADR-034).
+  BUGUN BITENLER (sirasiyla):
+    Faz 19  Optimistic locking                    51bc3c4
+    Faz 20  CI mobili de dogruluyor               f9c8ef6
+    Faz 21  @clerk/expo gecisi                    30b2ecf
+    Faz 22  /privacy ve /support (ADR-034)        63154ff
+    Faz 23  Mobilde parolayla giris (ADR-035)     856b034
+            Device Trust bulgusu (dokuman)        07ab975
+            Dil degisince Clerk menusu duzeltmesi ab80386
 
-  SENDE KALAN ISLER:
-  1. destek@owezy.net kutusu - Cloudflare Email Routing (DNS zaten orada,
-     ADR-026). Adres iki sayfada da yazili; kutu acilmazsa sayfa ise yaramaz.
-  2. Clerk PRODUCTION'da Password'u etkinlestir. Development'ta ZATEN ACIK
-     (e2e/global.setup.ts kullanicilari parolayla giriyor), production
-     bilinmiyor.
-  3. Clerk production -> Users -> Create user ile demo hesabi olustur ve
-     PAROLA VER. Neon'dan YAPILMAZ: kimligi Clerk tutuyor, elle eklenen bir
-     User satiriyla giris yapilamaz (bizim satirimiz zaten ilk giriste
-     kendiliginden olusuyor).
-  4. O hesapla uygulamaya girip ORNEK VERI olustur - bir grup, birkac
-     harcama, bir odesme. Production veritabani 24 Agustos'ta temizlendi,
-     yani bombos; inceleyici bos ekran gorurse "calismiyor" der.
+  APP STORE HAZIRLIGI - NEREDE KALDIK:
+    BITTI (kullanici dogruladi):
+      - Apple Developer hesabi onaylandi
+      - App Store Connect uygulama kaydi + "Owezy" adi
+      - Privacy Policy URL + Support URL girildi
+      - App Privacy anketi dolduruldu
+      - Clerk production'da PAROLA ACIK (demo hesapla giris yapildi)
+      - Demo kullanici var ve CALISIYOR: bypass_client_trust=true sayesinde
+        kod istenmeden giris yapildi (gorsel: profil menusu, "demo user")
+      - App Review Information -> "Sign-in required" isaretli
+      - En az bir grup olusturuldu ("NEW GROU..." gorseldeydi)
+
+    DURUMU BILINMIYOR (kullaniciya sorulacak, VARSAYILMAYACAK):
+      - destek@owezy.net kutusu acildi mi (Cloudflare Email Routing)
+      - Ornek veri YETERLI mi: birkac harcama + bir odesme var mi
+      - App Review Information -> Contact Information telefonu girildi mi
+        (o telefon KULLANICININ, demo hesabin degil; hicbir yerde
+        yayinlanmiyor, yalnizca App Review ekibi goruyor)
+
+  BENIM YARIM KALAN TEK ISIM:
+    Export compliance. app.json'a su eklenmeli:
+        ios.infoPlist.ITSAppUsesNonExemptEncryption = false
+    Yalnizca HTTPS kullandigimiz icin dogru deger bu; eklenmezse her
+    yuklemede sifreleme sorusu tekrar soruluyor. Kullaniciya teklif edildi,
+    CEVAP GELMEDI, o yuzden yapilmadi.
 
   DEVICE TRUST ENGELI CIKTI VE ASILDI (25 Agustos):
   Clerk'in Device Trust korumasi, dogru paroladan sonra bile ek dogrulama
@@ -63,6 +77,11 @@ Current task:
 Hemen sonraki adim:
   2FA - MOBIL IKINCI FAKTOR ADIMI, SONRA PANELDEN ACMA.
   Kullanici sirayi boyle onayladi: once sayfalar (bitti), sonra 2FA.
+
+  BU IS ARTIK IKI SEY BIRDEN COZUYOR. Ikinci faktor adimi mobile gelince
+  needs_client_trust de tamamlanabilir hale geliyor - yani demo hesabin
+  BELGELENMEMIS bypass_client_trust alanina bagimliligimiz azaliyor.
+  O alan sessizce bozulursa yedegimiz olur.
 
   NEDEN ONCE MOBIL: mobil giris ekranini BIZ yazdik ve ikinci faktoru ELE
   ALMIYOR. Bugunku kod:
