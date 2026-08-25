@@ -165,7 +165,9 @@ Bu kural iki kez, iki farklı kaynaktan ihlal edildi ve ikisi de aynı ekranda
 patladı — `Maximum update depth exceeded`:
 
 1. **Clerk'in `getToken`'ı** (Faz 18.2). `useAuth()` her render'da yeni bir
-   fonksiyon döndürüyor.
+   fonksiyon döndürüyordu. (Clerk gitti; `useSession().getToken` sabit
+   kimlikli. Kural yine de geçerli — koruyan şey `use-api.ts`'teki referans
+   deseni, sağlayıcının nezaketi değil.)
 2. **Bizim kendi `useApiGet`'imiz** (Faz 18.6). Her render'da yeni bir
    `{ state, reload }` nesnesi döndürüyordu; onu `useFocusEffect`'in
    bağımlılığına koymak döngüyü kurdu.
@@ -218,23 +220,29 @@ React Native'de `<div>` yok. Mobil kendi 20 satırlık sağlayıcısını taşı
 (`@/lib/messages`, 700+ satır) ve `translate()`.
 
 **Oturum belirteci `expo-secure-store`'da saklanır**, `AsyncStorage`'da
-değil — orası düz metin. Önbelleği **kendimiz yazıyoruz**
-(`mobile/lib/token-cache.ts`); `@clerk/expo/token-cache` diye hazır bir tane
-var ama bizimkinin yorumlarında gerçek kararlar yazılı — yazma hatasında
-fırlatmamak (girişi yarıda kesmemek), okuma hatasında "oturum yok" saymak.
+değil — orası düz metin. Saklamayı **kendimiz yazıyoruz**
+(`mobile/lib/session-store.ts`) ve kararlar yorumlarında: yazma hatasında
+fırlatmamak (girişi yarıda kesmemek), okuma hatasında "oturum yok" saymak,
+çıkışta silmek.
 
-**Clerk'in bir Expo config plugin'i var ve `app.json`'a yazılmak zorunda.**
-`plugins` dizisinde `"@clerk/expo"` yoksa iOS/Android yapılandırması
-uygulanmaz ve bu **yalnızca native derlemede** görünür — Expo Go'da her şey
-normal çalışır. Aynısı `expo-web-browser` gibi native modül taşıyan paketler
-için de geçerli; `expo-doctor` bunların **doğrudan bağımlılık** olup
-olmadığını kontrol ediyor ve CI'da koşuyor.
+**Mobilin auth istekleri `credentials: "omit"` gönderir.** React Native'in
+`fetch`'i varsayılan olarak çerez tutuyor (`XMLHttpRequest.withCredentials`
+varsayılanı `true`; `whatwg-fetch` bunu yalnızca `"include"`/`"omit"` için
+eziyor). Better Auth'un CSRF kontrolü **çerezin varlığına** bakıyor, Origin'in
+yokluğuna değil — yani çerez taşınırsa ikinci auth isteği 403 olur. Ölçüm ve
+ayrıntı ADR-038'de.
 
-**Kimlik SDK'sı yükseltmesi derlemeyle doğrulanmaz.** `tsc` sözleşme
-değişikliğini yakalayabilir (v4 geçişinde `useSignIn` için yakaladı) ama
-oturumun kalıcılığını gösteremez. Doğrulama simülatörde: çıkış → giriş →
-**uygulamayı öldürüp yeniden açmak**. Sonuncusu `tokenCache`'in tek gerçek
-kanıtı.
+**Bir Expo config plugin'i `app.json`'a yazılmak zorundadır.** `plugins`
+dizisinde eksik olan bir paketin iOS/Android yapılandırması uygulanmaz ve bu
+**yalnızca native derlemede** görünür — Expo Go'da her şey normal çalışır.
+Native modül taşıyan her paket için geçerli; `expo-doctor` bunların
+**doğrudan bağımlılık** olup olmadığını kontrol ediyor ve CI'da koşuyor.
+
+**Kimlik değişikliği derlemeyle doğrulanmaz.** `tsc` sözleşme değişikliğini
+yakalayabilir (Clerk v4 geçişinde `useSignIn` için yakaladı) ama oturumun
+kalıcılığını gösteremez. Doğrulama simülatörde: giriş → çıkış →
+**uygulamayı öldürüp yeniden açmak**, iki durumda da. Sonuncusu belirteç
+saklamasının tek gerçek kanıtı.
 
 **Paylaşılan saf modüller `@/lib/...` ile import edilir.** Takma ad
 `mobile/tsconfig.json`'daki `paths` alanından çözülüyor; Metro depo kökünü

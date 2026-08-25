@@ -502,6 +502,58 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-038 — Mobil, Better Auth ile elle konuşur; istemci kütüphanesi kullanılmaz
+**Tarih:** 2026-08-26 · **Durum:** Kabul edildi
+
+**Karar:** Mobil uygulama Better Auth'un uçlarını `mobile/lib/auth.tsx`
+içinden **düz `fetch` ile** çağırır. Ne `better-auth/react` istemcisi ne de
+`@better-auth/expo` eklentisi kurulur. Oturum belirteci `set-auth-token`
+başlığından okunup SecureStore'a yazılır ve `/api/v1`'e
+`Authorization: Bearer` ile taşınır (ADR-029).
+
+**Neden:** Mobilin Better Auth'tan ihtiyacı olan şey **dört HTTP çağrısı**:
+kod iste, kodla gir, parolayla gir, çık. Buna karşılık `better-auth/react`
+istemcisi bir oturum makinesi getiriyor ve o makine tarayıcı varsayımları
+üzerine kurulu — `localStorage`, `document.visibilitychange`,
+`navigator.onLine`. React Native'de `window` **tanımlı** ama bu üçünün
+hiçbiri yok; yani kod "tarayıcıdayım" sanıp yanlış dala giriyor. Paketten
+ölçüldü: `session-refresh.mjs`'teki `shouldRefetch()`, `navigator.onLine`
+olmadığı için sürekli `false` dönüyor.
+
+Kütüphanenin **desteklediği** React Native yolu zaten `@better-auth/expo` ve
+o çerez tabanlı — onu ADR-029'un Bearer sözleşmesini korumak için reddettik.
+Desteklenmeyen bir yapılandırmayı sürmek, kendi dört çağrımızı yazmaktan
+daha riskli.
+
+**Alternatifler:** `better-auth/react` + `credentials: "omit"` +
+`refetchWhenOffline` (yukarıdaki pürüzler aşılabilir ama desteklenmiyor);
+`@better-auth/expo` (çerez tabanlı, üç ek peer, Bearer sözleşmesini bozar).
+
+**Sonuç — iki şey ölçüldü ve ikisi de tasarımı değiştirdi:**
+
+1. **CSRF'i tetikleyen şey "Origin yok" değil, "çerez var".** Kaynakta
+   (`api/middlewares/origin-check.mjs`) origin denetimi
+   `headers.has("cookie")` doğruysa çalışıyor. Çalışan sunucuda üç istekle
+   doğrulandı: çerezsiz + Origin yok → uca ulaşıyor; çerezsiz + Origin var →
+   ulaşıyor; **çerez var + Origin yok → 403 `MISSING_OR_NULL_ORIGIN`**.
+   Yani `trustedOrigins`'e gerek **yok**.
+
+2. **React Native'in `fetch`'i varsayılan olarak çerez tutuyor.**
+   `XMLHttpRequest.withCredentials` varsayılanı `true` ve `whatwg-fetch`
+   bunu yalnızca `"include"`/`"omit"` için eziyor. Yani `credentials: "omit"`
+   yazılmasaydı ilk girişte gelen `Set-Cookie` saklanır, **ikinci** auth
+   isteği 403 olurdu — "bir kere çalıştı sonra bozuldu" biçiminde, bulunması
+   en zor hata. Hem `lib/auth.tsx` hem `lib/api.ts` `"omit"` gönderiyor.
+
+Belirteç geçersizleşirse (süre dolması, sunucudan iptal) `/api/v1` 401 +
+`auth.not_signed_in` dönüyor ve `lib/use-api.ts` oturumu bırakıyor. Clerk'te
+bu gerekmiyordu — SDK kısa ömürlü JWT'yi kendisi yeniliyordu. Better Auth'un
+Bearer belirteci oturumun kendisi; ele alınmasaydı uygulama "girişli görünen
+ama her isteği hata veren" bir halde takılırdı. Simülatörde oturum satırı
+veritabanından silinerek ölçüldü: tek 401, ardından giriş ekranı.
+
+---
+
 ## ADR-037 — Oturum koruması tek yerde: kök yerleşimde, ekranlarda değil
 **Tarih:** 2026-08-25 · **Durum:** Kabul edildi
 
@@ -529,6 +581,12 @@ yapılıyor: kök yerleşim `<Slot />` yerine başka bir şey dönerse gezinme
 bağlamı hiç kurulmaz ve `router.replace` çağrılacak yeri bulamaz.
 `isLoaded` bekleniyor, yoksa girişli kullanıcı da her açılışta bir an için
 giriş ekranına atılırdı. Giriş ekranının kendisi muaf.
+
+**Not (Faz 25.5):** Karar aynen duruyor, mekanizmanın adı değişti. Clerk'in
+`useAuth().isLoaded` / `isSignedIn` ikilisi yerine artık kendi
+`useSession().status` değerimiz okunuyor (`loading` / `signed-in` /
+`signed-out`); beklenen şey belirtecin Keychain'den okunması (bkz.
+[ADR-038](#adr-038--mobil-better-auth-ile-elle-konuşur-istemci-kütüphanesi-kullanılmaz)).
 
 ---
 
@@ -580,6 +638,15 @@ duruyor, Pro'ya geçildiği gün panelden bir anahtar açmakla bitiyor.
 Device Trust ekranının istediği şey e-posta kodu; App Review inceleyicisinin
 demo hesabın posta kutusuna erişimi yok. Muafiyet hâlâ gerekli ve her
 gönderimden önce doğrulanmalı.
+
+**Durum güncellemesi (Faz 25.5):** Kararın **gerekçesi** aynen duruyor —
+ikinci faktör mobilde yürütülür, SMS dalı yazılmaz. Ama **uygulaması**
+kaldırıldı: `mobile/components/second-factor.tsx` Clerk'in `signIn.mfa.*`
+API'sine yazılmıştı ve mobil artık Clerk konuşmuyor
+([ADR-038](#adr-038--mobil-better-auth-ile-elle-konuşur-istemci-kütüphanesi-kullanılmaz)).
+Faz 25.6'da Better Auth'un `twoFactor` eklentisiyle geri geliyor; uçlar
+farklı, gerekçe aynı. `needs_client_trust` (Device Trust) dalının bir
+karşılığı **yok** — o Clerk'e özgüydü.
 
 ---
 
@@ -741,6 +808,13 @@ ertelemek — sürüm ayrışması sürerdi ve TestFlight yaklaşıyor.
 **Doğrulama derlemeyle yapılmadı**, simülatörde uçtan uca: çıkış → e-posta
 kodu ile giriş → grupların yüklenmesi → uygulamayı öldürüp yeniden açınca
 oturumun durması. Sonuncusu `tokenCache` sözleşmesinin tek gerçek kanıtı.
+
+**Durum güncellemesi (Faz 25.5):** `@clerk/expo` mobilden çıktı; paket ve
+`app.json` eklentisi 25.7'de sökülecek. "Token cache bizde kalıyor" kararı
+ise **korundu ve genişledi**: dosya `mobile/lib/session-store.ts` oldu ve
+Clerk'in `TokenCache` arayüzü yerine (anahtar parametreli
+`getToken`/`saveToken`/`clearToken`) tek anahtarlı üç açık fonksiyon
+taşıyor. Saklama yeri hâlâ SecureStore, gerekçesi hâlâ aynı.
 
 ---
 

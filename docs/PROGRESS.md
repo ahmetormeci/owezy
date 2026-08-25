@@ -8,12 +8,12 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 24 faz tamamlandı. Uygulama canlıda ve `main`'e giden her değişiklik
-CI'dan geçiyor.
+**Özet:** 24 faz tamamlandı, **Faz 25 sürüyor** (`better-auth` dalında, `main`'e
+girmedi). Uygulama canlıda ve `main`'e giden her değişiklik CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 535 | ✅ tümü geçiyor |
+| Birim (Vitest) | 539 | ✅ tümü geçiyor |
 | E2E (Playwright) | 43 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -1109,6 +1109,49 @@ genişletirse uygulama mağazadan döner ve sebebi hiçbir yerde görünmez.
 
 **Yayına almadan önce SENDE kalan:** `destek@owezy.net` kutusu (Cloudflare
 Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yaramaz.
+
+---
+
+## Faz 25 — Clerk'ten Better Auth'a geçiş · **SÜRÜYOR**
+
+`better-auth` dalında. **`main`'e girmedi** ve girmeyecek: `betterAuth()`
+`BETTER_AUTH_SECRET` yokken **modül yüklenirken** fırlatıyor, `src/lib/auth.ts`
+onu neredeyse her sayfaya taşıyor — yani Vercel değişkenleri girilmeden bir
+push, uygulamanın tamamını 500 yapardı. Ayrıca yeni `/sign-in` yalnızca Better
+Auth konuşuyor ve App Review demo hesabı Clerk production'da.
+
+Yayından **önce** yapılıyor: production'da sıfır kullanıcı var. Sonra yapmak
+herkese parola sıfırlatmak demekti (Clerk parola hash'ini dışarı vermiyor).
+
+| Adım | Durum | Commit |
+|---|---|---|
+| 25.1 Şema ve iskelet | ✅ | `aa6f6cb` |
+| 25.2 Resend + tek seferlik kod | ✅ | `6dbb997` |
+| 25.3 Sunucu kimliği (`auth.ts`, `/api/v1`) | ✅ | `bd9ae88` |
+| 25.4 Web arayüzleri (giriş/kayıt/menü) | ✅ | `0952ad2`, `e8163e6`, `c4107b2` |
+| 25.5 Mobil | ✅ | `b3156e9` |
+| 25.6 İkinci faktör (`twoFactor`) | — | |
+| 25.7 Clerk'in sökülmesi | — | |
+| 25.8 E2E yeniden kurulur | — | |
+
+**Kazanç şimdiden görülüyor:** kendi `User` tablomuz devralındı (`modelName` +
+`fields`), yani `Expense`/`Settlement`/`GroupMember`/`Notification`'ın tamamı
+yerinde kaldı ve `session.user.id` **doğrudan** bizim `User.id`'miz — ADR-007'nin
+taşıdığı `clerkId → User.id` eşlemesi ortadan kalkıyor.
+
+**25.5 — mobil.** Mobil artık yalnızca Better Auth konuşuyor. Better Auth'un
+istemci kütüphanesi **kullanılmadı**; gerekçe ve iki ölçüm ADR-038'de —
+CSRF'i tetikleyen şey "Origin yok" değil "çerez var", ve React Native'in
+`fetch`'i varsayılan olarak çerez tutuyor. Belirteç geçersizleşirse
+(401 + `auth.not_signed_in`) oturum bırakılıyor; Clerk'te bu gerekmiyordu.
+
+**Üç kez doküman/üretici yanıldı, çalışma zamanı haklı çıktı:** Better Auth'un
+id üreteci UUID değil; `prisma migrate diff` çıktısı olduğu gibi alınamıyor
+(ADR-024'ün üretilmiş kolonunu bozuyor); `@better-auth/cli` eski bir sürümün
+şemasını üretti ve `Account.issuer` atlandı. Şema artık `getAuthTables()`
+çağrılarak doğrulanıyor.
+
+**Test:** Birim 539 ✅ · E2E 43 ✅ · `tsc`/lint ✅ · mobil uçtan uca simülatörde ✅
 
 ---
 

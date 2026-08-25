@@ -13,11 +13,12 @@ src/
 │  │  └─ groups/...             Grup, harcama, üye sayfaları
 │  ├─ api/
 │  │  ├─ v1/                    Kendi versiyonladığımız API (web + mobil)
+│  │  ├─ auth/[...all]/         Better Auth'un uçları (web + mobil, v1 DEĞİL)
 │  │  └─ webhooks/clerk/        Clerk'ten gelen olaylar (v1 DEĞİL, bkz. aşağı)
 │  ├─ join/[token]/             Davet kabul sayfası (giriş gerektirmez)
 │  ├─ privacy/, support/        Gizlilik ve destek (giriş gerektirmez, mağazalar zorunlu tutuyor)
-│  ├─ sign-in/, sign-up/        Clerk sayfaları
-│  ├─ layout.tsx                Kök layout, ClerkProvider
+│  ├─ sign-in/, sign-up/        Bizim giriş/kayıt sayfalarımız (Faz 25.4)
+│  ├─ layout.tsx                Kök layout, ClerkProvider (25.7'de çıkıyor)
 │  └─ page.tsx                  Karşılama sayfası
 ├─ components/
 │  ├─ ui/                       shadcn/ui (Base UI) primitifleri — elle düzenlenmez
@@ -135,6 +136,13 @@ dosya kuralı yeniden adlandırıldı (bkz. sürüm tuzakları).
 
 ### `getOrCreateCurrentUser()` (`src/lib/auth.ts`)
 
+**Faz 25 sürerken iki kimlik sistemi yan yana çalışıyor** (`better-auth`
+dalında): önce Better Auth oturumu sorulur, bulunamazsa Clerk. Yeni olan
+kazanır — tersi göçü geri alırdı, çünkü bir kullanıcının ikisinde birden
+oturumu olabilir. Better Auth yolunda `session.user.id` **doğrudan** bizim
+`User.id`'miz; arada eşleme yok. Aşağıdaki anlatım Clerk dalını tarif ediyor
+ve o dal 25.7'de siliniyor.
+
 Clerk kimliğini bizim `User` satırımıza bağlar. Kayıt yoksa oluşturur
 ("lazy sync"). **Yarışa dayanıklıdır:** bir sayfa açılışında tarayıcı eş
 zamanlı birden fazla istek atar; hepsi "kayıt yok" görüp oluşturmaya
@@ -152,7 +160,15 @@ geçilmedi (ADR-029). Web ile ilişkisi üç maddeyle özetlenebilir:
 **Aynı API'yi çağırıyor.** Web oturumu çerezle taşıyor, mobil
 `Authorization: Bearer` ile. Bu bir varsayım değil, ölçüldü ve kalıcı bir E2E
 testine bağlandı (`e2e/auth.spec.ts`) — biri ileride çerez varsayan bir
-kontrol eklerse mobil sözleşme sessizce kırılırdı.
+kontrol eklerse mobil sözleşme sessizce kırılırdı. Kimlik sağlayıcısı
+değiştiğinde de korunan şey buydu: Better Auth'un `bearer()` eklentisi aynı
+sözleşmeyi konuşuyor, o yüzden 25.5'te mobilin istek katmanı yerinde kaldı
+(ADR-038).
+
+**Kimlik doğrulamayı da aynı sunucudan alıyor.** Mobil `/api/auth` uçlarını
+`mobile/lib/auth.tsx` içinden düz `fetch` ile çağırıyor; Better Auth'un
+istemci kütüphanesi kullanılmıyor. Belirteç `set-auth-token` başlığından
+okunup `expo-secure-store`'a yazılıyor.
 
 **Saf modülleri paylaşıyor, React bileşenlerini PAYLAŞMIYOR.** `money.ts`,
 `split.ts`, `messages.ts`, `dates.ts`, `expense-category-guess.ts`,

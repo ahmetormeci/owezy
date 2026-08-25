@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (14)
+Updated: 2026-08-26 (15)
 
 DAL: better-auth. YEREL main = origin/main = CANLIDAKI HAL.
 
@@ -51,10 +51,72 @@ Current task:
     25.2  Resend + sendVerificationOTP       BITTI  6dbb997
     25.3  Sunucu kimligi (auth.ts, /api/v1)  BITTI  bd9ae88
     25.4  Web arayuzleri (giris/kayit)       BITTI  0952ad2
-    25.5  Mobil (bearer + ekranlar)
+    25.5  Mobil (bearer + ekranlar)          BITTI  b3156e9
     25.6  2FA (TOTP + yedek kod + trustDevice)
     25.7  Clerk'in sokulmesi
     25.8  E2E yeniden kurulur
+
+  25.5'TE NE YAPILDI:
+    - MOBILDE CLERK KALMADI. lib/auth.tsx tek kapi: dort cagri (kod iste,
+      kodla gir, parolayla gir, cik) + oturum baglami + SecureStore.
+    - KUTUPHANE KULLANILMADI, sebebi ADR-038'de. Kisaca: better-auth'un
+      tarayici istemcisi localStorage / document.visibilitychange /
+      navigator.onLine uzerine kurulu; RN'de `window` TANIMLI ama bu ucunun
+      hicbiri yok. Desteklenen RN yolu (@better-auth/expo) ise cerez tabanli
+      ve ADR-029'un Bearer sozlesmesini bozardi.
+    - token-cache.ts -> session-store.ts. Clerk'in TokenCache arayuzu yerine
+      tek anahtarli uc fonksiyon. Saklama yeri hala SecureStore.
+    - use-api.ts: 401 + auth.not_signed_in gelince OTURUM BIRAKILIYOR.
+      Clerk'te gerekmiyordu (SDK kisa omurlu JWT'yi yeniliyordu); Better
+      Auth'un Bearer belirteci oturumun kendisi.
+    - api.ts: ag hatasi artik ISTEKTE yakalaniyor -> server.offline. O kod
+      onceden Clerk'in getToken()'indan geliyordu; tasinmasaydi kullanici
+      ham "Network request failed" gorurdu.
+    - second-factor.tsx ve clerk-errors.ts SILINDI. Ikinci faktor 25.6'da
+      Better Auth'un twoFactor eklentisiyle donuyor (ADR-036'nin gerekcesi
+      duruyor, Clerk uygulamasi durmuyor). Hata metinleri artik
+      @/lib/auth-errors'tan - WEB ILE ORTAK.
+    - @clerk/expo PAKETI ve app.json eklentisi 25.7'ye BIRAKILDI: app.json
+      native yapilandirmayi degistiriyor, Clerk'in her yerden sokuldugu
+      commit'e ait.
+
+    OLCULEN IKI SEY - biri onceki notu duzeltti:
+      1. CSRF'i tetikleyen sey "Origin yok" DEGIL, "cerez var". Bu dosyada
+         bir ara "cozum trustedOrigins" yaziyordu; YANLISTI. Kaynak
+         (origin-check.mjs) headers.has("cookie") dogruysa denetliyor.
+         Calisan sunucuda uc istek:
+           cerezsiz + Origin yok   -> uca ulasiyor   (mobilin hali)
+           cerezsiz + Origin var   -> uca ulasiyor
+           CEREZ VAR + Origin yok  -> 403 MISSING_OR_NULL_ORIGIN
+         trustedOrigins'e GEREK YOK.
+      2. React Native'in fetch'i VARSAYILAN OLARAK CEREZ TUTUYOR
+         (XMLHttpRequest.withCredentials varsayilani true; whatwg-fetch
+         yalnizca "include"/"omit" icin eziyor). credentials: "omit"
+         yazilmasaydi ilk giris Set-Cookie'yi saklar ve IKINCI auth istegi
+         403 olurdu - "bir kere calisti sonra bozuldu" sekli.
+
+    DOGRULANDI - SIMULATORDE, UCTAN UCA:
+      e-posta koduyla giris             200, belirtec saklandi
+      /api/v1 Bearer ile                200 (liste, detay, uyeler, ozet,
+                                        bakiyeler, me)
+      grup olusturma                    201
+      uygulamayi oldur + yeniden ac     hala girisli
+      cikis                             200; giris ekrani
+      uygulamayi oldur + yeniden ac     hala cikis yapmis
+      oturum satiri sunucudan silindi   tek 401, ardindan giris ekrani
+      Kosunun tamaminda 403 YOK - cerez sorusunun cevabi bu.
+
+    BEN TEST EDEMEDIM (parola forma yazilmiyor): PAROLAYLA GIRIS.
+
+  25.4 SONRASI IKINCI DUZELTME - BASLIKTAKI MENU (c4107b2):
+    25.4 user-menu.tsx'i yazdi ve layout'a IMPORT ETTI ama JSX'te hala
+    Clerk'in <UserButton />'i duruyordu. Import kullanilmadigi icin
+    eslint uyarisi verdi ve 25.5'i dogrularken ortaya cikti.
+    ONEMLIYDI: <UserButton /> yalnizca CLERK oturumunu biliyor; Better Auth
+    ile giren kullanici HIC menu gormuyordu. 25.4'un kapatmak icin var
+    oldugu boslugun ta kendisi - ve bu dosya kapandigini yaziyordu.
+    Bu kez TARAYICIDA dogrulandi: avatar baslikta, menude hesap ve
+    "Cikis yap".
 
   25.1'DE NE YAPILDI:
     - better-auth 1.7.1 kuruldu. Peer'ler olculdu, hepsi uyumlu:
@@ -217,11 +279,15 @@ Current task:
         /       + oturum -> 307 /groups
         /groups oturumsuz -> 307 /sign-in
 
-  25.2'DE CIKAN SURPRIZ - CSRF KORUMASI:
+  25.2'DE CIKAN SURPRIZ - CSRF KORUMASI (TESHIS 25.5'TE DUZELTILDI):
     BETTER_AUTH_URL tanimlaninca Better Auth ORIGIN kontrolu yapmaya basladi:
-    basliksiz istek 403 MISSING_OR_NULL_ORIGIN doniyor. Bu iyi bir sey.
-    AMA 25.5'TE SORUN OLACAK: mobil istemci Origin basligi gondermiyor.
-    Cozum betterAuth({ trustedOrigins: [...] }) - sirasi gelince.
+    403 MISSING_OR_NULL_ORIGIN. Buraya "mobil Origin gondermiyor, cozum
+    trustedOrigins" diye yazilmisti - TESHIS YANLISTI.
+
+    Denetim Origin'in yoklugunda degil, CEREZIN varliginda calisiyor
+    (origin-check.mjs: headers.has("cookie")). Mobil cerez tasimadigi surece
+    denetime hic girmiyor; trustedOrigins gerekmedi. Gereken sey React
+    Native'in fetch'ine credentials: "omit" demekti - ayrinti ADR-038'de.
 
   25.1'DE OLCULEN IKI SEY - BELGELER YANILDI:
     1. "Better Auth varsayilan olarak UUID uretir" YANLIS. Gercek uretici
@@ -298,9 +364,22 @@ Current task:
     aninda app.json'dan uretiliyor. Dogru yer burasi.
 
 Hemen sonraki adim:
-  YOK - KULLANICIDAN GOREV BEKLENIYOR.
+  25.6 - IKINCI FAKTOR, BETTER AUTH'UN twoFactor EKLENTISIYLE.
+    TOTP + yedek kod + trustDevice. Web ve mobil ayni uclari cagiracak.
 
-  ONERILEN SIRADAKI IS (kullanici daha once onaylamisti, sirasi geldi):
+    SEMA CLI'DAN URETILMEYECEK. 25.4'te Account.issuer tam bu yuzden
+    atlandi: "@better-auth/cli@1.4.21" kurulurken "Package no longer
+    supported" dedi ve eski bir surumun semasi uretildi. Dogru kaynak
+    CALISMA ZAMANI: @better-auth/core'daki getAuthTables() KENDI
+    ayarlarimizla cagrilip alan listesi semayla karsilastirilacak.
+
+    Mobil tarafta silinen bilesenin yerine yenisi yazilacak; ADR-036'nin
+    gerekcesi (SMS dali yok, faktor sirasi authenticator > yedek kod)
+    aynen gecerli. needs_client_trust'in karsiligi YOK - o Clerk'e ozguydu.
+
+  SONRA: 25.7 Clerk'in sokulmesi -> 25.8 E2E yeniden kurulur.
+
+  FAZ 25'TEN SONRA (kullanici daha once onaylamisti, sirasi bekliyor):
   GUVENLIK BASLIKLARI + HIZ SINIRI.
     - next.config.ts'te HIC guvenlik basligi yok: Strict-Transport-Security,
       X-Content-Type-Options, CSP.
@@ -308,26 +387,20 @@ Hemen sonraki adim:
     Gizlilik politikasindaki "makul teknik tedbirler" cumlesini gercek
     yapan is bu - ve MFA'nin aksine UCRETSIZ.
 
-2FA - NEREDE DURUYOR (Faz 24 bitti):
-  KOD HAZIR VE SIMULATORDE DOGRULANDI. Mobil giris ekrani ikinci faktoru
-  yurutuyor: TOTP, e-posta kodu, yedek kod. SMS dali BILEREK YOK.
+2FA - NEREDE DURUYOR:
+  MOBILDEKI IKINCI FAKTOR EKRANI 25.5'TE SILINDI. Faz 24'te yazilmis ve
+  simulatorde dogrulanmisti, ama Clerk'in signIn.mfa.* API'sine yaziliydi;
+  mobil artik Clerk konusmuyor. 25.6'da Better Auth'un twoFactor
+  eklentisiyle donuyor - ADR-036'nin gerekcesi duruyor, uygulamasi degil.
 
-  PANEL DURUMU:
-    development : authenticator_app + backup_code ACIK, ISTEGE BAGLI
-                  (second_factors: ["backup_code","totp"])
-    production  : KAPALI. Clerk'te MFA bir PRO ozelligi - $25/ay
-                  ($20/ay yillik). Kullanici acmama karari verdi:
-                  uygulamanin henuz kullanicisi ve geliri yok.
-    Acmak istendiginde: panelden iki anahtar, KOD DEGISIKLIGI GEREKMIYOR.
+  CLERK PANELI ARTIK KONU DISI (kalan tek kullanicisi web'in Clerk yolu ve
+  o da 25.7'de gidiyor). Kayit icin: development'ta authenticator_app +
+  backup_code ACIKTI, production'da KAPALIYDI - Clerk'te MFA $25/ay'lik bir
+  PRO ozelligi ve kullanici acmama karari vermisti. FAZ 25'IN CIKIS NOKTASI
+  ZATEN BUYDU.
 
-  DEV TEST KULLANICISI: mfa+clerk_test@example.com
-    Ilk faktor e-posta kodu 424242 (gercek posta kutusu yok).
-    TOTP gizli anahtari ve yedek kodlar REPOYA YAZILMADI; oturumun
-    scratchpad'inde. Kaybolursa panelden 2FA kaldirilip yeniden kurulur.
-
-  SINANMADI: needs_client_trust (Device Trust) dali. O durum PAROLAYLA
-  giriste tetikleniyor; parola forma yazilmadigi icin denenemedi. Kod yolu
-  ayni metotlari kullaniyor (mfa.*) ama bu bir CIKARIM, olcum degil.
+  DEV TEST KULLANICISI mfa+clerk_test@example.com Clerk tarafinda duruyor;
+  25.6'da Better Auth'ta kendi test kimligimizi kuracagiz.
 
 DEVICE TRUST - DEMO HESAP ICIN MUAFIYET HALA GEREKLI:
   DIKKAT: bu dosyada bir ara "ikinci faktor isi bypass_client_trust'a
@@ -346,24 +419,16 @@ DEVICE TRUST - DEMO HESAP ICIN MUAFIYET HALA GEREKLI:
        Kod istenmeden giriyorsan muafiyet calisiyor.
   Bozulursa yedek plan: Protect -> Rules -> Device Trust -> Enable kapat.
 
-FAZ 21'DEN AKILDA TUTULACAKLAR:
-  - useSignIn'in SOZLESMESI DEGISTI ve tsc yakaladi:
-      eski: { signIn, setActive, isLoaded }
-      yeni: { signIn, fetchStatus }, signIn "future" API'si
-    Giris ekrani yeniden yazildi ve KISALDI: create() + faktor arama +
-    prepareFirstFactor yerine tek emailCode.sendCode({emailAddress});
-    setActive yerine finalize(). Hatalar FIRLATILMIYOR, { error } doniyor.
-  - app.json'a CONFIG PLUGIN eklendi ("@clerk/expo"). Eski pakette boyle
-    bir sey YOKTU. Yazilmasaydi eksik yapilandirmayla derlenirdi ve bu
-    ancak native derlemede, yani TestFlight'ta gorunurdu.
-  - getToken() CEVRIMDISIYKEN ARTIK HATA FIRLATIYOR (clerk_offline).
-    Tek yerde (lib/use-api.ts) yakalanip { ok:false, status:0,
-    code:"server.offline" } sozlesmesine cevriliyor - ekranlar degismedi.
-  - KENDI token-cache'imiz KORUNDU. Yeni paket @clerk/expo/token-cache
-    veriyor ama bizimkinin yorumlarinda gercek kararlar yazili.
-  - ERTELENDI: react-dom, expo-web-browser, expo-auth-session yeni surumde
-    OPSIYONEL peer oldu (eskisinde ikisi zorunluydu). Ayni commit'te
-    silmek, bir sey bozulunca hangisinin bozdugunu bilinmez yapardi.
+FAZ 21'DEN GERIYE KALANLAR (cogu 25.5'te konu disi kaldi):
+  Mobil artik Clerk konusmuyor, o yuzden useSignIn sozlesmesi, clerk_offline
+  ve token-cache notlari ARTIK GECERSIZ - ne olduklari ADR-033'te duruyor.
+  Yasayan iki madde:
+  - app.json'daki CONFIG PLUGIN ("@clerk/expo") HALA ORADA. Kod onu
+    kullanmiyor ama app.json'a dokunmak native yapilandirmayi degistiriyor;
+    25.7'de paketle birlikte cikacak.
+  - ERTELENMIS BAGIMLILIK TEMIZLIGI: react-dom, expo-web-browser,
+    expo-auth-session. Ucu de @clerk/expo yuzunden duruyordu; 25.7'de
+    gozden gecirilecek.
 
 MOBILDE BUGUN NE VAR:
   giris (e-posta + kod, ya da parolayla - ikincil), grup listesi / tek grupta dogrudan gruba
@@ -385,6 +450,10 @@ ROTA YAPISI:
   "grup olustur"a hic ulasamiyordu. BIRLESTIRME.
 
 MOBILDE HENUZ YOK (bilincli kapsam disi):
+  - IKINCI FAKTOR - 25.5'te silindi, 25.6'da Better Auth ile donuyor
+  - KAYIT EKRANI ve bu bir eksiklik DEGIL: e-posta kodu akisi, adres kayitli
+    degilse kullaniciyi kendisi yaratiyor. Web'de ayri form olmasinin tek
+    sebebi gorunen ADI sorabilmek; mobilde ad e-postaya dusuyor
   - bildirimler
   - EXACT/PERCENTAGE bolusumun mobilde duzenlenmesi (bilincli: tutari
     degistirmek paylarla celisirdi)

@@ -8,6 +8,61 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-26 (1) — `better-auth` dalı, `main`'e girmedi
+
+Faz 25'in ilk beş adımı. Bu kayıt tek girişte toplandı çünkü adımlar bir
+bütün olarak anlamlı ve hiçbiri henüz canlıda değil.
+
+### Kimlik doğrulama Clerk'ten Better Auth'a taşınıyor
+- **Kendi `User` tablomuz devralındı** (`modelName` + `fields`).
+  `Expense`, `Settlement`, `GroupMember`, `Notification` yerinde kaldı ve
+  `session.user.id` **doğrudan** bizim `User.id`'miz — ADR-007'nin taşıdığı
+  `clerkId → User.id` eşlemesi ortadan kalkıyor. Yeni tablolar: `Session`,
+  `Account`, `Verification`.
+- **Tek seferlik kodu artık biz gönderiyoruz** (Resend). Gönderim
+  beklenmiyor ve `after()` ile yapılıyor: beklemek kayıtlı/kayıtsız adres
+  arasında ölçülebilir bir süre farkı yaratırdı, ve Vercel'de yalnızca
+  "await etme" demek postanın hiç gitmemesi demek olabilirdi.
+- **Kod e-postanın konusuna yazılmıyor.** Çoğu servis yazıyor; tam o yüzden
+  yazmıyoruz — telefona yandan bakan biri kilit ekranında okuyabilir.
+- `/sign-in`, `/sign-up` ve başlıktaki kullanıcı menüsü **bizim**.
+  Clerk'in `<SignIn />`, `<SignUp />`, `<UserButton />` bileşenleri gitti.
+  Sebep kozmetik değil: Clerk'in bileşenleri yalnızca **Clerk** oturumunu
+  biliyor, Better Auth ile giren kullanıcıyı tanımıyorlardı.
+- Hata metinleri: Better Auth'un **kodu** bizim mesaj kodumuza çevriliyor
+  (`lib/auth-errors.ts`, web ve mobil ortak). "Kullanıcı yok" ile "parola
+  yanlış" **aynı** cümleye bağlandı — ayırmak, hangi e-postaların kayıtlı
+  olduğunu tek tek sınamaya izin verirdi.
+- **Mobil de yalnızca Better Auth konuşuyor** (ADR-038). İstemci kütüphanesi
+  kullanılmadı: paketin oturum makinesi `localStorage`,
+  `document.visibilitychange` ve `navigator.onLine` üzerine kurulu ve
+  React Native'de `window` tanımlı ama bu üçünün hiçbiri yok. Desteklenen
+  RN yolu (`@better-auth/expo`) ise çerez tabanlı ve ADR-029'un Bearer
+  sözleşmesini bozardı.
+- **Geçersiz belirteç artık uygulamayı kilitlemiyor:** `/api/v1` 401 +
+  `auth.not_signed_in` dönünce mobil oturumu bırakıyor. Clerk'te
+  gerekmiyordu — SDK kısa ömürlü JWT'yi kendisi yeniliyordu.
+
+### Ölçüm dokümanı üç kez yalanladı
+- Better Auth'un id üreteci **UUID değil**; sütunlara güvenseydik ilk
+  `INSERT` patlardı.
+- `prisma migrate diff` çıktısı **olduğu gibi alınamıyor**: her seferinde
+  `descriptionFold`'un `DEFAULT`'unu düşüren bir satır üretiyor ve o kolon
+  `GENERATED ALWAYS ... STORED` (ADR-024). Arama katlaması bozulurdu.
+- `@better-auth/cli` **eski bir sürümün** şemasını üretti ve `Account.issuer`
+  atlandı; kayıt formu ilk gerçek denemede düştü. Şema artık
+  `getAuthTables()` çağrılarak doğrulanıyor.
+- **CSRF'i tetikleyen şey "Origin yok" değil, "çerez var"** — ve React
+  Native'in `fetch`'i varsayılan olarak çerez tutuyor. `credentials: "omit"`
+  yazılmasaydı mobil giriş **bir kez** çalışır, sonra 403 verirdi.
+
+### Eşlenmeyen hatalar artık iz bırakıyor
+Kayıt formu düştüğünde kullanıcı "Bir şeyler ters gitti" görüyordu ve
+**geriye hiçbir iz kalmıyordu**; teşhis elenerek ilerlemek zorunda kaldı.
+Kullanıcıya gösterilen cümle yine genel, ham hâli konsola düşüyor.
+
+---
+
 ## 2026-08-25 (6)
 
 ### Mobilde ikinci faktör (ADR-036)
