@@ -70,8 +70,23 @@ enum NotificationType {
 
 model User {
   id          String    @id @default(uuid()) @db.Uuid
-  clerkId     String    @unique
-  email       String
+
+  // NULLABLE OLDU (Faz 25.1). Better Auth bir kullanici yarattiginda clerkId
+  // yazmaz; NOT NULL kalsaydi her yeni kayit kisit ihlaliyle duserdi.
+  // Sutunun tamami 25.7'de, Clerk sokulurken kaldirilacak.
+  clerkId     String?   @unique
+
+  // @unique EKLENDI. Better Auth kimligi e-postadan cozuyor; kisit olmadan
+  // ayni adrese birden fazla satir dusebiliyor - nitekim DUSMUSTU: E2E
+  // veritabaninda uc test kullanicisinin her biri iki kez vardi, cunku
+  // Clerk tarafinda kullanici yeniden yaratilinca clerkId degisiyor ve
+  // "clerkId ile ara, yoksa olustur" ikinci satiri aciyordu.
+  email       String    @unique
+
+  // Better Auth'un cekirdek alani. Bizde karsiligi yoktu cunku dogrulamayi
+  // Clerk yapiyordu ve biz sonucunu hic saklamiyorduk.
+  emailVerified Boolean @default(false)
+
   displayName String
   avatarUrl   String?
   createdAt   DateTime  @default(now())
@@ -129,6 +144,13 @@ model User {
   settlementsReceived  Settlement[] @relation("toUser")
   settlementsCreated   Settlement[] @relation("createdBy")
   settlementsCancelled Settlement[] @relation("cancelledBy")
+
+  // Better Auth'un yonettigi kayitlar. Cascade BILEREK: bunlar finansal
+  // kayit degil, oturum artifaktlari - "finansal kayitlar fiziksel olarak
+  // silinmez" kurali onlari baglamiyor. Zaten hesap silme SOFT delete
+  // (deletedAt) oldugu icin bu cascade pratikte hic tetiklenmiyor.
+  sessions Session[]
+  accounts Account[]
 
   expenseEdits  ExpenseEdit[]  @relation("changedBy")
   groupInvites  GroupInvite[]  @relation("invitedBy")
@@ -355,4 +377,65 @@ model Notification {
   // Listeyi yeniden eskiye siralamak icin. Bu olmasa her listeleme, kullanicinin
   // TUM bildirimlerini okuyup bellekte siralamak zorunda kalirdi.
   @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Better Auth'un yonettigi tablolar (Faz 25.1).
+//
+// Bu uc model ELLE YAZILMADI: "@better-auth/cli generate" uretti, sonra iki
+// yerde bizim semamiza uyarlandi:
+//   1. Tablo adlari PascalCase (uretici kucuk harf @@map koyuyordu)
+//   2. Butun id ve FK sutunlari @db.Uuid (semanin geri kalani boyle)
+// ---------------------------------------------------------------------------
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String   @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(uuid()) @db.Uuid
+  accountId             String
+  providerId            String
+  userId                String    @db.Uuid
+  // Parolayla giriste parola HASH'i burada durur (providerId = "credential").
+  // Sosyal saglayicilarda bunun yerine token alanlari dolar - o is 25.x'e
+  // ertelendi, ama tablo bugunden hazir.
+  password              String?
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(uuid()) @db.Uuid
+  // E-posta adresi gibi "neyi dogruluyoruz" degeri. Tek seferlik kodlar
+  // (emailOTP) da burada duruyor - kullaniciya bagli DEGIL, cunku kod
+  // henuz kimligi kanitlanmamis birine gonderiliyor.
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
 }

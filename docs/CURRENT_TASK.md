@@ -15,22 +15,78 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (7)
+Updated: 2026-08-25 (8)
 
 Current task:
-  YOK - KULLANICIDAN GOREV BEKLENIYOR.
+  FAZ 25 - CLERK'TEN BETTER AUTH'A GEC. Karar kullanicinin: 2FA Clerk'te bir
+  PRO ozelligi ($25/ay) ve uygulamanin henuz kullanicisi/geliri yok. Ama asil
+  soru "2FA nereden" degil, "kimlik dogrulamayi kim sahiplenecek" idi.
+  Yayindan ONCE yapiliyor cunku production'da SIFIR kullanici var; sonra
+  yapmak herkese parola sifirlatmak demek (Clerk parola hash'i disari vermiyor).
 
-  BUGUN BITENLER (sirasiyla):
-    Faz 19  Optimistic locking                    51bc3c4
-    Faz 20  CI mobili de dogruluyor               f9c8ef6
-    Faz 21  @clerk/expo gecisi                    30b2ecf
-    Faz 22  /privacy ve /support (ADR-034)        63154ff
-    Faz 23  Mobilde parolayla giris (ADR-035)     856b034
-            Device Trust bulgusu (dokuman)        07ab975
-            Dil degisince Clerk menusu duzeltmesi ab80386
-            Export compliance                     edfb500
-    Faz 24  Mobilde ikinci faktor (ADR-036)       6ba6144
-            Cikis gercekten cikis yapiyor (ADR-037)
+  ADIMLAR (her biri kendi basina dogrulanabilir; CLERK 25.7'YE KADAR AYAKTA):
+    25.1  Sema ve iskelet                    BITTI (commit bekliyor)
+    25.2  Resend + sendVerificationOTP       SIRADA
+    25.3  Sunucu kimligi (auth.ts, /api/v1)
+    25.4  Web arayuzleri (giris/kayit/hesap)
+    25.5  Mobil (bearer + ekranlar)
+    25.6  2FA (TOTP + yedek kod + trustDevice)
+    25.7  Clerk'in sokulmesi
+    25.8  E2E yeniden kurulur
+
+  25.1'DE NE YAPILDI:
+    - better-auth 1.7.1 kuruldu. Peer'ler olculdu, hepsi uyumlu:
+      next ^16, prisma ^7, react ^19, vitest ^4.
+    - src/lib/better-auth.ts: Prisma adaptoru + emailOTP + bearer.
+    - BIZIM User TABLOMUZ DEVRALINDI (modelName + fields). Bu gocun en buyuk
+      kazanci: Expense/Settlement/GroupMember/Notification'in tamami
+      User.id'ye bagli ve HICBIRI TASINMIYOR.
+    - Yeni tablolar: Session, Account, Verification.
+    - User: clerkId NULLABLE oldu, email UNIQUE oldu, emailVerified eklendi.
+    - /api/auth/[...all] route handler.
+    - DOGRULANDI (derleme degil, CALISMA): get-session 200 + null,
+      send-verification-otp 200 + {"success":true}, uretilen kod sunucu
+      loguna dustu, Verification satiri uuid id ile veritabanina yazildi.
+
+  25.1'DE OLCULEN IKI SEY - BELGELER YANILDI:
+    1. "Better Auth varsayilan olarak UUID uretir" YANLIS. Gercek uretici
+       createRandomStringGenerator("a-z","0-9","A-Z","-_") - nanoid tarzi
+       metin. Sutunlari @db.Uuid yazip buna guvenseydik ilk INSERT patlardi.
+       Cozum: advanced.database.generateId = "uuid" + sutunlarda
+       @default(uuid()). Postgres'te "uuid" demek "id'yi ben gondermem,
+       sutun doldursun" demek - tip tanimi boyle yaziyor.
+    2. "prisma migrate diff" ciktisi OLDUGU GIBI ALINAMAZ. Her seferinde
+       fazladan su satiri uretiyor:
+           ALTER TABLE "Expense" ALTER COLUMN "descriptionFold" DROP DEFAULT;
+       descriptionFold bir GENERATED ALWAYS ... STORED kolon (ADR-024);
+       Prisma semasi uretilmis kolonu ifade edemedigi icin farki "default
+       kaldirilmali" saniyor. BUNDAN SONRAKI MIGRATION'LARDA DA ATILMALI.
+
+  BEKLEYEN - KULLANICI YAPACAK:
+    1. .env.local'a iki degisken (BEN YAZAMAM):
+         BETTER_AUTH_SECRET=<openssl rand -base64 32 ciktisi>
+         BETTER_AUTH_URL=http://localhost:3000
+       Ikincisi olmadan Better Auth her istekte "Base URL is not set" uyarisi
+       basiyor ve origin'i istekten cikariyor.
+    2. E2E veritabanindaki UC OKSUZ kullanici satirinin silinmesi. Silme
+       komutu izin katmaninda ENGELLENDI; kullanici kendi calistiracak.
+       Yedegi: scratchpad/e2e-orphan-users-backup.json
+       Silinmeden E2E veritabanina migration UYGULANAMAZ (email UNIQUE duser).
+    3. Resend: hesap + domain dogrulamasi YAPILDI (DNS kontrol edildi).
+       RESEND_API_KEY .env.local'a yazilacak (25.2'de gerekecek).
+
+  DNS DURUMU (25 Agustos, dig ile dogrulandi):
+    Email Routing (kok MX)   : route1/2/3.mx.cloudflare.net    ACIK
+    Resend bounce (MX)       : feedback-smtp.ap-northeast-1.amazonses.com
+    Resend SPF               : send.owezy.net -> include:amazonses.com
+    Resend DKIM              : resend._domainkey.owezy.net     GECERLI
+    DMARC                    : p=reject; adkim=s; ASPF=S
+
+    ASPF=S RISKLI VE KULLANICIYA SOYLENDI: Resend zarfi send.owezy.net'ten
+    yolluyor, From ise owezy.net olacak - strict hizalamada SPF HER ZAMAN
+    dusecek. Posta yine gidiyor cunku DMARC "SPF ya da DKIM" diyor ve DKIM
+    hizaliyor. Ama tek bacak uzerindeyiz ve p=reject yuzunden bir DKIM
+    aksamasi = kimse giris yapamiyor. ONERI: aspf=s -> aspf=r.
 
   APP STORE HAZIRLIGI - NEREDE KALDIK:
     BITTI (kullanici dogruladi):
