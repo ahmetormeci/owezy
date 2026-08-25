@@ -15,7 +15,29 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (13)
+Updated: 2026-08-25 (14)
+
+DAL: better-auth. YEREL main = origin/main = CANLIDAKI HAL.
+
+  GOC main'E PUSH EDILMIYOR ve sebebi olculdu:
+    1. betterAuth() production'da BETTER_AUTH_SECRET yoksa MODUL YUKLENIRKEN
+       firlatiyor (kaynakta dogrulandi: "BETTER_AUTH_SECRET is missing").
+       src/lib/auth.ts onu import ediyor, o da neredeyse her sayfa ve her
+       API ucu tarafindan import ediliyor. Yani anahtar Vercel'e girilmeden
+       push = UYGULAMANIN TAMAMI 500.
+    2. Anahtar girilse bile: yeni /sign-in yalnizca Better Auth konusuyor.
+       APP REVIEW DEMO HESABI Clerk production'da; Better Auth tarafinda
+       parolasi yok ve e-posta kodunu inceleyici okuyamaz. Yani demo hesap
+       KILITLENIR.
+    main'e gecis 25.7/25.8'den sonra, ve o gecise KENDI kontrol listesi
+    yazilacak (Vercel degiskenleri + demo hesabin Better Auth karsiligi).
+
+  NOT - VERCEL ONIZLEME: dal push'u bir onizleme derlemesi tetikleyebilir ve
+  vercel-build "prisma migrate deploy" calistiriyor. Onizleme production
+  veritabanini kullaniyorsa iki migration canliya gider (email UNIQUE ve
+  Account.issuer). IKISI DE GUVENLI - production'da sifir kullanici ve
+  Account tablosu bos oldugu DOGRULANDI - ve zaten sirasi gelince gerekecek.
+  Uygulamanin davranisi degismiyor, cunku canli hala main'deki kodu kosuyor.
 
 Current task:
   FAZ 25 - CLERK'TEN BETTER AUTH'A GEC. Karar kullanicinin: 2FA Clerk'te bir
