@@ -100,6 +100,11 @@ CI MOBILDE NE KOSUYOR (Faz 20):
   Ikisinin kirmiziya dusebildigi KANITLANDI: bagimlilik gecici kaldirilinca
   expo-doctor 1 dondu, bozuk import eklenince expo export 1 dondu.
 
+  GERCEK RUNNER'DA DOGRULANDI (f9c8ef6, 25 Agustos): dort adim da gecti.
+  Sureler: kurulum 61 sn (onbellek SOGUKTU - cache-dependency-path yeni
+  eklendigi icin anahtar degismisti), tsc 3, doctor 4, export 20.
+  Kosunun tamami 2 dk 22 sn.
+
   YAYIN DERLEMESI ICIN ONEMLI BULGU: EXPO_PUBLIC_* degerleri pakete
   GOMULUYOR ve Metro'nun onbellegi env degisikligini GORMUYOR - ayni komut,
   .env.local varken ve yokken BIREBIR AYNI paket hash'ini uretti. Yani
@@ -147,10 +152,17 @@ YAYIN DURUMU (ayrinti: PROJECT.md "Yayinlama", kararlar: ADR-030/031):
     dakikalar). Asagidakiler ancak APP STORE INCELEMESINDE kapi oluyor.
 
     A) Kod beklemeyenler, bekleme suresi olanlar:
-       1. App Store Connect'te uygulama kaydi + "Owezy" adi rezervasyonu.
-          Isimler ilk gelene. Bundle ID net.owezy.app KALICI (app.json).
+       1. App Store Connect kaydi + "Owezy" adi   -> BITTI (25 Agustos).
        2. owezy.net'e gizlilik politikasi + destek sayfasi. IKISI DE
-          ZORUNLU, IKISI DE BUGUN YOK.
+          ZORUNLU, IKISI DE BUGUN YOK. -> ACIK
+
+    XCODE'DA YENI PROJE ACILMAYACAK. Bir kez yanlis anlasildi: "App Store
+    Connect'te kayit ac" bir WEB SITESI isi (appstoreconnect.apple.com),
+    Xcode isi degil. Xcode'un "New Project"i sifirdan bir NATIVE SWIFT
+    uygulamasi yaratir - bizimki Expo/React Native ve zaten mobile/ altinda
+    duruyor. Expo'da native proje elle yazilmaz: ya "npx expo prebuild"
+    app.json'dan uretir ya da EAS bulutta uretir. Hangisi olacagi bir MIMARI
+    KARAR, sirasi gelince tasarimi yazilip onay alinacak.
     B) Kod isteyenler:
        3. Hesap silme (DELETE /api/v1/me) - Guideline 5.1.1. Karar
           ADR-031'de, uygulanmadi. Zor kismi zaten yazili (asagida).
