@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
 import { getOrCreateCurrentUser } from "@/lib/auth";
 import { countUnreadNotifications } from "@/lib/notifications";
 import { listGroupsForUser } from "@/lib/groups";
@@ -85,7 +84,12 @@ export default async function AppLayout({
             <LanguageToggle />
             <ThemeToggle />
             <NotificationBell initialUnreadCount={unreadCount} />
-            <UserButton />
+            <UserMenu
+              displayName={user.displayName}
+              email={user.email}
+              avatarUrl={user.avatarUrl}
+              hasImage={user.hasImage}
+            />
           </div>
         </div>
       </header>
