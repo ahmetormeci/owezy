@@ -378,6 +378,7 @@ export default async function GroupDetailPage({
               userId: participant.userId,
               shareAmount: participant.shareAmount,
             })),
+            version: expense.version,
           }))}
         />
 

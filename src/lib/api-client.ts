@@ -17,6 +17,29 @@ type ApiErrorBody = {
   params?: MessageParams;
 };
 
+/**
+ * Hata METNINE ek olarak HTTP durumunu ve sunucu kodunu da tasir.
+ *
+ * Neden gerekti: cagiran taraf bazen hatayi ayirt etmek zorunda. Ilk ornegi
+ * optimistic locking (ADR-032) - 409 + "expense.version_conflict" geldiginde
+ * form, diger hatalardan farkli davraniyor: sunucudaki hali cekip neyin
+ * degistigini gosteriyor. Duz Error ile bu ayrim yapilamiyordu.
+ *
+ * `message` eskisi gibi CEVRILMIS cumle, yani mevcut "catch (e) { e.message }"
+ * yazan her yer degismeden calismaya devam ediyor.
+ */
+export class ApiClientError extends Error {
+  status: number;
+  code: string | null;
+
+  constructor(message: string, status: number, code: string | null) {
+    super(message);
+    this.name = "ApiClientError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(url, {
     ...options,
@@ -30,13 +53,15 @@ export async function apiRequest<T>(url: string, options: RequestInit = {}): Pro
   try {
     body = await response.json();
   } catch {
-    throw new Error(translate("server.bad_response"));
+    throw new ApiClientError(translate("server.bad_response"), response.status, null);
   }
 
   const parsed = body as ApiErrorBody;
   if (!response.ok || parsed.ok === false) {
-    throw new Error(
+    throw new ApiClientError(
       parsed.code ? translate(parsed.code, parsed.params) : translate("server.unexpected"),
+      response.status,
+      parsed.code ?? null,
     );
   }
 

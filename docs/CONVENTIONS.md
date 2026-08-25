@@ -112,6 +112,28 @@ const expense = await prisma.expense.create({ ... });
   korunur ve toplam trigger'ı bozulmaz.
 - Her silme/geri yükleme `ExpenseEdit` kaydı üretir (aynı transaction'da).
 
+## Eş zamanlı yazma (optimistic locking)
+
+Bugün yalnızca `Expense` bu kuralın kapsamında (ADR-032). Yeni bir kayıt türü
+**düzenlenebilir** hâle gelirse aynı soruyu sor: iki istemci aynı anda
+dokunursa biri diğerini sessizce ezer mi?
+
+- **Sürüm sayacı taşıyan bir kaydı yazan istemci, okuduğu sürümü geri
+  gönderir.** Sürüm zorunludur; opsiyonel bir kontrol kontrol değildir.
+- **Kontrol `WHERE` içinde yapılır, JS'te `if` ile değil.** Postgres varsayılan
+  olarak Read Committed ve okuma satırı kilitlemez; transaction içinde okuyup
+  karşılaştırmak iki eş zamanlı isteğin ikisini de geçirebilir. Prisma'da bu
+  `updateMany` demek (`update()` yalnızca benzersiz alanla filtreleyebilir),
+  ve dönen `count === 0` çakışma anlamına gelir.
+- **Kaydı değiştiren her yol sayacı artırır** — güncelleme, silme, geri
+  yükleme. Artırmayan bir yol, elinde eski hâli tutan istemciyi görünmez kılar.
+- **Sürüm, gövde şemasına eklenmez** eğer o şema oluşturma (POST) ile
+  paylaşılıyorsa: oluşturmada sürüm diye bir şey yok. Ayrı bir şema aynı ham
+  gövdeden okur. `DELETE`'te gövde yok, sürüm query string'ten gelir.
+- **Çakışma kullanıcıya anlatılır:** yazdıkları korunur, sunucudaki hâl çekilip
+  neyin değiştiği gösterilir. Locking üzerine yazmayı engellemez, **sessiz
+  olmasını** engeller — arayüz metni de bunu söylemeli, fazlasını değil.
+
 ## Test yaklaşımı
 
 **Birim testler (Vitest)** — servis ve saf mantık. Prisma `vi.hoisted` +

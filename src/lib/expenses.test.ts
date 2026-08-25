@@ -15,6 +15,7 @@ const { mockTx } = vi.hoisted(() => ({
     expense: {
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       findUnique: vi.fn(),
       findUniqueOrThrow: vi.fn(),
     },
@@ -75,6 +76,7 @@ function resetMocks() {
   mockTx.groupMember.findFirst.mockReset();
   mockTx.expense.create.mockReset();
   mockTx.expense.update.mockReset();
+  mockTx.expense.updateMany.mockReset();
   mockTx.expense.findUnique.mockReset();
   mockTx.expense.findUniqueOrThrow.mockReset();
   mockTx.expenseParticipant.createMany.mockReset();
@@ -85,7 +87,18 @@ function resetMocks() {
   mockPrisma.expense.findMany.mockReset();
   mockPrisma.expense.findUnique.mockReset();
   mockPrisma.expense.aggregate.mockReset();
+
+  // Optimistic locking varsayilanlari (ADR-032). updateMany satiri degil
+  // ESLESEN SAYIYI donuyor; "1" = surum tuttu, yazma gecti. Cakismayi test
+  // eden yerler bunu 0'a cekiyor.
+  mockTx.expense.updateMany.mockResolvedValue({ count: 1 });
+  // updateExpense guncellenmis satiri buradan okuyor; gercekci bir satir
+  // donmezse buildSnapshot (expenseDate.toISOString) patlar.
+  mockTx.expense.findUniqueOrThrow.mockResolvedValue(existingExpense());
 }
+
+/** Testlerin ekrana yuklenmis saydigi surum. existingExpense ile ayni. */
+const CURRENT_VERSION = 1;
 
 function allMembersActive() {
   mockTx.groupMember.findMany.mockResolvedValue([
@@ -295,6 +308,7 @@ function existingExpense(overrides: Record<string, unknown> = {}) {
     expenseDate: new Date("2026-08-01T00:00:00.000Z"),
     deletedAt: null,
     deletedById: null,
+    version: CURRENT_VERSION,
     // EQUAL bolusum: yuzde diye bir sey yok, kolon null.
     participants: [
       { userId: PARTICIPANT_ID, shareAmount: 4500, basisPoints: null },
@@ -321,7 +335,7 @@ describe("updateExpense", () => {
     mockTx.expense.findUnique.mockResolvedValue(null);
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(NotFoundError);
     expect(mockTx.expenseParticipant.deleteMany).not.toHaveBeenCalled();
   });
@@ -332,9 +346,9 @@ describe("updateExpense", () => {
     );
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(NotFoundError);
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
     expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
   });
 
@@ -344,9 +358,9 @@ describe("updateExpense", () => {
     );
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(NotFoundError);
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
   });
 
   it("grup soft-delete edilmisse NotFoundError firlatir", async () => {
@@ -358,9 +372,9 @@ describe("updateExpense", () => {
     });
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(NotFoundError);
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
   });
 
   it("harcamayi olusturmayan bir uye guncelleyemez", async () => {
@@ -370,10 +384,10 @@ describe("updateExpense", () => {
     membershipLookups({ role: "MEMBER" }, { userId: PAYER_ID });
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(ForbiddenError);
     expect(mockTx.expenseParticipant.deleteMany).not.toHaveBeenCalled();
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
     expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
   });
 
@@ -386,9 +400,9 @@ describe("updateExpense", () => {
     membershipLookups({ role: "MEMBER" }, { userId: PAYER_ID });
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(ForbiddenError);
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
   });
 
   it("olusturan kisi hala gruptaysa OWNER bile guncelleyemez", async () => {
@@ -397,9 +411,9 @@ describe("updateExpense", () => {
     membershipLookups({ role: "OWNER" }, { userId: PAYER_ID });
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(ForbiddenError);
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
   });
 
   it("olusturan kisi gruptan ayrildiysa OWNER guncelleyebilir", async () => {
@@ -411,12 +425,11 @@ describe("updateExpense", () => {
       { userId: PAYER_ID },
       { userId: PARTICIPANT_ID },
     ]);
-    mockTx.expense.update.mockResolvedValue(existingExpense({ createdById: PAYER_ID }));
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(existingExpense({ createdById: PAYER_ID }));
 
-    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput);
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
 
-    expect(mockTx.expense.update).toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).toHaveBeenCalled();
     expect(mockTx.expenseEdit.create).toHaveBeenCalled();
   });
 
@@ -426,9 +439,9 @@ describe("updateExpense", () => {
     membershipLookups({ role: "MEMBER" }, null);
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(ForbiddenError);
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
   });
 
   it("yeni katilimci aktif uye degilse ForbiddenError firlatir ve hicbir yazma olmaz", async () => {
@@ -441,10 +454,10 @@ describe("updateExpense", () => {
     ]);
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(ForbiddenError);
     expect(mockTx.expenseParticipant.deleteMany).not.toHaveBeenCalled();
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
     expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
   });
 
@@ -465,10 +478,10 @@ describe("updateExpense", () => {
     };
 
     await expect(
-      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, invalidInput),
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, invalidInput, CURRENT_VERSION),
     ).rejects.toBeInstanceOf(ValidationError);
     expect(mockTx.expenseParticipant.deleteMany).not.toHaveBeenCalled();
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
     expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
   });
 
@@ -476,12 +489,11 @@ describe("updateExpense", () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense());
     mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
     allMembersActive();
-    mockTx.expense.update.mockResolvedValue(
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(
       existingExpense({ description: updateInput.description, amount: 12000 }),
     );
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
 
-    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput);
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
 
     expect(mockTx.expenseParticipant.deleteMany).toHaveBeenCalledWith({
       where: { expenseId: EXPENSE_ID },
@@ -503,12 +515,11 @@ describe("updateExpense", () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense());
     mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
     allMembersActive();
-    mockTx.expense.update.mockResolvedValue(
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(
       existingExpense({ description: updateInput.description, amount: 12000 }),
     );
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
 
-    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput);
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
 
     const auditArgs = mockTx.expenseEdit.create.mock.calls[0][0].data;
 
@@ -550,8 +561,7 @@ describe("updateExpense", () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense());
     mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
     allMembersActive();
-    mockTx.expense.update.mockResolvedValue(existingExpense({ splitType: "EXACT" }));
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(existingExpense({ splitType: "EXACT" }));
 
     await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, {
       description: "EXACT'e cevrildi",
@@ -562,9 +572,9 @@ describe("updateExpense", () => {
         { userId: PAYER_ID, amount: 7000 },
         { userId: PARTICIPANT_ID, amount: 3000 },
       ],
-    });
+    }, CURRENT_VERSION);
 
-    expect(mockTx.expense.update.mock.calls[0][0].data.splitType).toBe("EXACT");
+    expect(mockTx.expense.updateMany.mock.calls[0][0].data.splitType).toBe("EXACT");
     expect(mockTx.expenseParticipant.createMany).toHaveBeenCalledWith({
       data: [
         { expenseId: EXPENSE_ID, userId: PAYER_ID, shareAmount: 7000, basisPoints: null },
@@ -588,10 +598,9 @@ describe("updateExpense", () => {
     );
     mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
     allMembersActive();
-    mockTx.expense.update.mockResolvedValue(existingExpense({ amount: 12000 }));
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(existingExpense({ amount: 12000 }));
 
-    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput);
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
 
     expect(mockTx.expenseParticipant.createMany).toHaveBeenCalledWith({
       data: [
@@ -614,15 +623,14 @@ describe("updateExpense", () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense());
     mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
     allMembersActive();
-    mockTx.expense.update.mockResolvedValue(existingExpense({ paidById: PARTICIPANT_ID }));
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(existingExpense({ paidById: PARTICIPANT_ID }));
 
     await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, {
       ...updateInput,
       paidById: PARTICIPANT_ID,
-    });
+    }, CURRENT_VERSION);
 
-    expect(mockTx.expense.update.mock.calls[0][0].data.paidById).toBe(PARTICIPANT_ID);
+    expect(mockTx.expense.updateMany.mock.calls[0][0].data.paidById).toBe(PARTICIPANT_ID);
   });
 
   it("category ve expenseDate gonderilmezse mevcut degerler korunur", async () => {
@@ -630,12 +638,11 @@ describe("updateExpense", () => {
     mockTx.expense.findUnique.mockResolvedValue(existing);
     mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
     allMembersActive();
-    mockTx.expense.update.mockResolvedValue(existing);
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(existing);
 
-    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput);
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
 
-    const updateData = mockTx.expense.update.mock.calls[0][0].data;
+    const updateData = mockTx.expense.updateMany.mock.calls[0][0].data;
     expect(updateData.category).toBe("FOOD");
     expect(updateData.expenseDate).toBe(existing.expenseDate);
   });
@@ -644,12 +651,59 @@ describe("updateExpense", () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense());
     mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
     allMembersActive();
-    mockTx.expense.update.mockResolvedValue(existingExpense());
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(existingExpense());
 
-    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput);
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
 
-    expect(mockTx.expense.update.mock.calls[0][0].data).not.toHaveProperty("currency");
+    expect(mockTx.expense.updateMany.mock.calls[0][0].data).not.toHaveProperty("currency");
+  });
+
+  // --- Optimistic locking (ADR-032) ---
+  //
+  // Buradaki testler GERCEK DUNYA senaryosunu kapsiyor: A kaydeder, sonra B
+  // elindeki eski surumle kaydeder. Ayni ANDAKI yaris (iki transaction'in ayni
+  // anda yazmasi) mock'la kanitlanamaz - onu Postgres'in satir kilidi
+  // engelliyor ve kanit, kontrolun WHERE icinde olmasi (asagidaki ilk test).
+
+  it("surum kontrolu WHERE icinde yapilir ve sayac artirilir", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(existingExpense());
+    mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
+    allMembersActive();
+
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
+
+    const call = mockTx.expense.updateMany.mock.calls[0][0];
+    expect(call.where).toEqual({ id: EXPENSE_ID, version: CURRENT_VERSION });
+    expect(call.data.version).toEqual({ increment: 1 });
+  });
+
+  it("bayat surumle gelen guncelleme ConflictError firlatir", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(existingExpense());
+    mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
+    allMembersActive();
+    // Arada baskasi yazdi: hicbir satir bu surumle eslesmiyor.
+    mockTx.expense.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION - 1),
+    ).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it("cakisma halinde paylara HIC dokunulmaz", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(existingExpense());
+    mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
+    allMembersActive();
+    mockTx.expense.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION - 1),
+    ).rejects.toBeInstanceOf(ConflictError);
+
+    // Surum kontrolu pay yazmalarindan ONCE oldugu icin bunlar hic calismadi.
+    // (Transaction geri alinsa da fark ederdi; ama bosuna is yapmiyoruz.)
+    expect(mockTx.expenseParticipant.deleteMany).not.toHaveBeenCalled();
+    expect(mockTx.expenseParticipant.createMany).not.toHaveBeenCalled();
+    expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
   });
 });
 
@@ -687,29 +741,29 @@ describe("deleteExpense", () => {
   it("harcama bulunamazsa NotFoundError firlatir", async () => {
     mockTx.expense.findUnique.mockResolvedValue(null);
 
-    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID)).rejects.toBeInstanceOf(
+    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION)).rejects.toBeInstanceOf(
       NotFoundError,
     );
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
   });
 
   it("zaten silinmis harcama tekrar silinemez", async () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense({ deletedAt: DELETED_AT }));
 
-    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID)).rejects.toBeInstanceOf(
+    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION)).rejects.toBeInstanceOf(
       NotFoundError,
     );
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
     expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
   });
 
   it("harcama baska bir gruba aitse NotFoundError firlatir", async () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense({ groupId: "baska-grup" }));
 
-    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID)).rejects.toBeInstanceOf(
+    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION)).rejects.toBeInstanceOf(
       NotFoundError,
     );
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
   });
 
   it("cagiran kisi aktif uye degilse ForbiddenError firlatir ve hicbir yazma olmaz", async () => {
@@ -717,10 +771,10 @@ describe("deleteExpense", () => {
     liveGroup();
     mockTx.groupMember.findFirst.mockResolvedValue(null);
 
-    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID)).rejects.toBeInstanceOf(
+    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION)).rejects.toBeInstanceOf(
       ForbiddenError,
     );
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
     expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
   });
 
@@ -729,10 +783,10 @@ describe("deleteExpense", () => {
     liveGroup();
     membershipLookups({ role: "MEMBER" }, { userId: PAYER_ID });
 
-    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID)).rejects.toBeInstanceOf(
+    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION)).rejects.toBeInstanceOf(
       ForbiddenError,
     );
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
     expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
   });
 
@@ -741,22 +795,21 @@ describe("deleteExpense", () => {
     liveGroup();
     membershipLookups({ role: "OWNER" }, { userId: PAYER_ID });
 
-    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID)).rejects.toBeInstanceOf(
+    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION)).rejects.toBeInstanceOf(
       ForbiddenError,
     );
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
   });
 
   it("olusturan kisi gruptan ayrildiysa OWNER silebilir", async () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense({ createdById: PAYER_ID }));
     liveGroup();
     membershipLookups({ role: "OWNER" }, null); // olusturan kisi artik aktif uye degil
-    mockTx.expense.update.mockResolvedValue(existingExpense({ deletedAt: DELETED_AT }));
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(existingExpense({ deletedAt: DELETED_AT }));
 
-    await deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID);
+    await deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION);
 
-    expect(mockTx.expense.update.mock.calls[0][0].data.deletedById).toBe(CALLER_ID);
+    expect(mockTx.expense.updateMany.mock.calls[0][0].data.deletedById).toBe(CALLER_ID);
     expect(mockTx.expenseEdit.create).toHaveBeenCalled();
   });
 
@@ -765,22 +818,21 @@ describe("deleteExpense", () => {
     liveGroup();
     membershipLookups({ role: "MEMBER" }, null);
 
-    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID)).rejects.toBeInstanceOf(
+    await expect(deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION)).rejects.toBeInstanceOf(
       ForbiddenError,
     );
-    expect(mockTx.expense.update).not.toHaveBeenCalled();
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
   });
 
   it("fiziksel silme yapmaz, sadece deletedAt/deletedById doldurur", async () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense());
     liveGroup();
     callerIsActiveMember();
-    mockTx.expense.update.mockResolvedValue(existingExpense({ deletedAt: DELETED_AT }));
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(existingExpense({ deletedAt: DELETED_AT }));
 
-    await deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID);
+    await deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION);
 
-    const updateData = mockTx.expense.update.mock.calls[0][0].data;
+    const updateData = mockTx.expense.updateMany.mock.calls[0][0].data;
     expect(updateData.deletedById).toBe(CALLER_ID);
     expect(updateData.deletedAt).toBeInstanceOf(Date);
 
@@ -792,10 +844,9 @@ describe("deleteExpense", () => {
     mockTx.expense.findUnique.mockResolvedValue(existingExpense());
     liveGroup();
     callerIsActiveMember();
-    mockTx.expense.update.mockResolvedValue(existingExpense({ deletedAt: DELETED_AT }));
-    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: EXPENSE_ID, participants: [] });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue(existingExpense({ deletedAt: DELETED_AT }));
 
-    await deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID);
+    await deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION);
 
     const auditData = mockTx.expenseEdit.create.mock.calls[0][0].data;
 
@@ -813,6 +864,30 @@ describe("deleteExpense", () => {
       deletedById: null,
     });
     expect(auditData.previousData.participants).toHaveLength(2);
+  });
+
+  it("bayat surumle gelen silme ConflictError firlatir ve audit yazilmaz", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(existingExpense());
+    liveGroup();
+    callerIsActiveMember();
+    mockTx.expense.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION - 1),
+    ).rejects.toBeInstanceOf(ConflictError);
+    expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
+  });
+
+  it("silme de surum sayacini artirir", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(existingExpense());
+    liveGroup();
+    callerIsActiveMember();
+
+    await deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION);
+
+    const call = mockTx.expense.updateMany.mock.calls[0][0];
+    expect(call.where).toEqual({ id: EXPENSE_ID, version: CURRENT_VERSION });
+    expect(call.data.version).toEqual({ increment: 1 });
   });
 });
 
@@ -889,7 +964,7 @@ describe("restoreExpense", () => {
 
     expect(mockTx.expense.update).toHaveBeenCalledWith({
       where: { id: EXPENSE_ID },
-      data: { deletedAt: null, deletedById: null },
+      data: { deletedAt: null, deletedById: null, version: { increment: 1 } },
     });
   });
 
@@ -906,7 +981,7 @@ describe("restoreExpense", () => {
 
     expect(mockTx.expense.update).toHaveBeenCalledWith({
       where: { id: EXPENSE_ID },
-      data: { deletedAt: null, deletedById: null },
+      data: { deletedAt: null, deletedById: null, version: { increment: 1 } },
     });
   });
 

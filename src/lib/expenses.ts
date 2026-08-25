@@ -402,11 +402,17 @@ export async function createExpense(userId: string, groupId: string, input: Crea
   });
 }
 
+/**
+ * `expectedVersion`: istemcinin ekrana YUKLEDIGI harcamanin surumu. Zorunlu -
+ * opsiyonel olsaydi gondermeyi unutan bir istemci sessizce uzerine yazmaya
+ * devam ederdi (ADR-032).
+ */
 export async function updateExpense(
   userId: string,
   groupId: string,
   expenseId: string,
   input: UpdateExpenseInput,
+  expectedVersion: number,
 ) {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.expense.findUnique({
@@ -450,14 +456,23 @@ export async function updateExpense(
     const shares = computeShares(input.amount, input);
     const basisPointsByUser = getBasisPointsByUser(input);
 
-    // Tam degistirme: eski paylarin tamami silinip yenileri yaziliyor. Bu ayni
-    // zamanda "SUM(shareAmount) = amount" trigger'inin her guncellemede
-    // calismasini garanti ediyor (trigger yalnizca ExpenseParticipant
-    // degisikliklerinde tetiklenir, Expense.amount degisiminde degil).
-    await tx.expenseParticipant.deleteMany({ where: { expenseId } });
-
-    const updated = await tx.expense.update({
-      where: { id: expenseId },
+    // ---- Optimistic locking (ADR-032) ----
+    // Surum kontrolu WHERE icinde, JS'te "if" ile DEGIL. Sebebi: Postgres'in
+    // varsayilan yalitim seviyesi Read Committed ve okuma satiri kilitlemez.
+    // Yukarida okunan `existing.version` ile karsilastirsaydik, iki es zamanli
+    // istek ikisi de 3 okuyup ikisi de kontrolu gecebilirdi. WHERE'e yazinca
+    // ikinci istek satir kilidinde bekliyor, birincisi commit edince kosulu
+    // YENIDEN degerlendiriyor, surum artik 4 ve hicbir satir eslesmiyor.
+    // Kilidi Postgres'e yaptiriyoruz.
+    //
+    // update() degil updateMany(): update() yalnizca benzersiz alanla
+    // filtreleyebilir, bize "id VE version" gerekiyor. updateMany eslesen
+    // satir sayisini donuyor - sifirsa arada baskasi yazmis demek.
+    //
+    // Katilimci satirlarindan ONCE calisiyor ki cakisma, gereksiz yazma
+    // yapilmadan aninda anlasilsin.
+    const guard = await tx.expense.updateMany({
+      where: { id: expenseId, version: expectedVersion },
       data: {
         description: input.description,
         amount: input.amount,
@@ -466,8 +481,23 @@ export async function updateExpense(
         category: input.category ?? existing.category,
         splitType: input.splitType,
         expenseDate: input.expenseDate ?? existing.expenseDate,
+        version: { increment: 1 },
       },
     });
+
+    if (guard.count === 0) {
+      throw new ConflictError("expense.version_conflict");
+    }
+
+    // Tam degistirme: eski paylarin tamami silinip yenileri yaziliyor. Bu ayni
+    // zamanda "SUM(shareAmount) = amount" trigger'inin her guncellemede
+    // calismasini garanti ediyor (trigger yalnizca ExpenseParticipant
+    // degisikliklerinde tetiklenir, Expense.amount degisiminde degil).
+    //
+    // Amount guncellemesinin pay silmeden ONCE gelmesi sorun degil: trigger
+    // CONSTRAINT TRIGGER ... DEFERRABLE INITIALLY DEFERRED, yani toplam
+    // kontrolu satir satir degil COMMIT aninda yapiliyor.
+    await tx.expenseParticipant.deleteMany({ where: { expenseId } });
 
     // PERCENTAGE'dan EQUAL'a gecen bir harcamada basisPoints kendiliginden
     // null oluyor: satirlar silinip yeniden yaziliyor ve yeni girdide yuzde yok.
@@ -478,6 +508,14 @@ export async function updateExpense(
         shareAmount: share.amount,
         basisPoints: basisPointsByUser?.get(share.userId) ?? null,
       })),
+    });
+
+    // Guncellenmis satir TEK KEZ okunuyor: hem audit snapshot'i hem de donen
+    // deger bundan uretiliyor. updateMany satiri geri vermedigi icin bu okuma
+    // sart; iki ayri okuma yapmak ise ayni veriyi iki kez cekmek olurdu.
+    const updated = await tx.expense.findUniqueOrThrow({
+      where: { id: expenseId },
+      include: { participants: true },
     });
 
     const newData = buildSnapshot(
@@ -521,14 +559,23 @@ export async function updateExpense(
       },
     });
 
-    return tx.expense.findUniqueOrThrow({
-      where: { id: expenseId },
-      include: { participants: true },
-    });
+    // Yukarida okunan satir doniyor: audit ve bildirim yazmalari Expense
+    // satirina dokunmuyor, yani ikinci bir okuma ayni seyi getirirdi.
+    return updated;
   });
 }
 
-export async function deleteExpense(userId: string, groupId: string, expenseId: string) {
+/**
+ * `expectedVersion` silmede de zorunlu (ADR-032): "gordugunden baska bir seyi
+ * sildin" hatasi, silindikten sonra fark edilemeyen turden. Kullanici 200 TL'lik
+ * bir kaydi siliyorum sanirken arada 500 TL olmus olabilir.
+ */
+export async function deleteExpense(
+  userId: string,
+  groupId: string,
+  expenseId: string,
+  expectedVersion: number,
+) {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.expense.findUnique({
       where: { id: expenseId },
@@ -553,10 +600,18 @@ export async function deleteExpense(userId: string, groupId: string, expenseId: 
     // Fiziksel silme YOK: yalnizca deletedAt/deletedById isaretleniyor.
     // ExpenseParticipant satirlarina da dokunulmuyor - hem paylar korunuyor
     // hem de "SUM(shareAmount) = amount" trigger'i bozulmuyor.
-    await tx.expense.update({
-      where: { id: expenseId },
-      data: { deletedAt: new Date(), deletedById: userId },
+    //
+    // Surum kontrolu guncellemedeki ile ayni: WHERE icinde, atomik. Silme de
+    // sayaci artiriyor cunku bu da bir degisiklik - elinde silinmemis hali
+    // tutan bir istemcinin sonraki yazmasi cakismali.
+    const guard = await tx.expense.updateMany({
+      where: { id: expenseId, version: expectedVersion },
+      data: { deletedAt: new Date(), deletedById: userId, version: { increment: 1 } },
     });
+
+    if (guard.count === 0) {
+      throw new ConflictError("expense.version_conflict");
+    }
 
     // action = DELETE -> yalnizca previousData dolu (newData hic yazilmaz).
     await tx.expenseEdit.create({
@@ -613,9 +668,13 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
 
     const previousData = buildSnapshot(existing, existing.participants);
 
+    // Geri yukleme surum ISTEMIYOR (cakisabilecek tek rakip islem yine geri
+    // yukleme, o da yukaridaki "zaten silinmemis" kontroluyle eleniyor) ama
+    // sayaci ARTIRIYOR: silinmeden onceki hali elinde tutan bir istemcinin
+    // sonraki yazmasi cakismali, sessizce gecmemeli.
     const restored = await tx.expense.update({
       where: { id: expenseId },
-      data: { deletedAt: null, deletedById: null },
+      data: { deletedAt: null, deletedById: null, version: { increment: 1 } },
     });
 
     // Paylar silme/geri yukleme sirasinda hic degismedigi icin ayni listeyi

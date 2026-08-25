@@ -8,6 +8,39 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-25
+
+### Eş zamanlı düzenleme artık sessizce kaybolmuyor (ADR-032)
+- **`Expense.version` sayacı eklendi.** Harcamayı okuyan sayacı da alıyor,
+  yazarken geri gönderiyor; sunucu `WHERE id = ? AND version = ?` ile
+  yazıyor. Arada başkası yazdıysa **409** dönüyor ve yazma hiç olmuyor.
+- **Kontrol `WHERE` içinde, JS'te değil.** Read Committed'da okuma satırı
+  kilitlemediği için transaction içinde karşılaştırmak eş zamanlı iki
+  isteğin ikisini de geçirebilirdi. Kilidi Postgres yapıyor.
+- **Sürüm zorunlu.** Göndermeyen istemci sessizce ezmeye devam ederdi.
+  TestFlight'a sürüm çıkmadığı için kırılan yüklü uygulama yok.
+- **Çakışmada kullanıcı ne yazdıysa duruyor** ve **neyin değiştiği**
+  yazılıyor ("Tutar: 100,00 ₺ → 500,00 ₺"). Tekrar kaydetmek geçiyor —
+  ama artık üzerine yazdığını bilerek. Locking üzerine yazmayı
+  engellemiyor, **sessiz olmasını** engelliyor.
+- **Karşılaştırma tek yerde**: `src/lib/expense-diff.ts` saf bir modül,
+  mobil de aynı dosyayı içe aktarıyor.
+- **Kapsam yalnızca harcama** (düzenleme + silme). Ödeşme, grup düzenleme
+  ve geri yükleme bilerek dışarıda — gerekçeler ADR-032'de. Geri yükleme
+  sürüm istemiyor ama sayacı **artırıyor**.
+- **`updatedAt` kullanılmadı**: onu Postgres değil Prisma yazıyor, yani
+  sunucunun saati; Vercel'de örnekler arası saat kayması bu kontrolü
+  sessizce yanıltabilirdi.
+
+### Yan düzeltmeler
+- `apiRequest` artık **hata kodunu ve HTTP durumunu taşıyor**
+  (`ApiClientError`). Önce düz `Error` fırlatıyordu ve kod yolda düşüyordu;
+  form 409'u başka bir hatadan ayırt edemiyordu. `.message` aynı kaldığı
+  için çağıran hiçbir yer değişmedi.
+- `updateExpense` güncellenmiş satırı **iki kez okuyordu**; tek okumaya indi.
+- DATABASE.md'nin migration tablosu **üç migration eksikti**, "3 migration
+  uygulanmış" diyordu; sekizi de listelendi.
+
 ## 2026-08-24 (14)
 
 ### Ödeşme mobilde (Faz 18.8)

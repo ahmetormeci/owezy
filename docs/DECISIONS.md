@@ -192,7 +192,7 @@ zaman düzenleyebilsin (sahibi gitmemiş kayda müdahale).
 ---
 
 ## ADR-010 — Optimistic locking mobil aşamasına ertelendi
-**Tarih:** 2026-07 (yaklaşık) · **Durum:** Ertelendi
+**Tarih:** 2026-07 (yaklaşık) · **Durum:** ~~Ertelendi~~ **Kapandı — ADR-032**
 
 **Karar:** `Expense`/`Settlement` üzerine `version` alanı **eklenmedi**.
 
@@ -204,8 +204,10 @@ yani önce altyapı, sonra arayüz gerekir.
 **Alternatifler:** Şimdi eklemek (kullanılmayan alan + her güncellemede ek
 kontrol).
 
-**Sonuç:** Mobil aşaması başladığında ilk ele alınacak konulardan biri.
-Şu anki davranış: son yazan kazanır. Bkz. [DATABASE.md](DATABASE.md).
+**Sonuç:** ~~Mobil aşaması başladığında ilk ele alınacak konulardan biri.
+Şu anki davranış: son yazan kazanır.~~ **KAPANDI (2026-08-25):** erteleme
+koşulu Faz 18 ile doldu ve iş yapıldı — bkz. **ADR-032**. `Expense.version`
+eklendi; `Settlement` bilerek kapsam dışı bırakıldı (gerekçe ADR-032'de).
 
 ---
 
@@ -497,6 +499,69 @@ sayfası 500 verirdi.
 11.4d'de `User.locale` geldiğinde durum değişir: o **gerçekten** bir kayıt
 olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 "çıkış yapmış kullanıcı" yolu olarak kalır; okuma sırası çerez → hesap → `tr`.
+
+---
+
+## ADR-032 — Optimistic locking: `Expense.version` sayacı, zorunlu, yalnızca harcamada
+**Tarih:** 2026-08-25 · **Durum:** Kabul edildi ve uygulandı — **ADR-010'u kapatır**
+
+**Karar:** `Expense` üzerine `version Int @default(1)` eklendi. Harcamayı
+okuyan istemci sayacı da alır ve yazarken geri gönderir; sunucu
+`UPDATE ... WHERE id = ? AND version = ?` ile yazar ve sayacı artırır. Eşleşen
+satır yoksa istek **409 `expense.version_conflict`** ile reddedilir.
+
+**Neden gerekti:** ADR-010 bunu "mobil aşamasına" ertelemişti, gerekçesi *tek
+istemcili web aşamasında nadir* olmasıydı. Faz 18 ikinci istemciyi getirdi ve
+ikisinde de harcama düzenlenebiliyor; erteleme koşulu doldu. Somut kayıp:
+telefon 10:00'da harcamayı yükler, tarayıcı 10:01'de tutarı değiştirir, telefon
+10:02'de formundaki eski tutarı geri yazar — ve kimseye bir şey söylenmez.
+
+**Kontrol neden `WHERE` içinde, JS'te `if` ile değil:** Postgres'in varsayılan
+yalıtım seviyesi Read Committed ve okuma satırı kilitlemez. Transaction içinde
+okuyup karşılaştırsaydık iki eş zamanlı istek ikisi de aynı sürümü okuyup
+kontrolü geçebilirdi. `WHERE`'e yazınca ikinci istek satır kilidinde bekler,
+birincisi commit edince koşulu yeniden değerlendirir ve hiçbir satır eşleşmez.
+Prisma'da bu `updateMany` demek: `update()` yalnızca benzersiz alanla
+filtreleyebiliyor.
+
+**Neden `updatedAt` değil:** Alan zaten vardı ve migration gerektirmezdi, ama
+onu Postgres değil **Prisma yazıyor** — yani uygulama sunucusunun saati.
+Vercel'de istekler farklı örnekler üzerinden geçtiği için saat geri gidebilir
+ve doğruluk kontrolü sessizce yanılır. Ayrıca JSON'a çıkarken milisaniyeye
+yuvarlanıyor, veritabanında mikrosaniye duruyor. Sayaç ikisini de bilmez.
+
+**Neden zorunlu:** Sürüm göndermeyen bir istemci sessizce ezmeye devam ederdi;
+atlanabilen bir kontrol kontrol değildir. Bunu şimdi yapmanın maliyeti sıfır:
+TestFlight'a hiçbir sürüm çıkmadı, kırılacak yüklü uygulama yok.
+
+**Kapsam yalnızca harcama — düzenleme ve silme.** Silme dahil, çünkü
+"gördüğünden başka bir şeyi sildin" sonradan fark edilemez. Dışarıda kalanlar
+ve nedenleri: **ödeşme** (ekleme toplamsal, iptal tek yönlü — kayıp güncelleme
+üretmiyor), **grup adı/açıklaması** (tek yazma yolu, yalnızca sahip, mobilde
+grup düzenleme yok), **geri yükleme** (ikinci geri yükleme zaten
+`expense.not_deleted` ile reddediliyor — ama sayacı **artırıyor**, çünkü
+silinmeden önceki hali elinde tutan istemci çakışmalı).
+
+**Taşıma:** PUT'ta gövdede `version`, DELETE'te `?version=` — DELETE'in gövdesi
+yok ve bazı ara sunucular kırpıyor. `expenseBodySchema` POST ile paylaşıldığı
+için sürüm oraya konulmadı; ayrı bir şema aynı ham gövdeden ikinci kez okuyor.
+
+**Çakışmada ne oluyor:** Kullanıcının yazdıkları formda **kalıyor**; sunucudaki
+hâl çekilip **neyin değiştiği** yazılıyor ("Tutar: 100,00 ₺ → 500,00 ₺").
+Tekrar kaydetmek geçer — ama artık üzerine yazdığını bilerek. Yani optimistic
+locking burada üzerine yazmayı **engellemiyor, sessiz olmasını engelliyor**.
+Bu ayrımın bekçisi `e2e/collaboration.spec.ts` içindeki çakışma testidir.
+
+**Karşılaştırma iki istemcide de aynı kodla yapılıyor:** `src/lib/expense-diff.ts`
+saf bir modül ve mobil de onu `@/lib/expense-diff` yolundan içe aktarıyor
+(CONVENTIONS.md "Mobil": saf modüller geçer, React bileşenleri geçmez).
+
+**Alternatifler:** (a) `updatedAt`'i belirteç olarak kullanmak — yukarıda;
+(b) sürümü opsiyonel yapmak — kontrolün kaçamağı olurdu; (c) alan bazlı
+otomatik birleştirme — tutar ile payların tutarlılığı bozulabilirdi ve bu
+uygulamanın karmaşıklık bütçesini aşardı.
+
+**Sonuç:** ADR-010 kapandı. Eş zamanlı düzenleme artık sessizce kaybolmuyor.
 
 ---
 

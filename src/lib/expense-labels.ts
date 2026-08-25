@@ -1,4 +1,4 @@
-import type { ExpenseCategory } from "@prisma/client";
+import type { ExpenseCategory, SplitType } from "@prisma/client";
 import type { MessageCode } from "@/lib/messages";
 
 // Enum degerlerinin arayuzde gosterilecek karsiliklari - artik METIN degil KOD.
@@ -21,3 +21,13 @@ export const EXPENSE_CATEGORY_OPTIONS = Object.entries(EXPENSE_CATEGORY_CODES) a
   ExpenseCategory,
   MessageCode,
 ][];
+
+// Bolusum turlerinin karsiliklari. Kategorilerle ayni gerekcelerle burada:
+// eksik veya uydurma bir kod derleme hatasi verir. Onceden expense-form.tsx
+// icinde yereldi; cakisma metnini (ADR-032) mobil de yazdigi icin buraya,
+// yani iki istemcinin de gordugu saf module tasindi.
+export const EXPENSE_SPLIT_TYPE_CODES: Record<SplitType, MessageCode> = {
+  EQUAL: "ui.split_equal",
+  EXACT: "ui.split_exact",
+  PERCENTAGE: "ui.split_percentage",
+};

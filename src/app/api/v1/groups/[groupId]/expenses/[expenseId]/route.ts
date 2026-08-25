@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateCurrentUser } from "@/lib/auth";
 import { deleteExpense, getExpenseForUser, updateExpense } from "@/lib/expenses";
-import { expenseBodySchema } from "@/lib/expense-schemas";
+import {
+  deleteExpenseQuerySchema,
+  expenseBodySchema,
+  expenseVersionSchema,
+} from "@/lib/expense-schemas";
 import { handleApiError } from "@/lib/api";
 
 // Tek harcama. Govde BILEREK liste ucundeki expenses[] elemaniyla ayni
@@ -38,9 +42,14 @@ export async function PUT(
     }
 
     const { groupId, expenseId } = await params;
-    const body = expenseBodySchema.parse(await request.json());
 
-    const expense = await updateExpense(user.id, groupId, expenseId, body);
+    // Ayni ham govde iki semadan geciyor: biri harcamanin kendisi (POST ile
+    // paylasilan sema), digeri optimistic locking surumu. Bkz. ADR-032.
+    const raw: unknown = await request.json();
+    const body = expenseBodySchema.parse(raw);
+    const { version } = expenseVersionSchema.parse(raw);
+
+    const expense = await updateExpense(user.id, groupId, expenseId, body, version);
     return NextResponse.json({ ok: true, expense });
   } catch (error) {
     return handleApiError(error);
@@ -48,7 +57,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ groupId: string; expenseId: string }> },
 ) {
   try {
@@ -58,8 +67,11 @@ export async function DELETE(
     }
 
     const { groupId, expenseId } = await params;
+    const { version } = deleteExpenseQuerySchema.parse(
+      Object.fromEntries(request.nextUrl.searchParams),
+    );
 
-    const expense = await deleteExpense(user.id, groupId, expenseId);
+    const expense = await deleteExpense(user.id, groupId, expenseId, version);
     return NextResponse.json({ ok: true, expense });
   } catch (error) {
     return handleApiError(error);

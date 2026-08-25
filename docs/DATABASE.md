@@ -73,6 +73,14 @@ dolu; `EQUAL`/`EXACT`'ta ve kolondan önceki kayıtlarda `null` (ADR-022).
 
 `Expense` üç ayrı `User` ilişkisi taşır: `paidById`, `createdById`, `deletedById`.
 
+`Expense.version` (`Int`, varsayılan 1) optimistic locking sayacıdır (ADR-032).
+Okuyan istemci sayacı da alır, yazarken geri gönderir; sunucu
+`WHERE id = ? AND version = ?` ile yazar ve sayacı **bir artırır**. Sayacı
+güncelleme, **silme** ve **geri yükleme** artırır — üçü de kaydı değiştiriyor.
+Eşleşen satır yoksa yazma hiç olmaz ve istek 409 döner. Kontrolün `WHERE`
+içinde olması şart: Read Committed'da okuma satırı kilitlemediği için JS
+tarafında karşılaştırmak eş zamanlı iki isteğin ikisini de geçirebilirdi.
+
 ### Settlement
 "X kişisi Y kişisine Z tutar ödedi" kaydı. **Gerçek para transferi değildir**;
 sistem para taşımaz, yalnızca bakiye hesabından düşer. Dört ayrı `User`
@@ -142,6 +150,11 @@ Trigger `AFTER INSERT OR UPDATE OR DELETE ON "ExpenseParticipant"` üzerindedir
 katmanı bu yüzden güncellemede payları her zaman baştan yazar
 (bkz. [ARCHITECTURE.md](ARCHITECTURE.md#transaction-yaklaşımı)).
 
+`DEFERRABLE INITIALLY DEFERRED` olması sıralamayı da serbest bırakıyor:
+`updateExpense` önce `amount`'u yazıp sonra payları siliyor (sürüm kontrolü
+gereksiz yazmalardan **önce** gelsin diye) ve arada oluşan geçici tutarsızlık
+sorun çıkarmıyor — toplam yalnızca COMMIT'te kontrol ediliyor.
+
 Trigger `DELETE`'te de çalıştığı için tabloları tek tek `deleteMany` ile
 boşaltmak hata verir; E2E temizliği bu yüzden `TRUNCATE ... CASCADE` kullanır
 (satır trigger'larını çalıştırmaz).
@@ -173,6 +186,9 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260811120730_notification_types` | `NotificationType` 6 değere çıktı, `Notification(userId, createdAt)` index'i |
 | `20260812085643_add_user_locale` | `User.locale` (nullable, varsayılansız). Tek satır: `ALTER TABLE "User" ADD COLUMN "locale" TEXT;` — tablo yeniden yazılmıyor |
 | `20260812170020_add_user_has_image` | `User.hasImage` (nullable boolean). Kullanıcının gerçekten fotoğraf yükleyip yüklemediği; gerekçesi yukarıda |
+| `20260812214219_add_expense_participant_basis_points` | `ExpenseParticipant.basisPoints` (nullable) + `0..10000` aralık kısıtı. Kullanıcının **girdiği** yüzde saklanıyor; paylardan geri hesaplamak yuvarlama yüzünden her zaman mümkün değil |
+| `20260813120000_add_expense_description_fold` | `Expense.descriptionFold` — `GENERATED ALWAYS ... STORED`. Türkçe harfleri ASCII'ye indirip küçülten arama sütunu; değeri Postgres üretiyor, Prisma bilmiyor |
+| `20260825090000_add_expense_version` | `Expense.version` (`INTEGER NOT NULL DEFAULT 1`). Optimistic locking sayacı — bkz. [DECISIONS.md](DECISIONS.md) ADR-032 |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 [DECISIONS.md](DECISIONS.md) ADR-012.
@@ -182,15 +198,12 @@ Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 - [ ] **`Notification` için saklama/temizleme politikası yok.** Kayıtlar
       sonsuza kadar birikir. Eski okunmuşları silen bir mekanizma
       tasarlanmadı.
-- [ ] **Optimistic locking yok — ERTELEME KOŞULU ARTIK DOLDU.**
-      `Expense`/`Settlement` üzerinde `version` alanı bulunmuyor; eş zamanlı
-      düzenleme **son yazana** göre sonuçlanır. ADR-010 bunu "mobil aşamasına"
-      ertelemişti çünkü gerekçesi *tek istemcili web aşamasında nadir*
-      olmasıydı. **Faz 18 bitti: iki istemci var ve ikisinde de harcama
-      düzenlenebiliyor.** Yani bugün telefondan ve tarayıcıdan aynı harcamaya
-      dokunulursa biri diğerini sessizce eziyor.
 - [ ] **Hesap silmede bildirimler temizlenmiyor.** `Notification` satırları
       anonimleştirilmiş kullanıcıya bağlı kalır.
 - [ ] **`schema.prisma` başındaki yorum bloğu güncel değil**: "bu dosya henüz
-      migration'a dönüştürülmedi" diyor; oysa 3 migration uygulanmış durumda.
+      migration'a dönüştürülmedi" diyor; oysa 8 migration uygulanmış durumda.
       Yalnızca yorum, davranışa etkisi yok.
+- [ ] **`Settlement`'ta optimistic locking yok** — ve bu **bilerek** böyle
+      (ADR-032). Ödeşme eklemek toplamsal bir iş, iptal ise tek yönlü: iki kez
+      iptal aynı sonucu veriyor. Yani kaybolacak bir güncelleme yok. Ödeşme
+      **düzenlenebilir** hâle gelirse bu satır geçersizleşir ve sayaç gerekir.

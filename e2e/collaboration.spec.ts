@@ -1,5 +1,6 @@
 import { test, expect } from "./fixtures";
 import {
+  addEqualExpense,
   createGroupAndOpen,
   createInviteLink,
   joinViaInvite,
@@ -155,5 +156,59 @@ test.describe("cok kullanicili akislar", () => {
 
     await expect(outsider.getByRole("heading", { name: "Davet kullanılamıyor" })).toBeVisible();
     await expect(outsider.getByText("Bu davet iptal edilmiş")).toBeVisible();
+  });
+
+  /**
+   * Optimistic locking (ADR-032).
+   *
+   * IKI TARAYICI DA AYNI KISI, cunku gercek senaryo bu: harcamayi yalnizca
+   * onu giren kisi duzenleyebiliyor, yani cakisma "ayni kullanici, iki cihaz"
+   * halinde yasaniyor - telefon ile tarayici acik unutulmus.
+   *
+   * Test uc seyi birden kanitliyor: ikinci kaydetme sessizce gecmiyor, neyin
+   * degistigi yaziyor, ve kullanicinin yazdigi formda duruyor.
+   */
+  test("ayni harcamayi iki cihazdan duzenleyen kullanici cakismayi gorur", async ({
+    browser,
+  }) => {
+    const laptop = await pageAs(browser, "owner");
+    const phone = await pageAs(browser, "owner");
+    const groupName = uniqueGroupName("cakisma");
+
+    await createGroupAndOpen(laptop, groupName);
+    await addEqualExpense(laptop, { description: "Kira", amount: "100" });
+
+    // Iki cihaz da duzenleme formunu ACIYOR: ikisi de surum 1'i gordu.
+    await laptop.getByRole("link", { name: "Düzenle" }).click();
+    await openGroup(phone, groupName);
+    await phone.getByRole("link", { name: "Düzenle" }).click();
+
+    // Laptop once kaydediyor -> sunucuda surum 2.
+    await laptop.getByLabel("Tutar").fill("500");
+    await laptop.getByRole("button", { name: "Değişiklikleri kaydet" }).click();
+    await expect(laptop.getByText("500,00 ₺").first()).toBeVisible();
+
+    // Telefon elindeki ESKI surumle kaydetmeye calisiyor.
+    await phone.getByLabel("Açıklama").fill("Kira (Agustos)");
+    await phone.getByRole("button", { name: "Değişiklikleri kaydet" }).click();
+
+    // 1) Sessizce gecmedi, uyari cikti.
+    await expect(phone.getByText("Bu harcama sen düzenlerken değişti")).toBeVisible();
+    // 2) NE degistigi yaziyor.
+    await expect(phone.getByText("Tutar: 100,00 ₺ → 500,00 ₺")).toBeVisible();
+    // 3) Kullanicinin yazdigi kaybolmadi.
+    await expect(phone.getByLabel("Açıklama")).toHaveValue("Kira (Agustos)");
+
+    // Ikinci kaydetme artik guncel surumle gidiyor ve GECIYOR.
+    await phone.getByRole("button", { name: "Değişiklikleri kaydet" }).click();
+    await expect(phone.getByText("Kira (Agustos)")).toBeVisible();
+
+    // Tutar 100'e DONUYOR - telefonun formunda hala 100 yaziyordu, yani
+    // laptop'un 500'unun uzerine yazildi. Bu bir hata degil, uyarinin
+    // ("tekrar kaydedersen uzerine yazacaksin") tam olarak soyledigi sey.
+    // Optimistic locking uzerine yazmayi ENGELLEMIYOR; SESSIZ olmasini
+    // engelliyor. Bu satir o ayrimin bekcisi: bir gun "cakismada kaydetme"
+    // davranisi degisirse burasi kirilir ve karar bilerek verilir.
+    await expect(phone.getByText("100,00 ₺").first()).toBeVisible();
   });
 });

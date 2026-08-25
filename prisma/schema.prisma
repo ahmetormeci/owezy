@@ -206,6 +206,17 @@ model Expense {
   updatedAt   DateTime        @updatedAt
   deletedAt   DateTime?
 
+  // Optimistic locking sayaci (ADR-032). Okuyan istemci bu degeri de alir ve
+  // yazarken geri gonderir; sunucu "WHERE id = ? AND version = ?" ile yazar.
+  // Arada baskasi yazdiysa sayac artmistir, hicbir satir eslesmez ve istek
+  // 409 ile reddedilir - sessizce uzerine yazmak yerine.
+  //
+  // NEDEN updatedAt DEGIL: updatedAt'i Postgres degil Prisma yaziyor, yani
+  // uygulama sunucusunun saati. Vercel'de istekler farkli ornekler uzerinden
+  // gectigi icin saat geri gidebilir. Ayrica JSON'a cikarken milisaniyeye
+  // yuvarlaniyor, veritabaninda mikrosaniye duruyor. Sayac ikisini de bilmez.
+  version     Int             @default(1)
+
   group        Group                @relation(fields: [groupId], references: [id], onDelete: Restrict)
   paidBy       User                 @relation("paidBy", fields: [paidById], references: [id], onDelete: Restrict)
   createdBy    User                 @relation("createdBy", fields: [createdById], references: [id], onDelete: Restrict)

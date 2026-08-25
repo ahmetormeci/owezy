@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { apiRequest } from "@/lib/api-client";
+import { ApiClientError, apiRequest } from "@/lib/api-client";
 import { formatMoney } from "@/lib/money";
 import { formatDate, formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES, EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
@@ -35,6 +35,8 @@ export type ExpenseListItem = {
   paidById: string;
   createdById: string;
   participants: { userId: string; shareAmount: number }[];
+  /** Optimistic locking sayaci (ADR-032). Silme istegiyle birlikte gidiyor. */
+  version: number;
 };
 
 /** Ozetten gelen ay toplamlari. Grubun TAMAMINI kapsar, ekrandakini degil. */
@@ -84,10 +86,12 @@ function DeleteExpenseButton({
   groupId,
   expenseId,
   description,
+  version,
 }: {
   groupId: string;
   expenseId: string;
   description: string;
+  version: number;
 }) {
   const router = useRouter();
   const t = useTranslate();
@@ -97,7 +101,8 @@ function DeleteExpenseButton({
   async function handleDelete() {
     setIsDeleting(true);
     try {
-      await apiRequest(`/api/v1/groups/${groupId}/expenses/${expenseId}`, {
+      // Surum query string'te: DELETE'in govdesi yok (ADR-032).
+      await apiRequest(`/api/v1/groups/${groupId}/expenses/${expenseId}?version=${version}`, {
         method: "DELETE",
       });
       toast.success(t("ui.expense_deleted"));
@@ -106,6 +111,16 @@ function DeleteExpenseButton({
       setOpen(false);
       router.refresh();
     } catch (error) {
+      // Cakismada pencere ACIK KALIYOR ve liste tazeleniyor: penceredeki
+      // aciklama da, arkadaki satir da guncel hale donuyor. Yani "ne degisti"
+      // sorusunu ayri bir metin yerine ekranin kendisi cevapliyor. Ikinci
+      // onay artik yeni surumle gidiyor.
+      if (error instanceof ApiClientError && error.code === "expense.version_conflict") {
+        toast.error(error.message);
+        router.refresh();
+        setIsDeleting(false);
+        return;
+      }
       toast.error(error instanceof Error ? error.message : t("ui.expense_delete_failed"));
     } finally {
       setIsDeleting(false);
@@ -543,6 +558,7 @@ export function ExpenseList({
                 groupId={groupId}
                 expenseId={expense.id}
                 description={expense.description}
+                version={expense.version}
               />
             </span>
           ) : null}

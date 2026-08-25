@@ -7,7 +7,7 @@ import type { ExpenseCategory, SplitType } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { apiRequest } from "@/lib/api-client";
+import { ApiClientError, apiRequest } from "@/lib/api-client";
 import {
   formatBasisPoints,
   formatBasisPointsForInput,
@@ -25,10 +25,15 @@ import {
   splitExactly,
   type SplitShare,
 } from "@/lib/split";
-import { EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
+import {
+  EXPENSE_CATEGORY_CODES,
+  EXPENSE_CATEGORY_OPTIONS,
+  EXPENSE_SPLIT_TYPE_CODES,
+} from "@/lib/expense-labels";
+import { diffExpenses, type ExpenseChange } from "@/lib/expense-diff";
+import { formatDate } from "@/lib/dates";
 import { AppError } from "@/lib/errors";
 import { useLocale, useTranslate } from "@/lib/i18n";
-import type { MessageCode } from "@/lib/messages";
 
 type Member = {
   userId: string;
@@ -44,6 +49,8 @@ export type ExpenseFormInitialValues = {
   splitType: SplitType;
   expenseDate: string;
   participants: { userId: string; shareAmount: number; basisPoints: number | null }[];
+  /** Optimistic locking sayaci (ADR-032). Kaydederken geri gonderiliyor. */
+  version: number;
 };
 
 type ParticipantDraft = {
@@ -53,11 +60,17 @@ type ParticipantDraft = {
   percentageText: string;
 };
 
-const SPLIT_TYPE_CODES: Record<SplitType, MessageCode> = {
-  EQUAL: "ui.split_equal",
-  EXACT: "ui.split_exact",
-  PERCENTAGE: "ui.split_percentage",
-};
+/**
+ * Cakisma (ADR-032) durumu.
+ *
+ * "deleted": harcama arada silinmis, kaydetmenin bir anlami kalmadi.
+ * "changed": baskasi degistirmis; `changes` neyin degistigini soyluyor.
+ *   Bos dizi olabilir - o zaman degisikligi tarif edemiyoruz, ama SAKLAMIYORUZ:
+ *   uyari yine cikiyor, yalnizca icerigi "gosteremiyoruz" oluyor.
+ */
+type ConflictState =
+  | { kind: "deleted" }
+  | { kind: "changed"; changes: ExpenseChange[] };
 
 // Native <select>, shadcn'in Select bilesenine gore daha az kod ve mobilde
 // isletim sisteminin kendi seciciyi acmasi sayesinde daha iyi bir deneyim
@@ -176,6 +189,18 @@ export function ExpenseForm({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /**
+   * Optimistic locking (ADR-032) icin iki parca durum.
+   *
+   * `baseline`: ekrana YUKLENEN harcamanin sunucudaki hali. Cakisma sonrasi
+   * yenisiyle degistiriliyor ki ikinci bir cakismada fark, ilk yuklemeye gore
+   * degil "en son gordugun hale" gore hesaplansin.
+   * `version`: o halin surumu; her kaydetmede govdeyle birlikte gidiyor.
+   */
+  const [baseline, setBaseline] = useState(initialValues);
+  const [version, setVersion] = useState(initialValues?.version ?? 0);
+  const [conflict, setConflict] = useState<ConflictState | null>(null);
+
   const amount = parseMoney(amountText);
   const selected = participants.filter((participant) => participant.selected);
 
@@ -252,6 +277,9 @@ export function ExpenseForm({
       paidById,
       category,
       expenseDate,
+      // Yalnizca duzenlemede: olusturmada ortada bir surum yok ve sunucunun
+      // POST semasi bu alani zaten kabul etmiyor.
+      ...(isEditing ? { version } : {}),
     };
 
     if (splitType === "EQUAL") {
@@ -305,6 +333,7 @@ export function ExpenseForm({
     }
 
     setIsSubmitting(true);
+    setConflict(null);
     try {
       const url = isEditing
         ? `/api/v1/groups/${groupId}/expenses/${initialValues!.id}`
@@ -323,11 +352,117 @@ export function ExpenseForm({
       router.push(`/groups/${groupId}?month=${expenseDate.slice(0, 7)}`);
       router.refresh();
     } catch (submitError) {
+      // Cakisma (ADR-032) diger hatalardan ayri ele aliniyor: kullanicinin
+      // formda yazdiklari OLDUGU GIBI duruyor, biz yalnizca arada ne olmus
+      // onu gosteriyoruz. Yeniden kaydetmek artik guncel surumle gidiyor.
+      if (
+        submitError instanceof ApiClientError &&
+        submitError.code === "expense.version_conflict"
+      ) {
+        await loadConflict();
+        setIsSubmitting(false);
+        return;
+      }
+
       setError(
         submitError instanceof Error ? submitError.message : t("server.unexpected"),
       );
       setIsSubmitting(false);
     }
+  }
+
+  /**
+   * Cakismadan sonra sunucudaki hali cekip farki hesaplar.
+   *
+   * Basarisiz olursa (ag koptu, harcama silindi) SESSIZ KALMIYORUZ: cakismanin
+   * kendisi zaten gerceklesti, kullanici bunu bilmeli. Yalnizca "ne degisti"
+   * kismini gosteremiyoruz.
+   */
+  async function loadConflict() {
+    if (!initialValues) {
+      return;
+    }
+
+    try {
+      const fresh = await apiRequest<{ expense: ExpenseFormInitialValues }>(
+        `/api/v1/groups/${groupId}/expenses/${initialValues.id}`,
+      );
+
+      const source = baseline ?? initialValues;
+      setConflict({ kind: "changed", changes: diffExpenses(source, fresh.expense) });
+      setBaseline(fresh.expense);
+      setVersion(fresh.expense.version);
+    } catch (fetchError) {
+      // 404 = harcama arada silindi. Kaydetmenin bir anlami kalmadi.
+      if (fetchError instanceof ApiClientError && fetchError.status === 404) {
+        setConflict({ kind: "deleted" });
+        return;
+      }
+      setConflict({ kind: "changed", changes: [] });
+    }
+  }
+
+  /** Bir degisikligi okunur tek satira cevirir. Bicimleme burada, farkta degil. */
+  function describeChange(change: ExpenseChange): string {
+    switch (change.field) {
+      case "description":
+        return t("ui.conflict_change", {
+          field: t("ui.description"),
+          before: change.before,
+          after: change.after,
+        });
+      case "amount":
+        return t("ui.conflict_change", {
+          field: t("ui.amount"),
+          before: formatMoney(change.before, currency, locale),
+          after: formatMoney(change.after, currency, locale),
+        });
+      case "paidById":
+        return t("ui.conflict_change", {
+          field: t("ui.payer"),
+          before: nameByUserId.get(change.before) ?? t("ui.unknown_user"),
+          after: nameByUserId.get(change.after) ?? t("ui.unknown_user"),
+        });
+      case "category":
+        return t("ui.conflict_change", {
+          field: t("ui.category"),
+          before: t(EXPENSE_CATEGORY_CODES[change.before as ExpenseCategory]),
+          after: t(EXPENSE_CATEGORY_CODES[change.after as ExpenseCategory]),
+        });
+      case "splitType":
+        return t("ui.conflict_change", {
+          field: t("ui.split_type"),
+          before: t(EXPENSE_SPLIT_TYPE_CODES[change.before]),
+          after: t(EXPENSE_SPLIT_TYPE_CODES[change.after]),
+        });
+      case "expenseDate":
+        return t("ui.conflict_change", {
+          field: t("ui.date"),
+          before: formatDate(new Date(change.before), locale),
+          after: formatDate(new Date(change.after), locale),
+        });
+      case "participants": {
+        const lines: string[] = [];
+        if (change.addedUserIds.length > 0) {
+          lines.push(
+            t("ui.conflict_participants_added", { names: joinNames(change.addedUserIds) }),
+          );
+        }
+        if (change.removedUserIds.length > 0) {
+          lines.push(
+            t("ui.conflict_participants_removed", { names: joinNames(change.removedUserIds) }),
+          );
+        }
+        if (change.sharesChanged) {
+          lines.push(t("ui.conflict_shares_changed"));
+        }
+        return lines.join(" · ");
+      }
+    }
+  }
+
+  function joinNames(userIds: string[]): string {
+    return userIds.map((id) => nameByUserId.get(id) ?? t("ui.unknown_user")).join(", ");
   }
 
   const nameByUserId = new Map(members.map((member) => [member.userId, member.displayName]));
@@ -428,9 +563,9 @@ export function ExpenseForm({
             value={splitType}
             onChange={(event) => setSplitType(event.target.value as SplitType)}
           >
-            {(Object.keys(SPLIT_TYPE_CODES) as SplitType[]).map((value) => (
+            {(Object.keys(EXPENSE_SPLIT_TYPE_CODES) as SplitType[]).map((value) => (
               <option key={value} value={value}>
-                {t(SPLIT_TYPE_CODES[value])}
+                {t(EXPENSE_SPLIT_TYPE_CODES[value])}
               </option>
             ))}
           </select>
@@ -525,10 +660,35 @@ export function ExpenseForm({
         </div>
       ) : null}
 
+      {/*
+        Cakisma uyarisi (ADR-032). Renk tek basina anlam tasimiyor (ADR-021):
+        basligi kalin, degisiklikleri tireli cerceve icinde listeliyoruz -
+        rengi goremeyen biri de neyin ne oldugunu okuyabiliyor.
+      */}
+      {conflict ? (
+        <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-card px-4 py-3.5">
+          <p className="label">{t("ui.conflict_heading")}</p>
+          {conflict.kind === "deleted" ? (
+            <p className="text-muted-foreground">{t("ui.conflict_deleted")}</p>
+          ) : conflict.changes.length === 0 ? (
+            <p className="text-muted-foreground">{t("ui.conflict_unknown")}</p>
+          ) : (
+            <>
+              <ul className="flex flex-col gap-1 text-muted-foreground">
+                {conflict.changes.map((change) => (
+                  <li key={change.field}>{describeChange(change)}</li>
+                ))}
+              </ul>
+              <p className="text-muted-foreground">{t("ui.conflict_overwrite_hint")}</p>
+            </>
+          )}
+        </div>
+      ) : null}
+
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || conflict?.kind === "deleted"}>
           {isSubmitting
             ? t("ui.saving")
             : isEditing

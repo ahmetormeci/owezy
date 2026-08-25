@@ -70,6 +70,23 @@ export const listExpensesQuerySchema = z.object({
     .optional(),
 });
 
+// Optimistic locking surumu (ADR-032). expenseBodySchema'nin ICINE
+// konulmuyor cunku o sema POST ile PAYLASILIYOR ve olusturmada surum diye bir
+// sey yok. Ayri bir sema olarak ayni ham govdeden ikinci kez okunuyor; Zod'un
+// varsayilan "strip" davranisi geregi expenseBodySchema "version"i zaten eliyor.
+//
+// ZORUNLU, opsiyonel degil: gonderilmedigi zaman kontrolun atlandigi bir
+// yazma yolu birakmak, kontrolu hic koymamakla ayni kapiya cikar.
+export const expenseVersionSchema = z.object({
+  version: z.number().int().positive(),
+});
+
+// DELETE'in govdesi yok (bazi ara sunucular kirpiyor), o yuzden surum query
+// string'ten geliyor. Orada her deger string oldugu icin coerce sart.
+export const deleteExpenseQuerySchema = z.object({
+  version: z.coerce.number().int().positive(),
+});
+
 export const expenseBodySchema = z.discriminatedUnion("splitType", [
   baseExpenseSchema.extend({
     splitType: z.literal("EQUAL"),

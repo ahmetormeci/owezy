@@ -1,5 +1,5 @@
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,7 +14,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate } from "@/lib/dates";
-import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
+import { EXPENSE_CATEGORY_CODES, EXPENSE_SPLIT_TYPE_CODES } from "@/lib/expense-labels";
+import { diffExpenses, type ExpenseChange } from "@/lib/expense-diff";
 import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
@@ -47,9 +48,16 @@ type Expense = {
   paidById: string;
   createdById: string;
   participants: Participant[];
+  /** Optimistic locking sayaci (ADR-032). */
+  version: number;
 };
 
 type ExpenseResponse = { expense: Expense };
+
+/** Cakisma durumu. Web'deki ExpenseForm ile ayni ayrim (ADR-032). */
+type ConflictState =
+  | { kind: "deleted" }
+  | { kind: "changed"; changes: ExpenseChange[] };
 type MembersResponse = { members: { userId: string; displayName: string }[] };
 type MeResponse = { user: { id: string } };
 
@@ -60,7 +68,7 @@ export default function ExpenseScreen() {
   const locale = useLocale();
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
-  const { put, remove } = useApiClient();
+  const { get, put, remove } = useApiClient();
 
   const expense = useApiGet<ExpenseResponse>(
     groupId && expenseId ? `/api/v1/groups/${groupId}/expenses/${expenseId}` : null,
@@ -76,14 +84,30 @@ export default function ExpenseScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Optimistic locking (ADR-032). `baseline` ekrana YUKLENEN hal: hem
+   * gonderilecek surumu hem de cakismada karsilastirilacak "onceki" tarafi
+   * tasiyor. Cakismadan sonra sunucudaki yenisiyle degistiriliyor.
+   */
+  const [baseline, setBaseline] = useState<Expense | null>(null);
+  const [conflict, setConflict] = useState<ConflictState | null>(null);
+
   // Form, kayit gelince BIR KEZ dolduruluyor. Her render'da doldurmak
   // kullanicinin yazdigini geri alirdi.
+  //
+  // filled bayragi cakisma icin sart: orada ekrandaki bilgileri tazelemek
+  // uzere expense.reload() cagriliyor ve bayrak olmasaydi bu efekt yeniden
+  // calisip kullanicinin yazdiklarini silerdi - yani cakismada girdiyi koruma
+  // sozunu tam da onu vermeye calisirken bozardik.
+  const filled = useRef(false);
   const loaded = expense.state.kind === "ok" ? expense.state.data.expense : null;
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || filled.current) return;
+    filled.current = true;
     setDescription(loaded.description);
     setAmountText(formatMoneyForInput(loaded.amount, locale));
     setPaidById(loaded.paidById);
+    setBaseline(loaded);
   }, [loaded, locale]);
 
   if (expense.state.kind === "error") {
@@ -119,6 +143,10 @@ export default function ExpenseScreen() {
   const isEqual = item.splitType === "EQUAL";
   const canEdit = isMine && isEqual;
 
+  // Harcama arada silinmisse kaydetmek ya da tekrar silmek anlamsiz; dugmeler
+  // kapali ama ekran duruyor, cunku kullanici ne yazdigini gormeye devam etmeli.
+  const gone = conflict?.kind === "deleted";
+
   const myShare = currentUserId
     ? item.participants.find((participant) => participant.userId === currentUserId)
     : undefined;
@@ -141,7 +169,10 @@ export default function ExpenseScreen() {
       return;
     }
 
+    if (!baseline) return;
+
     setBusy(true);
+    setConflict(null);
     try {
       // expenseDate GONDERILMIYOR: sunucu gonderilmediginde mevcut tarihi
       // koruyor (expenses.ts). Gondermek, duzenlemede tarihi sessizce bugune
@@ -152,9 +183,14 @@ export default function ExpenseScreen() {
         amount,
         paidById,
         participantUserIds: item.participants.map((participant) => participant.userId),
+        version: baseline.version,
       });
 
       if (!result.ok) {
+        if (result.code === "expense.version_conflict") {
+          await loadConflict();
+          return;
+        }
         setError(t(result.code));
         return;
       }
@@ -164,6 +200,32 @@ export default function ExpenseScreen() {
     } finally {
       setBusy(false);
     }
+  }
+
+  /**
+   * Cakismadan sonra sunucudaki hali cekip farki hesaplar.
+   *
+   * IKI istek atiyor ve bu bilerek: `get` farki hesaplamak icin veriyi ELE
+   * veriyor, `reload` ise ekrandaki bilgileri (tarih, kategori, odeyen)
+   * tazeliyor. Kanca kendi durumunu disaridan yazdirmiyor, o yuzden ikisi ayri.
+   * Cakisma nadir bir yol; iki istek burada kabul edilebilir bir bedel.
+   */
+  async function loadConflict() {
+    if (!baseline) return;
+
+    const fresh = await get<ExpenseResponse>(
+      `/api/v1/groups/${groupId}/expenses/${expenseId}`,
+    );
+
+    if (!fresh.ok) {
+      // 404 = harcama arada silindi; kaydetmenin bir anlami kalmadi.
+      setConflict(fresh.status === 404 ? { kind: "deleted" } : { kind: "changed", changes: [] });
+      return;
+    }
+
+    setConflict({ kind: "changed", changes: diffExpenses(baseline, fresh.data.expense) });
+    setBaseline(fresh.data.expense);
+    expense.reload();
   }
 
   function confirmDelete() {
@@ -180,9 +242,19 @@ export default function ExpenseScreen() {
   async function doDelete() {
     setBusy(true);
     setError(null);
+    setConflict(null);
     try {
-      const result = await remove(`/api/v1/groups/${groupId}/expenses/${expenseId}`);
+      if (!baseline) return;
+
+      // Surum query string'te: DELETE'in govdesi yok (ADR-032).
+      const result = await remove(
+        `/api/v1/groups/${groupId}/expenses/${expenseId}?version=${baseline.version}`,
+      );
       if (!result.ok) {
+        if (result.code === "expense.version_conflict") {
+          await loadConflict();
+          return;
+        }
         setError(t(result.code));
         return;
       }
@@ -192,6 +264,67 @@ export default function ExpenseScreen() {
     } finally {
       setBusy(false);
     }
+  }
+
+  /** Bir degisikligi okunur tek satira cevirir. Web'deki describeChange ile ayni is. */
+  function describeChange(change: ExpenseChange): string {
+    switch (change.field) {
+      case "description":
+        return t("ui.conflict_change", {
+          field: t("ui.description"),
+          before: change.before,
+          after: change.after,
+        });
+      case "amount":
+        return t("ui.conflict_change", {
+          field: t("ui.amount"),
+          before: formatMoney(change.before, item.currency, locale),
+          after: formatMoney(change.after, item.currency, locale),
+        });
+      case "paidById":
+        return t("ui.conflict_change", {
+          field: t("ui.payer"),
+          before: nameByUserId[change.before] ?? t("ui.unknown_user"),
+          after: nameByUserId[change.after] ?? t("ui.unknown_user"),
+        });
+      case "category":
+        return t("ui.conflict_change", {
+          field: t("ui.category"),
+          before: t(EXPENSE_CATEGORY_CODES[change.before as Expense["category"]]),
+          after: t(EXPENSE_CATEGORY_CODES[change.after as Expense["category"]]),
+        });
+      case "splitType":
+        return t("ui.conflict_change", {
+          field: t("ui.split_type"),
+          before: t(EXPENSE_SPLIT_TYPE_CODES[change.before]),
+          after: t(EXPENSE_SPLIT_TYPE_CODES[change.after]),
+        });
+      case "expenseDate":
+        return t("ui.conflict_change", {
+          field: t("ui.date"),
+          before: formatDate(new Date(change.before), locale),
+          after: formatDate(new Date(change.after), locale),
+        });
+      case "participants": {
+        const lines: string[] = [];
+        if (change.addedUserIds.length > 0) {
+          lines.push(t("ui.conflict_participants_added", { names: joinNames(change.addedUserIds) }));
+        }
+        if (change.removedUserIds.length > 0) {
+          lines.push(
+            t("ui.conflict_participants_removed", { names: joinNames(change.removedUserIds) }),
+          );
+        }
+        if (change.sharesChanged) {
+          lines.push(t("ui.conflict_shares_changed"));
+        }
+        return lines.join(" · ");
+      }
+    }
+  }
+
+  function joinNames(userIds: string[]): string {
+    return userIds.map((id) => nameByUserId[id] ?? t("ui.unknown_user")).join(", ");
   }
 
   return (
@@ -276,18 +409,40 @@ export default function ExpenseScreen() {
             ) : null}
             {!isMine ? <Text style={s.note}>{t("access.expense_creator_only")}</Text> : null}
 
+            {/* Cakisma uyarisi (ADR-032). Kesikli ayirici fisin geri kalaniyla
+                ayni dile ait; anlami renk degil metin tasiyor (ADR-021). */}
+            {conflict ? (
+              <View style={s.conflict}>
+                <Cap>{t("ui.conflict_heading")}</Cap>
+                {conflict.kind === "deleted" ? (
+                  <Text style={s.note}>{t("ui.conflict_deleted")}</Text>
+                ) : conflict.changes.length === 0 ? (
+                  <Text style={s.note}>{t("ui.conflict_unknown")}</Text>
+                ) : (
+                  <>
+                    {conflict.changes.map((change) => (
+                      <Text key={change.field} style={s.note}>
+                        {describeChange(change)}
+                      </Text>
+                    ))}
+                    <Text style={s.note}>{t("ui.conflict_overwrite_hint")}</Text>
+                  </>
+                )}
+              </View>
+            ) : null}
+
             {error ? <Text style={s.error}>{error}</Text> : null}
 
             {canEdit ? (
               <View style={s.actions}>
-                <Pressable style={s.save} onPress={() => void save()} disabled={busy}>
+                <Pressable style={s.save} onPress={() => void save()} disabled={busy || gone}>
                   {busy ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
                     <Cap tone="onBrand">{t("ui.save")}</Cap>
                   )}
                 </Pressable>
-                <Pressable onPress={confirmDelete} disabled={busy}>
+                <Pressable onPress={confirmDelete} disabled={busy || gone}>
                   <Text style={s.delete}>{t("ui.delete")}</Text>
                 </Pressable>
               </View>
@@ -365,6 +520,16 @@ function createStyles(theme: Theme) {
     factLabel: { fontSize: 13, color: theme.muted },
     factValue: { fontSize: 13, color: theme.foreground },
     note: { fontSize: 12, color: theme.muted, lineHeight: 18 },
+    // facts ile birebir ayni: kesikli ust cizgi + bosluk. Cerceve DEGIL -
+    // RN'de borderStyle "dashed" ile borderRadius birlikte iOS'ta duz cizgi
+    // olarak ciziliyor; fisin dilinde zaten yatay ayirici kullaniliyor.
+    conflict: {
+      gap: 6,
+      borderTopWidth: 1,
+      borderStyle: "dashed",
+      borderColor: theme.border,
+      paddingTop: 14,
+    },
     error: { fontSize: 13, color: theme.debt },
     actions: { flexDirection: "row", alignItems: "center", gap: 20, paddingTop: 6 },
     save: {

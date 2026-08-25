@@ -69,6 +69,10 @@ export default async function EditExpensePage({
             shareAmount: participant.shareAmount,
             basisPoints: participant.basisPoints,
           })),
+          // Sayfa sunucuda render edildigi icin bu, formun acildigi ANDAKI
+          // surum. Kaydederken geri gidiyor; arada baskasi yazdiysa 409
+          // doner (ADR-032).
+          version: expense.version,
         }}
       />
     </div>

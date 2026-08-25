@@ -966,6 +966,33 @@ için CI'a ikinci kurulum adımı eklemek erken; ekran sayısı artınca dönül
 
 ---
 
+## Faz 19 — Eş zamanlı düzenleme · **BİTTİ**
+
+Faz 18'in açtığı borcu kapatıyor: iki istemci vardı ve aynı harcamaya iki
+yerden dokunulduğunda biri diğerini **sessizce** eziyordu.
+
+`Expense.version` sayacı eklendi; okuyan alıyor, yazarken geri gönderiyor,
+sunucu `WHERE id = ? AND version = ?` ile yazıyor. Çakışmada 409 dönüyor,
+kullanıcının yazdıkları formda kalıyor ve **neyin değiştiği** yazılıyor.
+Tekrar kaydetmek geçiyor — üzerine yazmak engellenmiyor, **sessiz olması**
+engelleniyor. Gerekçelerin tamamı ADR-032'de.
+
+Karşılaştırma iki istemcide de aynı saf modülden geliyor
+(`src/lib/expense-diff.ts`), yani mobil için ikinci kez yazılmadı.
+
+**Yan bulgular:** `apiRequest` hata kodunu düşürüyordu, artık taşıyor
+(`ApiClientError`); `updateExpense` güncellenmiş satırı iki kez okuyordu;
+DATABASE.md'nin migration tablosu üç migration eksikti.
+
+**Test:** 535 birim / 37 E2E. Yeni E2E, çakışmayı **aynı kullanıcının iki
+cihazı** üzerinden kuruyor — gerçek senaryo bu, çünkü harcamayı yalnızca onu
+giren kişi düzenleyebiliyor. Aynı andaki yarışı Postgres'in satır kilidi
+çözüyor; onun kanıtı testte değil, kontrolün `WHERE` içinde olmasında.
+
+**Kapsam dışı bırakılanlar** (ADR-032): ödeşme, grup düzenleme, geri yükleme.
+
+---
+
 ## Faz dışı düzeltmeler
 
 | İş | Commit |
@@ -987,7 +1014,6 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Optimistic locking (ADR-010)** | Erteleme koşulu doldu: iki istemci var, ikisinde de harcama düzenlenebiliyor, ve bugün **son yazan sessizce diğerini eziyor** |
 | **CI mobili doğrulasın** | Sekiz ekranlık bir uygulama var ve CI hiçbirine bakmıyor; `mobile/` bağımlılıkları bile kurulmuyor |
 | **Mobilde otomatik test** | Bugün tek doğrulama simülatörde elle bakmak |
 | **Silineni geri alma arayüzü** | `restore` ucu var, hiçbir istemci kullanmıyor |
@@ -997,7 +1023,7 @@ karar vermemiştir.
 
 ## Bilinen teknik borç
 
-- Optimistic locking yok (ADR-010, mobil aşamasına ertelendi)
+- `@clerk/clerk-expo` kullanımdan kaldırıldı; `@clerk/expo` (core-3) geçişi yapılmadı. Clerk bir süre var olmayan bir sürüme bağımlı paket yayınladığı için kurulamıyordu; `@clerk/shared@4.30.0` çıktı ve engel kalktı, geçiş bekliyor
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi

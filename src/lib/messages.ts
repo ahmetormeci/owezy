@@ -48,6 +48,7 @@ export const MESSAGES_TR = {
   "expense.not_found": "Harcama bulunamadı",
   "expense.not_deleted": "Harcama zaten silinmemiş",
   "expense.participants_not_active": "Şu kullanıcılar grubun aktif üyesi değil: {userIds}",
+  "expense.version_conflict": "Bu harcama sen düzenlerken başkası tarafından değiştirildi",
 
   // --- Odeme kaydi ---
   "settlement.not_found": "Ödeme kaydı bulunamadı",
@@ -264,6 +265,20 @@ export const MESSAGES_TR = {
   "ui.delete_expense_hint":
     "“{description}” kaydı silinecek ve bakiyelerden düşülecek. Bu işlem geri alınamaz.",
 
+  // --- Cakisma (ADR-032) ---
+  // Cumle "uzerine yazacaksin" diyor, "yazabilirsin" degil: kaydetmek gercekten
+  // uzerine yazar. Onlemedigimiz bir seyi onluyormus gibi anlatmiyoruz.
+  "ui.conflict_heading": "Bu harcama sen düzenlerken değişti",
+  "ui.conflict_overwrite_hint": "Tekrar kaydedersen bu değişikliklerin üzerine yazacaksın.",
+  "ui.conflict_unknown": "Neyin değiştiğini gösteremiyoruz. Kaydetmeden önce kontrol et.",
+  "ui.conflict_deleted": "Bu harcama silinmiş. Düzenlemen kaydedilemez.",
+  "ui.conflict_change": "{field}: {before} → {after}",
+  "ui.conflict_participants_added": "Eklenen: {names}",
+  "ui.conflict_participants_removed": "Çıkarılan: {names}",
+  "ui.conflict_shares_changed": "Paylar değişti",
+  "ui.payer": "Ödeyen",
+  "ui.split_type": "Bölüşüm",
+
   // --- Odeme kaydi ---
   "ui.settlements": "Kaydedilen ödemeler",
   "ui.record_settlement": "Ödeme kaydet",
@@ -435,6 +450,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "expense.not_deleted": "This expense has not been deleted",
   "expense.participants_not_active":
     "These users are not active members of the group: {userIds}",
+  "expense.version_conflict": "Someone else changed this expense while you were editing it",
 
   // --- Settlement ---
   "settlement.not_found": "Settlement not found",
@@ -621,6 +637,18 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.participant_percentage_label": "{name} percentage",
   "ui.delete_expense_hint":
     "“{description}” will be removed and deducted from the balances. This cannot be undone.",
+
+  // --- Conflict (ADR-032) ---
+  "ui.conflict_heading": "This expense changed while you were editing it",
+  "ui.conflict_overwrite_hint": "Saving again will overwrite these changes.",
+  "ui.conflict_unknown": "We cannot show what changed. Check before you save.",
+  "ui.conflict_deleted": "This expense was deleted. Your edit cannot be saved.",
+  "ui.conflict_change": "{field}: {before} → {after}",
+  "ui.conflict_participants_added": "Added: {names}",
+  "ui.conflict_participants_removed": "Removed: {names}",
+  "ui.conflict_shares_changed": "Shares changed",
+  "ui.payer": "Paid by",
+  "ui.split_type": "Split",
 
   // --- Settlements ---
   "ui.settlements": "Recorded settlements",

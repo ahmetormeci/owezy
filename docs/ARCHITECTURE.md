@@ -79,7 +79,7 @@ export async function POST(request: NextRequest, { params }) {
   try {
     const user = await getOrCreateCurrentUser();
     if (!user) {
-      return NextResponse.json({ ok: false, error: "not signed in" }, { status: 401 });
+      return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
 
     const { groupId } = await params;
@@ -102,10 +102,16 @@ Servise her zaman **bizim `User.id`'miz** geçer, `clerkId` değil.
 | Durum | Gövde | HTTP |
 |---|---|---|
 | Başarılı | `{ ok: true, ... }` | 200 / 201 |
-| Hata | `{ ok: false, error: "..." }` | 400 / 401 / 403 / 404 / 409 / 500 |
+| Hata | `{ ok: false, code, params? }` | 400 / 401 / 403 / 404 / 409 / 500 |
 
 İstemci tarafında bu sözleşme tek yerde yorumlanır: `src/lib/api-client.ts`
-içindeki `apiRequest<T>()`.
+içindeki `apiRequest<T>()`. Hata durumunda `ApiClientError` fırlatır:
+`message` çevrilmiş cümledir (çağıranların çoğu yalnızca onu okur), ama
+`status` ve `code` de üzerinde durur — bazı çağıranların hatayı **ayırt
+etmesi** gerekiyor (ilk örnek: 409 + `expense.version_conflict`).
+
+Mobil tarafta karşılığı `mobile/lib/api.ts`: fırlatmak yerine
+`{ ok: false, status, code }` döndürüyor.
 
 ## Auth akışı
 
@@ -147,9 +153,10 @@ testine bağlandı (`e2e/auth.spec.ts`) — biri ileride çerez varsayan bir
 kontrol eklerse mobil sözleşme sessizce kırılırdı.
 
 **Saf modülleri paylaşıyor, React bileşenlerini PAYLAŞMIYOR.** `money.ts`,
-`split.ts`, `messages.ts`, `dates.ts`, `expense-category-guess.ts` mobilde
-`@/lib/...` ile doğrudan import ediliyor; takma ad `mobile/tsconfig.json`'dan,
-kök izleme `mobile/metro.config.js`'ten geliyor. React bileşenleri geçemiyor:
+`split.ts`, `messages.ts`, `dates.ts`, `expense-category-guess.ts`,
+`expense-labels.ts`, `expense-diff.ts` mobilde `@/lib/...` ile doğrudan
+import ediliyor; takma ad `mobile/tsconfig.json`'dan, kök izleme
+`mobile/metro.config.js`'ten geliyor. React bileşenleri geçemiyor:
 mobil ağacın dışındaki bir dosyadan `react` çözülünce kökteki kopya bulunuyor
 ve iki React kopyası kancaları boş bir dispatcher'a gönderiyor. Ayrıntı ve
 kural [CONVENTIONS.md](CONVENTIONS.md) "Mobil" bölümünde.
@@ -211,6 +218,23 @@ Kurallar:
    `ExpenseParticipant` değişiminde tetiklenir, `Expense.amount` değişiminde
    değil. Payları yeniden yazmak trigger'ın her güncellemede çalışmasını
    garanti eder.
+5. **Transaction eş zamanlılığı ÇÖZMEZ.** Sık karışan nokta bu: `$transaction`
+   tek bir isteğin içini atomik yapar, ama iki *ayrı* isteğin arasındaki
+   bayatlığı görmez. Aynı harcamayı iki cihazdan düzenlemek buna örnek —
+   iki istek de kendi içinde kusursuzdur, kaybolan şey istemcinin elindeki
+   verinin güncelliğidir. Çözüm optimistic locking (ADR-032) ve kontrolü
+   **`WHERE` içine** yazmak: Read Committed'da okuma satırı kilitlemediği
+   için `tx` içinde okuyup JS'te karşılaştırmak iki eş zamanlı isteğin
+   ikisini de geçirebilir. Prisma'da bu `updateMany` demek —
+   `update()` yalnızca benzersiz alanla filtreleyebiliyor:
+
+   ```ts
+   const guard = await tx.expense.updateMany({
+     where: { id: expenseId, version: expectedVersion },
+     data: { ...alanlar, version: { increment: 1 } },
+   });
+   if (guard.count === 0) throw new ConflictError("expense.version_conflict");
+   ```
 
 ## Validation yaklaşımı
 
