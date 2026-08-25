@@ -1,5 +1,4 @@
 import { expect, type Browser, type Page } from "@playwright/test";
-import { clerk } from "@clerk/testing/playwright";
 import { trackContext } from "./fixtures";
 import { userByKey, type E2EUser } from "./users";
 
@@ -97,27 +96,17 @@ export async function createInviteLink(page: Page, groupName: string): Promise<s
 export async function joinViaInvite(page: Page, inviteLink: string, groupName: string) {
   await page.goto(inviteLink);
 
-  // CLERK'IN YUKLENMESI BEKLENIYOR ve bu bir suslemeye degil, OLCULEN bir
-  // yarisa cozum:
+  // BURADA BIR ZAMANLAR clerk.loaded({ page }) VARDI ve gercek bir yarisi
+  // cozuyordu: "Gruba katil" butonunu sunucu render ediyor, yani HTML'de
+  // aninda var; ama basinca calisan sey ISTEMCIDEN /api/v1/invites/accept'e
+  // giden bir fetch. Clerk'in __session cerezi kisa omurluydu ve tarayicidaki
+  // SDK tarafindan tazeleniyordu - tazeleme bitmeden basilirsa istek 401
+  // donuyordu. Belirtisi sasirticiydi: girisli bir kullanicida "Bu islem icin
+  // giris yapman gerekiyor".
   //
-  // "Gruba katil" butonunu SUNUCU render ediyor, yani HTML'de aninda var.
-  // Ama butona basinca calisan sey ISTEMCIDEN /api/v1/invites/accept'e giden
-  // bir fetch - ve Clerk'in __session cerezi KISA OMURLU, tarayicidaki SDK
-  // tarafindan tazeleniyor. Playwright butona goruntulendigi anda basiyor;
-  // tazeleme henuz bitmediyse istek 401 doner, katilma gerceklesmez,
-  // asagidaki waitForURL sonsuza kadar bekler ve test 60 saniyede duser.
-  //
-  // Belirti tam olarak buydu: sayfada "Bu islem icin giris yapman gerekiyor"
-  // yaziyordu - girisli bir kullanicida.
-  //
-  // NEDEN YALNIZCA BURADA: davet akisi, sayfa yuklendikten HEMEN SONRA
-  // istemciden kimlikli bir istek atan tek yer. Diger yardimcilar form
-  // gonderiyor, yani sunucudan geciyor ve orada bayat cerez sorun degil.
-  //
-  // 25.8'DE KALKACAK: Better Auth'un oturum cerezi uzun omurlu ve
-  // tarayicida tazelenmesi gerekmiyor, yani bu yaris kendiliginden bitiyor.
-  await clerk.loaded({ page });
-
+  // Better Auth'un oturum cerezi UZUN OMURLU ve tarayicida tazelenmesi
+  // gerekmiyor; storageState'ten yuklenen cerez ilk istekten itibaren
+  // gecerli. Yani beklenecek bir sey kalmadi (Faz 25.8).
   await page.getByRole("button", { name: "Gruba katıl" }).click();
 
   // Katilma basariliysa uygulama bizi grup sayfasina yonlendirir.

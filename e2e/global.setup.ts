@@ -1,115 +1,85 @@
-import { test as setup, expect } from "@playwright/test";
-import { clerk, clerkSetup, setupClerkTestingToken } from "@clerk/testing/playwright";
+import { test as setup, expect, request, type APIRequestContext } from "@playwright/test";
 import { resetE2EDatabase } from "./db-cleanup";
-import { E2E_USERS } from "./users";
+import { E2E_USERS, type E2EUser } from "./users";
 
-// Clerk'te "Device Trust" acik: bilinmeyen bir cihazdan giriste sifre tek
-// basina yetmiyor, e-postaya gonderilen kodun da girilmesi gerekiyor. Playwright
-// her testte sifir bir tarayici profili actigi icin her giris "yeni cihaz"
-// sayiliyor ve bu adim her seferinde cikiyor.
-//
-// Test kullanicilarimizin adresleri Clerk'in test e-postalari (+clerk_test)
-// oldugu icin gercek bir e-posta gonderilmiyor; dogrulama kodu her zaman
-// asagidaki sabit deger oluyor.
-const CLERK_TEST_CODE = "424242";
+const BASE_URL = "http://localhost:3100";
 
-// Onceki kosulardan kalan gruplari/harcamalari siliyoruz. Ayni dosyadaki
-// setup'lar sirayla calistigi icin bu, oturum hazirligindan once biter.
+// Onceki kosulardan kalan veriyi siliyoruz. Ayni dosyadaki setup'lar sirayla
+// calistigi icin bu, oturum hazirligindan once biter.
 setup("onceki kosulardan kalan test verisini temizle", async () => {
   await resetE2EDatabase();
 });
 
-// Her test dosyasinda tekrar giris yapmak yavas olurdu. Burada bir kez giris
-// yapip her kullanicinin oturumunu diske kaydediyoruz; testler bu kayitli
-// oturumu yukleyerek dogrudan giris yapmis halde basliyor.
+/**
+ * Test kullanicilarini YARATIR ve oturumlarini diske yazar.
+ *
+ * BU DOSYA 25.8'DE YENIDEN YAZILDI. Neyin gittigini saymak, gocun ne
+ * kazandirdigini en iyi anlatan sey:
+ *   - clerkSetup() + setupClerkTestingToken(): bot korumasini asmak icin.
+ *   - window.Clerk uzerinden signIn.create(...): giris tarayicidaki SDK'dan
+ *     yurutuluyordu.
+ *   - "424242" sabit dogrulama kodu ve +clerk_test adresleri: Clerk'te Device
+ *     Trust acikti, Playwright her testte sifir bir profil actigi icin her
+ *     giris "yeni cihaz" sayiliyor ve e-posta kodu isteniyordu.
+ *   - window.Clerk.user'in dolmasini beklemek.
+ * Hicbiri kalmadi.
+ *
+ * KULLANICILAR HER KOSUDA SIFIRDAN YARATILIYOR. Eskiden Clerk panelinde elle
+ * kurulmus uc hesap vardi ve veritabanindaki satirlari bilerek korunuyordu.
+ * Artik kimligin kaynagi bizim veritabanimiz; onlari da temizleyip yeniden
+ * yaratmak, E2E veritabanini ELLE HAZIRLIK GEREKTIRMEYEN bir yer yapiyor.
+ * Yarim kalmis bir kullanici satirinin kosuyu bozmasi (25.1'de tam bu oldu)
+ * artik mumkun degil.
+ */
 setup("test kullanicilarinin oturumlarini hazirla", async ({ browser }) => {
-  // Clerk'in bot korumasini test ortaminda asmak icin gereken token'i alir.
-  await clerkSetup();
-
   for (const user of E2E_USERS) {
-    const context = await browser.newContext();
-    // Token'i sayfayi acmadan once kuruyoruz ki Clerk'e giden butun istekler
-    // bot korumasini gecebilsin.
-    await setupClerkTestingToken({ context });
+    await createUser(user);
 
+    const context = await browser.newContext();
     const page = await context.newPage();
 
-    // Giris islemi tarayicidaki Clerk nesnesi uzerinden yurutuluyor; once
-    // Clerk'in yuklendigi korumasiz bir sayfada olmamiz gerekiyor.
-    await page.goto("/");
-    await clerk.loaded({ page });
+    // Giris UYGULAMANIN KENDI FORMUNDAN yapiliyor, bir API cagrisindan degil.
+    // Boylece kurulum ayni zamanda giris ekraninin calistigini da kanitliyor;
+    // form bozulursa testler "oturum hazirlanamadi" diye duser - kirk uc test
+    // birden anlasilmaz sekilde degil.
+    await page.goto("/sign-in");
+    await page.getByRole("button", { name: "Parolayla gir" }).click();
+    await page.getByLabel("E-posta").fill(user.email);
+    await page.getByLabel("Parola").fill(user.password);
+    await page.getByRole("button", { name: "Giriş yap", exact: true }).click();
 
-    const result = await page.evaluate(
-      async ({ identifier, password, code }) => {
-        try {
-          const client = window.Clerk.client;
-          if (!client) {
-            return { ok: false as const, reason: "Clerk istemcisi yuklenmedi" };
-          }
-
-          let attempt = await client.signIn.create({
-            strategy: "password",
-            identifier,
-            password,
-          });
-
-          // Sifre dogrulandi ama cihaz taninmadi: ikinci adim olarak e-posta
-          // koduyla dogrulama isteniyor.
-          if (
-            attempt.status === "needs_client_trust" ||
-            attempt.status === "needs_second_factor"
-          ) {
-            const emailFactor = attempt.supportedSecondFactors?.find(
-              (factor) => factor.strategy === "email_code",
-            );
-            if (!emailFactor || !("emailAddressId" in emailFactor)) {
-              return {
-                ok: false as const,
-                reason: `email_code ikinci adimi bulunamadi (durum: ${attempt.status})`,
-              };
-            }
-
-            await attempt.prepareSecondFactor({
-              strategy: "email_code",
-              emailAddressId: emailFactor.emailAddressId,
-            });
-            attempt = await attempt.attemptSecondFactor({
-              strategy: "email_code",
-              code,
-            });
-          }
-
-          if (attempt.status !== "complete" || !attempt.createdSessionId) {
-            return {
-              ok: false as const,
-              reason: `Giris tamamlanmadi (durum: ${attempt.status})`,
-            };
-          }
-
-          await window.Clerk.setActive({ session: attempt.createdSessionId });
-          return { ok: true as const };
-        } catch (error) {
-          return {
-            ok: false as const,
-            reason: error instanceof Error ? error.message : String(error),
-          };
-        }
-      },
-      { identifier: user.email, password: user.password, code: CLERK_TEST_CODE },
-    );
-
-    if (!result.ok) {
-      throw new Error(`${user.email} icin giris basarisiz: ${result.reason}`);
-    }
-
-    // Oturum cerezleri yazilmadan storageState alirsak kaydettigimiz dosya
-    // "giris yapilmamis" bir tarayici durumu olurdu.
-    await page.waitForFunction(() => window.Clerk?.user != null);
-
-    await page.goto("/groups");
+    // Yonlendirmenin TAMAMLANMASINI bekliyoruz. storageState'i cerez
+    // yazilmadan alsaydik, kaydettigimiz dosya "giris yapilmamis" bir tarayici
+    // durumu olurdu - ve butun testler giris ekraninda baslardi.
     await expect(page.getByRole("heading", { name: "Gruplarım" })).toBeVisible();
 
     await context.storageState({ path: user.storageStatePath });
     await context.close();
   }
 });
+
+/**
+ * Kullaniciyi Better Auth'un kayit ucundan yaratir.
+ *
+ * NEDEN UCTAN, veritabanina dogrudan INSERT ile DEGIL: parola hash'ini Better
+ * Auth uretiyor (scrypt) ve onu elle taklit etmek, kutuphanenin ic detayina
+ * bel baglamak olurdu - degistigi gun testler "parola yanlis" der ve sebebi
+ * hicbir yerde gorunmezdi.
+ *
+ * BAGLAM HER SEFERINDE ATILIYOR: kayit olan baglam cerez tutmaya basliyor ve
+ * Better Auth'un CSRF kontrolu cerez GORDUGU anda Origin istiyor. Baglami
+ * atmak, o kontrole hic girmemek demek (ayni gerekce ADR-038'de).
+ */
+async function createUser(user: E2EUser) {
+  const api: APIRequestContext = await request.newContext({ baseURL: BASE_URL });
+  try {
+    const response = await api.post("/api/auth/sign-up/email", {
+      data: { name: user.displayName, email: user.email, password: user.password },
+    });
+    if (!response.ok()) {
+      throw new Error(`${user.email} yaratilamadi: ${response.status()} ${await response.text()}`);
+    }
+  } finally {
+    await api.dispose();
+  }
+}

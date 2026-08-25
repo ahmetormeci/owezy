@@ -51,6 +51,12 @@ export default defineConfig({
       // var olan degiskenleri .env.local ile EZMEZ; bu yuzden burada verilen
       // deger gecerli olur.
       DATABASE_URL: process.env.E2E_DATABASE_URL,
+      // BETTER_AUTH_URL DE EZILMEK ZORUNDA. .env.local'daki deger 3000'i
+      // gosteriyor (gelistirme sunucusu); E2E ise 3100'de kosuyor. Better Auth
+      // guvendigi origin listesini BU adresten turetiyor, yani duzeltilmezse
+      // tarayicidan giden her giris istegi 3100'den gelip 3000 beklenen
+      // listeye takilir ve 403 INVALID_ORIGIN doner.
+      BETTER_AUTH_URL: baseURL,
     },
   },
 });

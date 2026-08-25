@@ -62,33 +62,35 @@ test.describe("kimlik dogrulama", () => {
     await expect(page.getByRole("heading", { name: groupName })).toBeVisible();
   });
 
-  test("api cerezsiz Bearer token ile calisiyor", async ({ browser, playwright }) => {
+  test("api cerezsiz Bearer token ile calisiyor", async ({ playwright }) => {
     // MOBIL SOZLESMESI. ADR-002 is mantigini /api/v1 altina koydu cunku
-    // "mobil istemci de ayni uclari cagiracak" - ama bu bugune kadar bir
-    // VARSAYIMDI. Web istemcisi oturumu cerezle tasiyor; mobil Bearer
-    // kullanacak. Bu test o sozlesmeyi koruyor: biri ileride cerez varsayan
-    // bir kontrol eklerse (CSRF, SameSite, origin dogrulamasi) mobil taraf
-    // sessizce kirilirdi.
-    const page = await pageAs(browser, "owner");
-    await page.goto("/groups");
+    // "mobil istemci de ayni uclari cagiracak" - ama bu bir VARSAYIMDI. Web
+    // istemcisi oturumu cerezle tasiyor; mobil Bearer kullaniyor. Bu test o
+    // sozlesmeyi koruyor: biri ileride cerez varsayan bir kontrol eklerse
+    // (CSRF, SameSite, origin dogrulamasi) mobil taraf sessizce kirilirdi.
+    //
+    // 25.8'DE BELIRTECIN GELDIGI YER DEGISTI ve test GERCEGE YAKLASTI.
+    // Onceden tarayicidaki window.Clerk.session.getToken() cagriliyordu -
+    // yani mobilin hic kullanmadigi bir yoldan. Artik belirtec, mobilin
+    // aldigi yerden aliniyor: bir giris isteginin "set-auth-token" basligi
+    // (bearer eklentisi koyuyor). Yani test artik mobil istemcinin YAPTIGI
+    // seyi yapiyor, benzerini degil.
+    const user = userByKey("owner");
 
-    // Clerk istemci tarafta yuklenmeden session yok.
-    await page.waitForFunction(
-      () => {
-        const clerk = (window as unknown as { Clerk?: { loaded?: boolean; session?: unknown } })
-          .Clerk;
-        return Boolean(clerk?.loaded && clerk?.session);
-      },
-      undefined,
-      { timeout: 20_000 },
-    );
-
-    const token = await page.evaluate(async () => {
-      const clerk = (
-        window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }
-      ).Clerk;
-      return clerk?.session ? await clerk.session.getToken() : null;
-    });
+    // Giris KENDI baglaminda ve baglam atiliyor: kayit olan/giris yapan bir
+    // baglam cerez tutmaya basliyor ve asagidaki NEGATIF kontrol (token yoksa
+    // 401) o cerez yuzunden 200 donerdi - yani test sessizce anlamsizlasirdi.
+    const signIn = await playwright.request.newContext({ baseURL: "http://localhost:3100" });
+    let token: string | undefined;
+    try {
+      const response = await signIn.post("/api/auth/sign-in/email", {
+        data: { email: user.email, password: user.password },
+      });
+      expect(response.status()).toBe(200);
+      token = response.headers()["set-auth-token"];
+    } finally {
+      await signIn.dispose();
+    }
     expect(token).toBeTruthy();
 
     // TAMAMEN YENI bir istek baglami: cerez yok, tarayici durumu yok.

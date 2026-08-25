@@ -7,7 +7,7 @@ import { userByKey } from "./users";
 // hale geldi.
 //
 // Giris GEREKMIYOR: dugme artik karsilama sayfasinda da var. Bu testin
-// hizli olmasinin sebebi bu - Clerk oturumu yuklemiyor.
+// hizli olmasinin sebebi bu - kayitli oturumu yuklemiyor.
 test.describe("dil degistirme", () => {
   test("karsilama sayfasinda dil degisir ve yenilemede kalir", async ({ browser }) => {
     // Kayitli oturum YUKLEMEDEN: giris yapmis kullanici / adresinden
@@ -97,7 +97,7 @@ test.describe("dil degistirme", () => {
     await expect(page.getByRole("heading", { name: "My groups" })).toBeVisible();
 
     // Yeni bir cihazi taklit ediyoruz: YALNIZCA dil cerezini siliyoruz.
-    // Hepsini silseydik Clerk oturumu da giderdi ve test giris ekranina
+    // Hepsini silseydik oturum cerezi de giderdi ve test giris ekranina
     // duserdi - olcmek istedigimiz sey o degil.
     await context.clearCookies({ name: "locale" });
     await page.reload();

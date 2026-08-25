@@ -31,8 +31,19 @@ export async function resetE2EDatabase() {
     // calistirmaz. Tek tek deleteMany yapsaydik ExpenseParticipant uzerindeki
     // "paylarin toplami = tutar" trigger'i DELETE'te de calistigi icin patlardik.
     //
-    // User tablosuna dokunmuyoruz: uc test kullanicisi dursun, her kosuda
-    // yeniden olusturmanin bir faydasi yok.
+    // USER DA SILINIYOR (Faz 25.8). Eskiden korunuyordu cunku test
+    // kullanicilari asil olarak CLERK'te duruyordu ve buradaki satirlar
+    // yalnizca onlarin kopyasiydi; silmek eslesmeyi bozardi. Artik kimligin
+    // kaynagi bu veritabani ve kullanicilari global.setup.ts her kosuda
+    // yeniden yaratiyor.
+    //
+    // Kazanci somut: E2E veritabani ELLE HAZIRLIK ISTEMIYOR ve yarim kalmis
+    // bir kullanici satiri (25.1'de bir migration'i durdurmustu) kosuyu
+    // engelleyemiyor.
+    //
+    // Session/Account/Verification'i ayrica yazmaya gerek yok - CASCADE
+    // onlari User uzerinden goturuyor. Yine de yaziliyorlar: TRUNCATE'in
+    // hangi tablolara dokundugu, okuyan icin acikta durmali.
     await prisma.$executeRawUnsafe(
       `TRUNCATE TABLE
          "ExpenseEdit",
@@ -42,7 +53,11 @@ export async function resetE2EDatabase() {
          "Notification",
          "GroupInvite",
          "GroupMember",
-         "Group"
+         "Group",
+         "Session",
+         "Account",
+         "Verification",
+         "User"
        CASCADE`,
     );
   } finally {
