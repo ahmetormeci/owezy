@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
-    "@clerk/clerk-expo": "^2.20.0",
+    "@clerk/expo": "^4.5.4",
     "expo": "~57.0.16",
     "expo-auth-session": "~57.0.9",
     "expo-constants": "~57.0.14",

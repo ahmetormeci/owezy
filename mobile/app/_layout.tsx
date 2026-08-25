@@ -1,4 +1,4 @@
-import { ClerkProvider } from "@clerk/clerk-expo";
+import { ClerkProvider } from "@clerk/expo";
 import { Slot } from "expo-router";
 import { LocaleProvider } from "../lib/i18n";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";

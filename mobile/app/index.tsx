@@ -1,4 +1,4 @@
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@clerk/expo";
 import { Redirect } from "expo-router";
 import { useMemo } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
@@ -34,7 +34,13 @@ export default function EntryScreen() {
     isLoaded && isSignedIn ? "/api/v1/groups" : null,
   );
 
-  if (!isLoaded || state.kind === "loading") {
+  // SIRA ONEMLI, ve burada bir kez YANLISTI: once "yukleniyor mu", sonra
+  // "girisli mi" diye bakiliyordu. Cikis yapmis kullanicida path null oluyor,
+  // yani useApiGet hicbir zaman istek atmiyor ve state SONSUZA KADAR
+  // "loading" kaliyor - spinner hic kaybolmuyor, alttaki yonlendirme de olu
+  // koda donuyordu. Yani cikis yapan kullanicinin uygulamasi donuyordu.
+  // Once Clerk'in yuklenmesini bekle, sonra oturumu sor, EN SON veriyi bekle.
+  if (!isLoaded) {
     return (
       <SafeAreaView style={s.centered}>
         <ActivityIndicator />
@@ -44,6 +50,14 @@ export default function EntryScreen() {
 
   if (!isSignedIn) {
     return <Redirect href="/sign-in" />;
+  }
+
+  if (state.kind === "loading") {
+    return (
+      <SafeAreaView style={s.centered}>
+        <ActivityIndicator />
+      </SafeAreaView>
+    );
   }
 
   if (state.kind === "error") {

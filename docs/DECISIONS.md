@@ -502,6 +502,67 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-033 — `@clerk/expo` (core-3) geçişi; token cache bizde kalıyor
+**Tarih:** 2026-08-25 · **Durum:** Kabul edildi ve uygulandı
+
+**Karar:** `@clerk/clerk-expo@2` bırakıldı, `@clerk/expo@4` alındı. Kendi
+`lib/token-cache.ts`'imiz **korundu**. `app.json`'ın `plugins` dizisine
+`"@clerk/expo"` eklendi.
+
+**Neden gerekti:** Eski paket deprecated'dı ve asıl mesele kozmetik değil,
+**sürüm ayrışmasıydı**: web `@clerk/react@^6` (Core 3) kullanırken mobil
+`@clerk/clerk-js@5` (Core 2) kullanıyordu. Geçiş bir ayrışma yaratmadı,
+var olanı kapattı.
+
+**Neden şimdi:** Geçiş daha önce denenip **geri alınmıştı** ve sebep bizde
+değildi — `@clerk/expo`'nun her sürümü dolaylı olarak `@clerk/shared@^4.30.0`
+istiyordu ama npm'deki en yenisi 4.29.3'tü, yani paket kurulamıyordu.
+4.30.0 yayınlanınca engel kalktı.
+
+**Config plugin YENİ ve sessizce atlanabilirdi.** Eski pakette `app.plugin.js`
+yoktu, yenisinde var: iOS deployment target'ını, Info.plist'i ve Android
+paketleme ayarlarını yapıyor. Expo'da config plugin'ler `app.json`'a
+yazılmadıkça çalışmaz — yazılmasaydı derleme eksik yapılandırmayla çıkardı ve
+bu ancak native derlemede, yani TestFlight'ta görünürdü.
+
+**`useSignIn`'in sözleşmesi değişti** (bunu `tsc` yakaladı):
+`{ signIn, setActive, isLoaded }` → `{ signIn, fetchStatus }` ve `signIn`
+artık "future" API'si. Sonuç bizim için **sadeleşme**: `create()` +
+`supportedFirstFactors` içinde `email_code` faktörünü bulup
+`prepareFirstFactor` çağırmak gerekmiyor, `emailCode.sendCode({emailAddress})`
+hepsini yapıyor. `setActive` yerine `finalize()`. Hatalar artık fırlatılmıyor,
+`{ error }` olarak dönüyor.
+
+**`getToken()` çevrimdışıyken artık hata fırlatıyor** (`clerk_offline`),
+eskiden sessizce başarısız oluyordu. Tek yerde — `lib/use-api.ts` — mevcut API
+sözleşmesine çevriliyor (`{ ok: false, status: 0, code: "server.offline" }`),
+böylece hiçbir ekran değişmeden düzgün mesaj gösteriyor. Kontrol
+`@clerk/expo`'nun kendi verdiği `isClerkRuntimeError` ile yapılıyor;
+`ClerkOfflineError` sınıfı yalnızca geçişli bir pakette duruyor ve oradan
+import etmek doğrudan bağımlılığımız olmayan bir paketin iç yerleşimine bel
+bağlamak olurdu.
+
+**Hazır token cache kullanılmadı.** Yeni paket `@clerk/expo/token-cache` diye
+SecureStore tabanlı bir tane veriyor. Bizimki korundu çünkü yorumlarında
+gerçek kararlar yazılı — yazma hatasında fırlatmamak (girişi yarıda kesmemek),
+okuma hatasında "oturum yok" saymak. Hazır olanı kara kutu; kazancı yok,
+kaybı o gerekçeler.
+
+**Bağımlılık temizliği ERTELENDİ.** `react-dom`, `expo-web-browser` ve
+`expo-auth-session` yeni sürümde opsiyonel peer oldu (eskisinde ikisi
+zorunluydu). Aynı commit'te silmek, bir şey bozulduğunda hangi değişikliğin
+bozduğunu bilinmez yapardı.
+
+**Alternatifler:** (a) Clerk'in codemod'u (`npx @clerk/upgrade`) — altı import
+satırı için elle yapmak daha okunur ve gözden geçirilebilir; (b) geçişi
+ertelemek — sürüm ayrışması sürerdi ve TestFlight yaklaşıyor.
+
+**Doğrulama derlemeyle yapılmadı**, simülatörde uçtan uca: çıkış → e-posta
+kodu ile giriş → grupların yüklenmesi → uygulamayı öldürüp yeniden açınca
+oturumun durması. Sonuncusu `tokenCache` sözleşmesinin tek gerçek kanıtı.
+
+---
+
 ## ADR-032 — Optimistic locking: `Expense.version` sayacı, zorunlu, yalnızca harcamada
 **Tarih:** 2026-08-25 · **Durum:** Kabul edildi ve uygulandı — **ADR-010'u kapatır**
 

@@ -15,43 +15,43 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (2)
+Updated: 2026-08-25 (3)
 
 Current task:
-  FAZ 20 - CI MOBILI DE DOGRULUYOR. BITTI.
-  Mevcut CI isine dort adim eklendi: mobil "npm ci", tsc, expo-doctor,
-  expo export. Ayri job DEGIL (mobil tsc kokun Prisma client'ina bagli),
-  kosullu DEGIL (src/lib degisikligi mobili kirabiliyor).
+  FAZ 21 - @clerk/expo GECISI. BITTI.
+  @clerk/clerk-expo@2 -> @clerk/expo@4. Deprecation uyarisi gitti, surum
+  ayrismasi (web Core 3 / mobil Core 2) kapandi. Gerekce: ADR-033.
 
 Hemen sonraki adim:
-  @clerk/expo GECISI.
-  Kullanici uc isi SU SIRAYLA yapmayi onayladi:
+  YOK - KULLANICIDAN GOREV BEKLENIYOR.
+  Kullanicinin verdigi uc adimlik planin UCU DE BITTI:
     1. Optimistic locking          BITTI (51bc3c4)
-    2. CI mobili dogrulasin        BITTI (bu commit)
-    3. @clerk/expo gecisi          SIRADA
-  Bu sira KULLANICININ VERDIGI bir plandir - PROGRESS.md'deki aday
-  listesinden farkli, oradan bir sey kendiliginden baslatilmaz.
+    2. CI mobili dogrulasin        BITTI (f9c8ef6)
+    3. @clerk/expo gecisi          BITTI (bu commit)
+  PROGRESS.md'deki aday listesi bir plan DEGIL, secenek listesidir -
+  oradan bir sey kendiliginden baslatilmaz.
 
-  AYRICA: Apple Developer hesabi ONAYLANDI (25 Agustos). Yayin adimlari
-  asagida "YAYIN DURUMU" altinda, sirasiyla.
+  ACIK OLAN TEK YOL: yayin (Apple hesabi onaylandi). Adimlar asagida
+  "YAYIN DURUMU" altinda, neyin neyi bekledigiyle birlikte.
 
-  3. ADIMIN DURUMU - ENGEL KALKTI (25 Agustos'ta dogrulandi):
-    @clerk/clerk-expo DEPRECATED, uygulama acilista uyari basiyor. Gecis
-    denenmis ve GERI ALINMISTI: @clerk/expo'nun her surumu dolayli olarak
-    @clerk/shared@^4.30.0 istiyordu ama npm'de en yenisi 4.29.3'tu, yani
-    paket kurulamiyordu. Sebep bizde degildi.
-    ARTIK: @clerk/shared 4.30.0 yayinlandi. "npm install @clerk/expo
-    --dry-run" temiz cozuluyor (11 paket, cakisma yok).
-    ONEMI KOZMETIK DEGIL - surum ayrismasi:
-      web    @clerk/nextjs@7.5.22 -> @clerk/react@^6   = Core 3
-      mobil  @clerk/clerk-expo@2  -> @clerk/clerk-js@5 = Core 2
-      yenisi @clerk/expo@4.5.3    -> @clerk/clerk-js@^6 = Core 3
-    Gecis ayrisma YARATMAZ, var olani KAPATIR.
-    IS: 6 dosyada import yolu (_layout, sign-in, index, groups/index,
-    groups/[id]/index, lib/use-api) + paket degisimi. AMA major surum
-    atlamasi (core-3 gocu): ClerkProvider'in token saklama sozlesmesi ya da
-    getToken davranisi degismis olabilir. tsc bunu GOSTERMEZ - bu oturumda
-    iki kez tam olarak boyle oldu. Dogrulama simulatorde giris yapmakla.
+FAZ 21'DEN AKILDA TUTULACAKLAR:
+  - useSignIn'in SOZLESMESI DEGISTI ve tsc yakaladi:
+      eski: { signIn, setActive, isLoaded }
+      yeni: { signIn, fetchStatus }, signIn "future" API'si
+    Giris ekrani yeniden yazildi ve KISALDI: create() + faktor arama +
+    prepareFirstFactor yerine tek emailCode.sendCode({emailAddress});
+    setActive yerine finalize(). Hatalar FIRLATILMIYOR, { error } doniyor.
+  - app.json'a CONFIG PLUGIN eklendi ("@clerk/expo"). Eski pakette boyle
+    bir sey YOKTU. Yazilmasaydi eksik yapilandirmayla derlenirdi ve bu
+    ancak native derlemede, yani TestFlight'ta gorunurdu.
+  - getToken() CEVRIMDISIYKEN ARTIK HATA FIRLATIYOR (clerk_offline).
+    Tek yerde (lib/use-api.ts) yakalanip { ok:false, status:0,
+    code:"server.offline" } sozlesmesine cevriliyor - ekranlar degismedi.
+  - KENDI token-cache'imiz KORUNDU. Yeni paket @clerk/expo/token-cache
+    veriyor ama bizimkinin yorumlarinda gercek kararlar yazili.
+  - ERTELENDI: react-dom, expo-web-browser, expo-auth-session yeni surumde
+    OPSIYONEL peer oldu (eskisinde ikisi zorunluydu). Ayni commit'te
+    silmek, bir sey bozulunca hangisinin bozdugunu bilinmez yapardi.
 
 MOBILDE BUGUN NE VAR:
   giris (e-posta + kod), grup listesi / tek grupta dogrudan gruba
@@ -93,7 +93,11 @@ MOBILIN BILINEN ACIKLARI:
   - Mobilin DAVRANIS testi YOK. CI artik derleniyor mu diye bakiyor ama
     ekranlarin ne yaptigina bakan hicbir sey yok; dogrulama simulatorde
     elle yapiliyor.
-  - @clerk/clerk-expo deprecated (yukarida).
+  - Bir hata bu oturumda simulatorde bulundu ve duzeltildi: CIKIS YAPAN
+    kullanicinin uygulamasi DONUYORDU (app/index.tsx once "yukleniyor mu"
+    sonra "girisli mi" diye bakiyordu; cikista istek hic atilmadigi icin
+    durum sonsuza kadar "loading" kaliyordu). Ders: mobilde bir yolu
+    denemediysen o yol CALISMIYOR olabilir - tsc de CI de gostermez.
 
 CI MOBILDE NE KOSUYOR (Faz 20):
   mobil npm ci -> tsc -> expo-doctor -> expo export --clear
@@ -133,12 +137,21 @@ SIMULATOR NOTLARI:
     update_dyld_sim_shared_cache surerken cihazlar listelenmiyor. Bekle.
   - YAZMA HIZI: uzun metni tek seferde yazmak karakter dusuruyor (kontrollu
     TextInput). 8-10 karakterlik parcalar halinde yaz.
+  - ARTI ISARETI YAZILAMIYOR. "e2e+clerk_test@example.com" yazmaya calisinca
+    alan "e2e_test@example.com" oldu - metin enjeksiyonu "+" gorunce kesiyor
+    ve SESSIZCE devam ediyor. Clerk test kullanicilari tam da o desene bagli.
+    COZUM - pano:
+      printf 'e2e+clerk_test@example.com' | xcrun simctl pbcopy <UDID>
+    sonra alana UZUN BAS -> Select All -> Paste.
   - Donanim klavyesi ayari test icin gecici kapatilip GERI ACILDI
     (defaults write com.apple.iphonesimulator ConnectHardwareKeyboard).
 
 TEST VERISI (gelistirme veritabaninda duruyor):
-  testuser1'in iki grubu. "Ev": iki uye, 28 harcama (2026-08/07/06,
-  sonuncusunda 25 tane - sayfalama testi). "Bodrum tatili": tek uye, bir
+  25 Agustos'ta simulatorde UC grup gorundu: "Ofis", "Bodrum tatili", "Ev".
+  Asagidaki not ikisini tarif ediyor; "Ofis" sonradan olusmus (buyuk olasilikla
+  bir E2E kosusundan), icerigi dogrulanmadi.
+  "Ev": iki uye, 28 harcama (2026-08/07/06, sonuncusunda 25 tane -
+  sayfalama testi). "Bodrum tatili": tek uye, bir
   harcama. Uretme yolu: playwright chromium + e2e/.auth/owner.json + sayfa
   icinden fetch (storage state'teki __session kisa omurlu; ciplak request
   context ile 401 doner, gercek tarayicida Clerk taziliyor).

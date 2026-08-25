@@ -218,7 +218,23 @@ React Native'de `<div>` yok. Mobil kendi 20 satırlık sağlayıcısını taşı
 (`@/lib/messages`, 700+ satır) ve `translate()`.
 
 **Oturum belirteci `expo-secure-store`'da saklanır**, `AsyncStorage`'da
-değil — orası düz metin.
+değil — orası düz metin. Önbelleği **kendimiz yazıyoruz**
+(`mobile/lib/token-cache.ts`); `@clerk/expo/token-cache` diye hazır bir tane
+var ama bizimkinin yorumlarında gerçek kararlar yazılı — yazma hatasında
+fırlatmamak (girişi yarıda kesmemek), okuma hatasında "oturum yok" saymak.
+
+**Clerk'in bir Expo config plugin'i var ve `app.json`'a yazılmak zorunda.**
+`plugins` dizisinde `"@clerk/expo"` yoksa iOS/Android yapılandırması
+uygulanmaz ve bu **yalnızca native derlemede** görünür — Expo Go'da her şey
+normal çalışır. Aynısı `expo-web-browser` gibi native modül taşıyan paketler
+için de geçerli; `expo-doctor` bunların **doğrudan bağımlılık** olup
+olmadığını kontrol ediyor ve CI'da koşuyor.
+
+**Kimlik SDK'sı yükseltmesi derlemeyle doğrulanmaz.** `tsc` sözleşme
+değişikliğini yakalayabilir (v4 geçişinde `useSignIn` için yakaladı) ama
+oturumun kalıcılığını gösteremez. Doğrulama simülatörde: çıkış → giriş →
+**uygulamayı öldürüp yeniden açmak**. Sonuncusu `tokenCache`'in tek gerçek
+kanıtı.
 
 **Paylaşılan saf modüller `@/lib/...` ile import edilir.** Takma ad
 `mobile/tsconfig.json`'daki `paths` alanından çözülüyor; Metro depo kökünü

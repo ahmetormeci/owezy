@@ -94,6 +94,9 @@ export const MESSAGES_TR = {
   "auth.not_signed_in": "Bu işlem için giriş yapman gerekiyor",
   "server.unexpected": "Beklenmeyen bir hata oluştu",
   "server.bad_response": "Sunucudan beklenmeyen bir cevap alındı",
+  // Yalnizca MOBILDE olusuyor: @clerk/expo v4 cevrimdisiyken getToken()'dan
+  // hata firlatiyor. Web'de karsiligi yok - tarayici zaten kendi hatasini verir.
+  "server.offline": "Bağlantı yok. İnternete bağlanıp tekrar dene.",
 
   // ==========================================================
   // ARAYUZ METINLERI
@@ -491,6 +494,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "auth.not_signed_in": "You need to sign in to do that",
   "server.unexpected": "Something went wrong",
   "server.bad_response": "The server sent an unexpected response",
+  "server.offline": "No connection. Get back online and try again.",
 
   // ==========================================================
   // INTERFACE TEXT

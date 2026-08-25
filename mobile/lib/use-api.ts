@@ -1,6 +1,38 @@
-import { useAuth } from "@clerk/clerk-expo";
+import { isClerkRuntimeError, useAuth } from "@clerk/expo";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiDelete, apiGet, apiPost, apiPut, type ApiResult } from "./api";
+import { useTranslate } from "./i18n";
+
+/**
+ * Belirteci okur; cihaz cevrimdisiysa bunu API sozlesmesine cevirir.
+ *
+ * NEDEN VAR: @clerk/expo v4'te getToken() cevrimdisiyken HATA FIRLATIYOR
+ * (kod "clerk_offline"); eski surumde sessizce basarisiz oluyordu. Burada
+ * yakalamasaydik ekranlar ham hata metnini gosterirdi - her ekranda ayri
+ * ayri "String(caught)" yaziyor.
+ *
+ * Kontrol @clerk/expo'nun KENDI disari verdigi isClerkRuntimeError ile
+ * yapiliyor. ClerkOfflineError sinifi yalnizca gecisli bir pakette
+ * (@clerk/shared) duruyor; oradan import etmek, dogrudan bagimliligimiz
+ * olmayan bir paketin ic yerlesimine bel baglamak olurdu.
+ *
+ * status 0: ortada bir HTTP cevabi YOK. Istek hic gonderilmedi.
+ *
+ * Cevrimdisi olmayan hatalar OLDUGU GIBI firlatiliyor - yutmak, gercek bir
+ * arizayi "baglanti yok" diye gostermek olurdu.
+ */
+async function readToken(
+  getToken: () => Promise<string | null>,
+): Promise<{ ok: true; token: string | null } | { ok: false; result: ApiResult<never> }> {
+  try {
+    return { ok: true, token: await getToken() };
+  } catch (error) {
+    if (isClerkRuntimeError(error) && error.code === "clerk_offline") {
+      return { ok: false, result: { ok: false, status: 0, code: "server.offline" } };
+    }
+    throw error;
+  }
+}
 
 export type QueryState<T> =
   | { kind: "loading" }
@@ -25,23 +57,27 @@ export function useApiClient() {
   });
 
   const get = useCallback(async <T,>(path: string): Promise<ApiResult<T>> => {
-    const token = await getTokenRef.current();
-    return apiGet<T>(path, token);
+    const read = await readToken(getTokenRef.current);
+    if (!read.ok) return read.result;
+    return apiGet<T>(path, read.token);
   }, []);
 
   const post = useCallback(async <T,>(path: string, body: unknown): Promise<ApiResult<T>> => {
-    const token = await getTokenRef.current();
-    return apiPost<T>(path, token, body);
+    const read = await readToken(getTokenRef.current);
+    if (!read.ok) return read.result;
+    return apiPost<T>(path, read.token, body);
   }, []);
 
   const put = useCallback(async <T,>(path: string, body: unknown): Promise<ApiResult<T>> => {
-    const token = await getTokenRef.current();
-    return apiPut<T>(path, token, body);
+    const read = await readToken(getTokenRef.current);
+    if (!read.ok) return read.result;
+    return apiPut<T>(path, read.token, body);
   }, []);
 
   const remove = useCallback(async <T,>(path: string): Promise<ApiResult<T>> => {
-    const token = await getTokenRef.current();
-    return apiDelete<T>(path, token);
+    const read = await readToken(getTokenRef.current);
+    if (!read.ok) return read.result;
+    return apiDelete<T>(path, read.token);
   }, []);
 
   return useMemo(() => ({ get, post, put, remove }), [get, post, put, remove]);
@@ -58,6 +94,17 @@ export function useApiGet<T>(path: string | null) {
   // ekran spinner'a duserdi - en sik yapilan isin ardindan sayfanin
   // kaybolmasi demek bu.
   const loadedPath = useRef<string | null>(null);
+
+  // Ceviriciyi REF'te tutuyoruz, bagimlilik listesinde degil. Bu dosyanin
+  // getToken icin ogrendigi dersin aynisi: efekt bagimliligina konan bir
+  // fonksiyon gereksiz istek - kotu durumda sonsuz dongu - uretiyor.
+  // useTranslate yalnizca dil degistiginde yenileniyor ve o an yeniden
+  // veri cekmek istemiyoruz.
+  const t = useTranslate();
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  });
 
   useEffect(() => {
     if (path === null) {
@@ -80,7 +127,13 @@ export function useApiGet<T>(path: string | null) {
           loadedPath.current = path;
           setState({ kind: "ok", data: result.data });
         } else {
-          setState({ kind: "error", text: `${result.status} · ${result.code}` });
+          // Kod DEGIL, cumle gosteriliyor. Onceden "404 · expense.not_found"
+          // yaziyordu - gelistirici metni. Cevrimdisi yolu (0 · server.offline)
+          // eklenince bu artik bir ayrinti degil: kullanicinin en sik
+          // gorecegi hata o ve ona kod gostermek olmaz.
+          // translate bilinmeyen kodda kodun kendisini donduruyor, yani en
+          // kotu ihtimalde eski davranisa dusuyoruz.
+          setState({ kind: "error", text: tRef.current(result.code) });
         }
       } catch (error) {
         // Genelde ag hatasi: dev sunucusu kapali ya da

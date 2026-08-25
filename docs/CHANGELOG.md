@@ -8,6 +8,38 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-25 (3)
+
+### `@clerk/expo` geçişi (Faz 21, ADR-033)
+- `@clerk/clerk-expo@2` → `@clerk/expo@4`. Deprecation uyarısı gitti ve
+  asıl mesele olan **sürüm ayrışması kapandı**: web Core 3 kullanırken
+  mobil Core 2'de kalmıştı.
+- **`app.json`'a config plugin eklendi.** Eski pakette yoktu; yenisi iOS
+  deployment target'ını ve Android paketlemeyi ayarlıyor. Yazılmasaydı
+  derleme eksik yapılandırmayla çıkardı — ve bu ancak TestFlight'ta
+  görünürdü.
+- **`useSignIn`'in sözleşmesi değişti** ve `tsc` bunu yakaladı. Giriş
+  ekranı yeniden yazıldı ve **kısaldı**: `create()` + faktör arama +
+  `prepareFirstFactor` yerine tek `emailCode.sendCode()`; `setActive`
+  yerine `finalize()`. Hatalar artık fırlatılmıyor, dönüyor.
+- **Çevrimdışı artık hata fırlatıyor.** `getToken()` çevrimdışıyken
+  `clerk_offline` atıyor; tek yerde (`use-api.ts`) yakalanıp
+  `server.offline` koduna çevriliyor, böylece hiçbir ekran değişmeden
+  düzgün mesaj gösteriyor.
+- **Kendi token cache'imiz korundu** — hazır olanı kara kutu, bizimkinin
+  yorumlarında gerçek kararlar yazılı.
+
+### Çıkış yapan kullanıcının uygulaması donuyormuş
+- `app/index.tsx` önce "yükleniyor mu", sonra "girişli mi" diye
+  bakıyordu. Çıkış yapmış kullanıcıda istek hiç atılmıyor, dolayısıyla
+  durum **sonsuza kadar** "loading" kalıyor ve giriş ekranına yönlendiren
+  satır ölü koda dönüyordu. Sıra düzeltildi.
+- **Göçün getirdiği bir hata değil** — `git diff` o dosyada yalnızca
+  import satırının değiştiğini gösteriyor. Baştan beri oradaydı ve
+  görünmemişti çünkü çıkış yapma yolu hiç denenmemişti. Göçü sınamak için
+  çıkış yapınca ortaya çıktı.
+- Aynı test `signOut()`'un yeni SDK'da çalıştığını da kanıtladı.
+
 ## 2026-08-25 (2)
 
 ### CI mobil tarafa da bakıyor (Faz 20)

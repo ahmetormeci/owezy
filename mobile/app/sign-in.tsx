@@ -1,4 +1,4 @@
-import { useSignIn } from "@clerk/clerk-expo";
+import { useSignIn } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -23,7 +23,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 type Step = "email" | "code";
 
 export default function SignInScreen() {
-  const { signIn, setActive, isLoaded } = useSignIn();
+  // @clerk/expo v4'te useSignIn'in SOZLESMESI DEGISTI (core-3). Eskiden
+  // { signIn, setActive, isLoaded } donuyordu; artik { signIn, fetchStatus }
+  // ve signIn "future" API'si. Farklar:
+  //   - create() + supportedFirstFactors icinde email_code faktorunu bulup
+  //     prepareFirstFactor cagirmak GEREKMIYOR: emailCode.sendCode() adresi
+  //     dogrudan aliyor. O yuzden burasi eskisinden KISA.
+  //   - Hatalar FIRLATILMIYOR, { error } olarak DONUYOR. try/catch yine
+  //     duruyor ama yalnizca ag/beklenmeyen arizalar icin.
+  //   - setActive yerine signIn.finalize().
+  //   - isLoaded yok; kanca signIn'i hazir veriyor.
+  const { signIn, fetchStatus } = useSignIn();
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("email");
@@ -32,29 +42,20 @@ export default function SignInScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Kanca kendi istegini surdururken de dugmeler kapali kalmali.
+  const working = busy || fetchStatus === "fetching";
+
   async function sendCode() {
-    if (!isLoaded || busy) return;
+    if (working) return;
     setBusy(true);
     setError(null);
 
     try {
-      await signIn.create({ identifier: email });
-
-      // Clerk hangi e-posta adresine kod gonderilecegini bir "factor" olarak
-      // donuyor; strateji adiyla degil, o adresin kimligiyle isteniyor.
-      const factor = signIn.supportedFirstFactors?.find(
-        (candidate) => candidate.strategy === "email_code",
-      );
-
-      if (!factor || !("emailAddressId" in factor)) {
-        setError("Bu hesap için e-posta ile giriş açık değil.");
+      const { error: sendError } = await signIn.emailCode.sendCode({ emailAddress: email });
+      if (sendError) {
+        setError(describe(sendError));
         return;
       }
-
-      await signIn.prepareFirstFactor({
-        strategy: "email_code",
-        emailAddressId: factor.emailAddressId,
-      });
       setStep("code");
     } catch (caught) {
       setError(describe(caught));
@@ -64,21 +65,30 @@ export default function SignInScreen() {
   }
 
   async function verifyCode() {
-    if (!isLoaded || busy) return;
+    if (working) return;
     setBusy(true);
     setError(null);
 
     try {
-      const attempt = await signIn.attemptFirstFactor({ strategy: "email_code", code });
-
-      if (attempt.status !== "complete") {
-        // Ikinci faktor gibi tamamlanmamis durumlar. 18.2'nin kapsaminda
-        // degil ama sessiz kalmiyoruz.
-        setError(`Giriş tamamlanamadı: ${attempt.status}`);
+      const { error: verifyError } = await signIn.emailCode.verifyCode({ code });
+      if (verifyError) {
+        setError(describe(verifyError));
         return;
       }
 
-      await setActive({ session: attempt.createdSessionId });
+      if (signIn.status !== "complete") {
+        // Ikinci faktor gibi tamamlanmamis durumlar. Kapsamimizda degil ama
+        // sessiz kalmiyoruz - kullanici neden iceri giremedigini gormeli.
+        setError(`Giriş tamamlanamadı: ${signIn.status}`);
+        return;
+      }
+
+      // setActive'in yerini aliyor: tamamlanmis girisi aktif oturuma cevirir.
+      const { error: finalizeError } = await signIn.finalize();
+      if (finalizeError) {
+        setError(describe(finalizeError));
+        return;
+      }
       router.replace("/");
     } catch (caught) {
       setError(describe(caught));
@@ -107,10 +117,10 @@ export default function SignInScreen() {
               keyboardType="email-address"
               textContentType="emailAddress"
               placeholder="ornek@owezy.net"
-              editable={!busy}
+              editable={!working}
             />
-            <Pressable style={styles.button} onPress={() => void sendCode()} disabled={busy}>
-              {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Kod gönder</Text>}
+            <Pressable style={styles.button} onPress={() => void sendCode()} disabled={working}>
+              {working ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Kod gönder</Text>}
             </Pressable>
           </>
         ) : (
@@ -125,12 +135,12 @@ export default function SignInScreen() {
               keyboardType="number-pad"
               textContentType="oneTimeCode"
               placeholder="000000"
-              editable={!busy}
+              editable={!working}
             />
-            <Pressable style={styles.button} onPress={() => void verifyCode()} disabled={busy}>
-              {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Giriş yap</Text>}
+            <Pressable style={styles.button} onPress={() => void verifyCode()} disabled={working}>
+              {working ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Giriş yap</Text>}
             </Pressable>
-            <Pressable onPress={() => setStep("email")} disabled={busy}>
+            <Pressable onPress={() => setStep("email")} disabled={working}>
               <Text style={styles.link}>E-postayı değiştir</Text>
             </Pressable>
           </>
@@ -142,19 +152,41 @@ export default function SignInScreen() {
   );
 }
 
-// Clerk hatalari {errors:[{message,longMessage}]} seklinde geliyor. Ham nesneyi
-// ekrana basmak kullaniciya hicbir sey anlatmaz.
+/**
+ * Clerk hatasini okunur bir cumleye cevirir. Ham nesneyi ekrana basmak
+ * kullaniciya hicbir sey anlatmaz.
+ *
+ * IKI SEKIL BIRDEN ele aliniyor cunku v4'te ikisi de gelebiliyor:
+ *   - DONEN hata: ClerkError - duz nesne, { message, longMessage, code }.
+ *     Yeni emailCode.sendCode/verifyCode/finalize bunu doniyor.
+ *   - FIRLATILAN hata: {errors:[{message}]} - eski Clerk sekli, ag katmaninda
+ *     hala cikabiliyor.
+ *
+ * longMessage ONCE deneniyor: Clerk'in kendi tarifine gore kullaniciya
+ * gosterilmek uzere yazilan alan o; message gelistiriciye bakan metin.
+ */
 function describe(caught: unknown): string {
-  if (
-    caught &&
-    typeof caught === "object" &&
-    "errors" in caught &&
-    Array.isArray(caught.errors) &&
-    caught.errors.length > 0
-  ) {
-    const first: unknown = caught.errors[0];
-    if (first && typeof first === "object" && "message" in first && typeof first.message === "string") {
-      return first.message;
+  if (caught && typeof caught === "object") {
+    if ("longMessage" in caught && typeof caught.longMessage === "string" && caught.longMessage) {
+      return caught.longMessage;
+    }
+    if (
+      "errors" in caught &&
+      Array.isArray(caught.errors) &&
+      caught.errors.length > 0
+    ) {
+      const first: unknown = caught.errors[0];
+      if (
+        first &&
+        typeof first === "object" &&
+        "message" in first &&
+        typeof first.message === "string"
+      ) {
+        return first.message;
+      }
+    }
+    if ("message" in caught && typeof caught.message === "string" && caught.message) {
+      return caught.message;
     }
   }
   return "Bir şeyler ters gitti. Tekrar dener misin?";

@@ -939,7 +939,8 @@ kural [CONVENTIONS.md](CONVENTIONS.md) "Mobil" bölümüne yazıldı. **Bu hatay
 hiçbir statik kontrol göstermedi** — tsc temizdi, paket doğru derleniyordu;
 yalnızca uygulamayı açıp giriş yapınca çıktı.
 
-**`@clerk/expo` GEÇİŞİ DENENDİ VE ŞU AN YAPILAMIYOR.** Sebep bizde değil:
+**`@clerk/expo` GEÇİŞİ O SIRADA YAPILAMADI** (Faz 21'de yapıldı — ADR-033).
+Sebep bizde değil:
 `@clerk/expo`'nun yayınlanmış her sürümü (4.5.1, 4.5.2, 4.5.3 — `latest` dahil)
 dolaylı olarak **`@clerk/shared@^4.30.0`** istiyor ama npm'deki en yeni sürüm
 **4.29.3**. Yani paket kurulamıyor. Bir sürüm sabitlemesiyle aşılmıyor: zincir
@@ -947,19 +948,19 @@ dolaylı olarak **`@clerk/shared@^4.30.0`** istiyor ama npm'deki en yeni sürüm
 kırık bir yayın penceresinin etrafına büyüyen bir sabitleme listesi gerekirdi —
 auth katmanında yapılacak şey değil. Denendi, geri alındı, ağaç temiz.
 
-**TEKRAR DENEME KOŞULU:** `npm view @clerk/shared version` **4.30.0** ya da
-üstünü gösterdiğinde geçiş tek komutla yapılabilir. Kontrol tek satır:
-`npm view @clerk/shared version`.
+**TEKRAR DENEME KOŞULU DOLDU** (25 Ağustos): `@clerk/shared` 4.30.0 yayınlandı
+ve geçiş yapıldı. Bkz. **Faz 21**.
 
 **BULUNAN SORUN — `@clerk/clerk-expo` DEPRECATED.** Uygulama açılışta uyarı
 basıyor: paket bırakılmış, yerine `@clerk/expo` geçmiş. Bu kozmetik değil,
 sürüm ayrışması: web (`@clerk/nextjs@7.5.22`) `@clerk/react@^6` yani **Core 3**
 kullanıyor; `@clerk/clerk-expo` ise `@clerk/clerk-js@5` yani **Core 2**.
 `@clerk/expo@4.5.2` Core 3'te. Yani geçiş bir ayrışma yaratmaz, **var olanı
-kapatır**. Karar bekliyor — henüz yapılmadı.
+kapatır**. ~~Karar bekliyor — henüz yapılmadı.~~ **YAPILDI, Faz 21.**
 
-**Bilinen boşluk:** CI mobil tarafı doğrulamıyor. Kök CI `npm ci` + tsc + lint
-koşuyor ve `mobile/` bağımlılıklarını kurmuyor. Tek ekranı olan bir uygulama
+**Bilinen boşluk (O SIRADA):** CI mobil tarafı doğrulamıyordu. **Faz 20'de
+kapatıldı.** Kök CI `npm ci` + tsc + lint koşuyordu ve `mobile/`
+bağımlılıklarını kurmuyordu. Tek ekranı olan bir uygulama
 için CI'a ikinci kurulum adımı eklemek erken; ekran sayısı artınca dönülecek.
 
 **Test:** 518 birim / 36 E2E — **ikisi de yalnızca web'i kapsıyor.** Mobilin otomatik testi yok, doğrulama simülatörde elle yapılıyor.
@@ -1030,6 +1031,44 @@ CI `--clear` kullanıyor; TestFlight derlemesinde de kullanılmalı.
 **Kapsam dışı:** mobil lint (bugün yok; eklemek yeni devDependency ister ve
 Faz 18'deki altı gerçek hatanın hiçbirini yakalamazdı) ve mobil birim testi
 (ayrı aday olarak duruyor).
+
+---
+
+## Faz 21 — `@clerk/expo` geçişi · **BİTTİ**
+
+Faz 18'den kalan son borç. Uygulama her açılışta deprecation uyarısı
+basıyordu ve altında **sürüm ayrışması** vardı: web Core 3, mobil Core 2.
+Geçiş bir ayrışma yaratmadı, var olanı kapattı. Gerekçeler ADR-033'te.
+
+**Beklediğimden fazlası çıktı, ikisi de iyi tarafa:**
+
+`useSignIn`'in sözleşmesi değişmiş ve **`tsc` bunu yakaladı** — göçün en
+riskli parçası derlemede görünür oldu. Yeni API bizim akışımızı
+**kısalttı**: `create()` + `supportedFirstFactors` içinde faktör arama +
+`prepareFirstFactor` yerine tek `emailCode.sendCode({emailAddress})`.
+
+`app.json`'a **config plugin** eklemek gerekiyordu; eski pakette böyle bir
+şey yoktu. Bu, sessizce atlanabilecek türden: eksikliği ancak native
+derlemede, yani TestFlight'ta görünürdü.
+
+**Simülatörde çıkış yapınca bir hata ortaya çıktı ve göçle ilgisi yoktu.**
+`app/index.tsx` önce "yükleniyor mu" sonra "girişli mi" diye bakıyordu;
+çıkış yapmış kullanıcıda istek hiç atılmadığı için durum sonsuza kadar
+"loading" kalıyor ve yönlendirme satırı ölü koda dönüyordu — yani çıkış
+yapan kullanıcının uygulaması donuyordu. `git diff` o dosyada yalnızca
+import satırının değiştiğini gösteriyor: hata baştan beri oradaydı,
+görünmemişti çünkü çıkış yolu hiç denenmemişti.
+
+**Doğrulama derlemeyle değil, simülatörde uçtan uca:** çıkış → e-posta
+koduyla giriş → grupların yüklenmesi → uygulamayı öldürüp yeniden açınca
+oturumun durması. Sonuncusu `tokenCache`'in tek gerçek kanıtı; kimlik
+SDK'sının major atlamasında `tsc` bunu gösteremez.
+
+**Ertelenen:** `react-dom`, `expo-web-browser`, `expo-auth-session` yeni
+sürümde opsiyonel peer oldu. Aynı commit'te silmek, bir şey bozulduğunda
+hangi değişikliğin bozduğunu bilinmez yapardı.
+
+**Test:** 535 birim / 37 E2E (ikisi de web). Mobil dört CI adımı da geçti.
 
 ---
 
