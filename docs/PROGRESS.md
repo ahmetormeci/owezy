@@ -1134,10 +1134,12 @@ dönüyor ve cümleyi çağıran taraf sözlükten koyuyor. Tamamlanmamış giri
 durumları da ham durum adı basmak yerine kullanıcıyı çalışan yola (web'e)
 yönlendiriyor.
 
-**Bulunan açık — `needs_client_trust`:** Clerk'te Device Trust açıksa doğru
-parola bile yetmiyor; tanınmayan cihazda ek doğrulama isteniyor ve o
-doğrulama e-posta koduyla yapılıyor. Yani Device Trust production'da açıksa
-bu çözüm inceleyiciyi kurtarmaz. Panelden kontrol edilmeli.
+**Device Trust engeli çıktı ve aşıldı.** Parola tek başına yetmedi: Clerk'in
+Device Trust koruması doğru paroladan sonra bile ek doğrulama istiyor
+(`needs_client_trust`) ve o doğrulama e-posta koduyla yapılıyor. Çözüm,
+demo kullanıcıyı `bypass_client_trust` ile muaf tutmak oldu — böylece koruma
+**herkeste açık kaldı**. Alan belgelenmemiş olduğu için her gönderimden önce
+doğrulanmalı; adımlar ADR-035'te.
 
 **Doğrulama simülatörde uçtan uca:** çıkış → parolayla giriş → grupların
 yüklenmesi. iOS'un parola kaydetme teklifi de alanın doğru tanındığının

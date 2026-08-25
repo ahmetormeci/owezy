@@ -34,11 +34,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
   `needs_client_trust`) artık ham durum adı basmıyor; kullanıcıyı
   **çalışan yola** — web'e — yönlendiren bir cümle gösteriyor.
 
-### Bulunan açık
-- **`needs_client_trust`:** Clerk'te Device Trust açıksa doğru parola bile
-  yetmiyor, tanınmayan cihazda ek doğrulama isteniyor ve o doğrulama
-  e-posta koduyla yapılıyor. Yani Device Trust production'da açıksa demo
-  hesap çözümü inceleyiciyi kurtarmaz. Panelden kontrol edilmeli.
+### Device Trust engeli çıktı ve aşıldı
+- Parola tek başına yetmedi: Clerk'in **Device Trust** koruması doğru
+  paroladan sonra bile ek doğrulama istiyor (`needs_client_trust`) ve o
+  doğrulama e-posta koduyla yapılıyor — demo hesap kilitleniyordu.
+  Kullanıcının JSON'ı tanıyı kesinleştirdi: `password_enabled: true`,
+  `two_factor_enabled: false`, `last_sign_in_at: null` — Clerk'in saydığı
+  **üç koşulun üçü de** sağlanıyor.
+- **MFA açmak kurtarmıyor:** o durumda `needs_second_factor` dönüyor,
+  yani ikinci adımdan kaçılmıyor, adı değişiyor.
+- **Çözüm kullanıcı bazında muafiyet:** demo kullanıcının
+  `bypass_client_trust` alanı Backend API ile `true` yapıldı. Böylece
+  **Device Trust herkeste açık kaldı** — parolayı yeni açtığımız gün
+  kimlik doldurma korumasını kapatmak kötü bir takas olurdu.
+- **Alan belgelenmemiş.** Çalışıyor ama sessizce bozulabilir ve sonucu bir
+  sonraki incelemede inceleyicinin içeri girememesi olur. Her gönderimden
+  önce doğrulama adımı ADR-035'e yazıldı.
 
 ## 2026-08-25 (4)
 

@@ -41,11 +41,24 @@ Current task:
      harcama, bir odesme. Production veritabani 24 Agustos'ta temizlendi,
      yani bombos; inceleyici bos ekran gorurse "calismiyor" der.
 
-  DIKKAT - BU COZUMU BOZABILECEK TEK SEY: Clerk'te "Device Trust" acik olursa
-  dogru parola bile yetmiyor, taninmayan cihazda ek dogrulama isteniyor ve o
-  dogrulama E-POSTA KODUYLA yapiliyor (durum: needs_client_trust). Yani
-  Device Trust production'da acikSA inceleyici yine kilitlenir. PANELDEN
-  KONTROL ET.
+  DEVICE TRUST ENGELI CIKTI VE ASILDI (25 Agustos):
+  Clerk'in Device Trust korumasi, dogru paroladan sonra bile ek dogrulama
+  istiyordu (needs_client_trust) ve o dogrulama e-posta koduyla yapiliyor -
+  yani demo hesap kilitleniyordu. Cozum kullanici bazinda muafiyet:
+
+    PATCH https://api.clerk.com/v1/users/user_3IPH520z2gWytNtqkHrg1xP1kYP
+    { "bypass_client_trust": true }        -> true dondu, calisti
+
+  Boylece Device Trust HERKESTE ACIK KALDI; ornek genelinde kapatmadik.
+
+  AMA BU ALAN BELGELENMEMIS. Sessizce calismayi birakabilir ve sonucu, bir
+  sonraki incelemede inceleyicinin iceri girememesi olur.
+  HER GONDERIMDEN ONCE DOGRULA:
+    1. GET .../v1/users/<id> -> bypass_client_trust hala true mu
+    2. GIZLI PENCEREDE owezy.net'e demo bilgileriyle gir. Gizli pencere
+       Clerk icin YENI ISTEMCI demek, yani Device Trust'i tetikleyecek kosul.
+       Kod istenmeden giriyorsan muafiyet calisiyor.
+  Bozulursa yedek plan: Protect -> Rules -> Device Trust -> Enable kapat.
 
 Hemen sonraki adim:
   2FA - MOBIL IKINCI FAKTOR ADIMI, SONRA PANELDEN ACMA.

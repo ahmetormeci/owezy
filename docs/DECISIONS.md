@@ -533,10 +533,39 @@ sorunu çözmek olurdu.
 kırılganlık; (b) Sign in with Apple — ADR-030'da çift hesap riski nedeniyle
 elenmişti, karar değişmedi.
 
-**BİLİNEN AÇIK — `needs_client_trust`:** Clerk'te "Device Trust" açıksa doğru
-parola bile yetmiyor; tanınmayan cihazdan girişte ek bir doğrulama isteniyor
-ve o doğrulama e-posta koduyla yapılıyor. Yani Device Trust production'da
-açıksa bu çözüm inceleyiciyi kurtarmaz. Panelden kontrol edilmeli.
+**`needs_client_trust` ENGELİ ÇIKTI VE AŞILDI (25 Ağustos).** Clerk'in
+"Device Trust" koruması, üç koşul birden sağlandığında doğru paroladan sonra
+bile ek doğrulama istiyor: (1) geçerli parola, (2) kullanıcının MFA'sı yok,
+(3) yeni cihaz. Demo hesap üçünü de sağlıyordu, yani parola çözümü tek başına
+inceleyiciyi kurtarmıyordu. MFA açmak da kurtarmıyor — Clerk'in kendi
+dokümanına göre o durumda `needs_second_factor` dönüyor, yani ikinci adımdan
+kaçılmıyor, adı değişiyor.
+
+**Çözüm: kullanıcı bazında muafiyet.** Demo kullanıcının `bypass_client_trust`
+alanı Backend API ile `true` yapıldı:
+
+    PATCH https://api.clerk.com/v1/users/<user_id>
+    { "bypass_client_trust": true }
+
+Böylece **Device Trust herkes için açık kaldı** — korumayı örnek genelinde
+kapatmak zorunda kalmadık. Alternatif buydu ve parolayı yeni açtığımız gün
+kimlik doldurma korumasını kapatmak kötü bir takas olurdu.
+
+**AMA BU ALAN BELGELENMEMİŞ.** Kullanıcı nesnesinde görünüyor ve yazma
+çalışıyor, ancak Clerk onu belgelemiyor; sessizce çalışmayı bırakabilir.
+Sonucu şu olur: bir sonraki mağaza incelemesinde inceleyici içeri giremez ve
+sebebi hiçbir yerde görünmez.
+
+**KURAL — HER GÖNDERİMDEN ÖNCE DOĞRULA.** İki adım:
+
+1. Alan hâlâ `true` mu:
+   `GET https://api.clerk.com/v1/users/<user_id>` → `bypass_client_trust`
+2. Gerçekten çalışıyor mu: **gizli pencerede** owezy.net'e demo bilgileriyle
+   gir. Gizli pencere Clerk için yeni bir istemci demek, yani Device Trust'ı
+   tetikleyecek koşul. Kod istenmeden içeri giriyorsan muafiyet çalışıyor.
+
+Bu bozulursa yedek plan: Device Trust'ı örnek genelinde kapatmak
+(Protect → Rules → Device Trust → Manage → Enable kapalı → Save).
 
 ---
 
