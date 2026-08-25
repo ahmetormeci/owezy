@@ -1,4 +1,3 @@
-import { useSignIn } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -11,234 +10,103 @@ import {
   TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { SecondFactor, type SecondFactorKind } from "../components/second-factor";
-import { describeClerkError } from "../lib/clerk-errors";
+import { useSession } from "../lib/auth";
 import { useTranslate } from "../lib/i18n";
 
-// NEDEN KENDI EKRANIMIZ: Clerk'in Expo tarafinda web'deki <SignIn /> bilesenin
-// dengi yok; giris akisini kancalarla kendimiz kuruyoruz.
-//
-// BUNUN BEDELI: web'de Clerk'in kendi formu her adimi biliyor, burada
-// BILDIGIMIZ kadari calisiyor. Ikinci faktor tam da bu yuzden bir sure
-// eksik kaldi ve 2FA'yi acan kullaniciyi mobilden kilitleyecekti.
+// NEDEN KENDI EKRANIMIZ: mobilde hazir bir giris bileseni kullanmiyoruz;
+// akisi kendimiz kuruyoruz. Web'deki src/components/sign-in-form.tsx ile
+// AYNI adimlar, ayni sirada - iki istemcinin ayni akisi farkli sunmasi, ayni
+// uygulamayi iki ayri urun gibi gosterirdi.
 //
 // NEDEN E-POSTA KODU, OAUTH DEGIL: e-posta kodu hicbir yonlendirme
-// yapilandirmasi istemiyor ve development orneginin +clerk_test kullanicilari
-// ile sabit 424242 kodu burada da calisiyor - yani E2E icin kurdugumuz
-// kimlikler mobilde dogrudan ise yariyor. Google/GitHub sonraki bir is.
+// yapilandirmasi istemiyor. Google/Apple girisi sonraki bir is (ADR-030'daki
+// acik maddelerden biri).
 //
-// PAROLA DA VAR ama IKINCIL (asagidaki Step notu). Web'de zaten calisiyordu:
-// Clerk'in <SignIn /> bileseni parola acikken alani kendisi gosteriyor ve
-// e2e/global.setup.ts kullanicilari bastan beri parolayla giriyor.
+// KAYIT EKRANI YOK ve bu bir eksiklik degil: Better Auth'un e-posta kodu
+// akisi, adres kayitli degilse kullaniciyi KENDISI yaratiyor. Web'de ayri bir
+// kayit formu olmasinin tek sebebi gorunen ADI sorabilmek; mobilde ad
+// e-postaya dusuyor (better-auth.ts'teki databaseHooks) - web'de koddan giren
+// birinin durumuyla ayni.
 
 /**
  * Ekran bir DURUM MAKINESI. Adimlarin ayrintisi degil, sirasi burada.
  *
- * "password" adiminin varlik sebebi App Store incelemesi: inceleyici
- * uygulamaya girmek zorunda ve e-posta koduyla girmesi, onun okuyabildigi bir
- * posta kutusu vermemizi gerektirirdi - gonderimin kaderi bizim kontrol
- * etmedigimiz bir posta saglayicisina baglanirdi. Parola o bagimliligi
- * kaldiriyor.
+ * "password" adiminin varlik sebebi App Store incelemesi (ADR-035):
+ * inceleyici uygulamaya girmek zorunda ve e-posta koduyla girmesi, onun
+ * okuyabildigi bir posta kutusu vermemizi gerektirirdi - gonderimin kaderi
+ * bizim kontrol etmedigimiz bir posta saglayicisina baglanirdi. Parola o
+ * bagimliligi kaldiriyor.
  *
  * BIRINCIL YOL YINE E-POSTA KODU. Parola ikincil bir baglantinin arkasinda;
  * normal kullanicinin gordugu akis degismedi.
  *
- * "mfa" adimi ILK IKISININ ARDINDAN gelebilir: hangi yolla girdigin fark
- * etmeksizin Clerk ikinci bir dogrulama isteyebiliyor.
+ * IKINCI FAKTOR ADIMI SIMDILIK YOK: Clerk'in MFA akisini yuruten adim
+ * (ADR-036) bu fazda kaldirildi, cunku ikinci faktoru artik Better Auth'un
+ * twoFactor eklentisi saglayacak ve uclari farkli. Faz 25.6'da geri geliyor.
  */
-type Step = "email" | "code" | "password" | "mfa";
+type Step = "email" | "code" | "password";
 
 export default function SignInScreen() {
-  // @clerk/expo v4'te useSignIn'in SOZLESMESI DEGISTI (core-3). Eskiden
-  // { signIn, setActive, isLoaded } donuyordu; artik { signIn, fetchStatus }
-  // ve signIn "future" API'si. Farklar:
-  //   - create() + supportedFirstFactors icinde email_code faktorunu bulup
-  //     prepareFirstFactor cagirmak GEREKMIYOR: emailCode.sendCode() adresi
-  //     dogrudan aliyor. O yuzden burasi eskisinden KISA.
-  //   - Hatalar FIRLATILMIYOR, { error } olarak DONUYOR. try/catch yine
-  //     duruyor ama yalnizca ag/beklenmeyen arizalar icin.
-  //   - setActive yerine signIn.finalize().
-  //   - isLoaded yok; kanca signIn'i hazir veriyor.
-  const { signIn, fetchStatus } = useSignIn();
+  const { sendCode, signInWithCode, signInWithPassword } = useSession();
   const router = useRouter();
   const t = useTranslate();
 
   const [step, setStep] = useState<Step>("email");
-  const [factor, setFactor] = useState<SecondFactorKind | null>(null);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Kanca kendi istegini surdururken de dugmeler kapali kalmali.
-  const working = busy || fetchStatus === "fetching";
-
   /**
-   * Parolayla giris. BIRINCIL YOL DEGIL - ikincil bir baglantinin arkasinda.
+   * Butun yollarin ORTAK kuyrugu.
    *
-   * App Store incelemesi icin gerekli (bkz. Step tipinin yanindaki not):
-   * inceleyicinin bir posta kutusuna erisebilmesini gerektirmeyen tek yol bu.
-   * Gercek kullanicilar da parola tercih ederse kullanabilir.
+   * Cagrilar HATA FIRLATMIYOR: lib/auth.tsx her durumda { ok } donduruyor ve
+   * basarisizlikta hazir bir MESAJ KODU veriyor (ag hatasi dahil). Yani
+   * burada try/catch'e gerek yok ve ekranda ham hata metni cikmasi mumkun
+   * degil.
    */
-  async function signInWithPassword() {
-    if (working) return;
+  async function run(call: () => Promise<{ ok: true } | { ok: false; code: string }>) {
+    if (busy) return false;
     setBusy(true);
     setError(null);
+    const result = await call();
+    setBusy(false);
 
-    try {
-      const { error: passwordError } = await signIn.password({
-        emailAddress: email,
-        password,
-      });
-      if (passwordError) {
-        setError(describeClerkError(passwordError) ?? t("ui.sign_in_failed"));
-        return;
-      }
-      await finishSignIn();
-    } catch (caught) {
-      setError(describeClerkError(caught) ?? t("ui.sign_in_failed"));
-    } finally {
-      setBusy(false);
+    if (!result.ok) {
+      setError(t(result.code));
+      return false;
     }
+    return true;
   }
 
-  /**
-   * Butun yollarin ORTAK kuyrugu: Clerk'in durumuna bak, ne gerekiyorsa ona
-   * gonder. Ilk faktorden de, ikinci faktor bittikten sonra da buraya
-   * geliniyor.
-   *
-   * DIKKAT: signIn bir KAYNAK nesnesi ve YERINDE degisiyor. Yukaridaki
-   * await'ten sonra .status taze degeri veriyor; kancayi yeniden okumaya
-   * ya da yeni bir render beklemeye gerek yok.
-   */
-  async function finishSignIn() {
-    switch (signIn.status) {
-      case "complete":
-        break;
-
-      // IKISI DE AYNI YERE GIDIYOR. needs_second_factor kullanicinin kendi
-      // actigi 2FA; needs_client_trust ise Clerk'in cihazi tanimamasi
-      // (Device Trust). Clerk ikincisini de ikinci faktor olarak yurutuyor.
-      case "needs_second_factor":
-      case "needs_client_trust":
-        await enterSecondFactor();
-        return;
-
-      // Geriye kalan durumlar (needs_new_password, needs_protect_check, ...)
-      // mobilde YURUTULMUYOR. Ham durum adini ekrana basmak yerine
-      // kullaniciyi CALISAN yola gonderiyoruz: web'de Clerk'in kendi formu
-      // hepsini biliyor.
-      default:
-        setError(t("ui.sign_in_needs_web"));
-        return;
-    }
-
-    // setActive'in yerini aliyor: tamamlanmis girisi aktif oturuma cevirir.
-    const { error: finalizeError } = await signIn.finalize();
-    if (finalizeError) {
-      setError(describeClerkError(finalizeError) ?? t("ui.sign_in_failed"));
-      return;
-    }
-    router.replace("/");
-  }
-
-  /**
-   * Hangi ikinci faktorle devam edecegimizi SUNUCU soyluyor.
-   * supportedSecondFactors yalnizca ilk faktor dogrulandiktan sonra doluyor -
-   * yani tam da buraya geldigimizde.
-   *
-   * SIRA: authenticator > e-posta kodu > yalnizca yedek kod. Yedek kod
-   * normalde bir CIKIS KAPISI, ilk secenek degil; tek secenek kaldiysa
-   * elbette o.
-   *
-   * phone_code KASTEN LISTEDE YOK: SMS ornek genelinde kapali. Yalnizca o
-   * destekleniyorsa bos bir ekran gostermek yerine web'e yonlendiriyoruz.
-   */
-  async function enterSecondFactor() {
-    const strategies = new Set(signIn.supportedSecondFactors.map((f) => f.strategy));
-
-    const chosen: SecondFactorKind | null = strategies.has("totp")
-      ? "totp"
-      : strategies.has("email_code")
-        ? "email_code"
-        : strategies.has("backup_code")
-          ? "backup_code"
-          : null;
-
-    if (!chosen) {
-      setError(t("ui.sign_in_needs_web"));
-      return;
-    }
-
-    // Kodu BURADA gonderiyoruz, bilesenin icinde degil: cagiran taraf zaten
-    // dondurucuyu gosteriyor. Iceride gondermek, once bos bir kod alani
-    // gosterip sonra "gonderildi" demek olurdu.
-    if (chosen === "email_code") {
-      const { error: sendError } = await signIn.mfa.sendEmailCode();
-      if (sendError) {
-        setError(describeClerkError(sendError) ?? t("ui.sign_in_failed"));
-        return;
-      }
-    }
-
-    setFactor(chosen);
-    setStep("mfa");
-  }
-
-  async function sendCode() {
-    if (working) return;
-    setBusy(true);
-    setError(null);
-
-    try {
-      const { error: sendError } = await signIn.emailCode.sendCode({ emailAddress: email });
-      if (sendError) {
-        setError(describeClerkError(sendError) ?? t("ui.sign_in_failed"));
-        return;
-      }
+  async function requestCode() {
+    if (await run(() => sendCode(email))) {
       setStep("code");
-    } catch (caught) {
-      setError(describeClerkError(caught) ?? t("ui.sign_in_failed"));
-    } finally {
-      setBusy(false);
     }
   }
 
   async function verifyCode() {
-    if (working) return;
-    setBusy(true);
-    setError(null);
-
-    try {
-      const { error: verifyError } = await signIn.emailCode.verifyCode({ code });
-      if (verifyError) {
-        setError(describeClerkError(verifyError) ?? t("ui.sign_in_failed"));
-        return;
-      }
-      await finishSignIn();
-    } catch (caught) {
-      setError(describeClerkError(caught) ?? t("ui.sign_in_failed"));
-    } finally {
-      setBusy(false);
+    if (await run(() => signInWithCode(email, code))) {
+      // Oturum zaten kaydedildi; buradan sonrasini "/" karar veriyor
+      // (0 / 1 / 2+ grup). Yonlendirme replace: giris ekrani gecmise
+      // yazilmamali, yoksa geri tusu girisli kullaniciyi forma dondururdu.
+      router.replace("/");
     }
   }
 
-  /**
-   * Basa donus. EKRANI temizlemek yetmiyor: Clerk kendi tarafinda yarim
-   * kalmis giris denemesini tutuyor ve reset() onu birakmanin yolu.
-   * Ikinci faktor gelene kadar bu fark gorunmuyordu; artik yarim kalan sey
-   * dogrulanmis bir ilk faktor olabiliyor.
-   */
-  async function startOver() {
+  async function usePassword() {
+    if (await run(() => signInWithPassword(email, password))) {
+      router.replace("/");
+    }
+  }
+
+  /** Basa donus: adimi VE girilen degerleri birlikte temizliyor. */
+  function startOver() {
     setError(null);
     setCode("");
     setPassword("");
-    setFactor(null);
     setStep("email");
-    // API cagrisi yapmiyor, yalnizca yerel durumu siliyor - o yuzden
-    // hatasini gosterecek bir yer de yok.
-    await signIn.reset();
   }
 
   return (
@@ -249,13 +117,7 @@ export default function SignInScreen() {
       >
         <Text style={styles.title}>{t("ui.app_name")}</Text>
 
-        {step === "mfa" && factor ? (
-          <SecondFactor
-            kind={factor}
-            onVerified={finishSignIn}
-            onCancel={() => void startOver()}
-          />
-        ) : step === "code" ? (
+        {step === "code" ? (
           <>
             <Text style={styles.label}>{t("ui.verification_code")}</Text>
             <Text style={styles.muted}>{t("ui.code_sent_to", { email })}</Text>
@@ -267,16 +129,16 @@ export default function SignInScreen() {
               keyboardType="number-pad"
               textContentType="oneTimeCode"
               placeholder={t("ui.code_placeholder")}
-              editable={!working}
+              editable={!busy}
             />
-            <Pressable style={styles.button} onPress={() => void verifyCode()} disabled={working}>
-              {working ? (
+            <Pressable style={styles.button} onPress={() => void verifyCode()} disabled={busy}>
+              {busy ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.buttonText}>{t("ui.sign_in")}</Text>
               )}
             </Pressable>
-            <Pressable onPress={() => void startOver()} disabled={working}>
+            <Pressable onPress={startOver} disabled={busy}>
               <Text style={styles.link}>{t("ui.change_email")}</Text>
             </Pressable>
           </>
@@ -292,7 +154,7 @@ export default function SignInScreen() {
               keyboardType="email-address"
               textContentType="emailAddress"
               placeholder={t("ui.email_placeholder")}
-              editable={!working}
+              editable={!busy}
             />
 
             {step === "password" ? (
@@ -306,17 +168,17 @@ export default function SignInScreen() {
                   autoCorrect={false}
                   secureTextEntry
                   textContentType="password"
-                  editable={!working}
+                  editable={!busy}
                 />
               </>
             ) : null}
 
             <Pressable
               style={styles.button}
-              onPress={() => void (step === "password" ? signInWithPassword() : sendCode())}
-              disabled={working}
+              onPress={() => void (step === "password" ? usePassword() : requestCode())}
+              disabled={busy}
             >
-              {working ? (
+              {busy ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.buttonText}>
@@ -332,7 +194,7 @@ export default function SignInScreen() {
                 setError(null);
                 setStep(step === "password" ? "email" : "password");
               }}
-              disabled={working}
+              disabled={busy}
             >
               <Text style={styles.link}>
                 {step === "password" ? t("ui.sign_in_with_code") : t("ui.sign_in_with_password")}

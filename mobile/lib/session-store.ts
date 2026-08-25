@@ -1,56 +1,54 @@
 import * as SecureStore from "expo-secure-store";
 
 /**
- * Clerk oturum belirtecinin saklandigi yer.
+ * Better Auth oturum belirtecinin cihazda durdugu yer.
  *
- * NEDEN SecureStore, AsyncStorage DEGIL: AsyncStorage duz metin. Oturum
- * belirteci duz metinde durmaz - cihaza erisen biri onunla kullanicinin
- * hesabina girebilir. SecureStore iOS'ta Keychain'i kullaniyor.
+ * NEDEN SecureStore, AsyncStorage DEGIL: AsyncStorage duz metin. Bu belirtec
+ * dogrudan oturumun KENDISI - cihaza erisen biri onunla kullanicinin hesabina
+ * girer. SecureStore iOS'ta Keychain'i kullaniyor.
  *
- * NEDEN HIC VERMEMEK SECENEK DEGIL: tokenCache verilmezse Clerk belirteci
- * yalnizca bellekte tutuyor ve uygulama kapaninca oturum kayboluyor.
+ * BU DOSYA ONCEDEN token-cache.ts IDI ve Clerk'in TokenCache arayuzunu
+ * (getToken/saveToken/clearToken, anahtar parametreli) uyguluyordu. O arayuz
+ * Clerk'e aitti; artik belirteci yazan da okuyan da biziz, o yuzden hem ad
+ * hem sekil bize dondu: TEK anahtar, uc acik fonksiyon.
+ *
+ * CLERK'INKINDEN BIR FARK DAHA VAR ve onemli: Clerk'in verdigi sey kisa
+ * omurlu bir JWT'ydi ve SDK onu arka planda yeniliyordu. Better Auth'un
+ * Bearer belirteci oturum belirtecinin kendisi - yenileme makinesi yok,
+ * sunucu omrunu kendisi uzatiyor. Yani "girisli miyim" sorusunun cevabi
+ * burada duran degerden ibaret.
  */
-export const tokenCache = {
-  async getToken(key: string): Promise<string | null> {
-    try {
-      return await SecureStore.getItemAsync(key);
-    } catch (error) {
-      // Okuma basarisizsa "oturum yok" saymak GUVENLI tarafta kalmak demek:
-      // kullanici yeniden giris yapar. Hatayi yutmuyoruz, loga birakiyoruz.
-      console.error("Oturum belirteci okunamadi", error);
-      return null;
-    }
-  },
+const KEY = "owezy.session-token";
 
-  async saveToken(key: string, value: string): Promise<void> {
-    try {
-      await SecureStore.setItemAsync(key, value);
-    } catch (error) {
-      // Yazma basarisizsa firlatmiyoruz: Clerk'in giris akisini yarida
-      // kesmek, kullaniciyi hicbir sey soylemeden disarida birakirdi.
-      // Sonucu su olur: oturum bu acilista calisir, uygulama kapaninca gider.
-      console.error("Oturum belirteci saklanamadi", error);
-    }
-  },
+export async function readSessionToken(): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(KEY);
+  } catch (error) {
+    // Okuma basarisizsa "oturum yok" saymak GUVENLI tarafta kalmak demek:
+    // kullanici yeniden giris yapar. Hatayi yutmuyoruz, loga birakiyoruz.
+    console.error("Oturum belirteci okunamadı", error);
+    return null;
+  }
+}
 
-  /**
-   * CIKISTA CAGRILIYOR. Clerk'in TokenCache arayuzunde bu alan OPSIYONEL
-   * (clearToken?: ...) ve bizde YOKTU - yani yazdigimiz belirteci silen
-   * hicbir sey yoktu. Cikis yapan kullanicinin oturum belirteci cihazin
-   * Keychain'inde kaliyordu.
-   *
-   * Opsiyonel olmasi "gereksiz" demek degil: bellekte tutan bir onbellek
-   * icin gercekten gereksiz (uygulama kapaninca zaten gidiyor). KALICI
-   * yazan her onbellek icin ZORUNLU.
-   */
-  async clearToken(key: string): Promise<void> {
-    try {
-      await SecureStore.deleteItemAsync(key);
-    } catch (error) {
-      // Burada da firlatmiyoruz - firlatmak Clerk'in cikis akisini yarida
-      // keserdi ve kullanici hicbir sey soylenmeden girisli kalirdi.
-      // Yutmuyoruz ama: silinemeyen bir belirtec loga dusmeli.
-      console.error("Oturum belirteci silinemedi", error);
-    }
-  },
-};
+export async function writeSessionToken(token: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(KEY, token);
+  } catch (error) {
+    // Yazma basarisizsa FIRLATMIYORUZ: girisi yarida kesmek, kullaniciyi
+    // hicbir sey soylemeden disarida birakirdi. Sonucu su olur: oturum bu
+    // acilista calisir, uygulama kapaninca gider.
+    console.error("Oturum belirteci saklanamadı", error);
+  }
+}
+
+export async function clearSessionToken(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(KEY);
+  } catch (error) {
+    // Burada da firlatmiyoruz - firlatmak cikisi yarida keserdi ve kullanici
+    // hicbir sey soylenmeden girisli kalirdi. Yutmuyoruz ama: silinemeyen bir
+    // belirtec loga dusmeli.
+    console.error("Oturum belirteci silinemedi", error);
+  }
+}

@@ -1,8 +1,8 @@
-import { useAuth } from "@clerk/expo";
 import { Link, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSession } from "../../lib/auth";
 import { useTranslate } from "../../lib/i18n";
 import { useApiGet } from "../../lib/use-api";
 import { useTheme, type Theme } from "../../lib/theme";
@@ -23,7 +23,7 @@ import { GroupCreator } from "../../components/group-creator";
 type Group = { id: string; name: string; description: string | null; role: "OWNER" | "MEMBER" };
 
 export default function GroupsScreen() {
-  const { signOut } = useAuth();
+  const { signOut } = useSession();
   const t = useTranslate();
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);

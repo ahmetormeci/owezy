@@ -1,4 +1,3 @@
-import { useAuth } from "@clerk/expo";
 import { Link, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -16,6 +15,7 @@ import { formatDate, formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { formatMoney, formatSignedMoney } from "@/lib/money";
 import type { Locale } from "@/lib/locale";
+import { useSession } from "../../../lib/auth";
 import { useLocale, useTranslate } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
@@ -81,7 +81,7 @@ type MonthState = {
 
 export default function GroupScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
-  const { signOut } = useAuth();
+  const { signOut } = useSession();
   const router = useRouter();
   const t = useTranslate();
   const locale = useLocale();

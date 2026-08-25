@@ -1,38 +1,7 @@
-import { isClerkRuntimeError, useAuth } from "@clerk/expo";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiDelete, apiGet, apiPost, apiPut, type ApiResult } from "./api";
+import { useSession } from "./auth";
 import { useTranslate } from "./i18n";
-
-/**
- * Belirteci okur; cihaz cevrimdisiysa bunu API sozlesmesine cevirir.
- *
- * NEDEN VAR: @clerk/expo v4'te getToken() cevrimdisiyken HATA FIRLATIYOR
- * (kod "clerk_offline"); eski surumde sessizce basarisiz oluyordu. Burada
- * yakalamasaydik ekranlar ham hata metnini gosterirdi - her ekranda ayri
- * ayri "String(caught)" yaziyor.
- *
- * Kontrol @clerk/expo'nun KENDI disari verdigi isClerkRuntimeError ile
- * yapiliyor. ClerkOfflineError sinifi yalnizca gecisli bir pakette
- * (@clerk/shared) duruyor; oradan import etmek, dogrudan bagimliligimiz
- * olmayan bir paketin ic yerlesimine bel baglamak olurdu.
- *
- * status 0: ortada bir HTTP cevabi YOK. Istek hic gonderilmedi.
- *
- * Cevrimdisi olmayan hatalar OLDUGU GIBI firlatiliyor - yutmak, gercek bir
- * arizayi "baglanti yok" diye gostermek olurdu.
- */
-async function readToken(
-  getToken: () => Promise<string | null>,
-): Promise<{ ok: true; token: string | null } | { ok: false; result: ApiResult<never> }> {
-  try {
-    return { ok: true, token: await getToken() };
-  } catch (error) {
-    if (isClerkRuntimeError(error) && error.code === "clerk_offline") {
-      return { ok: false, result: { ok: false, status: 0, code: "server.offline" } };
-    }
-    throw error;
-  }
-}
 
 export type QueryState<T> =
   | { kind: "loading" }
@@ -40,45 +9,73 @@ export type QueryState<T> =
   | { kind: "error"; text: string };
 
 /**
- * Oturumlu GET'i cagirabilen SABIT bir fonksiyon.
+ * Oturumlu istek atabilen SABIT fonksiyonlar.
  *
- * NEDEN AYRI BIR KANCA: getToken'i dogru kullanmak gorunenden zor.
- * useAuth() her render'da YENI bir getToken donduruyor; onu bir bagimlilik
- * listesine koymak sonsuz donguye yol aciyor (18.2'de simulatorde bizzat
- * yasandi, bkz. CONVENTIONS.md "Mobil"). Burada fonksiyonun kendisi degil
- * HER ZAMAN GUNCEL bir referansi tutuluyor, boylece donen "get" bir kez
- * uretiliyor ve kimligi hic degismiyor.
+ * NEDEN AYRI BIR KANCA: belirteci dogru kullanmak gorunenden zor. Kanca her
+ * render'da yeni bir nesne uretirse, onu bir bagimlilik listesine koyan her
+ * cagri sonsuz donguye giriyor (18.2'de simulatorde bizzat yasandi, bkz.
+ * CONVENTIONS.md "Mobil"). Burada fonksiyonlarin kendisi degil HER ZAMAN
+ * GUNCEL bir referansi tutuluyor, boylece donen "get" bir kez uretiliyor ve
+ * kimligi hic degismiyor.
+ *
+ * getToken() ARTIK FIRLATMIYOR. Clerk'te cevrimdisiyken hata firlatiyordu
+ * (clerk_offline) ve burada yakalanip "server.offline" sozlesmesine
+ * cevriliyordu. Bizim belirtecimiz Keychain'den okunuyor - ag yok. Cevrimdisi
+ * durumu artik ISTEGIN KENDISINDE yakalaniyor (lib/api.ts) ve orasi butun
+ * ag hatalarini kapsiyor, yalnizca Clerk'in fark ettiklerini degil.
  */
 export function useApiClient() {
-  const { getToken } = useAuth();
+  const { getToken, signOut } = useSession();
   const getTokenRef = useRef(getToken);
+  const signOutRef = useRef(signOut);
   useEffect(() => {
     getTokenRef.current = getToken;
+    signOutRef.current = signOut;
   });
 
-  const get = useCallback(async <T,>(path: string): Promise<ApiResult<T>> => {
-    const read = await readToken(getTokenRef.current);
-    if (!read.ok) return read.result;
-    return apiGet<T>(path, read.token);
+  /**
+   * BELIRTEC ARTIK GECERSIZSE OTURUMU BIRAK.
+   *
+   * Clerk'te bu gerekmiyordu: SDK kisa omurlu JWT'yi arka planda yeniliyor,
+   * yenileyemezse kendisi cikis yapiyordu. Better Auth'un Bearer belirteci
+   * oturumun kendisi ve suresi dolabilir ya da sunucudan iptal edilebilir.
+   * Ele almasaydik uygulama "girisli gorunen ama her istegi hata veren" bir
+   * halde takilirdi - kullanicinin cikamadigi bir hal, cunku ekranlar acik.
+   *
+   * KOSUL DAR TUTULDU (401 VE auth.not_signed_in): baska bir sebeple gelen
+   * 401 kullaniciyi disari atmamali. /api/v1'in tamami yetkisiz istege bu
+   * kodu donuyor.
+   */
+  const guard = useCallback(async <T,>(result: ApiResult<T>): Promise<ApiResult<T>> => {
+    if (!result.ok && result.status === 401 && result.code === "auth.not_signed_in") {
+      await signOutRef.current();
+    }
+    return result;
   }, []);
 
-  const post = useCallback(async <T,>(path: string, body: unknown): Promise<ApiResult<T>> => {
-    const read = await readToken(getTokenRef.current);
-    if (!read.ok) return read.result;
-    return apiPost<T>(path, read.token, body);
-  }, []);
+  const get = useCallback(
+    async <T,>(path: string): Promise<ApiResult<T>> =>
+      guard(await apiGet<T>(path, await getTokenRef.current())),
+    [guard],
+  );
 
-  const put = useCallback(async <T,>(path: string, body: unknown): Promise<ApiResult<T>> => {
-    const read = await readToken(getTokenRef.current);
-    if (!read.ok) return read.result;
-    return apiPut<T>(path, read.token, body);
-  }, []);
+  const post = useCallback(
+    async <T,>(path: string, body: unknown): Promise<ApiResult<T>> =>
+      guard(await apiPost<T>(path, await getTokenRef.current(), body)),
+    [guard],
+  );
 
-  const remove = useCallback(async <T,>(path: string): Promise<ApiResult<T>> => {
-    const read = await readToken(getTokenRef.current);
-    if (!read.ok) return read.result;
-    return apiDelete<T>(path, read.token);
-  }, []);
+  const put = useCallback(
+    async <T,>(path: string, body: unknown): Promise<ApiResult<T>> =>
+      guard(await apiPut<T>(path, await getTokenRef.current(), body)),
+    [guard],
+  );
+
+  const remove = useCallback(
+    async <T,>(path: string): Promise<ApiResult<T>> =>
+      guard(await apiDelete<T>(path, await getTokenRef.current())),
+    [guard],
+  );
 
   return useMemo(() => ({ get, post, put, remove }), [get, post, put, remove]);
 }

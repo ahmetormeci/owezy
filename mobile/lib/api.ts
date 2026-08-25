@@ -1,11 +1,11 @@
 /**
  * Mobil istemcinin /api/v1'e eristigi tek yer.
  *
- * ONEMLI - CLERK ORNEGI ILE API AYNI OLMAK ZORUNDA: gelistirmede mobil
- * "pk_test_" kullaniyor (web'in yerel gelistirmesiyle ayni development
- * ornegi), dolayisiyla cagirdigi API de o ornekle calisan sunucu olmali.
- * Canli API (https://owezy.net) "pk_live_" bekliyor; test ornegindeki bir
- * kullanicidan alinmis Bearer orada dogrulanmaz ve 401 doner.
+ * ONEMLI - BELIRTECI VEREN SUNUCU ILE CAGRILAN SUNUCU AYNI OLMAK ZORUNDA:
+ * oturum belirteci sunucunun BETTER_AUTH_SECRET'i ile imzalaniyor ve yine
+ * onunla dogrulaniyor. Gelistirmede mobil yerel sunucuya baglaniyor; canli
+ * API (https://owezy.net) baska bir secret kullaniyor ve yerelden alinmis
+ * bir belirtec orada 401 doner.
  *
  * iOS Simulator ana makinenin localhost'una erisebiliyor, yani
  * "http://localhost:3000" calisiyor. Fiziksel cihazda makinenin LAN adresi
@@ -28,8 +28,9 @@ export type ApiResult<T> =
   | { ok: false; status: number; code: string };
 
 /**
- * Oturumlu GET. Belirteci cagiran veriyor cunku onu almanin tek yolu Clerk'in
- * React kancasi (useAuth().getToken) ve kanca bir bilesenin disinda cagrilamaz.
+ * Oturumlu GET. Belirteci CAGIRAN veriyor: bu dosya saf kalsin diye. Belirtec
+ * React baglamindan geliyor (useSession().getToken) ve kanca bir bilesenin
+ * disinda cagrilamaz - okuma isi lib/use-api.ts'te.
  */
 export async function apiGet<T>(path: string, token: string | null): Promise<ApiResult<T>> {
   return send<T>(path, token, "GET");
@@ -64,14 +65,38 @@ async function send<T>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   body?: unknown,
 ): Promise<ApiResult<T>> {
-  const response = await fetch(`${apiBaseUrl()}${path}`, {
-    method,
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-    },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl()}${path}`, {
+      method,
+      // credentials: "omit" - sebebi lib/auth.tsx'te uzun uzun yazili. Kisaca:
+      // React Native'in fetch'i varsayilan olarak cerez tutuyor ve Better
+      // Auth'un CSRF kontrolu cerez GORDUGU anda Origin istiyor. Mobil Origin
+      // gondermiyor, yani cerez tasinirsa istek 403 olur. Bizim tasidigimiz
+      // sey zaten Bearer; cerez hicbir ise yaramiyor.
+      credentials: "omit",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+  } catch {
+    /**
+     * AG HATASI SOZLESMEYE CEVRILIYOR: cihaz cevrimdisi, sunucu kapali ya da
+     * EXPO_PUBLIC_API_BASE_URL cihazdan erisilemeyen bir adres.
+     *
+     * BURADA OLMASI BIR REGRESYONU KAPATIYOR: bu kod ("server.offline")
+     * onceden lib/use-api.ts'te uretiliyordu ve kaynagi Clerk'in getToken()
+     * cagrisinin cevrimdisiyken firlattigi hataydi. Clerk gidince o dal da
+     * gitti; yakalamayi buraya almasaydik kullanici ham "TypeError: Network
+     * request failed" metnini gorurdu. Buradaki hali daha genis: yalnizca
+     * Clerk'in fark ettigi durumlari degil, BUTUN ag hatalarini kapsiyor.
+     *
+     * status 0: ortada bir HTTP cevabi YOK. Istek hic gonderilmedi.
+     */
+    return { ok: false, status: 0, code: "server.offline" };
+  }
 
   const payload: unknown = await response.json().catch(() => null);
 

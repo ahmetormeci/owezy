@@ -1,14 +1,8 @@
-import { ClerkProvider, useAuth } from "@clerk/expo";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { LocaleProvider } from "../lib/i18n";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";
-import { tokenCache } from "../lib/token-cache";
-
-// Yayimlanabilir anahtar gizli degil (web'de de tarayiciya gidiyor), ama yine
-// de dosyaya gomulmuyor: gelistirme "pk_test_", yayin "pk_live_" kullanacak
-// ve ikisini kod degistirmeden ayirabilmek gerekiyor.
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+import { SessionProvider, useSession } from "../lib/auth";
 
 /**
  * Cihazin dili.
@@ -39,51 +33,60 @@ function deviceLocale() {
  * /members, /settlements, /expenses/[id]. Sonucu su oluyordu: kullanici
  * "Cikis yap"a basiyor, oturum kapaniyor, ama ekran oldugu yerde kaliyor -
  * yani dugme calismiyor gibi gorunuyor. Her ekrana ayri ayri Redirect
- * koymak, bir sonraki ekranda yine unutulacak bir sey demekti.
+ * koymak, bir sonraki ekranda yine unutulacak bir sey demekti (ADR-037).
  *
  * SLOT HER ZAMAN RENDER EDILIYOR, yonlendirme etkiyle yapiliyor: kok
  * yerlesim <Slot /> yerine baska bir sey donerse gezinme baglami hic
  * kurulmamis olur ve router.replace cagrilacak bir yer bulamaz.
  *
- * isLoaded BEKLENIYOR: Clerk yuklenmeden isSignedIn false gorunuyor, yani
- * beklemeden yonlendirseydik girisli kullaniciyi da her aciliste bir an
- * icin giris ekranina atardik.
+ * "loading" BEKLENIYOR: belirtec Keychain'den okunana kadar oturumun olup
+ * olmadigini bilmiyoruz. Beklemeseydik girisli kullaniciyi da her aciliste
+ * bir an icin giris ekranina atardik.
  */
 function AuthGuard() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { status } = useSession();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (status === "loading") return;
     // Giris ekraninin KENDISI korumasiz olmali; yoksa kendine yonlendirir.
     const onSignIn = segments[0] === "sign-in";
-    if (!isSignedIn && !onSignIn) {
+    if (status === "signed-out" && !onSignIn) {
       router.replace("/sign-in");
     }
-  }, [isLoaded, isSignedIn, segments, router]);
+  }, [status, segments, router]);
 
   return <Slot />;
 }
 
 export default function RootLayout() {
-  if (!publishableKey) {
-    // Sessizce devam etmek daha kotu olurdu: Clerk anahtarsiz da yukleniyor
-    // ama her giris denemesi anlamsiz bir hatayla dusuyor.
+  /**
+   * ADRES ACILISTA KONTROL EDILIYOR, ilk istekte degil.
+   *
+   * lib/api.ts'teki apiBaseUrl() de bu kontrolu yapiyor ama orada firlatilan
+   * hata send()'in try blogunun ICINDE kaliyor ve "Bağlantı yok" cumlesine
+   * cevriliyor - yani eksik yapilandirma, ag arizasi gibi gorunurdu. Yanlis
+   * teshise goturen bir mesaj, hic mesaj olmamasindan kotu.
+   *
+   * Onceden burada Clerk'in yayimlanabilir anahtari kontrol ediliyordu;
+   * Clerk mobilde artik hic yok (Faz 25.5).
+   */
+  if (!process.env.EXPO_PUBLIC_API_BASE_URL) {
     throw new Error(
-      "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY tanimli degil. mobile/.env.local " +
+      "EXPO_PUBLIC_API_BASE_URL tanimli degil. mobile/.env.local " +
         "dosyasini mobile/.env.local.example'a bakarak doldur.",
     );
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+    <SessionProvider>
       {/* Sozluk web ile ORTAK (src/lib/messages.ts). Iki ayri sozluk zamanla
           ayrisirdi; ADR-020'nin "eksik ceviri = derleme hatasi" garantisi
           boylece mobilde de gecerli. */}
       <LocaleProvider locale={deviceLocale()}>
         <AuthGuard />
       </LocaleProvider>
-    </ClerkProvider>
+    </SessionProvider>
   );
 }

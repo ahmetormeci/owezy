@@ -1,8 +1,8 @@
-import { useAuth } from "@clerk/expo";
 import { Redirect } from "expo-router";
 import { useMemo } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSession } from "../lib/auth";
 import { useTranslate } from "../lib/i18n";
 import { useApiGet } from "../lib/use-api";
 import { useTheme, type Theme } from "../lib/theme";
@@ -24,14 +24,14 @@ import { useTheme, type Theme } from "../lib/theme";
 type Group = { id: string };
 
 export default function EntryScreen() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { status } = useSession();
   const t = useTranslate();
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
 
   // Kancalar kosulsuz cagrilmali; "henuz istek atma" durumunu path=null tasiyor.
   const { state, reload } = useApiGet<{ groups: Group[] }>(
-    isLoaded && isSignedIn ? "/api/v1/groups" : null,
+    status === "signed-in" ? "/api/v1/groups" : null,
   );
 
   // SIRA ONEMLI, ve burada bir kez YANLISTI: once "yukleniyor mu", sonra
@@ -39,8 +39,9 @@ export default function EntryScreen() {
   // yani useApiGet hicbir zaman istek atmiyor ve state SONSUZA KADAR
   // "loading" kaliyor - spinner hic kaybolmuyor, alttaki yonlendirme de olu
   // koda donuyordu. Yani cikis yapan kullanicinin uygulamasi donuyordu.
-  // Once Clerk'in yuklenmesini bekle, sonra oturumu sor, EN SON veriyi bekle.
-  if (!isLoaded) {
+  // Once belirtecin Keychain'den okunmasini bekle, sonra oturumu sor, EN SON
+  // veriyi bekle.
+  if (status === "loading") {
     return (
       <SafeAreaView style={s.centered}>
         <ActivityIndicator />
@@ -48,7 +49,7 @@ export default function EntryScreen() {
     );
   }
 
-  if (!isSignedIn) {
+  if (status === "signed-out") {
     return <Redirect href="/sign-in" />;
   }
 
