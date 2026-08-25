@@ -91,6 +91,37 @@ export const auth = betterAuth({
     enabled: true,
   },
 
+  databaseHooks: {
+    user: {
+      create: {
+        /**
+         * GORUNEN AD BOS BIRAKILAMAZ.
+         *
+         * OLCULDU: e-posta koduyla ilk kez giren birine Better Auth
+         * name: "" yaziyor - cunku o akista sorulan tek sey e-posta. Bizim
+         * arayuzumuz displayName'i HER YERDE gosteriyor (uye listesi,
+         * bakiyeler, fis, odesme plani); bos ad, o ekranlarin hepsinde bos
+         * bir hucre demek.
+         *
+         * E-POSTANIN TAMAMI yaziliyor, "@"den oncesi degil. Sebep tutarlilik:
+         * Clerk yolu da bastan beri boyle davraniyor
+         * ([ad, soyad].join(" ") || primaryEmail). Gocun ortasinda gorunen
+         * adin kuralini degistirmek, ayni gruptaki iki uyeyi iki farkli
+         * bicimde gosterirdi.
+         *
+         * KALICI COZUM DEGIL: 25.4'teki kayit formu gercek bir ad soracak.
+         * Bu, o form doldurulmadan giren herkes icin makul bir yedek.
+         */
+        async before(user) {
+          if (typeof user.name === "string" && user.name.trim().length > 0) {
+            return;
+          }
+          return { data: { ...user, name: user.email } };
+        },
+      },
+    },
+  },
+
   plugins: [
     /**
      * 6 HANELI KOD ile giris. Bugunku akisin aynisi - kullanicinin gordugu

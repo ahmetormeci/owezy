@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (9)
+Updated: 2026-08-25 (10)
 
 Current task:
   FAZ 25 - CLERK'TEN BETTER AUTH'A GEC. Karar kullanicinin: 2FA Clerk'te bir
@@ -26,8 +26,8 @@ Current task:
 
   ADIMLAR (her biri kendi basina dogrulanabilir; CLERK 25.7'YE KADAR AYAKTA):
     25.1  Sema ve iskelet                    BITTI  aa6f6cb
-    25.2  Resend + sendVerificationOTP       BITTI  (commit bekliyor)
-    25.3  Sunucu kimligi (auth.ts, /api/v1)
+    25.2  Resend + sendVerificationOTP       BITTI  6dbb997
+    25.3  Sunucu kimligi (auth.ts, /api/v1)  BITTI  (commit bekliyor)
     25.4  Web arayuzleri (giris/kayit/hesap)
     25.5  Mobil (bearer + ekranlar)
     25.6  2FA (TOTP + yedek kod + trustDevice)
@@ -71,6 +71,52 @@ Current task:
       destek@owezy.net'e gonderildi, GELEN KUTUSUNA dustu (spam'e degil),
       gonderen "Owezy <noreply@owezy.net>". Yani Resend + SPF + DKIM +
       DMARC + Cloudflare Email Routing zincirinin tamami calisiyor.
+
+  25.3'TE NE YAPILDI:
+    - /api/v1'IN TAMAMI TEK DOSYADAN: src/lib/auth.ts. 98 cagri noktasi var
+      ama hepsi getOrCreateCurrentUser()'dan geciyor - hicbir route
+      dosyasina dokunulmadi.
+    - AMA SAYFA TARAFINDA UC YER O KAPIYI ATLIYORDU ve sonradan bulundu:
+        (app)/layout.tsx     uygulamanin TAMAMININ korumasi
+        page.tsx             karsilama sayfasinin yonlendirmesi
+        join/[token]/page.tsx  davetin "giris yap" dali
+      Ucu de dogrudan Clerk'in auth()'unu soruyordu. Duzeltilmeseydi Better
+      Auth ile giren biri /groups'a girer gibi olup giris ekranina geri
+      atilirdi - yani yeni sistem calisir ama kimse iceri giremezdi.
+    - IKI SAYFA IKI SISTEME BIRDEN BAKIYOR (page.tsx, join). Sebep: Clerk
+      yolunda kullanici kaydi o sayfalarda DEGIL, (app) duzeninde olusuyor.
+      Yalnizca findCurrentUser'a bakmak, ilk kez giren bir Clerk
+      kullanicisini "girisi yok" saymak olurdu.
+    - LAYOUT'TA getOrCreateCurrentUser KULLANILDI, findCurrentUser DEGIL:
+      Clerk yolunda kaydi olusturan yer orasi. findCurrentUser'a gecseydik
+      ilk kez giren Clerk kullanicisi hic iceri giremezdi.
+    - Iki yol YAN YANA: once Better Auth, bulunamazsa Clerk. Clerk dali
+      25.7'de silinecek.
+    - NEDEN BETTER AUTH ONCE: bir kullanicinin ikisinde birden oturumu
+      olabilir (yeni sistemle girmis ama eski Clerk cerezi duruyor). Yeni
+      olan kazanmali; tersi gocu geri alirdi.
+    - session.user.id DOGRUDAN bizim User.id'miz. Arada esleme YOK.
+    - P2002 yakalamasi genisletildi: artik e-posta cakismasini da ele
+      aliyor (25.1'de email UNIQUE oldu). Ikisi de bulunamazsa hata YINE
+      firlatiliyor - sessizce null donmek "oturum yok" yalani olurdu.
+    - GORUNEN AD BOSLUGU BULUNDU VE KAPATILDI: e-posta koduyla ilk kez giren
+      birine Better Auth name:"" yaziyor. Arayuz displayName'i her yerde
+      gosterdigi icin bu bos hucre demekti. databaseHooks ile e-posta
+      yaziliyor - Clerk yolunun bastan beri yaptiginin AYNISI.
+      Kalici cozum 25.4'un kayit formu.
+    - auth.test.ts: 8 -> 12 test. Yeni yolun kendi testleri var; olmasaydi
+      25.7'de Clerk silinince arkada SINANMAMIS bir kimlik yolu kalirdi.
+
+    DOGRULANDI - GERCEK ISTEKLERLE:
+      Kod iste -> veritabanindan oku -> kodla giris -> /api/v1/groups:
+        CEREZ ile   (web)   -> 200 {"ok":true,"groups":[]}
+        BEARER ile  (mobil) -> 200   <- ADR-029 sozlesmesi KORUNUYOR,
+                                        mobilin use-api.ts'i degismeyecek
+        oturumsuz           -> 401 auth.not_signed_in
+      Sayfalar da ayni oturumla sinandi:
+        /groups + oturum -> 200
+        /       + oturum -> 307 /groups
+        /groups oturumsuz -> 307 /sign-in
 
   25.2'DE CIKAN SURPRIZ - CSRF KORUMASI:
     BETTER_AUTH_URL tanimlaninca Better Auth ORIGIN kontrolu yapmaya basladi:

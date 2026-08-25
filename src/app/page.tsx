@@ -25,19 +25,25 @@ const SAMPLE_ROWS = [
 const SAMPLE_TOTAL = 36000;
 
 export default async function HomePage() {
-  const { userId } = await auth();
+  // IKI SISTEME DE BAKILIYOR (Faz 25.3). Clerk yarisi 25.7'de silinecek.
+  //
+  // Neden ikisi birden: Clerk yolunda kullanici kaydi bu sayfada DEGIL,
+  // (app) duzeninde olusuyor. Yalnizca findCurrentUser'a baksaydik, ilk kez
+  // giren bir Clerk kullanicisi "kaydi yok" diye giris yapmamis sayilir ve
+  // karsilama sayfasinda birakilirdi - oysa girisli.
+  const user = await findCurrentUser();
+  const { userId: clerkId } = await auth();
   const t = await getTranslate();
   const locale = await getLocale();
-  if (userId) {
+  if (user || clerkId) {
     // Tek grubu olan kullaniciyi dogrudan grubunun icine birakiyoruz
     // (Faz 16.4). Kullanicilarin cogu bir ya da iki grupla calisiyor ve
     // tek satirlik bir dizin sayfasi, arada duran bos bir duraktir.
     //
-    // findCurrentUser kullaniyoruz, getOrCreateCurrentUser DEGIL: burasi
-    // herkese acik karsilama sayfasi ve bir SAYFA GORUNTULEMESI kullanici
-    // kaydi yaratmamali (bkz. auth.ts). Kayit henuz yoksa liste sayfasina
+    // getOrCreateCurrentUser BURADA CAGRILMAZ: burasi herkese acik
+    // karsilama sayfasi ve bir SAYFA GORUNTULEMESI kullanici kaydi
+    // yaratmamali (bkz. auth.ts). Kayit henuz yoksa liste sayfasina
     // gidiyoruz; onu (app) duzeni zaten olusturuyor.
-    const user = await findCurrentUser();
     const groups = user ? await listGroupsForUser(user.id) : [];
     redirect(groups.length === 1 ? `/groups/${groups[0].id}` : "/groups");
   }

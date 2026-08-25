@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { findCurrentUser } from "@/lib/auth";
 import { getInviteStatus } from "@/lib/groups";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,7 +26,11 @@ export default async function JoinPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const { userId } = await auth();
+  // IKI SISTEME DE BAKILIYOR (Faz 25.3). Clerk yarisi 25.7'de silinecek.
+  // Burada da kayit OLUSTURULMUYOR: davet linki herkese acik.
+  const currentUser = await findCurrentUser();
+  const { userId: clerkId } = await auth();
+  const userId = currentUser?.id ?? clerkId;
   const t = await getTranslate();
 
   // Davet gecerli mi diye ONCE bakiyoruz: kullanici gecersiz bir link icin

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
 import { getOrCreateCurrentUser } from "@/lib/auth";
 import { countUnreadNotifications } from "@/lib/notifications";
@@ -24,22 +23,32 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
   const t = await getTranslate();
-  if (!userId) {
-    redirect("/sign-in");
-  }
 
+  // KORUMA ARTIK BIZIM KAPIMIZDAN (Faz 25.3). Onceden dogrudan Clerk'in
+  // auth()'u soruluyordu; oyle kalsaydi Better Auth ile giren biri
+  // uygulamanin tamamindan disari atilirdi - bu layout altindaki HER sayfa
+  // buradan geciyor.
+  //
+  // getOrCreateCurrentUser, findCurrentUser DEGIL: Clerk yolunda kaydi
+  // olusturan yer burasi ("lazy sync", ADR-011). findCurrentUser'a
+  // gecseydik, ilk kez giren bir Clerk kullanicisi kaydi olmadigi icin
+  // giris ekranina geri atilirdi - yani hic iceri giremezdi.
+  //
   // Zil rakamini sunucuda hesapliyoruz: sayfa acilir acilmaz dogru sayiyla
   // geliyor, istemcinin ayrica bir istek atmasi gerekmiyor. Bildirimlerin
   // KENDISI ise yalnizca menu acildiginda cekiliyor.
   const user = await getOrCreateCurrentUser();
+  if (!user) {
+    redirect("/sign-in");
+  }
   // Bildirim sayisi ve grup listesi PARALEL: ikisi de baslikta gorunuyor ve
   // birbirini beklemeleri icin sebep yok. Grup listesi kucuk bir sorgu
   // (kullanici basina birkac satir) ve baslik zaten her sayfada.
-  const [unreadCount, groups] = user
-    ? await Promise.all([countUnreadNotifications(user.id), listGroupsForUser(user.id)])
-    : [0, []];
+  const [unreadCount, groups] = await Promise.all([
+    countUnreadNotifications(user.id),
+    listGroupsForUser(user.id),
+  ]);
 
   // Marka baglantisi "ev"e gider. Tek grubu olan icin ev, o grubun kendisi -
   // arada duran tek satirlik bir dizin sayfasi degil (Faz 16.4).
