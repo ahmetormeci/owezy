@@ -129,6 +129,10 @@ export const MESSAGES_TR = {
   "ui.sign_in": "Giriş yap",
   "ui.sign_up": "Kayıt ol",
   "ui.sample_note": "Örnek — gerçek bir gruba ait değil",
+
+  // --- Herkese acik alt baglantilar (gizlilik / destek) ---
+  "ui.privacy": "Gizlilik",
+  "ui.support": "Destek",
   "ui.sample_title": "Kahvaltı",
   "ui.theme_toggle": "Temayı değiştir",
   // Dil dugmesi. Kisa etiketler ("TR" / "EN") her dilde ayni yazilir ama yine
@@ -518,6 +522,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.sign_in": "Sign in",
   "ui.sign_up": "Sign up",
   "ui.sample_note": "Sample — not a real group",
+
+  "ui.privacy": "Privacy",
+  "ui.support": "Support",
   "ui.sample_title": "Breakfast",
   "ui.theme_toggle": "Switch theme",
   "ui.language_short_tr": "TR",

@@ -15,24 +15,45 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (3)
+Updated: 2026-08-25 (4)
 
 Current task:
-  FAZ 21 - @clerk/expo GECISI. BITTI.
-  @clerk/clerk-expo@2 -> @clerk/expo@4. Deprecation uyarisi gitti, surum
-  ayrismasi (web Core 3 / mobil Core 2) kapandi. Gerekce: ADR-033.
+  FAZ 22 - GIZLILIK POLITIKASI VE DESTEK SAYFASI. BITTI.
+  /privacy ve /support eklendi; giris gerektirmiyorlar, iki dilde, karsilama
+  sayfasindan baglantili. Metin src/content/legal/ altinda (ADR-034), cunku
+  messages.ts istemciye gidiyor.
+
+  SENDE KALAN TEK IS: destek@owezy.net kutusu. Adres iki sayfada da yazili
+  ama kutu ACILMADI - Cloudflare Email Routing ile birkac dakika (DNS zaten
+  orada, ADR-026). Kutu olmadan destek sayfasi ise yaramaz ve App Store
+  "Support URL" alani calisan bir yol bekliyor.
 
 Hemen sonraki adim:
-  YOK - KULLANICIDAN GOREV BEKLENIYOR.
-  Kullanicinin verdigi uc adimlik planin UCU DE BITTI:
-    1. Optimistic locking          BITTI (51bc3c4)
-    2. CI mobili dogrulasin        BITTI (f9c8ef6)
-    3. @clerk/expo gecisi          BITTI (bu commit)
-  PROGRESS.md'deki aday listesi bir plan DEGIL, secenek listesidir -
-  oradan bir sey kendiliginden baslatilmaz.
+  2FA - MOBIL IKINCI FAKTOR ADIMI, SONRA PANELDEN ACMA.
+  Kullanici sirayi boyle onayladi: once sayfalar (bitti), sonra 2FA.
 
-  ACIK OLAN TEK YOL: yayin (Apple hesabi onaylandi). Adimlar asagida
-  "YAYIN DURUMU" altinda, neyin neyi bekledigiyle birlikte.
+  NEDEN ONCE MOBIL: mobil giris ekranini BIZ yazdik ve ikinci faktoru ELE
+  ALMIYOR. Bugunku kod:
+      if (signIn.status !== "complete") { setError(...); return; }
+  2FA acilirsa Clerk "needs_second_factor" donuyor ve ekran orada duruyor -
+  yani 2FA'yi etkinlestiren her kullanici mobilden KILITLENIR.
+  Yeni @clerk/expo API'si gerekli her seyi veriyor:
+      mfa.verifyTOTP, mfa.verifyBackupCode,
+      mfa.sendEmailCode / verifyEmailCode,
+      mfa.sendPhoneCode / verifyPhoneCode
+  Is: app/sign-in.tsx'e ucuncu bir adim ("email" | "code" | "mfa").
+
+  SONRA PANELDEN: TOTP + yedek kodlar ISTEGE BAGLI olarak acilir.
+  - ZORUNLU YAPILMAYACAK: para tasimayan bir defter uygulamasinda zorunlu
+    2FA kullanici kaybettirir.
+  - SMS KAPALI KALSIN: mesaj basina maliyeti var ve SIM-swap'a acik.
+  - Clerk'in ucretsiz planinda TOTP'nin dahil oldugunu KULLANICI teyit
+    edecek (fiyatlandirma sayfasindan).
+
+  ARDINDAN (kullanici onayladi, sirasi gelmedi): guvenlik basliklari
+  (Strict-Transport-Security, X-Content-Type-Options, CSP - next.config.ts'te
+  HIC YOK) ve /api/v1 icin hiz siniri (HIC YOK). Gizlilik politikasindaki
+  "makul teknik tedbirler" cumlesini gercek yapan is bu.
 
 FAZ 21'DEN AKILDA TUTULACAKLAR:
   - useSignIn'in SOZLESMESI DEGISTI ve tsc yakaladi:
@@ -209,7 +230,10 @@ YAYIN DURUMU (ayrinti: PROJECT.md "Yayinlama", kararlar: ADR-030/031):
     ama reddedilirsek bedeli bir tur; simdi eklersek CIFT HESAP riskini her
     kullanici icin ustlenirdik (Hide My Email privaterelay adresi veriyor,
     Google ile kaydolmus biri Apple ile girince eslesmiyor).
-  - owezy.net'te gizlilik politikasi ve destek sayfasi HALA YOK.
+  - Gizlilik politikasi ve destek sayfasi VAR (Faz 22): owezy.net/privacy ve
+    owezy.net/support. Ikisi de giris gerektirmiyor. App Store Connect'teki
+    "Privacy Policy URL" ve "Support URL" alanlarina bu adresler yazilacak.
+    AMA destek@owezy.net KUTUSU HENUZ ACILMADI - o olmadan sayfa ise yaramaz.
 
 ACIK KALANLAR (yeni gorev degil, akilda tutulacaklar):
   - RESTORE UCU KULLANILMIYOR: POST .../expenses/[id]/restore sunucuda VAR
@@ -263,7 +287,7 @@ Verify with:
   npx tsc --noEmit
   npm run lint
   npm test          # beklenen: 535
-  npm run test:e2e  # beklenen: 37, ~6-7 dk, kosarken dosyalara dokunma
+  npm run test:e2e  # beklenen: 43, ~7 dk, kosarken dosyalara dokunma
 
   Mobil (CI de AYNISINI kosuyor, Faz 20'den beri):
     cd mobile
@@ -297,6 +321,13 @@ Verify with:
   (npm run test:e2e > out.txt), hangi test oldugunu bul, sonra ya o iddiayi
   daha kesin bir sinyale bagla ya da timeout'u YALNIZCA orada yukselt.
   Suite'in tamamina timeout eklemek gercek yavaslamalari gizler.
+
+  KURULUM ADIMI DA DUSEBILIYOR - 25 Agustos'ta yasandi: global.setup
+  "test kullanicilarinin oturumlarini hazirla" adimi dustu, hemen ardindan
+  ayni komut 43/43 temiz gecti. O sirada SIMULATORDE ayni test kullanicisiyla
+  arka arkaya giris yapilmisti; Clerk'in hiz sinirlamasi en olasi aciklama
+  (kosu log'unda hiz sinirina isaret eden satirlar vardi). Yani: simulatorde
+  giris denemelerinden HEMEN SONRA tam E2E kosma, birkac dakika bekle.
 
   NPM SURUM FARKI: npm 11.17 paketlerin kurulum betiklerini varsayilan
   olarak CALISTIRMIYOR. Sonuca bakildi, bugun bir sey kirmiyor. Gerekirse:

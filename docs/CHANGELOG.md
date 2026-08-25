@@ -8,6 +8,37 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-25 (4)
+
+### Gizlilik politikası ve destek sayfası (Faz 22, ADR-034)
+- `/privacy` ve `/support` eklendi. İkisi de **giriş gerektirmiyor**, iki
+  dilde, karşılama sayfasından bağlantılı. Mağazaların ikisi de zorunlu
+  tutuyor ve ikisi de yoktu.
+- **Metin yazılmadan önce kod okundu.** Şema, Sentry ayarı, çerezler,
+  üçüncü taraflar ve silme akışı doğrulandı; politikadaki her cümlenin
+  karşılığı kodda var.
+- **Silme dürüstçe anlatıldı:** ad ve e-posta siliniyor, harcama
+  kayıtları anonim olarak kalıyor — sebebiyle birlikte. Bir E2E testi bu
+  cümleyi bekçiliyor.
+- **Şifreleme abartılmadı:** aktarımda TLS (`sslmode=require` +
+  `channel_binding=require`, bağlantı dizesinden doğrulandı) ve
+  barındırıcının disk şifrelemesi yazıldı. Alan bazında şifreleme
+  yapmıyoruz ve yapıyormuş gibi yazmadık.
+- Metin `messages.ts`'e **konulmadı**: o sözlük istemciye gidiyor.
+  `src/content/legal/` altında `Record<Locale, LegalDocument>` tipiyle —
+  eksik dil hâlâ derleme hatası.
+- 6 yeni E2E testi. En önemlisi: sayfaların **oturum açmadan** açıldığını
+  doğrulayan test.
+
+### Yol boyunca bulunanlar
+- **`ui.back_home` sözlükte zaten vardı**; yeni bir tane eklerken fark
+  edildi ve kopya geri alındı. TypeScript de yakalardı ama sözlükte
+  arama alışkanlığı daha ucuz.
+- **2FA açılırsa mobil giriş kırılır.** Mobil giriş ekranı Clerk'in
+  `needs_second_factor` durumunu ele almıyor; ikinci faktör isteyen bir
+  kullanıcı uygulamaya giremez. Yeni `@clerk/expo` API'si gerekli her
+  şeyi veriyor (`mfa.verifyTOTP`, `verifyBackupCode`, ...). Sıradaki iş.
+
 ## 2026-08-25 (3)
 
 ### `@clerk/expo` geçişi (Faz 21, ADR-033)

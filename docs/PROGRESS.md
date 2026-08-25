@@ -1072,6 +1072,46 @@ hangi değişikliğin bozduğunu bilinmez yapardı.
 
 ---
 
+## Faz 22 — Gizlilik politikası ve destek sayfası · **BİTTİ**
+
+App Store ve Play, ikisini de **zorunlu** tutuyor ve ikisi de yoktu.
+`/privacy` ve `/support` eklendi; ikisi de giriş gerektirmiyor, iki dilde,
+karşılama sayfasından bağlantılı.
+
+**Metin yazılmadan önce kod okundu.** Şema, Sentry yapılandırması, çerezler,
+üçüncü taraf paketleri ve silme akışı tek tek doğrulandı — çünkü yanlış bir
+gizlilik politikası, hiç olmamasından kötüdür. Politikanın söylediği her
+şeyin karşılığı kodda var: para/kart verisi hiç toplanmıyor, parola bize
+ulaşmıyor, analitik paketi kurulu bile değil, Sentry'ye `sendDefaultPii:
+false` ile gidiliyor, yazı tipleri derleme anında indirilip kendi alan
+adımızdan sunuluyor.
+
+**En zor cümle silme hakkındaydı ve dürüst yazıldı:** hesabını silen
+kullanıcının adı ve e-postası temizleniyor ama **harcama kayıtları kalıyor**,
+anonimleşmiş bir kullanıcıya bağlı olarak. Sebebi de yazıldı — ortak bir
+defterde tek kişinin kayıtlarını silmek diğer herkesin bakiyesini bozar.
+Bir E2E testi bu cümlenin varlığını bekçiliyor.
+
+**Abartılmadı:** "verileriniz şifrelenir" gibi bir cümle, alan bazında
+şifreleme yaptığımızı ima ederdi; yapmıyoruz (şifrelenmiş tutarın toplamı
+alınamaz). Yazılan şey ölçülebilir olan: aktarım TLS
+(`sslmode=require` + `channel_binding=require`, bağlantı dizesinden
+doğrulandı) ve barındırıcının disk şifrelemesi.
+
+**Metin `messages.ts`'e konulmadı** (ADR-034): o sözlük istemciye gidiyor ve
+doküman metni her sayfanın paketini şişirirdi. `src/content/legal/` altında,
+`Record<Locale, LegalDocument>` tipiyle — yani ADR-020'nin "eksik çeviri =
+derleme hatası" garantisi korunuyor.
+
+**Test:** 535 birim / 43 E2E (6 yeni). Yeni testlerin varlık sebebi tek
+cümle: bu iki adres **giriş yapmadan** açılabilmek zorunda; biri korumayı
+genişletirse uygulama mağazadan döner ve sebebi hiçbir yerde görünmez.
+
+**Yayına almadan önce SENDE kalan:** `destek@owezy.net` kutusu (Cloudflare
+Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yaramaz.
+
+---
+
 ## Faz dışı düzeltmeler
 
 | İş | Commit |

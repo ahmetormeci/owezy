@@ -15,12 +15,14 @@ src/
 │  │  ├─ v1/                    Kendi versiyonladığımız API (web + mobil)
 │  │  └─ webhooks/clerk/        Clerk'ten gelen olaylar (v1 DEĞİL, bkz. aşağı)
 │  ├─ join/[token]/             Davet kabul sayfası (giriş gerektirmez)
+│  ├─ privacy/, support/        Gizlilik ve destek (giriş gerektirmez, mağazalar zorunlu tutuyor)
 │  ├─ sign-in/, sign-up/        Clerk sayfaları
 │  ├─ layout.tsx                Kök layout, ClerkProvider
 │  └─ page.tsx                  Karşılama sayfası
 ├─ components/
 │  ├─ ui/                       shadcn/ui (Base UI) primitifleri — elle düzenlenmez
 │  └─ *.tsx                     Uygulamaya özel bileşenler
+├─ content/legal/               Doküman METİNLERİ — sözlükte değil, bkz. ADR-034
 ├─ lib/                         SERVİS KATMANI + saf mantık
 ├─ instrumentation.ts           Sentry (sunucu)
 ├─ instrumentation-client.ts    Sentry (tarayıcı)

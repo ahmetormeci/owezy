@@ -99,6 +99,25 @@ export default async function HomePage() {
           {t("ui.sign_in")}
         </Link>
       </div>
+
+      {/* Gizlilik ve destek sayfalarina TEK giris noktasi burasi. Uygulamanin
+          ICINE footer koymadik: fis ekraninin sonu tasarlanmis bir sey (yirtik
+          kenar) ve altina global bir cizgi eklemek onunla kavga ederdi.
+          Magazalar zaten adresleri dogrudan kullaniyor. */}
+      <nav className="flex gap-5 text-sm text-muted-foreground">
+        <Link
+          href="/privacy"
+          className="rounded-md transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {t("ui.privacy")}
+        </Link>
+        <Link
+          href="/support"
+          className="rounded-md transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {t("ui.support")}
+        </Link>
+      </nav>
     </div>
   );
 }

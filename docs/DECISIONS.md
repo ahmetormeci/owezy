@@ -502,6 +502,39 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-034 — Doküman metinleri `messages.ts`'e girmez; `src/content/` altında durur
+**Tarih:** 2026-08-25 · **Durum:** Kabul edildi ve uygulandı
+
+**Karar:** Gizlilik politikası ve destek sayfasının metni `src/lib/messages.ts`
+sözlüğüne **konulmadı**. `src/content/legal/` altında, tipi
+`Record<Locale, LegalDocument>` olan içerik modüllerinde duruyor.
+
+**Neden:** ADR-020 "kullanıcıya görünen her metin sözlükte" diyor ve bu kural
+arayüz etiketleri için doğru. Ama `messages.ts` **istemciye gönderiliyor**;
+iki dilde birkaç bin kelimelik doküman metnini oraya koymak, uygulamanın her
+sayfasının paketine o metni de eklerdi. Üstelik bir hukuk metninin
+yapısı — başlık, bölüm, madde listesi — düz anahtar/değer çiftine sığmıyor;
+`privacy.section3.paragraph2` gibi anahtarlar üretmek zorunda kalırdık.
+
+**ADR-020'nin GARANTİSİ KORUNUYOR.** Kuralın asıl değeri "eksik çeviri =
+derleme hatası"ydı. `Record<Locale, LegalDocument>` tipi bunu birebir
+sağlıyor: yeni bir dil eklendiğinde ya da bir dil eksik bırakıldığında
+`tsc` düşer. Yani kuralın harfinden sapıp ruhunu koruyoruz.
+
+**Ek kazanç:** sayfalar Server Component olduğu için metin istemci paketine
+hiç inmiyor.
+
+**Sınır:** bu istisna **doküman metinleri** içindir — sayfa başlıkları,
+bağlantı etiketleri ve düğme metinleri sözlükte kalmaya devam ediyor
+(`ui.privacy`, `ui.support`). Ölçüt basit: bir cümle mi, bir belge mi?
+
+**Alternatifler:** (a) `messages.ts`'e koymak — yukarıda; (b) Markdown/MDX
+dosyaları — yeni bir bağımlılık ve derleme adımı, ve dil eksikliğini derleme
+hatasına çeviremezdi; (c) veritabanında tutmak — bir metin için gereksiz
+altyapı, ve sürüm kontrolünden çıkardı.
+
+---
+
 ## ADR-033 — `@clerk/expo` (core-3) geçişi; token cache bizde kalıyor
 **Tarih:** 2026-08-25 · **Durum:** Kabul edildi ve uygulandı
 
