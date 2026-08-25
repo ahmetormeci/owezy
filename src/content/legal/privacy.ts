@@ -3,7 +3,15 @@ import type { LegalDocumentByLocale } from "./types";
 /**
  * Gizlilik politikasi.
  *
- * BURADAKI HER CUMLE KODDAN DOGRULANDI. Metni yazmadan once sema, Sentry
+ * BURADAKI HER CUMLE KODDAN DOGRULANDI.
+ *
+ * FAZ 25.7'DE BIR CUMLE YANLIS OLMUSTU ve bu, dosyanin basindaki uyarinin
+ * neden yazildigini gosteriyor: "Parolan bize hic ulasmaz; girisi Clerk
+ * yonetiyor." Kimlik dogrulama Clerk'ten Better Auth'a gecince parola
+ * GERCEKTEN bizim sunucumuza gelmeye basladi - hash'lenip bizim
+ * veritabanimiza yaziliyor. Kod degisti, metin gerideydi. Bir davranis
+ * degistiginde BU DOSYA DA DEGISMELI; politikanin yanlis olmasi, hic
+ * olmamasindan kotudur. Metni yazmadan once sema, Sentry
  * yapilandirmasi, cerezler, ucuncu taraf paketleri ve silme akisi tek tek
  * okundu. Bir davranis degisirse BU DOSYA DA DEGISMELI - politikanin yanlis
  * olmasi, hic olmamasindan kotudur.
@@ -20,7 +28,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
     title: "Gizlilik Politikası",
     description:
       "Owezy hangi verileri işliyor, neden işliyor ve neleri hiç toplamıyor.",
-    updated: "2026-08-25",
+    updated: "2026-08-26",
     intro:
       "Owezy, arkadaş ve ev arkadaşı gruplarının ortak harcamalarını kaydettiği " +
       "bir defter uygulamasıdır. Bu sayfa, uygulamanın hangi verileri işlediğini " +
@@ -33,7 +41,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             kind: "ul",
             items: [
               "Owezy para taşımaz. Kart, IBAN veya ödeme bilgisi hiç toplamıyoruz.",
-              "Parolan bize hiç ulaşmaz; girişi Clerk yönetiyor.",
+              "Parolanı hiçbir zaman okunabilir hâlde saklamıyoruz; yalnızca geri " +
+                "döndürülemez bir özeti tutulur. Parola belirlemek zorunda da değilsin — " +
+                "e-postana gelen kodla girebilirsin.",
               "Reklam veya analiz izleyicisi kullanmıyoruz. Ziyaretlerini ölçmüyoruz.",
               "Hesabını sildiğinde adın ve e-postan silinir, ama grup arkadaşlarının " +
                 "bakiyesi bozulmasın diye harcama kayıtları anonim olarak kalır.",
@@ -58,8 +68,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "p",
             text:
-              "Hesabınla ilgili olanlar, giriş sağlayıcımız Clerk üzerinden gelir ve " +
-              "bizim veritabanımızda da bir kopyası tutulur:",
+              "Hesabını oluştururken sen verirsin; hepsi bizim veritabanımızda durur:",
           },
           {
             kind: "ul",
@@ -68,7 +77,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Görünen adın",
               "Profil fotoğrafının adresi (varsa) ve gerçekten bir fotoğraf yükleyip yüklemediğin",
               "Arayüz dili tercihin",
-              "Clerk tarafındaki hesap kimliğin",
+              "Parola belirlediysen: parolanın geri döndürülemez özeti (hash). " +
+                "Parolanın kendisi hiçbir yerde saklanmaz.",
+              "Açık oturumların — hangi cihazda girişli olduğunu takip eden kayıt",
             ],
           },
           {
@@ -103,7 +114,6 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             items: [
               "Ödeme bilgisi: kart numarası, IBAN, banka hesabı — hiçbiri. Uygulama para transferi yapmaz; " +
                 "ödeşme kaydı yalnızca senin girdiğin bir nottur.",
-              "Parolan. Girişi Clerk yapıyor; parola bizim sunucumuza hiç gelmiyor.",
               "Konum bilgisi, rehberin, fotoğraf galerin, cihaz kimliğin.",
               "Analitik ve reklam verisi. Uygulamada hiçbir analiz veya reklam aracı kurulu değil.",
               "Yüklediğin dosyalar — uygulamada dosya yükleme diye bir şey yok.",
@@ -137,8 +147,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Clerk — giriş ve hesap yönetimi",
               "Neon — veritabanı",
+              "Resend — giriş kodu e-postalarının gönderimi (e-posta adresin bu hizmete iletilir)",
               "Vercel — uygulamanın barındırılması",
               "Cloudflare — alan adı yönlendirmesi",
               "Sentry — hata takibi",
@@ -169,7 +179,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Clerk'in oturum çerezi — giriş yapmış kalman için gerekli.",
+              "Oturum çerezi — giriş yapmış kalman için gerekli.",
               "Dil tercihi çerezi — seçtiğin dilin bir sonraki ziyarette de geçerli olması için. Bir yıl saklanır.",
             ],
           },
@@ -277,7 +287,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
   en: {
     title: "Privacy Policy",
     description: "What data Owezy processes, why, and what it never collects.",
-    updated: "2026-08-25",
+    updated: "2026-08-26",
     intro:
       "Owezy is a shared ledger for friends and flatmates splitting expenses. " +
       "This page explains, in plain language, what the app does with your data. " +
@@ -290,7 +300,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             kind: "ul",
             items: [
               "Owezy does not move money. We never collect card, bank account or payment details.",
-              "Your password never reaches us; Clerk handles sign-in.",
+              "We never store your password in readable form — only an irreversible " +
+                "digest of it. You do not have to set one at all: you can sign in with " +
+                "a code sent to your email.",
               "We use no advertising or analytics trackers. We do not measure your visits.",
               "When you delete your account your name and email are removed, but expense " +
                 "records stay on anonymously so your group's balances are not corrupted.",
@@ -315,8 +327,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "p",
             text:
-              "Account data comes from our sign-in provider, Clerk, and a copy is kept " +
-              "in our own database:",
+              "You provide this when you create your account; all of it lives in our " +
+              "own database:",
           },
           {
             kind: "ul",
@@ -325,7 +337,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Your display name",
               "Your profile picture URL, if any, and whether you actually uploaded one",
               "Your interface language preference",
-              "Your account identifier on Clerk's side",
+              "If you set a password: an irreversible digest (hash) of it. The password " +
+                "itself is stored nowhere.",
+              "Your open sessions — the record of which device you are signed in on",
             ],
           },
           { kind: "p", text: "You create the rest by using the app:" },
@@ -357,7 +371,6 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             items: [
               "Payment details: no card numbers, no bank accounts. The app transfers no money; " +
                 "a settlement is only a note that you entered.",
-              "Your password. Clerk handles sign-in and the password never reaches our servers.",
               "Location, contacts, photo library, device identifiers.",
               "Analytics or advertising data. No such tool is installed in the app at all.",
               "Uploaded files — the app has no file upload.",
@@ -391,8 +404,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Clerk — sign-in and account management",
               "Neon — database",
+              "Resend — delivery of sign-in code emails (your email address is passed to this service)",
               "Vercel — hosting",
               "Cloudflare — domain routing",
               "Sentry — error tracking",
@@ -420,7 +433,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Clerk's session cookie — required to keep you signed in.",
+              "A session cookie — required to keep you signed in.",
               "A language preference cookie, so your chosen language survives your next visit. Kept for a year.",
             ],
           },
