@@ -405,6 +405,21 @@ model Session {
 
 model Account {
   id                    String    @id @default(uuid()) @db.Uuid
+
+  // Kimligi VEREN taraf ("local:credential", ya da sosyal saglayicilarda
+  // saglayicinin adresi). Better Auth bunu ZORUNLU yaziyor.
+  //
+  // BU ALAN ILK BASTA UNUTULDU ve sebebi kayda deger: sema
+  // "@better-auth/cli@1.4.21" ile uretilmisti, kutuphane ise 1.7.1. CLI
+  // kurulurken "no longer supported" uyarisi verdi, gecildi. Sonuc: ESKI
+  // bir surumun semasi. Kayit formu ilk denemede "Unknown argument issuer"
+  // ile dustu.
+  //
+  // DOGRU KAYNAK CALISMA ZAMANI: @better-auth/core'daki getAuthTables()
+  // kendi ayarlarimizla cagrilip dort modelin tamami karsilastirildi.
+  // Eksik olan yalnizca buydu.
+  issuer                String
+
   accountId             String
   providerId            String
   userId                String    @db.Uuid

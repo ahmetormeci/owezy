@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (12)
+Updated: 2026-08-25 (13)
 
 Current task:
   FAZ 25 - CLERK'TEN BETTER AUTH'A GEC. Karar kullanicinin: 2FA Clerk'te bir
@@ -71,6 +71,43 @@ Current task:
       destek@owezy.net'e gonderildi, GELEN KUTUSUNA dustu (spam'e degil),
       gonderen "Owezy <noreply@owezy.net>". Yani Resend + SPF + DKIM +
       DMARC + Cloudflare Email Routing zincirinin tamami calisiyor.
+
+  25.4 SONRASI DUZELTME - Account.issuer:
+    Kayit formu ilk gercek denemede dustu: "Unknown argument `issuer`".
+    Better Auth hesap satirina ZORUNLU bir issuer yaziyor
+    ("local:credential"); sutun semada yoktu.
+
+    NEDEN EKSIK KALDI - kayda deger: sema "@better-auth/cli@1.4.21" ile
+    uretildi, kutuphane 1.7.1. CLI kurulurken "Package no longer supported"
+    uyarisi verdi ve GECILDI. Yani eski bir surumun semasi uretildi.
+
+    DOGRU KAYNAK CALISMA ZAMANI. Tek tek yamamak yerine
+    @better-auth/core'daki getAuthTables() KENDI AYARLARIMIZLA cagrilip dort
+    modelin kanonik alan listesi alindi ve semayla karsilastirildi. Eksik
+    olan yalnizca issuer'di; User, Session, Verification tamdi.
+    25.6'da twoFactor tablolari gelirken AYNI YONTEM kullanilacak.
+
+    IKINCI BELIRTI: ilk denemede User satiri YARATILDI, Account yaratilamadi.
+    Geriye kimlik bilgisi olmayan yarim bir kayit kaldi ve ikinci deneme
+    "USER_ALREADY_EXISTS" verdi. Satir temizlendi.
+
+    HATA KODU ESLEMESI DUZELTILDI: calisma zamani
+    USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL doniyor, kaynak dosyalarindaki
+    kisa ad degil.
+
+    ESLENMEYEN HATALAR ARTIK LOGLANIYOR (auth-errors.ts). Onceden kullanici
+    "Bir seyler ters gitti" goruyordu ve GERIYE HICBIR IZ KALMIYORDU -
+    teshis bu yuzden elenerek ilerlemek zorunda kaldi. Kullaniciya gosterilen
+    cumle yine genel; ham hali yalnizca konsola dusuyor.
+
+    ARTIK DORT GIRIS YOLUNUN DORDU DE SINANDI:
+      e-posta kodu (tarayici)  - ben
+      Bearer / mobil sozlesmesi - ben (curl)
+      KAYIT FORMU               - KULLANICI
+      PAROLAYLA GIRIS           - KULLANICI
+    Kanit: Account satiri issuer=local:credential, providerId=credential,
+    parola hash'i var; displayName "ahmet" - yani kayit formundaki ad alani
+    calisti, e-posta yedegine dusulmedi.
 
   25.4'TE NE YAPILDI:
     - src/lib/auth-client.ts: Better Auth'un tarayici istemcisi.

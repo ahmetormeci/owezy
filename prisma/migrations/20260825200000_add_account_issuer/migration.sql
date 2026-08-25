@@ -1,0 +1,19 @@
+-- Account.issuer (Faz 25.5 oncesi duzeltme).
+--
+-- Better Auth hesap satirina ZORUNLU bir "issuer" yaziyor
+-- ("local:credential", sosyal saglayicilarda saglayicinin adresi). Sutun
+-- 20260825170000'de eksik kaldi ve kayit formu ilk denemede
+-- "Unknown argument `issuer`" ile dustu.
+--
+-- NEDEN EKSIK KALDI: sema "@better-auth/cli@1.4.21" ile uretildi, kutuphane
+-- ise 1.7.1. CLI kurulurken "no longer supported" uyarisi verdi. Yani ESKI
+-- bir surumun semasi uretildi.
+--
+-- DERS: semayi CLI'dan degil CALISMA ZAMANINDAN dogrula. @better-auth/core
+-- icindeki getAuthTables() kendi ayarlarimizla cagrilinca dort modelin
+-- kanonik alan listesini veriyor; karsilastirmada eksik olan yalnizca bu
+-- alandi (User, Session, Verification tamdi).
+--
+-- DEFAULT'SUZ NOT NULL GUVENLI: uygulanmadan once iki veritabaninda da
+-- Account tablosu BOS oldugu dogrulandi (hic basarili kayit olmamisti).
+ALTER TABLE "Account" ADD COLUMN "issuer" TEXT NOT NULL;

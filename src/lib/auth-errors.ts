@@ -28,11 +28,30 @@ const CODES: Record<string, string> = {
 
   PASSWORD_TOO_SHORT: "auth.password_too_short",
   USER_ALREADY_EXISTS: "auth.email_taken",
+  // Calisma zamaninda donen GERCEK kod bu - kaynak dosyalarindaki kisa ad
+  // degil. Kayit formunda olculdu.
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "auth.email_taken",
 };
 
-export function authErrorCode(error: { code?: string } | null | undefined): string | null {
-  if (!error?.code) {
-    return null;
+export function authErrorCode(
+  error: { code?: string; message?: string } | null | undefined,
+): string | null {
+  const mapped = error?.code ? CODES[error.code] : undefined;
+  if (mapped) {
+    return mapped;
   }
-  return CODES[error.code] ?? null;
+
+  // ESLENMEYEN HATA KONSOLA DUSUYOR.
+  //
+  // Olmadan: kullanici "Bir seyler ters gitti" goruyor ve GERIYE HICBIR IZ
+  // KALMIYOR - ne kod, ne mesaj. Nitekim kayit formunda tam olarak bu oldu
+  // ve teshis, elenerek ilerlemek zorunda kaldi.
+  //
+  // Kullaniciya gosterilen cumle yine GENEL kaliyor: Better Auth'un
+  // Ingilizce metnini basmak, Turkce arayuzde Ingilizce cumle demek olurdu
+  // (ADR-017). Ama gelistirici konsolunda ham hali durmali.
+  if (error) {
+    console.error("[auth] eşlenmemiş hata:", error);
+  }
+  return null;
 }
