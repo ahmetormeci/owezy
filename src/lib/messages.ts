@@ -146,6 +146,18 @@ export const MESSAGES_TR = {
   "ui.password": "Parola",
   "ui.sign_in_with_password": "Parolayla gir",
   "ui.sign_in_with_code": "Kodla gir",
+  // --- Kayit / giris sayfalari (Faz 25.4) ---
+  "ui.display_name": "Adın",
+  "ui.display_name_placeholder": "Ahmet Örmeci",
+  "ui.no_account_yet": "Hesabın yok mu?",
+  "ui.already_have_account": "Zaten hesabın var mı?",
+  // Better Auth'un hata KODLARI icin karsiliklar. Ham Ingilizce mesaji
+  // basmak, ADR-017'nin "API kod doner, metni okuyan taraf uretir"
+  // kuralini kimlik dogrulamada delmek olurdu.
+  "auth.invalid_code": "Kod hatalı ya da süresi dolmuş. Yeni bir kod isteyebilirsin.",
+  "auth.invalid_credentials": "E-posta ya da parola hatalı.",
+  "auth.password_too_short": "Parola en az 8 karakter olmalı.",
+  "auth.email_taken": "Bu e-posta adresi zaten kayıtlı. Giriş yapmayı dene.",
   // Ikinci faktor adimi. Ucu de AYNI ekrani kullaniyor, yalnizca baslik ve
   // ipucu degisiyor - kullanicinin yaptigi is her durumda ayni: bir kod gir.
   "ui.two_factor_title": "İki adımlı doğrulama",
@@ -587,6 +599,14 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.password": "Password",
   "ui.sign_in_with_password": "Sign in with a password",
   "ui.sign_in_with_code": "Sign in with a code",
+  "ui.display_name": "Your name",
+  "ui.display_name_placeholder": "Alex Doe",
+  "ui.no_account_yet": "Don't have an account?",
+  "ui.already_have_account": "Already have an account?",
+  "auth.invalid_code": "That code is wrong or has expired. You can ask for a new one.",
+  "auth.invalid_credentials": "That email or password is wrong.",
+  "auth.password_too_short": "Your password needs at least 8 characters.",
+  "auth.email_taken": "That email address is already registered. Try signing in.",
   "ui.two_factor_title": "Two-step verification",
   "ui.totp_hint": "Enter the 6-digit code from your authenticator app.",
   "ui.device_trust_hint": "We don't recognise this device. We sent a code to {email}.",

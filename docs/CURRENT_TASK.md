@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (10)
+Updated: 2026-08-25 (11)
 
 Current task:
   FAZ 25 - CLERK'TEN BETTER AUTH'A GEC. Karar kullanicinin: 2FA Clerk'te bir
@@ -27,8 +27,8 @@ Current task:
   ADIMLAR (her biri kendi basina dogrulanabilir; CLERK 25.7'YE KADAR AYAKTA):
     25.1  Sema ve iskelet                    BITTI  aa6f6cb
     25.2  Resend + sendVerificationOTP       BITTI  6dbb997
-    25.3  Sunucu kimligi (auth.ts, /api/v1)  BITTI  (commit bekliyor)
-    25.4  Web arayuzleri (giris/kayit/hesap)
+    25.3  Sunucu kimligi (auth.ts, /api/v1)  BITTI  bd9ae88
+    25.4  Web arayuzleri (giris/kayit)       BITTI  (commit bekliyor)
     25.5  Mobil (bearer + ekranlar)
     25.6  2FA (TOTP + yedek kod + trustDevice)
     25.7  Clerk'in sokulmesi
@@ -71,6 +71,46 @@ Current task:
       destek@owezy.net'e gonderildi, GELEN KUTUSUNA dustu (spam'e degil),
       gonderen "Owezy <noreply@owezy.net>". Yani Resend + SPF + DKIM +
       DMARC + Cloudflare Email Routing zincirinin tamami calisiyor.
+
+  25.4'TE NE YAPILDI:
+    - src/lib/auth-client.ts: Better Auth'un tarayici istemcisi.
+    - /sign-in ve /sign-up ARTIK BIZIM. Clerk'in <SignIn /> ve <SignUp />
+      bilesenleri gitti; [[...sign-in]] catch-all klasorleri de - o kalip
+      yalnizca Clerk'in ic yonlendirmesi icin gerekiyordu.
+    - GIRIS AKISI MOBILDEKININ AYNISI: birincil yol e-posta kodu, parola
+      ikincil. Iki istemcinin ayni akisi farkli sirayla sunmasi, ayni
+      uygulamayi iki ayri urun gibi gosterirdi.
+    - METINLER NEREDEYSE HAZIRDI: hepsi Faz 23'te mobil icin messages.ts'e
+      tasinmisti. Yalnizca ui.display_name ve dort auth.* hata karsiligi
+      eklendi.
+    - src/lib/auth-errors.ts: Better Auth'un hata KODUNU bizim mesaj
+      kodumuza ceviriyor. Kodlar PAKETTEN okundu. "Kullanici yok" ile
+      "parola yanlis" AYNI cumleye baglandi - ayirmak, hangi e-postalarin
+      kayitli oldugunu tek tek sinamaya izin verirdi.
+    - <UserButton /> GITTI, yerine components/user-menu.tsx. Sebebi kozmetik
+      DEGIL: Clerk'in bileseni yalnizca CLERK oturumunu biliyor, Better Auth
+      ile giren kullaniciyi tanimiyordu.
+    - CIKIS IKI SISTEMDEN BIRDEN yapiliyor (Promise.allSettled). Tarayici
+      hangi sistemde oturum oldugunu bilemiyor; yalnizca birinden cikmak
+      digerinin cerezini birakirdi ve auth.ts bir sonraki istekte onu bulup
+      kullaniciyi ICERIDE tutardi.
+    - HESAP EKRANI BILEREK YOK (kullanici karari): menude yalnizca ad,
+      e-posta ve cikis. Hesap silme zaten ADR-031'in kendi isi.
+
+    DOGRULANDI - TARAYICIDA:
+      Clerk oturumuyla /groups -> yeni menu dogru kullaniciyi gosterdi
+      Cikis -> /sign-in, __session cerezi silindi, /groups artik 307
+      E-posta + kod -> /groups (Better Auth oturumuyla)
+      /sign-up sayfasi dogru render oldu
+
+    BEN TEST EDEMEDIM (parola forma yazilmiyor): KAYIT FORMU ve PAROLAYLA
+    GIRIS. Kullanici deneyecek. Not: Better Auth'un varsayilan alt siniri
+    8 karakter.
+
+    KUCUK BULGU: kanca EKLENMEDEN ONCE yaratilan test kullanicisinin
+    displayName'i "" kaldi ve basliktaki dairede "?" gorunuyor. Kanca
+    yalnizca YENI kayitlara uygulaniyor - production'da sifir kullanici
+    oldugu icin gecis sorunu yok.
 
   25.3'TE NE YAPILDI:
     - /api/v1'IN TAMAMI TEK DOSYADAN: src/lib/auth.ts. 98 cagri noktasi var

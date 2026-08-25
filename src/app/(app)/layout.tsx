@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { BrandMark } from "@/components/brand-mark";
 import { GroupSwitcher } from "@/components/group-switcher";
+import { UserMenu } from "@/components/user-menu";
 import { getTranslate } from "@/lib/i18n-server";
 
 // (app) bir "route group": parantezli klasor adi URL'e yansimaz, yalnizca
