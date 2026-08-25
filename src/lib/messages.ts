@@ -146,9 +146,25 @@ export const MESSAGES_TR = {
   "ui.password": "Parola",
   "ui.sign_in_with_password": "Parolayla gir",
   "ui.sign_in_with_code": "Kodla gir",
-  // Ikinci faktor / cihaz guveni gibi tamamlanmamis durumlar. Mobil giris
-  // ekrani bunlari HENUZ yurutmuyor, o yuzden kullaniciyi cikmaza birakmak
-  // yerine calisan yola yonlendiriyoruz.
+  // Ikinci faktor adimi. Ucu de AYNI ekrani kullaniyor, yalnizca baslik ve
+  // ipucu degisiyor - kullanicinin yaptigi is her durumda ayni: bir kod gir.
+  "ui.two_factor_title": "İki adımlı doğrulama",
+  "ui.totp_hint": "Kimlik doğrulayıcı uygulamandaki 6 haneli kodu gir.",
+  // Cihaz guveni (needs_client_trust): parola dogruydu ama cihaz taninmiyor.
+  // Bunu bir GUVENLIK olayi gibi degil, bir bilgi gibi soyluyoruz - kullanici
+  // yanlis bir sey yapmadi.
+  "ui.device_trust_hint": "Bu cihazı tanımıyoruz. {email} adresine bir kod gönderdik.",
+  "ui.backup_code": "Yedek kod",
+  "ui.backup_code_hint":
+    "İki adımlı doğrulamayı kurarken sana verilen kodlardan birini gir. Her kod yalnızca bir kez kullanılır.",
+  "ui.use_backup_code": "Yedek kod kullan",
+  "ui.use_authenticator": "Uygulama kodunu kullan",
+  "ui.use_emailed_code": "E-postaya gelen kodu kullan",
+  "ui.resend_code": "Kodu yeniden gönder",
+  "ui.code_resent": "Kod yeniden gönderildi.",
+  // GERI DUSUS. Artik "ikinci faktor" demek DEGIL - onu yurutuyoruz. Geriye
+  // yalnizca desteklemedigimiz yollar kaliyor (bugun: SMS ikinci faktoru,
+  // ve parola yenileme gibi tamamlanmamis durumlar).
   "ui.sign_in_needs_web": "Bu giriş ek bir doğrulama istiyor. Şimdilik web üzerinden giriş yapman gerekiyor: owezy.net",
   "ui.sign_in_failed": "Bir şeyler ters gitti. Tekrar dener misin?",
   "ui.sample_title": "Kahvaltı",
@@ -554,6 +570,17 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.password": "Password",
   "ui.sign_in_with_password": "Sign in with a password",
   "ui.sign_in_with_code": "Sign in with a code",
+  "ui.two_factor_title": "Two-step verification",
+  "ui.totp_hint": "Enter the 6-digit code from your authenticator app.",
+  "ui.device_trust_hint": "We don't recognise this device. We sent a code to {email}.",
+  "ui.backup_code": "Backup code",
+  "ui.backup_code_hint":
+    "Enter one of the codes you were given when you set up two-step verification. Each code works once.",
+  "ui.use_backup_code": "Use a backup code",
+  "ui.use_authenticator": "Use your authenticator app",
+  "ui.use_emailed_code": "Use the emailed code",
+  "ui.resend_code": "Resend code",
+  "ui.code_resent": "Code sent again.",
   "ui.sign_in_needs_web": "This sign-in needs another verification step. For now, please sign in on the web: owezy.net",
   "ui.sign_in_failed": "Something went wrong. Care to try again?",
   "ui.sample_title": "Breakfast",
