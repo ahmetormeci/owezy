@@ -60,9 +60,11 @@ export default async function RootLayout({
 
   return (
     // DIKKAT: Clerk bu ayari yalnizca BASLARKEN okuyor. Prop degistiginde
-    // zaten mount olmus form eski dilde kaliyor - olculdu. Bu yuzden herkese
-    // acik sayfalardaki dil dugmesi sayfayi bastan yukluyor
-    // (PublicControls -> LanguageToggle fullReload).
+    // zaten mount olmus Clerk arayuzu eski dilde kaliyor - olculdu. Bu yuzden
+    // dil dugmesi HER YERDE sayfayi bastan yukluyor (bkz. LanguageToggle).
+    //
+    // "Yalnizca herkese acik sayfalarda" demek YETMIYOR: <UserButton /> de
+    // Clerk'in bileseni ve uygulama basliginda duruyor.
     <ClerkProvider localization={CLERK_LOCALIZATIONS[locale]}>
       <html
         // Sabit "tr" degildi bu: ekran okuyucu sayfanin tamamini Turkce

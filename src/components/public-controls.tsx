@@ -17,10 +17,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export function PublicControls() {
   return (
     <div className="fixed top-2 right-3 z-40 flex items-center gap-1">
-      {/* fullReload: Clerk'in giris/kayit formu bu sayfalarda ve dilini
-          yalnizca baslarken okuyor (bkz. LanguageToggle). Bu sayfalarda
-          korunacak istemci state'i de yok - form Clerk'in kendi formu. */}
-      <LanguageToggle fullReload />
+      <LanguageToggle />
       <ThemeToggle />
     </div>
   );

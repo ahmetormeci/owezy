@@ -73,6 +73,20 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 - 6 yeni E2E testi. En önemlisi: sayfaların **oturum açmadan** açıldığını
   doğrulayan test.
 
+### Dil değiştirince Clerk menüsü eski dilde kalıyormuş
+- İngilizce kullanırken profil menüsü Türkçe görünüyordu — hem de
+  **çıkış yapmaya çalışırken**, yani kullanıcının "bozuk mu?" diyeceği yerde.
+- Sebep zaten `language-toggle.tsx` içinde YAZILIYDI: Clerk bileşenleri
+  `localization` ayarını yalnızca mount olurken okuyor, `router.refresh()`
+  sunucu ağacını yeniliyor ama mount olmuş Clerk arayüzü eski dilde kalıyor.
+  Herkese açık sayfalarda `fullReload` ile çözülmüştü.
+- **Yanlış olan varsayımdı:** yorum "uygulama içi sayfalarda Clerk arayüzü
+  YOK" diyordu. O cümle, başlığa `<UserButton />` eklendiği gün sessizce
+  geçersizleşmiş.
+- `fullReload` bayrağı kaldırıldı; düğme artık **her yerde** sayfayı baştan
+  yüklüyor. Bedeli istemci durumu (yarım form, açık pencere); dil değiştirmek
+  nadir, yarısı çevrilmemiş arayüz ise her seferinde yanlış.
+
 ### Yol boyunca bulunanlar
 - **`ui.back_home` sözlükte zaten vardı**; yeni bir tane eklerken fark
   edildi ve kopya geri alındı. TypeScript de yakalardı ama sözlükte

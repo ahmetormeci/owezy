@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslate } from "@/lib/i18n";
 import {
   LOCALE_COOKIE,
@@ -31,26 +30,7 @@ const SWITCH_LABEL_CODES: Record<Locale, string> = {
  * geldiginde o gercekten bir kayit olacak ve API ucu orada anlam kazanacak;
  * cerez o zaman da hizli yol ve "cikis yapmis kullanici" yolu olarak kalir.
  */
-export function LanguageToggle({
-  /**
-   * Sunucu agacini tazelemek yerine sayfayi bastan yukler.
-   *
-   * NEDEN VAR: Clerk'in giris/kayit formu kendi metinlerini tasiyor ve
-   * "localization" ayarini YALNIZCA baslarken okuyor. router.refresh()
-   * sunucudan yeni dili getiriyor, ama zaten mount olmus Clerk arayuzu eski
-   * dilde kaliyor - yani dil dugmesine basan ziyaretci ekranin yarisi Turkce
-   * yarisi Ingilizce bir sayfa goruyor. Olculdu: yenilemeden sonra dogru dil
-   * geliyor, refresh() sonrasi gelmiyor.
-   *
-   * Yalnizca herkese acik sayfalarda kullaniliyor (PublicControls). Uygulama
-   * ici sayfalarda Clerk arayuzu YOK; orada refresh()'in gerekcesi -acik
-   * pencereleri ve form icerigini korumak- hala gecerli.
-   */
-  fullReload = false,
-}: {
-  fullReload?: boolean;
-} = {}) {
-  const router = useRouter();
+export function LanguageToggle() {
   const locale = useLocale();
   const t = useTranslate();
 
@@ -71,7 +51,7 @@ export function LanguageToggle({
     // yapmis kullanicida 401 gelmesi normal ve kullanicinin gordugu hicbir sey
     // bozulmuyor. Sessizce kaybolmasin diye konsola dusuyor.
     //
-    // keepalive: fullReload durumunda hemen ardindan sayfa bosaltiliyor ve
+    // keepalive: hemen ardindan sayfa bosaltiliyor ve
     // normalde tarayici ucusta olan istegi iptal ederdi - tercih hesaba hic
     // yazilmazdi. keepalive istegin sayfa omrunu asmasina izin veriyor.
     // Istek kucuk (tek alanli JSON), keepalive'in 64 KB sinirinin cok altinda.
@@ -84,16 +64,26 @@ export function LanguageToggle({
       console.warn("Dil tercihi hesaba yazilamadi", error);
     });
 
-    if (fullReload) {
-      window.location.reload();
-      return;
-    }
-
-    // Sayfanin yarisi sunucuda render ediliyor (baslik, grup sayfasi, sayfa
-    // basligi). refresh() sunucu agacini yeniden cekiyor ve yeni cerez o
-    // istekle birlikte gidiyor; istemci state'i (acik pencereler, form
-    // icerigi) korunuyor - tam sayfa yenileme bunlari silerdi.
-    router.refresh();
+    // TAM YENILEME, HER YERDE.
+    //
+    // Clerk'in bilesenleri "localization" ayarini YALNIZCA mount olurken
+    // okuyor. router.refresh() sunucu agacini yeni dilde getiriyor ama zaten
+    // mount olmus Clerk arayuzu eski dilde kaliyor - kullanici yarisi Turkce
+    // yarisi Ingilizce bir ekran goruyor.
+    //
+    // BU ONCE YALNIZCA HERKESE ACIK SAYFALARDA YAPILIYORDU ve buradaki yorum
+    // "uygulama ici sayfalarda Clerk arayuzu yok" diyordu. O varsayim
+    // (app)/layout.tsx'e <UserButton /> eklendigi gun sessizce gecersizlesti:
+    // dili degistiren kullanici, CIKIS YAPMAYA calisirken profil menusunu
+    // eski dilde goruyordu. Yani en cok "bu uygulama bozuk mu" diyecegi anda.
+    //
+    // BEDELI: istemci state'i siliniyor - yarim kalmis form, acik pencere,
+    // acilmis aylar. Dil degistirmek nadir bir is; yarisi cevrilmemis bir
+    // arayuz ise her seferinde yanlis.
+    //
+    // key={locale} ile ClerkProvider'i yeniden mount ettirmek DENENMEDI cunku
+    // ayni state kaybini uretir, ustune Clerk'i bastan baslatir.
+    window.location.reload();
   }
 
   return (
