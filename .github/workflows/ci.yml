@@ -6,10 +6,16 @@
 # once o yolun onunde otomatik hicbir kapi yoktu; her dogrulama elle
 # yapiliyordu. Burasi o boslugu kapatiyor.
 #
-# E2E BILEREK YOK. Playwright kosusu ~5,5 dakika suruyor, gercek Clerk test
-# kullanicilari ve ayri bir Neon veritabani istiyor. Bunlari CI'a tasimak,
-# uretim disi sirlari yeni bir ortama kopyalamak demek - kazanci degil.
+# E2E BILEREK YOK. Playwright kosusu ~8 dakika suruyor ve ayri bir Neon
+# veritabani ile bir avuc sir istiyor (E2E_DATABASE_URL, BETTER_AUTH_SECRET,
+# uc test kullanicisinin parolasi). Bunlari CI'a tasimak, uretim disi sirlari
+# yeni bir ortama kopyalamak demek - kazanci degil.
 # E2E yerelde calismaya devam ediyor: npm run test:e2e
+#
+# NOT (Faz 25.8): denklem bir miktar degisti. Kurulum artik test
+# kullanicilarini KENDISI yaratiyor; onceden Clerk panelinde elle kurulmus
+# hesaplar gerekiyordu ve "CI'a tasimak" o hesaplari da tasimak demekti.
+# Kalan tek gercek engel sirlar ve sure. Karar yeniden ele alinabilir.
 
 name: CI
 
@@ -118,7 +124,9 @@ jobs:
         # kontrol ediyor. Ilk kosuldugunda gercek bir sey buldu: ClerkProvider
         # expo-web-browser'i kosulsuz require ediyor ama paket yalnizca DOLAYLI
         # kuruluydu. Expo Go'da sorun cikmiyor, native derlemede native modul
-        # baglanmayabiliyor - yani tam da TestFlight'ta.
+        # baglanmayabiliyor - yani tam da TestFlight'ta. O paket 25.7'de
+        # Clerk'le birlikte kalkti; kontrol duruyor cunku ayni tuzak native
+        # modul tasiyan HER paket icin gecerli.
         run: npx expo-doctor
         working-directory: mobile
 

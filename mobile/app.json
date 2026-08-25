@@ -29,9 +29,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
-      "expo-web-browser",
-      "@clerk/expo"
+      "expo-secure-store"
     ]
   }
 }
