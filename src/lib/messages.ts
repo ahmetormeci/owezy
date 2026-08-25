@@ -167,6 +167,23 @@ export const MESSAGES_TR = {
   // ve parola yenileme gibi tamamlanmamis durumlar).
   "ui.sign_in_needs_web": "Bu giriş ek bir doğrulama istiyor. Şimdilik web üzerinden giriş yapman gerekiyor: owezy.net",
   "ui.sign_in_failed": "Bir şeyler ters gitti. Tekrar dener misin?",
+  // --- E-posta (Faz 25.2) ---
+  // Bunlar ARAYUZ metni degil, gonderilen postanin metni. Yine de sozlukte:
+  // ADR-020'nin garantisi (eksik ceviri = derleme hatasi) burada da gecerli
+  // olmali - kullanicinin gordugu en kritik metin bu, cunku giremezse
+  // uygulamayi hic gormuyor.
+  //
+  // KOD KONUYA YAZILMIYOR. Cogu servis yaziyor cunku kilit ekrani
+  // bildiriminde gorunuyor ve kolaylik sagliyor. Tam o yuzden yazmiyoruz:
+  // telefona yandan bakan biri giris kodunu okuyabilir. Konu ne oldugunu
+  // soyluyor, kod govdede.
+  "email.otp_subject_sign_in": "Owezy giriş kodun",
+  "email.otp_subject_email_verification": "E-posta adresini doğrula",
+  "email.otp_subject_forget_password": "Parolanı sıfırla",
+  "email.otp_subject_change_email": "Yeni e-posta adresini doğrula",
+  "email.otp_heading": "Doğrulama kodun",
+  "email.otp_body": "Bu kodu Owezy'de gir. {minutes} dakika geçerli.",
+  "email.otp_ignore": "Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; hesabında hiçbir şey değişmedi.",
   "ui.sample_title": "Kahvaltı",
   "ui.theme_toggle": "Temayı değiştir",
   // Dil dugmesi. Kisa etiketler ("TR" / "EN") her dilde ayni yazilir ama yine
@@ -583,6 +600,13 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.code_resent": "Code sent again.",
   "ui.sign_in_needs_web": "This sign-in needs another verification step. For now, please sign in on the web: owezy.net",
   "ui.sign_in_failed": "Something went wrong. Care to try again?",
+  "email.otp_subject_sign_in": "Your Owezy sign-in code",
+  "email.otp_subject_email_verification": "Verify your email address",
+  "email.otp_subject_forget_password": "Reset your password",
+  "email.otp_subject_change_email": "Verify your new email address",
+  "email.otp_heading": "Your verification code",
+  "email.otp_body": "Enter this code in Owezy. It is valid for {minutes} minutes.",
+  "email.otp_ignore": "If you didn't ask for this, you can ignore this email; nothing on your account has changed.",
   "ui.sample_title": "Breakfast",
   "ui.theme_toggle": "Switch theme",
   "ui.language_short_tr": "TR",

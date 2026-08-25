@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-25 (8)
+Updated: 2026-08-25 (9)
 
 Current task:
   FAZ 25 - CLERK'TEN BETTER AUTH'A GEC. Karar kullanicinin: 2FA Clerk'te bir
@@ -25,8 +25,8 @@ Current task:
   yapmak herkese parola sifirlatmak demek (Clerk parola hash'i disari vermiyor).
 
   ADIMLAR (her biri kendi basina dogrulanabilir; CLERK 25.7'YE KADAR AYAKTA):
-    25.1  Sema ve iskelet                    BITTI (commit bekliyor)
-    25.2  Resend + sendVerificationOTP       SIRADA
+    25.1  Sema ve iskelet                    BITTI  aa6f6cb
+    25.2  Resend + sendVerificationOTP       BITTI  (commit bekliyor)
     25.3  Sunucu kimligi (auth.ts, /api/v1)
     25.4  Web arayuzleri (giris/kayit/hesap)
     25.5  Mobil (bearer + ekranlar)
@@ -47,6 +47,36 @@ Current task:
     - DOGRULANDI (derleme degil, CALISMA): get-session 200 + null,
       send-verification-otp 200 + {"success":true}, uretilen kod sunucu
       loguna dustu, Verification satiri uuid id ile veritabanina yazildi.
+
+  25.2'DE NE YAPILDI:
+    - resend 6.22.1 kuruldu. src/lib/email.ts: sendOtpEmail().
+    - Metinler sozlukte (email.otp_*), iki dilde. ADR-020 garantisi burada
+      da gecerli olmali - kullanicinin gordugu EN KRITIK metin bu, cunku
+      giremezse uygulamayi hic gormuyor.
+    - KOD KONUYA YAZILMIYOR. Cogu servis yaziyor (kilit ekrani bildiriminde
+      gorunsun diye). Tam o yuzden yazmiyoruz: telefona yandan bakan biri
+      giris kodunu okuyabilir.
+    - DUZ METIN SURUMU DE gonderiliyor: yalnizca HTML tasiyan postalar spam
+      puani aliyor ve giris kodunun spam'e dusmesi = kullanici hic giremiyor.
+    - Dil, ISTEGIN CEREZINDEN okunuyor. Hesap tercihi BILEREK okunmuyor:
+      kod, kimligi henuz kanitlanmamis birine gidiyor; "bu adresin hesap dili
+      ne" diye sormak, adresin kayitli olup olmadigini sizdirmanin yolu olurdu.
+    - GONDERIM BEKLENMIYOR ve after() ile yapiliyor. Iki sebep birden:
+      (1) beklemek zamanlama sizintisi yaratiyor - kayitli/kayitsiz adres
+      arasindaki sure farki olculebilir hale geliyor; (2) sadece "await etme"
+      Vercel'de yetmiyor, yanit donunce islem olebilir ve posta hic gitmez.
+      after() ikisini birden cozuyor.
+
+    DOGRULANDI - UCTAN UCA, GERCEK POSTA KUTUSU:
+      destek@owezy.net'e gonderildi, GELEN KUTUSUNA dustu (spam'e degil),
+      gonderen "Owezy <noreply@owezy.net>". Yani Resend + SPF + DKIM +
+      DMARC + Cloudflare Email Routing zincirinin tamami calisiyor.
+
+  25.2'DE CIKAN SURPRIZ - CSRF KORUMASI:
+    BETTER_AUTH_URL tanimlaninca Better Auth ORIGIN kontrolu yapmaya basladi:
+    basliksiz istek 403 MISSING_OR_NULL_ORIGIN doniyor. Bu iyi bir sey.
+    AMA 25.5'TE SORUN OLACAK: mobil istemci Origin basligi gondermiyor.
+    Cozum betterAuth({ trustedOrigins: [...] }) - sirasi gelince.
 
   25.1'DE OLCULEN IKI SEY - BELGELER YANILDI:
     1. "Better Auth varsayilan olarak UUID uretir" YANLIS. Gercek uretici

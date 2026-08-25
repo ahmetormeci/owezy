@@ -1,8 +1,17 @@
+import { after } from "next/server";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { bearer } from "better-auth/plugins/bearer";
 import { emailOTP } from "better-auth/plugins/email-otp";
+import { sendOtpEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+
+/**
+ * Kodun omru. TEK YERDE cunku iki yer birden kullaniyor: eklentiye
+ * "ne kadar gecerli" diye veriliyor, e-postaya da "kac dakika" diye
+ * yaziliyor. Ayri yazilsalardi, biri degistiginde posta yalan soylerdi.
+ */
+const OTP_EXPIRES_IN_SECONDS = 300;
 
 /**
  * Better Auth sunucu ornegi - kimlik dogrulamanin TEK kaynagi olacak.
@@ -90,22 +99,40 @@ export const auth = betterAuth({
      */
     emailOTP({
       otpLength: 6,
-      expiresIn: 300,
-      async sendVerificationOTP({ email, otp, type }) {
-        // 25.2'DE RESEND GELECEK. O zamana kadar kod SUNUCU LOGUNA
-        // yaziliyor - yerelde calisabilmek icin.
-        //
-        // Production'da bu yol KAPALI: bir giris kodunu loga yazmak, log'a
-        // erisen herkese o hesabi acmak demek. Sessizce loglamaktansa
-        // patlamak dogru davranis - yanlis yapilandirilmis bir kurulum
-        // calisiyormus gibi gorunmemeli.
-        if (process.env.NODE_ENV === "production") {
-          throw new Error(
-            "E-posta gönderimi henüz yapılandırılmadı (Faz 25.2). " +
-              "Kod üretildi ama gönderilemedi.",
-          );
-        }
-        console.log(`[better-auth] ${type} kodu ${email} icin: ${otp}`);
+      expiresIn: OTP_EXPIRES_IN_SECONDS,
+      async sendVerificationOTP({ email, otp, type }, ctx) {
+        /**
+         * GONDERIM BEKLENMIYOR - ve bunun iki ayri sebebi var.
+         *
+         * 1. ZAMANLAMA SIZINTISI. Better Auth'un kendi notu: "not await the
+         *    email sending to avoid timing attacks". Beklersek, kayitli bir
+         *    adres ile kayitsiz bir adres arasindaki SURE FARKI olculebilir
+         *    hale gelir; yani cevabin icerigi ayni olsa da hangi
+         *    e-postalarin sistemde oldugu sizar.
+         *
+         * 2. SUNUCUSUZ ORTAM. Ama sadece "await etme" demek Vercel'de
+         *    YETMIYOR: yanit donunce islem sonlandirilabilir ve posta hic
+         *    gitmez. Bu yuzden after() - Next'in "yaniti gonder, SONRA sunu
+         *    calistir" araci. Ikisini birden cozen tek yol bu.
+         *
+         * HATA YUTULMUYOR, ama kullaniciya da YANSITILMIYOR: cagiran taraf
+         * her durumda "kod gonderildi" goruyor (yine 1. maddedeki sizinti).
+         * Hata sunucu loguna dusuyor - teslimat bozuldugunda tek isaretimiz o.
+         */
+        after(async () => {
+          try {
+            await sendOtpEmail({
+              to: email,
+              code: otp,
+              type,
+              expiresInSeconds: OTP_EXPIRES_IN_SECONDS,
+              // Dil cerezi buradan okunuyor. ctx yoksa varsayilana dusuyor.
+              headers: ctx?.request?.headers,
+            });
+          } catch (error) {
+            console.error("[better-auth] tek seferlik kod gönderilemedi:", error);
+          }
+        });
       },
     }),
 
