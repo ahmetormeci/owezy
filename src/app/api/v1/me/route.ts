@@ -15,7 +15,7 @@ export async function GET() {
 }
 
 /**
- * Kullanicinin kendi tercihlerini gunceller. Su an yalnizca dil.
+ * Kullanicinin kendi tercihlerini gunceller: dil ve gorunen ad.
  *
  * NEDEN CEREZ YETMIYOR: cerez tarayiciya ait. Kullanici baska bir cihazdan
  * girdiginde orada cerez yok ve dili yeniden secmesi gerekirdi. Kayit,
@@ -32,11 +32,17 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
 
-    const { locale } = updateMeSchema.parse(await request.json());
+    const body = updateMeSchema.parse(await request.json());
 
+    // YALNIZCA GONDERILEN ALAN yaziliyor. Ikisini birden yazsaydik, dil
+    // dugmesine basmak adi undefined'a cevirirdi - iki ayri arayuz ayni uca
+    // konusuyor ve birbirinin alanini silmemeli.
     const updated = await prisma.user.update({
       where: { id: user.id },
-      data: { locale },
+      data: {
+        ...(body.locale === undefined ? {} : { locale: body.locale }),
+        ...(body.displayName === undefined ? {} : { displayName: body.displayName }),
+      },
     });
 
     return NextResponse.json({ ok: true, user: updated });

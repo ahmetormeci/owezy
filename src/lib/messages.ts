@@ -85,6 +85,8 @@ export const MESSAGES_TR = {
   "validation.invalid": "Geçersiz istek",
   "validation.group_name_required": "Grup adı boş olamaz",
   "validation.group_name_too_long": "Grup adı en fazla 100 karakter olabilir",
+  "validation.display_name_required": "Adın boş olamaz",
+  "validation.display_name_too_long": "Ad en fazla 100 karakter olabilir",
   "validation.description_too_long": "Açıklama en fazla 500 karakter olabilir",
   "validation.currency_unsupported": "Desteklenmeyen para birimi",
 
@@ -149,6 +151,7 @@ export const MESSAGES_TR = {
   "ui.sign_in_with_code": "Kodla gir",
   // --- Kayit / giris sayfalari (Faz 25.4) ---
   "ui.display_name": "Adın",
+  "ui.name_saved": "Adın güncellendi",
   "ui.display_name_placeholder": "Ahmet Örmeci",
   "ui.no_account_yet": "Hesabın yok mu?",
   "ui.already_have_account": "Zaten hesabın var mı?",
@@ -557,6 +560,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "validation.invalid": "Invalid request",
   "validation.group_name_required": "Group name cannot be empty",
   "validation.group_name_too_long": "Group name can be at most 100 characters",
+  "validation.display_name_required": "Your name cannot be empty",
+  "validation.display_name_too_long": "Name can be at most 100 characters",
   "validation.description_too_long": "Description can be at most 500 characters",
   "validation.currency_unsupported": "Unsupported currency",
 
@@ -603,6 +608,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.sign_in_with_password": "Sign in with a password",
   "ui.sign_in_with_code": "Sign in with a code",
   "ui.display_name": "Your name",
+  "ui.name_saved": "Your name has been updated",
   "ui.display_name_placeholder": "Alex Doe",
   "ui.no_account_yet": "Don't have an account?",
   "ui.already_have_account": "Already have an account?",
