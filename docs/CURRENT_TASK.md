@@ -41,19 +41,27 @@ Current task:
       - App Review Information -> "Sign-in required" isaretli
       - En az bir grup olusturuldu ("NEW GROU..." gorseldeydi)
 
-    DURUMU BILINMIYOR (kullaniciya sorulacak, VARSAYILMAYACAK):
-      - destek@owezy.net kutusu acildi mi (Cloudflare Email Routing)
-      - Ornek veri YETERLI mi: birkac harcama + bir odesme var mi
-      - App Review Information -> Contact Information telefonu girildi mi
+    BITTI (devami):
+      - App Review Information -> Contact Information telefonu girildi
         (o telefon KULLANICININ, demo hesabin degil; hicbir yerde
         yayinlanmiyor, yalnizca App Review ekibi goruyor)
 
-  BENIM YARIM KALAN TEK ISIM:
-    Export compliance. app.json'a su eklenmeli:
-        ios.infoPlist.ITSAppUsesNonExemptEncryption = false
-    Yalnizca HTTPS kullandigimiz icin dogru deger bu; eklenmezse her
-    yuklemede sifreleme sorusu tekrar soruluyor. Kullaniciya teklif edildi,
-    CEVAP GELMEDI, o yuzden yapilmadi.
+    ACIK:
+      - destek@owezy.net kutusu ACILMADI (Cloudflare Email Routing).
+        Adres hem /privacy hem /support sayfasinda YAZILI; kutu yoksa
+        yazan adres calismiyor demektir.
+      - Ornek veri: kullanici "birkac harcama ve odeme ekledim" dedi;
+        GOZLE DOGRULANMADI (production'a girmek parola girmek demek, o
+        yapilmiyor). Kullanici kendisi kontrol edecek.
+
+  EXPORT COMPLIANCE: BITTI.
+    app.json -> ios.infoPlist.ITSAppUsesNonExemptEncryption = false
+    Yalnizca HTTPS kullandigimiz icin dogru deger bu; boylece her yuklemede
+    sifreleme sorusu SORULMUYOR. Cozumlenmis prebuild yapilandirmasindan
+    dogrulandi: deger BOOLEAN false (string "false" olsaydi Apple kabul
+    etmezdi).
+    NOT: ios/ klasoru repoda YOK (managed workflow); Info.plist derleme
+    aninda app.json'dan uretiliyor. Dogru yer burasi.
 
   DEVICE TRUST ENGELI CIKTI VE ASILDI (25 Agustos):
   Clerk'in Device Trust korumasi, dogru paroladan sonra bile ek dogrulama
