@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
 import { findCurrentUser } from "@/lib/auth";
 import { getInviteStatus } from "@/lib/groups";
 import { buttonVariants } from "@/components/ui/button";
@@ -26,11 +25,13 @@ export default async function JoinPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  // IKI SISTEME DE BAKILIYOR (Faz 25.3). Clerk yarisi 25.7'de silinecek.
-  // Burada da kayit OLUSTURULMUYOR: davet linki herkese acik.
+  // Kayit BURADA OLUSTURULMUYOR: davet linki herkese acik ve bir sayfa
+  // goruntulemesi kullanici kaydi yaratmamali. Bir sure burada Clerk'in
+  // auth()'u da soruluyordu (Faz 25.3), cunku o yolda "oturumu var ama
+  // satiri yok" diye bir ara durum vardi; Better Auth satiri kendisi
+  // yazdigi icin kalmadi.
   const currentUser = await findCurrentUser();
-  const { userId: clerkId } = await auth();
-  const userId = currentUser?.id ?? clerkId;
+  const userId = currentUser?.id;
   const t = await getTranslate();
 
   // Davet gecerli mi diye ONCE bakiyoruz: kullanici gecersiz bir link icin

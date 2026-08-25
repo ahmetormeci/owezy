@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { countUnreadNotifications } from "@/lib/notifications";
 import { listGroupsForUser } from "@/lib/groups";
 import { NotificationBell } from "@/components/notification-bell";
@@ -14,10 +14,11 @@ import { getTranslate } from "@/lib/i18n-server";
 // (app) bir "route group": parantezli klasor adi URL'e yansimaz, yalnizca
 // altindaki sayfalari ortak bir layout altinda toplar.
 //
-// Giris kontrolu burada, sayfanin kendisinde yapiliyor - middleware'de degil.
-// Clerk'in kendi dokumantasyonu da bunu oneriyor: middleware yol eslestirmesine
-// dayanir ve Next.js'in gercek yonlendirmesinden sapabilir, bu da korunmasi
-// gereken bir sayfanin acikta kalmasina yol acabilir.
+// Giris kontrolu burada, sayfanin kendisinde yapiliyor - proxy'de degil.
+// Proxy yol eslestirmesine dayanir ve Next.js'in gercek yonlendirmesinden
+// sapabilir; bu da korunmasi gereken bir sayfanin acikta kalmasina yol acar.
+// src/proxy.ts 25.7'de tamamen silindi: tek isi Clerk'in oturum baglamini
+// her istekte kullanilabilir kilmakti ve hicbir route'u korumuyordu.
 export default async function AppLayout({
   children,
 }: {
@@ -25,20 +26,17 @@ export default async function AppLayout({
 }) {
   const t = await getTranslate();
 
-  // KORUMA ARTIK BIZIM KAPIMIZDAN (Faz 25.3). Onceden dogrudan Clerk'in
-  // auth()'u soruluyordu; oyle kalsaydi Better Auth ile giren biri
-  // uygulamanin tamamindan disari atilirdi - bu layout altindaki HER sayfa
-  // buradan geciyor.
+  // BU LAYOUT ALTINDAKI HER SAYFANIN KORUMASI BU IKI SATIR.
   //
-  // getOrCreateCurrentUser, findCurrentUser DEGIL: Clerk yolunda kaydi
-  // olusturan yer burasi ("lazy sync", ADR-011). findCurrentUser'a
-  // gecseydik, ilk kez giren bir Clerk kullanicisi kaydi olmadigi icin
-  // giris ekranina geri atilirdi - yani hic iceri giremezdi.
+  // Bir sure burada findCurrentUser degil getOrCreateCurrentUser cagriliyordu:
+  // Clerk yolunda kullanici kaydini ilk goruste olusturan yer burasiydi
+  // ("lazy sync", ADR-011). Better Auth satiri kendisi yazdigi icin
+  // olusturacak bir sey kalmadi.
   //
   // Zil rakamini sunucuda hesapliyoruz: sayfa acilir acilmaz dogru sayiyla
   // geliyor, istemcinin ayrica bir istek atmasi gerekmiyor. Bildirimlerin
   // KENDISI ise yalnizca menu acildiginda cekiliyor.
-  const user = await getOrCreateCurrentUser();
+  const user = await findCurrentUser();
   if (!user) {
     redirect("/sign-in");
   }

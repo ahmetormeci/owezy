@@ -94,8 +94,9 @@ export const MESSAGES_TR = {
   "auth.not_signed_in": "Bu işlem için giriş yapman gerekiyor",
   "server.unexpected": "Beklenmeyen bir hata oluştu",
   "server.bad_response": "Sunucudan beklenmeyen bir cevap alındı",
-  // Yalnizca MOBILDE olusuyor: @clerk/expo v4 cevrimdisiyken getToken()'dan
-  // hata firlatiyor. Web'de karsiligi yok - tarayici zaten kendi hatasini verir.
+  // Yalnizca MOBILDE olusuyor: istek hic gonderilemedigi zaman
+  // (mobile/lib/api.ts fetch'i yakaliyor, status 0). Web'de karsiligi yok -
+  // tarayici zaten kendi hatasini verir.
   "server.offline": "Bağlantı yok. İnternete bağlanıp tekrar dene.",
 
   // ==========================================================
@@ -227,8 +228,10 @@ export const MESSAGES_TR = {
   "ui.role_owner": "Sahip",
   "ui.role_member": "Üye",
 
-  // Mobil istemcinin ihtiyaci (Faz 18.3). Web'de karsiliklari Clerk'in kendi
-  // bileseninden geliyordu, o yuzden sozlukte yoklardi.
+  // Mobil istemcinin ihtiyaci olarak eklendiler (Faz 18.3): web'de o zaman
+  // karsiliklari Clerk'in kendi bileseninden geliyordu ve sozlukte yoklardi.
+  // Faz 25.4'te web de bu sozluge bagsizlandi - ayni anahtarlari iki istemci
+  // birden kullaniyor.
   "ui.sign_out": "Çıkış yap",
   "ui.try_again": "Tekrar dene",
   "ui.you": "Sen",

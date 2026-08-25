@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { createExpense, listExpenses } from "@/lib/expenses";
 import { expenseBodySchema, listExpensesQuerySchema } from "@/lib/expense-schemas";
 import { handleApiError } from "@/lib/api";
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ groupId: string }> },
 ) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
@@ -39,7 +39,7 @@ export async function POST(
   { params }: { params: Promise<{ groupId: string }> },
 ) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }

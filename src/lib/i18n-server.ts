@@ -29,7 +29,7 @@ import type { Translator } from "@/lib/i18n";
  * sorgu sayisi sifir. Cikis yapmis ziyaretcide auth() bos donuyor, sorgu hic
  * calismiyor.
  *
- * KAYIT OLUSTURMAZ. Burada getOrCreateCurrentUser() cagrilamaz: o fonksiyon
+ * KAYIT OLUSTURMAZ. Burada findCurrentUser() cagrilamaz: o fonksiyon
  * yan etkili ve karsilama sayfasinin render'i kullanici satiri uretirdi.
  */
 export async function getLocale(): Promise<Locale> {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { getGroupForUser, listGroupMembers } from "@/lib/groups";
 import { listExpensesForExport } from "@/lib/expenses";
 import { listExpensesQuerySchema } from "@/lib/expense-schemas";
@@ -26,7 +26,7 @@ export async function GET(
   { params }: { params: Promise<{ groupId: string }> },
 ) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }

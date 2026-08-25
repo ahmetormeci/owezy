@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockCookies, mockFindCurrentUser, mockGetOrCreateCurrentUser } = vi.hoisted(() => ({
+const { mockCookies, mockFindCurrentUser } = vi.hoisted(() => ({
   mockCookies: vi.fn(),
   mockFindCurrentUser: vi.fn(),
-  mockGetOrCreateCurrentUser: vi.fn(),
 }));
 
 // "server-only" paketi, istemci ortaminda import edilirse bilerek patliyor.
@@ -14,7 +13,6 @@ vi.mock("next/headers", () => ({ cookies: mockCookies }));
 // auth.ts prisma'yi cekiyor; veritabani bu testin konusu degil.
 vi.mock("@/lib/auth", () => ({
   findCurrentUser: mockFindCurrentUser,
-  getOrCreateCurrentUser: mockGetOrCreateCurrentUser,
 }));
 
 const { getLocale, getTranslate } = await import("@/lib/i18n-server");
@@ -86,18 +84,6 @@ describe("getLocale - hesap tercihi", () => {
     withCookie(undefined);
     withAccount(null, false);
     await expect(getLocale()).resolves.toBe("tr");
-  });
-
-  // BU TESTIN SEBEBI: getOrCreateCurrentUser() kayit OLUSTURUYOR. getLocale
-  // kok layout'ta, yani her istekte calisiyor - o fonksiyonu cagirsaydi
-  // karsilama sayfasinin render'i kullanici satiri uretirdi.
-  it("kullanici kaydi OLUSTURMAZ", async () => {
-    withCookie(undefined);
-    withAccount("en");
-
-    await getLocale();
-
-    expect(mockGetOrCreateCurrentUser).not.toHaveBeenCalled();
   });
 });
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { getGroupForUser, listGroupInvites, listGroupMembers } from "@/lib/groups";
 import { AppError } from "@/lib/errors";
 import { getTranslate } from "@/lib/i18n-server";
@@ -18,7 +18,7 @@ export default async function GroupMembersPage({
   const { groupId } = await params;
   const t = await getTranslate();
 
-  const user = await getOrCreateCurrentUser();
+  const user = await findCurrentUser();
   if (!user) {
     return null;
   }

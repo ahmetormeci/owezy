@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { markAllNotificationsRead } from "@/lib/notifications";
 import { handleApiError } from "@/lib/api";
 
@@ -8,7 +8,7 @@ import { handleApiError } from "@/lib/api";
 // hicbir zaman notificationId = "read-all" olarak yorumlanmaz.
 export async function POST() {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }

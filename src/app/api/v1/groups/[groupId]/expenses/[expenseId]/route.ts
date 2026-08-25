@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { deleteExpense, getExpenseForUser, updateExpense } from "@/lib/expenses";
 import {
   deleteExpenseQuerySchema,
@@ -17,7 +17,7 @@ export async function GET(
   { params }: { params: Promise<{ groupId: string; expenseId: string }> },
 ) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
@@ -36,7 +36,7 @@ export async function PUT(
   { params }: { params: Promise<{ groupId: string; expenseId: string }> },
 ) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
@@ -61,7 +61,7 @@ export async function DELETE(
   { params }: { params: Promise<{ groupId: string; expenseId: string }> },
 ) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }

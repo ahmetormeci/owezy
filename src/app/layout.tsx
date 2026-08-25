@@ -1,33 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
-import { trTR } from "@clerk/localizations";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LocaleProvider } from "@/lib/i18n";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
-import type { Locale } from "@/lib/locale";
 import "./globals.css";
-
-// Clerk'in giris/kayit formu KENDI metinlerini tasiyor; bizim sozlugumuz
-// (messages.ts) oraya ulasmiyor. localization verilmedigi surece form
-// Clerk'in varsayilan diliyle, yani Ingilizce render ediliyordu: uygulamanin
-// metni Turkce, formun ici Ingilizce - ve bu kullanicinin gordugu ILK ekran.
-//
-// Burada Partial DOGRU olan (ADR-020'de DICTIONARIES'ten kaldirmistik, cunku
-// orada eksik bir dil sessiz bir bosluk demekti). Buradaysa eksiklik bir
-// bosluk degil, gecerli bir cevap: "Clerk'in varsayilani zaten dogru."
-// Ingilizce icin bilerek hicbir sey gondermiyoruz - enUS gondermek 1444
-// metni bosuna RSC yukune eklerdi.
-// Tip prop'un KENDISINDEN turetiliyor. "@clerk/types" dogrudan bagimlilik
-// degil (Clerk onu kendi icinde tasiyor); oradan import etmek, bizim
-// beyan etmedigimiz bir pakete bel baglamak olurdu. Boyle yazinca Clerk
-// tarafi tipi degistirirse burasi da onunla degisiyor.
-type ClerkLocalization = React.ComponentProps<typeof ClerkProvider>["localization"];
-
-const CLERK_LOCALIZATIONS: Partial<Record<Locale, ClerkLocalization>> = {
-  tr: trTR,
-};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,15 +35,20 @@ export default async function RootLayout({
   // tarayiciya/ekran okuyucuya, LocaleProvider ile istemci bilesenlerine.
   const locale = await getLocale();
 
+  // BURADA BIR ZAMANLAR <ClerkProvider> VARDI ve ona bir "localization"
+  // sozlugu geciriliyordu (trTR): Clerk'in giris/kayit formu kendi
+  // metinlerini tasiyor, bizim sozlugumuz oraya ulasmiyordu. Formlar artik
+  // BIZIM (Faz 25.4) ve metinleri messages.ts'ten geliyor - yani ADR-020'nin
+  // "eksik ceviri = derleme hatasi" garantisi kullanicinin gordugu ILK
+  // ekranda da gecerli. Once oyle degildi.
+  //
+  // BAGLI BIR SORU ACIK KALDI: dil dugmesi sayfayi bastan yukluyor
+  // (ADR-023) ve gerekcesi "Clerk bu ayari yalnizca baslarken okuyor"du.
+  // Clerk gitti, gerekce de gitti - ama tam yeniden yukleme kendi basina
+  // dogru mu, olculmedi. Degistirmek bir sadelestirme isi, bir sokme isi
+  // degil; oyle ele alinmali.
   return (
-    // DIKKAT: Clerk bu ayari yalnizca BASLARKEN okuyor. Prop degistiginde
-    // zaten mount olmus Clerk arayuzu eski dilde kaliyor - olculdu. Bu yuzden
-    // dil dugmesi HER YERDE sayfayi bastan yukluyor (bkz. LanguageToggle).
-    //
-    // "Yalnizca herkese acik sayfalarda" demek YETMIYOR: <UserButton /> de
-    // Clerk'in bileseni ve uygulama basliginda duruyor.
-    <ClerkProvider localization={CLERK_LOCALIZATIONS[locale]}>
-      <html
+    <html
         // Sabit "tr" degildi bu: ekran okuyucu sayfanin tamamini Turkce
         // telaffuz ederdi, Ingilizce metni de. lang yalnizca bir etiket degil,
         // sesletim ve tireleme kurallarini secen sey.
@@ -88,7 +70,6 @@ export default async function RootLayout({
             </ThemeProvider>
           </LocaleProvider>
         </body>
-      </html>
-    </ClerkProvider>
+    </html>
   );
 }

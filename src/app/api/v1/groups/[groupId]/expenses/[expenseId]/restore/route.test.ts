@@ -8,7 +8,7 @@ const { mockGetOrCreateCurrentUser, mockRestoreExpense } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/auth", () => ({
-  getOrCreateCurrentUser: mockGetOrCreateCurrentUser,
+  findCurrentUser: mockGetOrCreateCurrentUser,
 }));
 
 vi.mock("@/lib/expenses", () => ({

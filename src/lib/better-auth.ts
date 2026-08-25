@@ -16,11 +16,16 @@ const OTP_EXPIRES_IN_SECONDS = 300;
 /**
  * Better Auth sunucu ornegi - kimlik dogrulamanin TEK kaynagi olacak.
  *
- * NEDEN BU DOSYA "better-auth.ts", "auth.ts" DEGIL: src/lib/auth.ts su an
- * Clerk'in oturumunu okuyan yardimcilarimizi tasiyor ve gocun sonuna kadar
- * calisir durumda kalacak (bkz. PROGRESS Faz 25). Ikisini ayni ada
- * sikistirmak, gocun ortasinda hangisinin hangisi oldugunu belirsiz
- * yapardi. 25.7'de Clerk sokulurken bu dosya auth.ts olacak.
+ * NEDEN BU DOSYA "better-auth.ts", "auth.ts" DEGIL: ikisi AYRI islere
+ * bakiyor. Burasi kimlik dogrulama SUNUCUSU - uclari, eklentileri, posta
+ * gonderimi. src/lib/auth.ts ise tek bir soruyu cevapliyor: "bu istekteki
+ * kullanici kim". Doksanin uzerinde cagri noktasi ikincisini import ediyor
+ * ve birincisini hic bilmiyor.
+ *
+ * NOT: bu yorumda bir ara "25.7'de Clerk sokulurken bu dosya auth.ts olacak"
+ * yaziyordu. Yapilmadi ve sebebi yukarida: o plan "auth.ts adi Clerk
+ * yardimcilarinda dolu" diye kurulmustu, oysa ayirmanin daha iyi bir sebebi
+ * varmis.
  *
  * SECRET ve URL ortamdan geliyor. betterAuth() bunlari kendisi
  * BETTER_AUTH_SECRET / BETTER_AUTH_URL'den okuyor; burada elle

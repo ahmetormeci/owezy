@@ -11,7 +11,7 @@ const { mockGetOrCreateCurrentUser, mockCreateSettlement, mockListSettlements } 
 );
 
 vi.mock("@/lib/auth", () => ({
-  getOrCreateCurrentUser: mockGetOrCreateCurrentUser,
+  findCurrentUser: mockGetOrCreateCurrentUser,
 }));
 
 vi.mock("@/lib/settlements", () => ({

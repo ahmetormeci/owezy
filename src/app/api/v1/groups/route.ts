@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { createGroup, listGroupsForUser } from "@/lib/groups";
 import { createGroupSchema } from "@/lib/group-schemas";
 import { handleApiError } from "@/lib/api";
 
 export async function GET() {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }

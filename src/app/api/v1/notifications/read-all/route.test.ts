@@ -6,7 +6,7 @@ const { mockGetOrCreateCurrentUser, mockMarkAllRead } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/auth", () => ({
-  getOrCreateCurrentUser: mockGetOrCreateCurrentUser,
+  findCurrentUser: mockGetOrCreateCurrentUser,
 }));
 
 vi.mock("@/lib/notifications", () => ({

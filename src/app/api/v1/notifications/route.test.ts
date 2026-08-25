@@ -10,7 +10,7 @@ const { mockGetOrCreateCurrentUser, mockListNotifications, mockCountUnread } = v
 );
 
 vi.mock("@/lib/auth", () => ({
-  getOrCreateCurrentUser: mockGetOrCreateCurrentUser,
+  findCurrentUser: mockGetOrCreateCurrentUser,
 }));
 
 vi.mock("@/lib/notifications", () => ({

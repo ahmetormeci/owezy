@@ -1,18 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Prisma } from "@prisma/client";
 
-const { mockAuth, mockCurrentUser, mockGetSession, mockPrisma } = vi.hoisted(() => ({
-  mockAuth: vi.fn(),
-  mockCurrentUser: vi.fn(),
+const { mockGetSession, mockPrisma } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
   mockPrisma: {
     user: { findUnique: vi.fn(), create: vi.fn() },
   },
-}));
-
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: mockAuth,
-  currentUser: mockCurrentUser,
 }));
 
 // Better Auth ornegi TAKLIT EDILIYOR, gercegi yuklenmiyor: o modul Resend'i
@@ -22,7 +14,7 @@ vi.mock("@/lib/better-auth", () => ({
   auth: { api: { getSession: mockGetSession } },
 }));
 
-// findCurrentUser artik istegin basliklarini okuyor.
+// findCurrentUser istegin basliklarini okuyor (cerez ya da Bearer).
 vi.mock("next/headers", () => ({
   headers: async () => new Headers(),
 }));
@@ -31,192 +23,53 @@ vi.mock("@/lib/prisma", () => ({
   prisma: { user: mockPrisma.user },
 }));
 
-const { getOrCreateCurrentUser } = await import("@/lib/auth");
-
-const CLERK_ID = "user_clerk_1";
-
-/** Gercek Prisma'nin benzersizlik ihlalinde firlattigi hatanin aynisi. */
-function uniqueConstraintError() {
-  return new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
-    code: "P2002",
-    clientVersion: "7.9.0",
-    meta: { modelName: "User", target: ["clerkId"] },
-  });
-}
-
-function clerkUser(overrides: Record<string, unknown> = {}) {
-  return {
-    primaryEmailAddressId: "email-1",
-    emailAddresses: [
-      { id: "email-0", emailAddress: "eski@example.com" },
-      { id: "email-1", emailAddress: "ahmet@example.com" },
-    ],
-    firstName: "Ahmet",
-    lastName: "Ormeci",
-    imageUrl: "https://img.example.com/a.png",
-    ...overrides,
-  };
-}
+const { findCurrentUser } = await import("@/lib/auth");
 
 beforeEach(() => {
-  mockAuth.mockReset();
-  mockCurrentUser.mockReset();
+  mockGetSession.mockReset();
   mockPrisma.user.findUnique.mockReset();
   mockPrisma.user.create.mockReset();
-
-  mockGetSession.mockReset();
-
-  // VARSAYILAN: Better Auth oturumu YOK. Mevcut testlerin tamami Clerk
-  // yolunu sinaydi ve oyle kalmali - yeni yolun testleri ayri.
-  mockGetSession.mockResolvedValue(null);
-  mockAuth.mockResolvedValue({ userId: CLERK_ID });
-  mockCurrentUser.mockResolvedValue(clerkUser());
 });
 
-describe("getOrCreateCurrentUser - Better Auth yolu", () => {
-  it("Better Auth oturumu varsa kaydi id ile ceker ve Clerk'e HIC BAKMAZ", async () => {
-    const user = { id: "db-42", clerkId: null, email: "yeni@example.com" };
+/**
+ * BU DOSYA 25.7'DE KUCULDU: on iki testten uce indi ve bu bir kayip degil,
+ * silinen KODUN olcusu. Giden testlerin tamami Clerk'in "lazy sync"
+ * yolunu koruyordu - birincil e-postanin secilmesi, ad soyad yoksa
+ * e-postaya dusulmesi, P2002'nin yaris sinyali olarak ele alinmasi,
+ * clerkId ile e-posta cakismasinin birbirinden ayrilmasi. Hicbiri artik
+ * mumkun degil cunku "oturum var ama satir yok" durumu olusamiyor: Better
+ * Auth satiri kendisi yaziyor ve yazdigi tablo bizim User tablomuz.
+ *
+ * Geriye kalan uc test, kalan uc davranisin tamami.
+ */
+describe("findCurrentUser", () => {
+  it("oturum yoksa null doner ve veritabanina dokunmaz", async () => {
+    mockGetSession.mockResolvedValue(null);
+
+    await expect(findCurrentUser()).resolves.toBeNull();
+    expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("oturum varsa kaydi id ILE ceker", async () => {
+    const user = { id: "db-42", email: "ahmet@example.com" };
     mockGetSession.mockResolvedValue({ user: { id: "db-42" } });
     mockPrisma.user.findUnique.mockResolvedValue(user);
 
-    await expect(getOrCreateCurrentUser()).resolves.toBe(user);
+    await expect(findCurrentUser()).resolves.toBe(user);
 
-    // ESAS IDDIA: id ile aranmali, clerkId ile DEGIL. Better Auth'un
-    // session.user.id'si dogrudan bizim User.id'miz - arada esleme yok.
+    // ESAS IDDIA BU: arama id ile yapilmali. Faz 25 oncesinde burada bir
+    // esleme sutunu vardi (clerkId) ve gocun amaci onu ortadan kaldirmakti
+    // (ADR-007). session.user.id dogrudan bizim User.id'miz.
     expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({ where: { id: "db-42" } });
-    expect(mockAuth).not.toHaveBeenCalled();
-    expect(mockPrisma.user.create).not.toHaveBeenCalled();
   });
 
-  it("Better Auth yolunda kayit OLUSTURMAZ", async () => {
-    // Oturum var ama satir yok - Better Auth kendi yazdigi tabloya
-    // baktigi icin bu OLUSAMAZ. Yine de olusursa: Clerk'e dusulur,
-    // yeni kayit ACILMAZ.
+  it("oturum var ama satir yoksa KAYIT OLUSTURMAZ", async () => {
+    // Bu durum normalde olusamaz; yine de olusursa sessizce bir kullanici
+    // uretmek yanlis olurdu - cagiran taraf "oturum yok" cevabini almali.
     mockGetSession.mockResolvedValue({ user: { id: "db-yok" } });
-    mockAuth.mockResolvedValue({ userId: null });
     mockPrisma.user.findUnique.mockResolvedValue(null);
 
-    await expect(getOrCreateCurrentUser()).resolves.toBeNull();
+    await expect(findCurrentUser()).resolves.toBeNull();
     expect(mockPrisma.user.create).not.toHaveBeenCalled();
-  });
-
-  it("iki oturum birden varsa BETTER AUTH kazanir", async () => {
-    // Kullanici yeni sistemle girmis ama eski Clerk cerezi de duruyor.
-    // Yeni olan kazanmali; tersi gocu geri alirdi.
-    const betterAuthUser = { id: "db-yeni" };
-    mockGetSession.mockResolvedValue({ user: { id: "db-yeni" } });
-    mockPrisma.user.findUnique.mockResolvedValue(betterAuthUser);
-
-    await expect(getOrCreateCurrentUser()).resolves.toBe(betterAuthUser);
-    expect(mockPrisma.user.findUnique).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({ where: { id: "db-yeni" } });
-  });
-});
-
-describe("getOrCreateCurrentUser", () => {
-  it("oturum yoksa null doner ve veritabanina dokunmaz", async () => {
-    mockAuth.mockResolvedValue({ userId: null });
-
-    await expect(getOrCreateCurrentUser()).resolves.toBeNull();
-    expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
-    expect(mockPrisma.user.create).not.toHaveBeenCalled();
-  });
-
-  it("kayit zaten varsa onu doner ve yeni kayit olusturmaz", async () => {
-    const existing = { id: "db-1", clerkId: CLERK_ID };
-    mockPrisma.user.findUnique.mockResolvedValue(existing);
-
-    await expect(getOrCreateCurrentUser()).resolves.toBe(existing);
-    expect(mockPrisma.user.create).not.toHaveBeenCalled();
-  });
-
-  it("kayit yoksa birincil e-posta ile olusturur", async () => {
-    mockPrisma.user.findUnique.mockResolvedValue(null);
-    mockPrisma.user.create.mockResolvedValue({ id: "db-1" });
-
-    await getOrCreateCurrentUser();
-
-    expect(mockPrisma.user.create).toHaveBeenCalledWith({
-      data: {
-        clerkId: CLERK_ID,
-        // Listedeki ilk e-posta degil, primaryEmailAddressId ile eslesen secilmeli.
-        email: "ahmet@example.com",
-        displayName: "Ahmet Ormeci",
-        avatarUrl: "https://img.example.com/a.png",
-      },
-    });
-  });
-
-  it("ad soyad yoksa gorunen ad olarak e-postayi kullanir", async () => {
-    mockCurrentUser.mockResolvedValue(clerkUser({ firstName: null, lastName: null }));
-    mockPrisma.user.findUnique.mockResolvedValue(null);
-    mockPrisma.user.create.mockResolvedValue({ id: "db-1" });
-
-    await getOrCreateCurrentUser();
-
-    expect(mockPrisma.user.create.mock.calls[0][0].data.displayName).toBe(
-      "ahmet@example.com",
-    );
-  });
-
-  it("hic e-posta yoksa anlamli bir hata firlatir", async () => {
-    mockCurrentUser.mockResolvedValue(
-      clerkUser({ emailAddresses: [], primaryEmailAddressId: null }),
-    );
-    mockPrisma.user.findUnique.mockResolvedValue(null);
-
-    await expect(getOrCreateCurrentUser()).rejects.toThrow(/e-posta adresi bulunamadı/);
-    expect(mockPrisma.user.create).not.toHaveBeenCalled();
-  });
-
-  // Asil senaryo: ayni kullanicinin iki istegi ayni anda gelir, ikisi de
-  // "kayit yok" gorur, ikisi de olusturmaya calisir. Kaybeden istek patlamamali.
-  it("es zamanli istek kaydi once olusturduysa P2002'yi yutup mevcut kaydi doner", async () => {
-    const winner = { id: "db-1", clerkId: CLERK_ID };
-    mockPrisma.user.findUnique
-      .mockResolvedValueOnce(null) // ilk kontrol: henuz yok
-      .mockResolvedValueOnce(winner); // yaristan sonra: rakip olusturmus
-    mockPrisma.user.create.mockRejectedValue(uniqueConstraintError());
-
-    await expect(getOrCreateCurrentUser()).resolves.toBe(winner);
-    expect(mockPrisma.user.findUnique).toHaveBeenCalledTimes(2);
-  });
-
-  it("P2002 sonrasi kayit yine bulunamazsa hatayi gizlemez", async () => {
-    mockPrisma.user.findUnique.mockResolvedValue(null);
-    mockPrisma.user.create.mockRejectedValue(uniqueConstraintError());
-
-    await expect(getOrCreateCurrentUser()).rejects.toThrow(
-      Prisma.PrismaClientKnownRequestError,
-    );
-  });
-
-  // 25.1'de email UNIQUE oldu. Ayni adres Better Auth ile zaten kayitliysa,
-  // Clerk yolu ikinci bir satir ACAMAZ - ve acmamali.
-  it("e-posta cakismasinda mevcut kaydi doner, ikinci satir acmaz", async () => {
-    const mevcut = { id: "db-1", clerkId: null, email: "ahmet@example.com" };
-    mockPrisma.user.findUnique
-      .mockResolvedValueOnce(null) // ilk kontrol: clerkId ile yok
-      .mockResolvedValueOnce(null) // P2002 sonrasi: clerkId ile yine yok
-      .mockResolvedValueOnce(mevcut); // e-posta ile VAR
-    mockPrisma.user.create.mockRejectedValue(uniqueConstraintError());
-
-    await expect(getOrCreateCurrentUser()).resolves.toBe(mevcut);
-    expect(mockPrisma.user.findUnique).toHaveBeenLastCalledWith({
-      where: { email: "ahmet@example.com" },
-    });
-  });
-
-  it("P2002 disindaki veritabani hatalarini oldugu gibi firlatir", async () => {
-    const foreignKeyError = new Prisma.PrismaClientKnownRequestError("FK hatasi", {
-      code: "P2003",
-      clientVersion: "7.9.0",
-    });
-    mockPrisma.user.findUnique.mockResolvedValue(null);
-    mockPrisma.user.create.mockRejectedValue(foreignKeyError);
-
-    await expect(getOrCreateCurrentUser()).rejects.toBe(foreignKeyError);
-    // Baska bir hatada ikinci okuma yapilmamali.
-    expect(mockPrisma.user.findUnique).toHaveBeenCalledTimes(1);
   });
 });

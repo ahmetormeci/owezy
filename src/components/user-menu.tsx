@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PersonAvatar } from "@/components/person-avatar";
@@ -10,12 +9,9 @@ import { useTranslate } from "@/lib/i18n";
 
 /**
  * Basliktaki kullanici menusu. Clerk'in <UserButton /> bileseninin yerini
- * aliyor.
- *
- * NEDEN DEGISTIRMEK ZORUNDAYDIK: <UserButton /> yalnizca CLERK'IN oturumunu
- * biliyor. Better Auth ile giren biri uygulamaya giriyordu ama sag ustteki
- * menu onu tanimiyordu - yani goc yarim kalmis gibi gorunuyordu. Bu yuzden
- * 25.4 kozmetik degil, gocun tamamlanmasinin parcasi.
+ * aldi (Faz 25.4) ve bu kozmetik bir degisiklik degildi: <UserButton />
+ * yalnizca CLERK'IN oturumunu biliyordu, Better Auth ile giren kullaniciyi
+ * tanimiyordu.
  *
  * SIMDILIK YALNIZCA CIKIS. Profil duzenleme, parola degistirme ve hesap
  * silme bilerek disarida: hesap silme zaten ADR-031'in kendi isi
@@ -36,7 +32,6 @@ export function UserMenu({
 }) {
   const router = useRouter();
   const t = useTranslate();
-  const clerk = useClerk();
   const [busy, setBusy] = useState(false);
 
   async function signOut() {
@@ -44,17 +39,6 @@ export function UserMenu({
     setBusy(true);
 
     /**
-     * IKI SISTEMDEN DE CIKILIYOR ve bu goc suresince ZORUNLU.
-     *
-     * Kullanicinin hangi sistemde oturumu oldugunu buradan bilemiyoruz -
-     * sunucu biliyor, tarayici bilmiyor. Yalnizca birinden cikmak, digerinin
-     * cerezini birakirdi ve bir sonraki istekte auth.ts o kalan oturumu
-     * bulup kullaniciyi ICERIDE tutardi. Yani "cikis yaptim" diyen biri
-     * hala girisli olurdu.
-     *
-     * Oturumu olmayan sistemde cikmak zararsiz. Clerk yarisi 25.7'de
-     * silinecek.
-     *
      * NEDEN DUZ fetch, authClient.signOut() DEGIL:
      * authClient'i buraya import etmek, better-auth/react + better-fetch'i
      * (app) altindaki HER SAYFANIN istemci paketine sokardi. Cikis ise TEK
@@ -64,18 +48,17 @@ export function UserMenu({
      * Giris ve kayit formlari authClient'i kullanmaya devam ediyor: onlar
      * yalnizca kendi sayfalarinda yukleniyor, bedeli orada kaliyor.
      *
-     * NOT: bu degisiklik bir E2E hatasini kovalarken yapildi ve o hatanin
-     * sebebi BU DEGILDI - ayni test 25.3'te de dusuyor (bkz. CURRENT_TASK,
-     * expenses.spec.ts:106). Gerekce yine de kendi basina gecerli oldugu
-     * icin degisiklik korundu.
-     *
      * Ayni kokene giden fetch Origin basligini kendisi ekliyor, yani
      * Better Auth'un CSRF kontrolu memnun.
+     *
+     * BURADA BIR ZAMANLAR IKI CIKIS VARDI (Promise.allSettled): biri Better
+     * Auth'a, biri Clerk'e. Goc suresince zorunluydu - tarayici hangi
+     * sistemde oturum oldugunu bilemiyor ve yalnizca birinden cikmak,
+     * digerinin cerezini birakirdi; auth.ts bir sonraki istekte onu bulup
+     * kullaniciyi ICERIDE tutardi. Sistem tek kalinca ikinci cagriya da
+     * gerek kalmadi.
      */
-    await Promise.allSettled([
-      fetch("/api/auth/sign-out", { method: "POST" }),
-      clerk.signOut(),
-    ]);
+    await fetch("/api/auth/sign-out", { method: "POST" });
 
     router.replace("/sign-in");
     router.refresh();

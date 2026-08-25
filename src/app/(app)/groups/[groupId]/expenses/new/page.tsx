@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { getGroupForUser, listGroupMembers } from "@/lib/groups";
 import { AppError } from "@/lib/errors";
 import { ExpenseForm } from "@/components/expense-form";
@@ -14,7 +14,7 @@ export default async function NewExpensePage({
   const { groupId } = await params;
   const t = await getTranslate();
 
-  const user = await getOrCreateCurrentUser();
+  const user = await findCurrentUser();
   if (!user) {
     return null;
   }

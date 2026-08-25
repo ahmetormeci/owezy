@@ -11,7 +11,7 @@ const { mockGetOrCreateCurrentUser, mockGetGroupForUser, mockUpdateGroup } = vi.
 }));
 
 vi.mock("@/lib/auth", () => ({
-  getOrCreateCurrentUser: mockGetOrCreateCurrentUser,
+  findCurrentUser: mockGetOrCreateCurrentUser,
 }));
 
 // updateGroup kullanilmiyor ama sahte modulde BULUNMAK zorunda: route dosyasi

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { countUnreadNotifications, listNotifications } from "@/lib/notifications";
 import { listNotificationsQuerySchema } from "@/lib/notification-schemas";
 import { handleApiError } from "@/lib/api";
@@ -9,7 +9,7 @@ import { handleApiError } from "@/lib/api";
 // bir yolu bulunmuyor.
 export async function GET(request: NextRequest) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }

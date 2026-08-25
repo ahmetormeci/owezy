@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { getGroupBalances } from "@/lib/balances";
 import { getGroupForUser, listGroupMembers } from "@/lib/groups";
 import { listExpenses } from "@/lib/expenses";
@@ -113,7 +113,7 @@ export default async function GroupDetailPage({
   const t = await getTranslate();
   const locale = await getLocale();
 
-  const user = await getOrCreateCurrentUser();
+  const user = await findCurrentUser();
   if (!user) {
     return null;
   }

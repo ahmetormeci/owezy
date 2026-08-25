@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { cancelSettlement } from "@/lib/settlements";
 import { handleApiError } from "@/lib/api";
 
@@ -11,7 +11,7 @@ export async function POST(
   { params }: { params: Promise<{ groupId: string; settlementId: string }> },
 ) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { listGroupsForUser } from "@/lib/groups";
 import { Badge } from "@/components/ui/badge";
 import { CreateGroupDialog } from "@/components/create-group-dialog";
@@ -12,7 +12,7 @@ import { getTranslate } from "@/lib/i18n-server";
 // (Yazma islemleri /api/v1 uzerinden gidecek - mobil de ayni yolu kullanacak.)
 export default async function GroupsPage() {
   const t = await getTranslate();
-  const user = await getOrCreateCurrentUser();
+  const user = await findCurrentUser();
   if (!user) {
     return null;
   }

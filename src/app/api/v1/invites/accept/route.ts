@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getOrCreateCurrentUser } from "@/lib/auth";
+import { findCurrentUser } from "@/lib/auth";
 import { acceptGroupInvite } from "@/lib/groups";
 import { handleApiError } from "@/lib/api";
 
@@ -10,7 +10,7 @@ const acceptInviteSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getOrCreateCurrentUser();
+    const user = await findCurrentUser();
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }

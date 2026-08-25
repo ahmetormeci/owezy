@@ -12,7 +12,7 @@ const { mockGetOrCreateCurrentUser, mockCreateExpense, mockListExpenses } = vi.h
 }));
 
 vi.mock("@/lib/auth", () => ({
-  getOrCreateCurrentUser: mockGetOrCreateCurrentUser,
+  findCurrentUser: mockGetOrCreateCurrentUser,
 }));
 
 vi.mock("@/lib/expenses", () => ({

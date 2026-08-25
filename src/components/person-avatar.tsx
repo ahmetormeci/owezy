@@ -1,12 +1,17 @@
 /**
  * Bir kisinin gorsel karsiligi: fotografi varsa fotografi, yoksa bas harfi.
  *
- * NEDEN hasImage'e BAKIYORUZ, avatarUrl'e degil:
- * Clerk, fotograf yuklememis kullaniciya da bir image_url veriyor - kendi
- * urettigi bas-harf gorseli. "avatarUrl varsa bas" deseydik, fotografi
- * olanlar gercek yuz, olmayanlar CLERK'IN tasarimiyla gorunurdu ve ayni
- * listede iki ayri gorsel sistem yan yana dururdu. hasImage bu ayrimi
- * tasiyor (bkz. schema.prisma).
+ * NEDEN hasImage'e BAKIYORUZ, avatarUrl'e degil: Clerk, fotograf yuklememis
+ * kullaniciya da bir image_url veriyordu - kendi urettigi bas-harf gorseli.
+ * "avatarUrl varsa bas" deseydik, fotografi olanlar gercek yuz, olmayanlar
+ * CLERK'IN tasarimiyla gorunurdu ve ayni listede iki ayri gorsel sistem yan
+ * yana dururdu. hasImage bu ayrimi tasiyor (bkz. schema.prisma).
+ *
+ * FAZ 25.7 SONRASI: iki alani da YAZAN KIMSE YOK. Clerk gitti, yerine gelen
+ * kayit akisi fotograf sormuyor. Yani yeni her kullanici bas harfiyle
+ * gorunuyor ve kod, eski satirlardaki degerler icin duruyor. Silmedik: bir
+ * profil fotografi ozelligi geldiginde yazacak yer hazir - ve o gun geldiginde
+ * hasImage ayrimi yine gerekecek.
  *
  * Renk isimden TURETILIYOR, veritabaninda saklanmiyor: ayni kisi her
  * ekranda ayni rengi aliyor ve yeni bir kolon gerekmiyor. Ton araligi
@@ -54,9 +59,9 @@ export function PersonAvatar({
 
   if (hasImage && avatarUrl) {
     return (
-      // next/image DEGIL duz img: next/image, img.clerk.com icin
-      // next.config'de remotePatterns tanimi ister ve bu goruntuler zaten
-      // kucuk, Clerk'in CDN'inden geliyor ve olculeri sabit.
+      // next/image DEGIL duz img: next/image her dis kaynak icin
+      // next.config'de bir remotePatterns tanimi ister; bu goruntuler ise
+      // kucuk ve olculeri sabit, yani optimizasyonun getirisi yok.
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={avatarUrl}
