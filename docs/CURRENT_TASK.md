@@ -13,9 +13,25 @@ kod degisti mi:
 
 Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
+
+AMA BU KONTROL YALNIZCA KODU KAPSIYOR - ve staleness'in asil sakland
+yer orasi degil. "SENDE KALANLAR" maddeleri DIS DUNYAYI anlatiyor: DNS
+kayitlari, Vercel degiskenleri, Sentry ayarlari, App Store Connect,
+saglayici panelleri. Onlari ne git ne de bir test goruyor; kullanici
+sessizce halletmis olabilir.
+
+BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI, ustteki
+listeden kopyalanmamali. Olcum yollari:
+    DNS      dig +short TXT _dmarc.owezy.net
+    env      grep -oE '^[A-Z0-9_]+' .env.local   (ADLAR; degerleri okuma)
+    canli    curl -sI https://owezy.net/...
+    panel    olculemez - KULLANICIYA SOR, varsaymadan
+
+26 Agustos'ta tam bu hata yapildi: aspf=s -> aspf=r isi coktan bitmisti,
+dosya "yapilacak" diye tasidi ve kullaniciya ikinci kez anlatildi.
 -->
 
-Updated: 2026-08-26 (23)
+Updated: 2026-08-26 (24)
 
 Current task:
   FAZ 27 - IKI ADIMLI DOGRULAMA. Karar ve gerekcesi ADR-040'ta.
@@ -78,26 +94,34 @@ APP STORE - ACIK IS KALMADI (26 Agustos, kullanici dogruladi):
   hesabinda) IKI ADIMLI DOGRULAMAYI ACMA. 27.4 bitene kadar 2FA acik bir
   hesap MOBILDE GIREMIYOR - olculdu, ayrintisi asagida.
 
-SENDE KALANLAR (uygulama tarafinda bir isi yok, ama unutulmasin):
+SENDE KALAN TEK IS - CLERK'IN SON IZLERI (aceleye gerek yok):
+    Clerk paneli : Webhooks -> Endpoints'teki olu kayit
+    Clerk hesabi : development ornegi de dahil kapatilabilir
+    git          : better-auth dali birlesti, silinebilir
+                   (git push origin --delete better-auth)
+  E2E ARTIK CLERK'E BAGLI DEGIL - kurulum test kullanicilarini kendisi
+  yaratiyor, yani development ornegi de gerekmiyor.
 
-  1. TEMIZLIK - Vercel ve .env.local BITTI (kullanici sildi, dogrulandi:
-     .env.local'de yalnizca 11 gerekli degisken kaldi). Kalanlar:
-       mobile/.env.local : EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY (HALA DURUYOR)
-       Clerk paneli      : Webhooks -> Endpoints'teki olu kayit
-       Clerk hesabi      : development ornegi de dahil kapatilabilir
-       git               : better-auth dali birlesti, silinebilir
-                           (git push origin --delete better-auth)
-     E2E ARTIK CLERK'E BAGLI DEGIL - kurulum test kullanicilarini kendisi
-     yaratiyor.
+BITEN VE OLCULEN ISLER (26 Agustos - burada duruyorlar ki bir daha
+"yapilacak" diye yazilmasinlar):
 
-  2. SENTRY - "Prevent Storing of IP Addresses" (istege bagli).
-     Sentry -> Settings -> Security & Privacy -> Data Scrubbing.
+  DNS - DMARC HIZALAMASI DUZELTILDI. dig ile dogrulandi:
+      v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r
+      send.owezy.net TXT : v=spf1 include:amazonses.com ~all
+      resend._domainkey  : gecerli
+    aspf ARTIK RELAXED. Onceki durumda (aspf=s) Resend zarfi
+    send.owezy.net'ten cikip From owezy.net oldugu icin SPF her seferinde
+    dusuyordu ve p=reject altinda tek dayanak DKIM kaliyordu. Simdi iki
+    bacak da tutuyor. adkim=s bilerek strict birakildi.
 
-  3. DNS - ASPF=S RISKLI. Resend zarfi send.owezy.net'ten yolluyor, From ise
-     owezy.net; strict hizalamada SPF HER ZAMAN dusuyor. Posta yine gidiyor
-     cunku DMARC "SPF ya da DKIM" diyor ve DKIM hizaliyor. Ama tek bacak
-     uzerindeyiz ve p=reject yuzunden bir DKIM aksamasi = KIMSE GIRIS
-     YAPAMIYOR. ONERI: aspf=s -> aspf=r.
+  SENTRY - "Prevent Storing of IP Addresses" ACIK.
+    /privacy'deki "Sentry'ye kisisel veri gondermiyoruz" cumlesi artik
+    yalnizca kodla degil, Sentry ayariyla da kilitli.
+
+  TEMIZLIK - Vercel, .env.local ve mobile/.env.local'de CLERK ADI GECEN
+    HICBIR SEY KALMADI. Dogrulandi (yalnizca degisken ADLARI okundu):
+      .env.local        : 11 gerekli degisken, hepsi yerinde
+      mobile/.env.local : yalnizca EXPO_PUBLIC_API_BASE_URL
 
 E2E - NASIL CALISIYOR:
   - Kurulum test kullanicilarini KENDISI yaratiyor (/api/auth/sign-up/email)
