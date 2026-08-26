@@ -119,8 +119,13 @@ Bunlar tartışılmış ve karara bağlanmıştır (gerekçeler DECISIONS.md'de)
 - Üç ayrı veritabanı: geliştirme, E2E, production. `E2E_DATABASE_URL` ile
   `DATABASE_URL` **asla** aynı olmamalı — `e2e/db-cleanup.ts` aynıysa
   çalışmayı reddeder.
-- Tam E2E koşusu ~5–6 dakika sürer ve gerçek bir dev sunucusu başlatır (3100).
+- Tam E2E koşusu ~8 dakika sürer ve gerçek bir dev sunucusu başlatır (3100).
   **Koşu sürerken proje dosyalarına dokunma.**
+- **E2E'den önce 3000'deki dev sunucusunu kapat.** Next 16 aynı dizinden
+  ikinci bir `next dev` başlatmayı reddediyor — farklı port olsa bile.
+  Belirtisi yanıltıcı: Playwright "Process from config.webServer was not able
+  to start" diyor, sanki testlerde bir sorun varmış gibi. Gerçek satır bir
+  üstte: `⨯ Another next dev server is already running.`
 - E2E çıktısındaki `[WebServer]` satırları dev sunucusunun stderr'i: tarayıcı
   kapanınca çıkan `ECONNRESET` / `Error: aborted` gürültüsüdür. Playwright'ta `stdout` zaten kapalı; `stderr`
   **bilerek açık** çünkü gerçek sunucu hataları da oradan geliyor.
