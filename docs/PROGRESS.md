@@ -1114,7 +1114,7 @@ Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yarama
 
 ---
 
-## Faz 26 — Güvenlik başlıkları ve hız sınırı · **SÜRÜYOR**
+## Faz 26 — Güvenlik başlıkları ve hız sınırı · **BİTTİ**
 
 Gizlilik politikasındaki "makul teknik tedbirler" cümlesini gerçek yapan iş.
 Faz 25 onu aciller listesine taşıdı: **giriş denemelerini eskiden Clerk
@@ -1125,7 +1125,7 @@ sınırlıyordu, artık biz sorumluyuz.**
 | 26.1 `/api/auth` hız sınırı gerçekten sayıyor | ✅ | `ee9e32e` |
 | 26.2 Güvenlik başlıkları | ✅ | `abb6697` |
 | 26.3 CSP | ✅ | `fbfed02` |
-| 26.4 `/api/v1` hız sınırı | — | |
+| 26.4 `/api/v1` hız sınırı | ✅ | `c698eaa` |
 
 **26.1 — sayaç yanlış yerdeydi, kural değil.** Better Auth'un varsayılan
 kuralları okununca makul çıktı (giriş/kayıt 3/10sn, e-posta kodu 3/60sn). Ama
@@ -1155,8 +1155,24 @@ taşıyor (`/join/<token>`) ve adres çubuğunda duruyor.
 her sayfayı dinamik render'a zorlar; karşılığında kazanılan şey ölçüldüğünde
 küçük çıktı — kod tabanında tek bir `dangerouslySetInnerHTML` yok.
 
-**Test:** Birim 510 ✅ · E2E 43 ✅ (üç kez: hız sınırı, başlıklar, zorlayıcı
-CSP) · üretim derlemesi yerelde koşulup konsol okundu ✅
+**26.4 — yazma bütçesi, kullanıcı başına.** Anahtar kullanıcı, IP değil:
+her yazma ucu oturum istiyor, yani anonim sel diye bir tehdit yok ve IP
+operatör/NAT arkasında paylaşılıyor. **Okuma uçları bilerek dışarıda** — grup
+sayfası tek seferde beş paralel GET atıyor.
+
+Tablo **kendimizin olmak zorundaydı** ve bu ölçüldü: Better Auth kendi
+`RateLimit` tablosunu buduyor ve eşiği yalnızca kendi pencerelerinden
+hesaplıyor; bizim satırlarımız altımızdan silinirdi — sınır zaman zaman hiç
+uygulanmazdı.
+
+**Kuralı bir yapısal test koruyor.** Sınır 15 dosyaya elle kondu; on altıncıda
+unutmak görünür hiçbir şey bozmaz. Test, bir uçtan sınır kasten çıkarılarak
+doğrulandı ve adını verdi: `'/groups/route.ts -> POST'`.
+
+Ölçüm: 1–60 → 200, 61+ → 429. E2E'nin en yoğun anı bir pencerede **4** yazma.
+
+**Test:** Birim 513 ✅ · E2E 43 ✅ (dört kez) · üretim derlemesi yerelde
+koşulup konsol okundu ✅
 
 ---
 

@@ -15,30 +15,33 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-26 (17)
+Updated: 2026-08-26 (18)
 
 DAL: better-auth. YEREL main = origin/main = CANLIDAKI HAL.
 CLERK ARTIK KODDA HIC YOK. Paketler de kalkti.
 
 Current task:
-  FAZ 26 - GUVENLIK BASLIKLARI VE HIZ SINIRI. Uc adim bitti, biri kaldi.
+  YOK - KULLANICIDAN GOREV BEKLENIYOR.
+
+  FAZ 26 (guvenlik basliklari ve hiz siniri) BITTI:
     26.1  /api/auth hiz siniri gercekten sayiyor   BITTI  ee9e32e
     26.2  Guvenlik basliklari                      BITTI  abb6697
     26.3  CSP (nonce'suz, ADR-039)                 BITTI  fbfed02
-    26.4  /api/v1 hiz siniri                       KALDI
+    26.4  /api/v1 yazma butcesi                    BITTI  c698eaa
 
-  26.4 HENUZ TASARLANMADI ve gercek bir karar iceriyor:
-    - NEYE GORE sinirliyoruz? IP mi, kullanici mi? /api/v1'in tamami oturum
-      istiyor, yani tehdit anonim sel degil; hesap acip yazma uclarini
-      dovmek. Kullanici kimligi daha dogru anahtar gibi duruyor - IP
-      operatorler ve NAT arkasinda paylasiliyor ve masumu cezalandirir.
-    - NEREDE duruyor? 15 yazma ucunun basinda bir yardimci mi, yoksa proxy
-      mi? proxy 25.7'de silindi ve ADR-039 onu CSP icin de geri getirmedi;
-      ucuncu kez gundeme gelirse karar bilincli verilmeli.
-    - HANGI UCLAR? Okuma uclari oturumla korunuyor ve ucuz; yazma uclari hem
-      veri buyutuyor hem bildirim yayiyor. 21 route dosyasinin 15'i yazma.
+  SIRADAKI ADAYLAR (karar kullanicinin):
+    - 2FA - asagida, uc secenek var, hicbiri secilmedi
+    - main'e gecis - asagidaki kontrol listesi, sende bekleyen adimlar var
+    - PROGRESS.md'deki aday listesi (fis gorseli, mobilde otomatik test, ...)
 
   FAZ 26'DAN AKILDA TUTULACAKLAR:
+    - /api/v1 YAZMA BUTCESI: kullanici basina dakikada 60. Kural 15 dosyaya
+      ELLE konuldu; koruyan sey src/app/api/v1/write-limit.test.ts - yeni bir
+      yazma ucu sinirsiz eklenirse o test dusuyor. Testin kendisi, bir uctan
+      sinir kasten cikarilarak dogrulandi.
+    - APIRateLimit TABLOSU AYRI VE AYRI KALMALI: Better Auth kendi RateLimit
+      tablosunu buduyor ve esigi yalnizca KENDI pencerelerinden hesapliyor.
+      Ayni tabloya yazsaydik satirlarimiz altimizdan silinirdi.
     - HIZ SINIRI HER ORTAMDA ACIK (kutuphane yalnizca production'da aciyor).
       Oyle birakilsaydi mekanizmanin ILK GERCEK KOSUSU CANLIDA olurdu.
     - E2E kurulumu sinirin tavanina TAM oturuyordu (kosu sonrasi sayac 3'te

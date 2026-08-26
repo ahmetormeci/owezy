@@ -32,6 +32,25 @@ Eklendi: `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`,
 `Referrer-Policy`'nin burada genel değil **somut** bir gerekçesi var: davet
 linki bir sırdır (`/join/<token>`) ve adres çubuğunda durur.
 
+### `/api/v1`'in yazma uçlarına kullanıcı başına bütçe
+26.1 `/api/auth`'u kapattı; oturum açmış bir istemci `/api/v1`'e hâlâ
+istediği kadar yazabiliyordu. En olası olay kötü niyet değil **kaçak bir
+istemci**: bu kod tabanının gerçekten yaşadığı hata sonsuz bir render
+döngüsüydü.
+
+Anahtar kullanıcı, IP değil — her yazma ucu oturum istiyor ve IP operatör
+ile NAT arkasında paylaşılıyor. Okuma uçları bilerek dışarıda.
+
+**Tablo kendimizin olmak zorundaydı.** Better Auth kendi `RateLimit`
+tablosunu buduyor ve eşiği yalnızca **kendi** pencerelerinden hesaplıyor;
+bizim satırlarımız altımızdan silinir, sınır zaman zaman hiç uygulanmazdı.
+
+**Kuralı bir yapısal test koruyor:** sınır 15 dosyaya elle kondu, on
+altıncıda unutmak görünür hiçbir şey bozmaz — uç çalışır, yalnızca korumasız
+olur. Test bir uçtan sınır kasten çıkarılarak doğrulandı.
+
+Ölçüldü: 1–60 → 200, 61+ → 429.
+
 ### CSP — nonce'suz, ve bu bir karar (ADR-039)
 Next 16'nın nonce yolu `proxy.ts`'i geri getiriyor (25.7'de bilerek silinmişti)
 ve **her sayfayı dinamik render'a zorluyor**. Karşılığı ölçüldüğünde küçük
