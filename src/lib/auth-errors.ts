@@ -27,6 +27,20 @@ const CODES: Record<string, string> = {
   USER_NOT_FOUND: "auth.invalid_credentials",
 
   PASSWORD_TOO_SHORT: "auth.password_too_short",
+  PASSWORD_TOO_LONG: "auth.password_too_long",
+
+  /**
+   * E-POSTANIN BICIMI BOZUK - "boyle bir hesap yok" DEGIL.
+   *
+   * Ayri bir cumle sizinti riski TASIMIYOR: bu kod adresin kayitli olup
+   * olmadigina degil, bicimine bakiyor. "Kullanici yok" hala
+   * auth.invalid_credentials'a bagli ve oyle kalmali.
+   *
+   * MOBILDE GERCEKTEN GORULDU (27.4, simulatorde): adres yarim girildi ve
+   * kullaniciya "Bir seyler ters gitti" dendi. Yazim hatasi, kullanicinin
+   * kendi duzeltebilecegi en yaygin hata - ve en anlamsiz cumleyi aliyordu.
+   */
+  INVALID_EMAIL: "auth.invalid_email",
 
   /**
    * PAROLA YANLIS - ve bu, "e-posta ya da parola hatali"dan AYRI bir cumle

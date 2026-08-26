@@ -9,16 +9,16 @@ BAYAT MI? Dosyaya hash yazmiyoruz (bir dosya kendi commit'inin hash'ini
 iceremez). Bunun yerine git'e soruyoruz - bu dosya son guncellendikten sonra
 kod degisti mi:
 
-  git log --oneline $(git log -1 --format=%H -- docs/CURRENT_TASK.md)..HEAD -- src prisma
+  git log --oneline $(git log -1 --format=%H -- docs/CURRENT_TASK.md)..HEAD -- src prisma mobile
 
 Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
-durumunu dogrula, sonra bu dosyayi duzelt.
+durumunu dogrula, sonra bu dosyayi duzelt. (mobile de listede: Faz 27.4'ten
+sonra kimlik dogrulama kodunun bir parcasi orada yasiyor.)
 
-AMA BU KONTROL YALNIZCA KODU KAPSIYOR - ve staleness'in asil sakland
-yer orasi degil. "SENDE KALANLAR" maddeleri DIS DUNYAYI anlatiyor: DNS
-kayitlari, Vercel degiskenleri, Sentry ayarlari, App Store Connect,
-saglayici panelleri. Onlari ne git ne de bir test goruyor; kullanici
-sessizce halletmis olabilir.
+AMA BU KONTROL YALNIZCA KODU KAPSIYOR - ve staleness'in asil saklandigi yer
+orasi degil. "SENDE KALANLAR" maddeleri DIS DUNYAYI anlatiyor: DNS kayitlari,
+Vercel degiskenleri, Sentry ayarlari, App Store Connect, saglayici panelleri.
+Onlari ne git ne de bir test goruyor; kullanici sessizce halletmis olabilir.
 
 BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI, ustteki
 listeden kopyalanmamali. Olcum yollari:
@@ -31,68 +31,56 @@ listeden kopyalanmamali. Olcum yollari:
 dosya "yapilacak" diye tasidi ve kullaniciya ikinci kez anlatildi.
 -->
 
-Updated: 2026-08-26 (24)
+Updated: 2026-08-26 (25)
+
+FAZ 27 BITTI - IKI ADIMLI DOGRULAMA WEB'DE VE MOBILDE.
+Karar ve butun gerekceler ADR-040'ta.
+  27.1  Sema (TwoFactor + User.twoFactorEnabled)  BITTI  98d79b5
+  27.2  Sunucu (eklenti + email-otp kapisi)       BITTI  98d79b5
+  27.3  Web arayuzu + parola kurtarma             BITTI  e9f3de1
+  27.4  Mobil ikinci faktor                       BITTI
+  27.5  Dokumanlar (ADR-040)                      BITTI
 
 Current task:
-  FAZ 27 - IKI ADIMLI DOGRULAMA. Karar ve gerekcesi ADR-040'ta.
-    27.1  Sema (TwoFactor + User.twoFactorEnabled)  BITTI  98d79b5
-    27.2  Sunucu (eklenti + email-otp kapisi)       BITTI  98d79b5
-    27.3  Web arayuzu + PAROLA KURTARMA             BITTI
-    27.5  Dokumanlar (ADR-040)                      BITTI
-    27.4  MOBIL ARAYUZ                              SIRADA
+  YOK. Siradaki isi kullanici secmedi. PROGRESS.md'deki aday listesi bir
+  PLAN DEGIL, secenek listesi - oradan biri kendiliginden baslatilmaz.
 
-27.4 - MOBIL IKINCI FAKTOR. YAPILMADAN ONCE BILINMESI GEREKENLER:
+2FA ARTIK ACILABILIR. 27.4'ten once acilmamasi gerekiyordu (2FA acan hesap
+mobilde giremiyordu); o kisit KALKTI.
 
-  0. BUGUN 2FA ACAN BIR KULLANICI MOBILDE GIREMIYOR - koddan olculdu, ve
-     mesaj onu YAPAMAYACAGI SEYE yonlendiriyor:
-       e-posta kodu -> kancamiz reddediyor -> "Parolanla giris yap" diyor
-       parola       -> sunucu 200 donuyor ama set-auth-token BASLIGI YOK
-                       (mobile/lib/auth.tsx:166) -> "Bir seyler ters gitti"
-     Yani birincisi ikincisini oneriyor, ikincisi de calismiyor. 27.4 bu
-     yuzden bir "aday" degil, 27.3'un actigi bir bosluk.
+FAZ 27'DEN AKILDA TUTULACAKLAR:
 
-  1. MEYDAN OKUMA CEREZLE TASINIYOR (verify-two-factor.mjs) ve mobil bilerek
-     credentials:"omit" kullaniyor (ADR-038). Gereken sira:
-       Set-Cookie'yi yakala -> bir sonraki istekte geri gonder ->
-       Origin basligi ekle -> sunucuda trustedOrigins.
-     25.5'te kaldirilan cerez makinesi YALNIZCA iki cagri icin geri geliyor:
-     /sign-in/email ve /two-factor/verify-totp | verify-backup-code.
+  MOBILDE CEREZ MAKINESI TAM IKI UC ICIN VAR:
+    /two-factor/verify-totp ve /two-factor/verify-backup-code.
+    credentials:"omit" DEGISMEDI (ADR-038 duruyor). Cerez bir kez yakalanip
+    elle konuyor, YALNIZCA BELLEKTE duruyor (sunucudaki omru 600 saniye).
+    Origin YALNIZCA cerez tasiyan cagrilara ekleniyor - her cagriya koymak
+    formCsrfMiddleware'i tetikleyip bugun calisan giris akisini kirilgan
+    yapardi.
 
-  2. "BU CIHAZI HATIRLA" MOBILDE OLMAYACAK - ayni sebep, ve bu ADR-040'ta
-     bilincli bir asimetri olarak yaziyor.
+  trustedOrigins'E DOKUNULMADI ve bu bir OLCUM: varsayilan liste
+  BETTER_AUTH_URL'i iceriyor, gonderdigimiz Origin ise apiBaseUrl() - dev'de
+  localhost:3000, uretimde owezy.net, ikisi de ayni. Bu dosya 25.5'ten beri
+  "sunucuda trustedOrigins" diye bir adim tasiyordu; gerekmiyormus.
 
-  3. MOBILDE PAROLA KURTARMA DA YOK ve 27.3'ten sonra bu bir BOSLUK:
-     2FA acan kullanici mobilde parolayla girmek zorunda, parolasini
-     unutursa mobilde yapabilecegi hicbir sey yok. En ucuz cozum web'e
-     yonlendirmek (owezy.net/reset-password) - ama karar 27.4'un isi.
+  YANITTA UC Set-Cookie SATIRI VAR (ikisi oturum cerezlerini SILEN bos
+  satirlar, biri meydan okuma). Ayristirma ADA GORE yapiliyor.
 
-  4. Mobilde KAYIT EKRANI yok ve bu bir eksiklik degil: e-posta kodu akisi
-     adres kayitli degilse kullaniciyi kendisi yaratiyor.
+  verify-totp OTURUMU DONDURUYOR (yeni oturum + eskisini sil). Mobilde bu,
+  SecureStore'daki belirtecin yenilenmesi demek - accept() zaten yapiyor.
 
-27.3'TE OLCULENLER - 27.4'te de gecerli:
-  - signIn.email, 2FA acikken HATA DONDURMUYOR. error null; bilgi
-    data.twoFactorRedirect'te. Yalnizca error'a bakan istemci kullaniciyi
-    OTURUMSUZ halde ana ekrana gonderir. Mobilde de ayni tuzak var.
-  - /two-factor/enable 2FA'yi ACMIYOR; acan sey verify-totp. enable yalnizca
-    gizli anahtari ve yedek kodlari uretiyor (verified=false).
-  - verify-totp OTURUMU DONDURUYOR (yeni oturum + eskisini sil). Mobilde bu,
-    SecureStore'daki belirtecin YENILENMESI gerektigi anlamina gelir -
-    yenilenmezse kullanici bir sonraki istekte 401 alir.
-  - createOTP(secret).url(...) anahtari URI'ye BASE32'LEYEREK yaziyor.
-    Ekranda gorunen deger HAM ANAHTAR DEGIL.
-  - Eklentinin kendi hiz siniri: /two-factor/* -> 10 saniyede 3 istek.
-  - allowPasswordless ACILMAMALI: parolasiz biri 2FA acar, sonra e-posta
-    kodu kapali + parola yok = kendini tamamen disarida birakir.
+  createOTP(secret).url(...) anahtari URI'ye BASE32'LEYEREK yaziyor. Ekranda
+  gorunen deger HAM ANAHTAR DEGIL; testler once base32 cozuyor.
 
-APP STORE - ACIK IS KALMADI (26 Agustos, kullanici dogruladi):
-  App Review Information'da appreview@owezy.net yazili ve o bilgilerle giris
-  yapilabiliyor. Hesap uctan uca calisiyor: "example" grubu, davet linkiyle
-  ikinci hesap, harcamalar ve odemeler girildi. Gizlilik anketi de gozden
-  gecirildi.
+  FORM GIRDISI TUZAGI (cihazda olculdu, testte gorunmuyordu):
+    Yedek kodlar buyuk/kucuk harfe DUYARLI ve iOS Safari metin girdilerinde
+    ilk harfi kendiliginden BUYUTUYOR. autoCapitalize="none" olmadan
+    kullanici dogru kodu yazdigi halde giremiyor. Playwright'in fill()'i bunu
+    taklit etmedigi icin testi AKIS degil OZNITELIK koruyor.
 
-  DIKKAT - INCELEME BITENE KADAR: appreview@owezy.net'te (ve kendi
-  hesabinda) IKI ADIMLI DOGRULAMAYI ACMA. 27.4 bitene kadar 2FA acik bir
-  hesap MOBILDE GIREMIYOR - olculdu, ayrintisi asagida.
+  MOBILIN OTOMATIK TESTI YOK. Playwright web'e bagli (aday listesinde).
+  27.4 once curl ile sunucu sozlesmesi, sonra iOS simulatorunde gercek akis
+  olarak dogrulandi.
 
 SENDE KALAN TEK IS - CLERK'IN SON IZLERI (aceleye gerek yok):
     Clerk paneli : Webhooks -> Endpoints'teki olu kayit
@@ -105,23 +93,20 @@ SENDE KALAN TEK IS - CLERK'IN SON IZLERI (aceleye gerek yok):
 BITEN VE OLCULEN ISLER (26 Agustos - burada duruyorlar ki bir daha
 "yapilacak" diye yazilmasinlar):
 
-  DNS - DMARC HIZALAMASI DUZELTILDI. dig ile dogrulandi:
-      v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r
-      send.owezy.net TXT : v=spf1 include:amazonses.com ~all
-      resend._domainkey  : gecerli
-    aspf ARTIK RELAXED. Onceki durumda (aspf=s) Resend zarfi
-    send.owezy.net'ten cikip From owezy.net oldugu icin SPF her seferinde
-    dusuyordu ve p=reject altinda tek dayanak DKIM kaliyordu. Simdi iki
-    bacak da tutuyor. adkim=s bilerek strict birakildi.
+  APP STORE - App Review Information'da appreview@owezy.net yazili ve o
+    bilgilerle giris yapilabiliyor (kullanici dogruladi). Hesap uctan uca
+    calisiyor. Gizlilik anketi de gozden gecirildi.
 
-  SENTRY - "Prevent Storing of IP Addresses" ACIK.
-    /privacy'deki "Sentry'ye kisisel veri gondermiyoruz" cumlesi artik
-    yalnizca kodla degil, Sentry ayariyla da kilitli.
+  DNS - DMARC hizalamasi duzeltilmis. dig ile dogrulandi:
+      v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r
+    aspf RELAXED, yani SPF de DKIM de hizaliyor. adkim=s bilerek strict.
+
+  SENTRY - "Prevent Storing of IP Addresses" acik.
+
+  destek@owezy.net - acik, kullanicinin kendi kutusuna yonleniyor.
 
   TEMIZLIK - Vercel, .env.local ve mobile/.env.local'de CLERK ADI GECEN
-    HICBIR SEY KALMADI. Dogrulandi (yalnizca degisken ADLARI okundu):
-      .env.local        : 11 gerekli degisken, hepsi yerinde
-      mobile/.env.local : yalnizca EXPO_PUBLIC_API_BASE_URL
+    hicbir sey kalmadi (degisken ADLARI okunarak dogrulandi).
 
 E2E - NASIL CALISIYOR:
   - Kurulum test kullanicilarini KENDISI yaratiyor (/api/auth/sign-up/email)
@@ -137,13 +122,15 @@ E2E - NASIL CALISIYOR:
     Baska yolu yok: test posta kutusunu okuyamiyor.
 
 MOBILDE BUGUN NE VAR:
-  giris (e-posta kodu, ya da parolayla - ikincil), grup listesi / tek grupta
+  giris (e-posta kodu, parola, ve IKINCI FAKTOR - uygulama kodu ya da yedek
+  kod), parola kurtarma icin web'e yonlendirme, grup listesi / tek grupta
   dogrudan gruba yonlendirme, grup olusturma (satir ici), uyeler + davet
   linki, fis ekrani, satir ici harcama girisi, harcama detayi.
 
 MOBILDE HENUZ YOK (bilincli kapsam disi):
-  - IKINCI FAKTOR (27.4'un isi)
-  - PAROLA KURTARMA (yukarida, 27.4 maddesi 3)
+  - 2FA ACMA/KAPATMA (ADR-040, secenek B1: kurulum web'de kaliyor)
+  - "BU CIHAZI HATIRLA" (ADR-040, bilincli asimetri)
+  - PAROLA KURTARMA EKRANI (web'e yonlendiriyor - secenek A1)
   - GORUNEN ADI DUZENLEME (web'de var)
   - bildirimler
   - EXACT/PERCENTAGE bolusumun mobilde duzenlenmesi
@@ -161,6 +148,3 @@ ROTA YAPISI (mobil):
   /groups/[id]/members        uyeler + davet
   /groups/[id]/settlements    odeme kaydi + gecmis + iptal
   /groups/[id]/expenses/[id]  harcama detayi
-
-DIGER ADAYLAR: PROGRESS.md'deki liste (fis gorseli, mobilde otomatik test,
-silineni geri alma arayuzu, ...) - o liste bir PLAN DEGIL, secenek listesi.

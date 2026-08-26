@@ -204,6 +204,23 @@ export function SignInForm() {
             // zorlastirirdi.
             inputMode={usingBackupCode ? "text" : "numeric"}
             autoComplete="one-time-code"
+            /**
+             * autoCapitalize="none" ZORUNLU VE BU CIHAZDA OLCULDU.
+             *
+             * Yedek kodlar BUYUK/KUCUK HARFE DUYARLI ("pDHBX-yCqQf") ve iOS
+             * Safari metin girdilerinde ilk harfi kendiliginden BUYUTUYOR.
+             * Simulatorde gercekten yasandi: kod "PDHBX-yCqQf" olarak gitti
+             * ve reddedildi. Kullanicinin gordugu sey "Kod dogrulanamadi" -
+             * yani dogru kodu yazdigi halde giremeyen, sebebini de asla
+             * anlayamayan biri. Ustelik tam olarak "telefonumu kaybettim"
+             * yolunda, yani baska secenegi olmadigi anda.
+             *
+             * Sayi klavyesinde sorun cikmiyordu; bu yuzden ancak yedek kod
+             * denenince gorunur oluyor.
+             */
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             placeholder={usingBackupCode ? undefined : t("ui.code_placeholder")}
             autoFocus
             required

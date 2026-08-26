@@ -591,12 +591,48 @@ faktör zaten parola; üstüne e-posta kodu koymak gerçek bir 2FA olurdu ama
 gücü posta kutusunun güvenliğine inerdi. TOTP belirli bir **cihaz** istiyor;
 "telefonumu kaybettim" durumunu yedek kodlar karşılıyor.
 
-**Doğrulama:** altı uçtan uca test, gerçek TOTP kodları üretilerek
-(`e2e/two-factor.spec.ts`) ve üç tanesi parola kurtarma için
-(`e2e/password-reset.spec.ts`). İkisi ayrıca **düzeltme geri alınarak**
-doğrulandı: kanca devre dışı bırakıldığında "e-posta koduyla giriş
-reddediliyor" düşüyor; giriş formundaki `twoFactorRedirect` dalı kapatıldığında
-"girişte ikinci faktör soruluyor" düşüyor.
+**Mobil (27.4): çerez elle taşınır, `credentials: "omit"` değişmez.**
+Eklentinin meydan okuması imzalı bir çerezle yürüyor ve başka taşıyıcısı yok.
+RN'in kendi çerez kavanozunu açmak yerine çerez **bir kez yakalanıp** tam iki
+uca (`/two-factor/verify-totp`, `/two-factor/verify-backup-code`) elle
+konuyor; yalnızca bellekte durur, SecureStore'a yazılmaz (sunucudaki ömrü 600
+saniye, ölçüldü).
+
+`Origin` başlığı **yalnızca çerez taşıyan çağrılara** ekleniyor. Her çağrıya
+koymak zararsız değil: `formCsrfMiddleware`, `Origin` görünce doğrulamayı
+**zorluyor** (`validateOrigin(ctx, true)`), yani bugün çalışan giriş akışı
+biri `EXPO_PUBLIC_API_BASE_URL`'i başka bir adrese çevirdiği gün 403 almaya
+başlardı.
+
+**`trustedOrigins`'e dokunulmadı** — ve bu bir ölçümün sonucu, bir tercih
+değil. Varsayılan liste `BETTER_AUTH_URL`'i içeriyor; gönderdiğimiz `Origin`
+ise `apiBaseUrl()`, yani iki ortamda da aynı adres (dev `localhost:3000`,
+üretim `owezy.net`). `CURRENT_TASK` 25.5'ten beri "sunucuda trustedOrigins"
+diye bir adım taşıyordu; gerekmiyormuş. **Sunucuya tek satır eklenmedi.**
+
+**Doğrulama:** sekiz uçtan uca test 2FA için (`e2e/two-factor.spec.ts`), üçü
+parola kurtarma için (`e2e/password-reset.spec.ts`), gerçek TOTP kodları
+üretilerek. **Dört tanesi düzeltmesi geri alınarak** doğrulandı — her biri
+gerçekten düşüyor: kanca, giriş formundaki `twoFactorRedirect` dalı,
+`INVALID_PASSWORD` eşlemesi, `trustDevice`.
+
+Mobil tarafı **önce curl ile** ölçüldü (çerezsiz 403 `MISSING_OR_NULL_ORIGIN`,
+doğru `Origin` ile 200 + `set-auth-token`, yanlış `Origin` ile 403
+`INVALID_ORIGIN`), **sonra iOS simülatöründe gerçek cihaz akışıyla**: parola →
+ikinci faktör adımı → TOTP → içeri, çıkış, ve "parolamı unuttum" web sayfasını
+açıyor. Cihaz ölçümünün kapattığı asıl belirsizlik şuydu: React Native
+`set-cookie` başlığını okuyabiliyor mu? Okuyor. Yanıtın **üç** `Set-Cookie`
+satırı taşıdığı da orada görüldü (ikisi oturum çerezlerini silen boş satırlar),
+yani ayrıştırma ada göre yapılıyor, körlemesine değil.
+
+**Cihazda ölçmek bir hata buldu ve o hata hiçbir testte görünmüyordu:** yedek
+kodlar büyük/küçük harfe duyarlı, iOS Safari ise metin girdilerinde ilk harfi
+kendiliğinden büyütüyor. `pDHBX-yCqQf` sunucuya `PDHBX-yCqQf` olarak gitti ve
+reddedildi. Kullanıcının göreceği şey "Kod doğrulanamadı" — doğru kodu yazdığı
+hâlde giremeyen ve sebebini asla anlayamayan biri, üstelik tam da "telefonumu
+kaybettim" yolunda. Düzeltme `autoCapitalize="none"`; Playwright'ın `fill()`'i
+o davranışı taklit etmediği için testi bir akış değil, **özniteliğin kendisi**
+koruyor.
 
 ---
 

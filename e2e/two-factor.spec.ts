@@ -206,7 +206,22 @@ test.describe.serial("iki adimli dogrulama", () => {
     const page = await freshSignInPage(browser);
 
     await page.getByRole("button", { name: "Yedek kod kullan" }).click();
-    await page.getByLabel("Yedek kod").fill(backupCodes[0]);
+
+    /**
+     * ALAN OTOMATIK BUYUTMEYI KAPATMIS OLMALI.
+     *
+     * Yedek kodlar buyuk/kucuk harfe duyarli ve iOS Safari metin
+     * girdilerinde ilk harfi kendiliginden buyutuyor. Simulatorde gercekten
+     * yasandi: "pDHBX-yCqQf" -> "PDHBX-yCqQf" gitti ve reddedildi.
+     *
+     * Playwright'in fill()'i o davranisi TAKLIT ETMIYOR, yani asil hatayi
+     * bir akis testi yakalayamaz. O yuzden ozniteligin KENDISI kontrol
+     * ediliyor - kaldirilirsa test duser, ve dusme sebebi de acikca yazar.
+     */
+    const field = page.getByLabel("Yedek kod");
+    await expect(field).toHaveAttribute("autocapitalize", "none");
+
+    await field.fill(backupCodes[0]);
     await page.getByRole("button", { name: "Giriş yap", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: "Gruplarım" })).toBeVisible();

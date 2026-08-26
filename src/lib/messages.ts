@@ -170,6 +170,10 @@ export const MESSAGES_TR = {
     "Çok fazla hatalı deneme oldu. Hesabın bir süreliğine kilitlendi; biraz sonra tekrar dene.",
   "auth.two_factor_expired": "Doğrulama süresi doldu. Baştan giriş yapman gerekiyor.",
   "auth.password_too_short": "Parola en az 8 karakter olmalı.",
+  "auth.password_too_long": "Parola en fazla 128 karakter olabilir.",
+  // BICIM hatasi - "boyle bir hesap yok" degil. O ayrimi korumak onemli:
+  // hangi adreslerin kayitli oldugunu sinamaya izin vermiyoruz.
+  "auth.invalid_email": "E-posta adresi geçerli görünmüyor.",
   // Yalnizca parola sorulan ekranlarda (guvenlik ayarlari): orada e-posta
   // diye bir alan yok, o yuzden "e-posta ya da parola hatali" demiyoruz.
   "auth.invalid_password": "Parola hatalı.",
@@ -675,6 +679,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
     "Too many wrong attempts. Your account is locked for a while; try again shortly.",
   "auth.two_factor_expired": "The verification window closed. Please sign in again.",
   "auth.password_too_short": "Your password needs at least 8 characters.",
+  "auth.password_too_long": "Your password can be at most 128 characters.",
+  "auth.invalid_email": "That email address doesn't look right.",
   "auth.invalid_password": "That password is wrong.",
   "auth.email_taken": "That email address is already registered. Try signing in.",
   "ui.two_factor_title": "Two-step verification",

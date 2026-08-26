@@ -1115,7 +1115,7 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
-## Faz 27 — İki adımlı doğrulama · **BİTTİ (arayüz web'de)**
+## Faz 27 — İki adımlı doğrulama · **BİTTİ (web + mobil)**
 
 Faz 25'in ertelediği iş. 25.6'da "eklentiyi tak" sanılıyordu; ölçünce üç ayrı
 karar işi çıktı ve fazın kendisi oldu.
@@ -1124,8 +1124,8 @@ karar işi çıktı ve fazın kendisi oldu.
 |---|---|---|
 | 27.1 Şema (`TwoFactor` + `User.twoFactorEnabled`) | ✅ | `98d79b5` |
 | 27.2 Sunucu (eklenti + e-posta kodu kapısı) | ✅ | `98d79b5` |
-| 27.3 Web arayüzü + parola kurtarma | ✅ | — |
-| 27.4 Mobil arayüz | ⏳ sırada | — |
+| 27.3 Web arayüzü + parola kurtarma | ✅ | `e9f3de1` |
+| 27.4 Mobil ikinci faktör | ✅ | — |
 | 27.5 Dokümanlar (ADR-040) | ✅ | — |
 
 **Kararın kendisi ADR-040'ta.** Özeti: 2FA açıksa giriş **parolayla** olur,
@@ -1172,7 +1172,40 @@ hatırla).
 **Bir boşluk testi yazarken çıktı:** Better Auth'un `INVALID_PASSWORD` kodu
 `auth-errors.ts`'te eşlenmemişti. Güvenlik ekranının **en olası** hatası —
 parolayı yanlış yazmak — en anlamsız cümleyi alıyordu ("Bir şeyler ters
-gitti").
+gitti"). 27.4'te aynısının iki tanesi daha çıktı: `INVALID_EMAIL` ve
+`PASSWORD_TOO_LONG`. Üçü de eklendi; `INVALID_EMAIL` ayrı bir cümle aldı çünkü
+o bir **biçim** hatası, "böyle bir hesap yok" değil.
+
+### 27.4 — mobil ikinci faktör
+
+**Sunucuya tek satır eklenmedi.** Meydan okuma imzalı bir çerezle taşınıyor ve
+mobil bilerek `credentials: "omit"` kullanıyor (ADR-038). O karar
+**değişmedi**: çerez bir kez yakalanıp tam iki uca elle konuyor, yalnızca
+bellekte duruyor. `Origin` de yalnızca çerez taşıyan çağrılara ekleniyor —
+her çağrıya koymak `formCsrfMiddleware`'i tetikleyip bugün çalışan giriş
+akışını kırılgan hâle getirirdi.
+
+`trustedOrigins`'e dokunulmadı ve bu bir ölçümün sonucu: varsayılan liste
+`BETTER_AUTH_URL`'i içeriyor, gönderdiğimiz `Origin` ise `apiBaseUrl()` —
+iki ortamda da aynı adres. `CURRENT_TASK` 25.5'ten beri o adımı yapılacak
+diye taşıyordu.
+
+**Parola kurtarma mobilde web'e yönlendiriyor** (seçenek A1, kullanıcı
+kararı): uçlar zaten aynı, yani ekran ileride mobile taşınırsa sunucuda
+hiçbir şey değişmiyor. **2FA açma/kapatma mobilde yok** (B1): kurulum web'de
+kalıyor, QR'ı authenticator'ın kurulu olduğu telefonda göstermek zaten garip.
+
+**Cihazda ölçmek, hiçbir testin görmediği bir hata buldu.** Yedek kodlar
+büyük/küçük harfe duyarlı; iOS Safari metin girdilerinde ilk harfi
+kendiliğinden büyütüyor. `pDHBX-yCqQf` sunucuya `PDHBX-yCqQf` gitti ve
+reddedildi — kullanıcı doğru kodu yazdığı hâlde giremez ve sebebini
+anlayamazdı, üstelik "telefonumu kaybettim" yolunda. `autoCapitalize="none"`
+eklendi. Playwright'ın `fill()`'i bu davranışı taklit etmediği için testi bir
+akış değil **özniteliğin kendisi** koruyor.
+
+**Test:** birim 534 ✅ · E2E 55 ✅. Mobil tarafın otomatik testi **yok**
+(Playwright web'e bağlı, aday listesinde duruyor); doğrulama önce curl ile
+sunucu sözleşmesi, sonra iOS simülatöründe gerçek akış olarak yapıldı.
 
 ---
 

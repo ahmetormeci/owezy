@@ -8,6 +8,50 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-26 (6) — İki adımlı doğrulama mobilde de yürüyor
+
+Faz 27 bitti. 2FA açan bir hesap artık mobilde de girebiliyor: parola → ikinci
+faktör (uygulama kodu ya da yedek kod) → içeri. Önceden bu hesap mobilde
+**hiç** giremiyordu ve mesaj kullanıcıyı yapamayacağı şeye yönlendiriyordu —
+e-posta kodu "parolanla gir" diyor, parola ise "bir şeyler ters gitti".
+
+**Sunucuya tek satır eklenmedi.** Meydan okuma imzalı bir çerezle taşınıyor ve
+mobil bilerek `credentials: "omit"` kullanıyor (ADR-038). O karar değişmedi:
+çerez bir kez yakalanıp tam iki uca elle konuyor, yalnızca bellekte duruyor.
+`Origin` de yalnızca çerez taşıyan çağrılara ekleniyor — her çağrıya koymak
+`formCsrfMiddleware`'i tetikleyip bugün çalışan giriş akışını, biri
+`EXPO_PUBLIC_API_BASE_URL`'i değiştirdiği gün kıracaktı.
+
+`trustedOrigins`'e dokunulmadı, ve bu bir ölçümün sonucu: varsayılan liste
+`BETTER_AUTH_URL`'i içeriyor, gönderdiğimiz `Origin` ise `apiBaseUrl()` — iki
+ortamda da aynı adres. `CURRENT_TASK` 25.5'ten beri o adımı "yapılacak" diye
+taşıyordu.
+
+Parola kurtarma mobilde web'e yönlendiriyor; 2FA açma/kapatma web'de kalıyor.
+"Bu cihazı hatırla" mobilde yok — hepsi ADR-040'ta gerekçeleriyle.
+
+### Cihazda ölçmek, hiçbir testin görmediği bir hata buldu
+Yedek kodlar büyük/küçük harfe duyarlı. iOS Safari ise metin girdilerinde ilk
+harfi kendiliğinden büyütüyor: `pDHBX-yCqQf` sunucuya `PDHBX-yCqQf` olarak
+gitti ve reddedildi. Kullanıcının göreceği şey "Kod doğrulanamadı" — doğru
+kodu yazdığı hâlde giremeyen ve sebebini asla anlayamayan biri, üstelik tam da
+"telefonumu kaybettim" yolunda. `autoCapitalize="none"` eklendi; Playwright'ın
+`fill()`'i o davranışı taklit etmediği için testi bir akış değil **özniteliğin
+kendisi** koruyor.
+
+### İki hata kodu daha eşlendi
+`INVALID_EMAIL` ve `PASSWORD_TOO_LONG` haritada yoktu. Birincisi kullanıcının
+en sık yaptığı hata: e-postasını yanlış yazan herkes "Bir şeyler ters gitti"
+görüyordu. Ayrı bir cümle aldı çünkü bu bir **biçim** hatası — "böyle bir
+hesap yok" hâlâ ortak cümleye bağlı, yani hangi adreslerin kayıtlı olduğu
+sınanamıyor.
+
+**Test:** 534 birim, 55 E2E. Mobil tarafın otomatik testi yok (Playwright
+web'e bağlı); doğrulama önce curl ile sunucu sözleşmesi, sonra iOS
+simülatöründe gerçek akış olarak yapıldı.
+
+---
+
 ## 2026-08-26 (5) — İki adımlı doğrulama web'de; parola kurtarma
 
 2FA artık kullanılabilir: kullanıcı menüsünün içindeki güvenlik ekranından
