@@ -523,6 +523,83 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-040 — İki adımlı doğrulama açıksa giriş parolayla olur
+**Tarih:** 2026-08-26 · **Durum:** Kabul edildi
+
+**Karar:** İki adımlı doğrulama (2FA) **TOTP + yedek kod** olarak sunulur.
+Açıldığı andan itibaren o hesap **e-posta koduyla giremez**; giriş parolayla
+başlar ve ikinci adımda kimlik doğrulayıcı uygulamanın kodu ya da bir yedek
+kod istenir. Kuralı `src/lib/better-auth.ts` içindeki `hooks.before`
+uyguluyor: `/sign-in/email-otp` çağrısı, hesabın `twoFactorEnabled` alanı
+doğruysa `TWO_FACTOR_REQUIRES_PASSWORD` ile reddediliyor.
+
+**Neden gerekli — ölçüldü:** Better Auth'un `twoFactor` eklentisi ikinci
+faktörü yalnızca üç yolda soruyor (`two-factor/index.mjs:245`):
+
+```
+/sign-in/email, /sign-in/username, /sign-in/phone-number
+```
+
+Bizim **birincil** giriş yolumuz olan `/sign-in/email-otp` listede **yok** ve
+`email-otp` eklentisinin kaynağında `twoFactor` diye bir iz de yok (grep boş).
+`TwoFactorOptions` bu yolu ekleyecek bir seçenek de sunmuyor. Yani kanca
+olmasaydı: kullanıcı 2FA'yı açar, her zamanki gibi e-posta koduyla girer ve
+**ikinci faktör hiç sorulmazdı** — korunduğunu sanan ama korunmayan bir
+kullanıcı. Bir güvenlik özelliğinin en kötü arıza biçimi bu.
+
+**Neden bu çözüm, eklentinin kancasını taklit etmek değil:** o kanca
+`internalAdapter`, `createAuthCookie`, HMAC ve `setNewSession` üzerine kurulu.
+Taklit etmek, bir sürüm yükseltmesinde **sessizce** bozulacak bir kod demekti
+— ve bozulma biçimi yine "2FA artık sorulmuyor" olurdu. Buradaki kanca genel
+API (`hooks.before`) ve tek bir şey yapıyor.
+
+**Kod doğrulama adımında reddediliyor, kod gönderme adımında değil.**
+Gönderimde reddetseydik, bir adresin kayıtlı olup olmadığı dışarıdan tek tek
+sınanabilirdi. Burada reddedilen kişi kodu **zaten okumuş** olan biri.
+
+**Bedeli açıkça kabul edildi:** 2FA açan kullanıcı parolasız giriş
+kolaylığını kaybediyor. Alternatif B (`/sign-in/email-otp`'yi kendimiz 2FA'ya
+bağlamak) kolaylığı korurdu ama yukarıdaki kütüphane-içi bağımlılıkları
+getirirdi. Alternatif C (hiç yapmamak) elendi.
+
+**Kararın zorunlu kıldığı ikinci iş — parola kurtarma.** 2FA'dan önce
+"parolamı unuttum"un kaçış kapısı e-posta koduyla girmekti; bu karar o kapıyı
+kapatıyor. Kapatıp yerine bir şey koymasaydık, 2FA açan bir kullanıcı
+parolasını unuttuğu anda hesabına **bir daha giremezdi** — yedek kodlar
+kurtarmaz, çünkü onlar *ikinci* faktör; birincisi yine parola. Bu yüzden
+`/reset-password` aynı fazda geldi. Sunucu tarafına tek satır eklenmedi:
+`/email-otp/request-password-reset` ve `/email-otp/reset-password` `emailOTP`
+ile zaten geliyordu, gönderdikleri posta bizim `sendOtpEmail`'imizden geçiyor
+ve konu metni sözlükte hazırdı. İkincisi, kullanıcının credential hesabı
+yoksa **onu yaratıyor** (`email-otp/routes.mjs`) — yani aynı ekran hem
+"unuttum"a hem "hiç yoktu"ya yetiyor. Oturum açmadığı için de 2FA'yı
+atlatmıyor: kullanıcı yeni parolasıyla girer, ikinci faktör yine sorulur.
+
+**`allowPasswordless` kapalı kalmalı.** Açık olsaydı parolası olmayan bir
+kullanıcı 2FA açabilirdi — sonra e-posta kodu bu kararla kapalı, parola da
+yok: kendini tamamen dışarıda bırakırdı. Bunun arayüzdeki karşılığı
+`GET /api/v1/me`'nin `hasPassword` alanı: güvenlik ekranı "Aç" düğmesini
+göstermek yerine "önce parola belirle" diyor.
+
+**"Bu cihazı hatırla" yalnızca web'de** (30 gün). Özellik imzalı bir çerezle
+yürüyor (`verify-two-factor.mjs`); mobil istemci bilerek `credentials: "omit"`
+kullanıyor (ADR-038). Asimetri bilinçli: mobil oturum belirteci uzun ömürlü,
+orada zaten nadiren giriş yapılıyor.
+
+**E-posta ikinci faktör olarak sunulmuyor** (`otpOptions` verilmedi). İlk
+faktör zaten parola; üstüne e-posta kodu koymak gerçek bir 2FA olurdu ama
+gücü posta kutusunun güvenliğine inerdi. TOTP belirli bir **cihaz** istiyor;
+"telefonumu kaybettim" durumunu yedek kodlar karşılıyor.
+
+**Doğrulama:** altı uçtan uca test, gerçek TOTP kodları üretilerek
+(`e2e/two-factor.spec.ts`) ve üç tanesi parola kurtarma için
+(`e2e/password-reset.spec.ts`). İkisi ayrıca **düzeltme geri alınarak**
+doğrulandı: kanca devre dışı bırakıldığında "e-posta koduyla giriş
+reddediliyor" düşüyor; giriş formundaki `twoFactorRedirect` dalı kapatıldığında
+"girişte ikinci faktör soruluyor" düşüyor.
+
+---
+
 ## ADR-039 — CSP nonce'suz kurulur; `proxy.ts` bunun için geri getirilmez
 **Tarih:** 2026-08-26 · **Durum:** Kabul edildi
 

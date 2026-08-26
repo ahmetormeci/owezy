@@ -46,9 +46,11 @@ export async function resetE2EDatabase() {
     // hangi tablolara dokundugu, okuyan icin acikta durmali.
     //
     // RateLimit ve ApiRateLimit hicbir kullaniciya bagli DEGIL (ikisinde de
-    // foreign key yok), o yuzden CASCADE onlari goturmez. Bugun E2E'de hic satir yazilmiyor (hiz siniri yalnizca
-    // production'da acik) ama burada durmasi ucuz: biri onu acarsa, bir
-    // onceki kosudan kalan sayac yeni kosuyu 429'a dusururdu.
+    // foreign key yok), o yuzden CASCADE onlari goturmez ve ELLE yazilmalari
+    // sart. Bu satirlar bir zamanlar "ucuz bir onlem" diye durusuyordu -
+    // artik degil: Faz 26.1 hiz sinirini HER ORTAMDA actu, yani E2E de bu
+    // tablolara gercekten yaziyor. Temizlenmeseydi bir onceki kosudan kalan
+    // sayac yeni kosuyu 429'a dusururdu.
     await prisma.$executeRawUnsafe(
       `TRUNCATE TABLE
          "ExpenseEdit",
@@ -98,6 +100,50 @@ export async function clearRateLimits() {
   });
   try {
     await prisma.rateLimit.deleteMany();
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
+ * Bir kullaniciya GONDERILEN tek seferlik kodu veritabanindan okur.
+ *
+ * NEDEN GEREKLI: e-posta koduyla giris ve parola yenileme, testin OKUYAMADIGI
+ * bir posta kutusundan geciyor. Uctan uca sinamanin baska yolu yok - ya kodu
+ * buradan okuruz ya da o iki akis hic test edilmez. Ikincisi, parola
+ * yenilemenin (2FA acan bir kullanicinin TEK kurtarma yolu) sessizce
+ * bozulmasi demekti.
+ *
+ * BICIM KUTUPHANEDEN GELIYOR ve bu kirilgan bir bagimlilik: identifier
+ * "<tur>-otp-<eposta>", deger ise "<kod>:<deneme sayisi>"
+ * (email-otp/utils.mjs, routes.mjs). Better Auth bunu degistirirse test
+ * duser - ama SESSIZCE yanlis gecmez, "kod bulunamadi" diye bagirir.
+ *
+ * KODUN DUZ METIN DURMASI DA BIR OLCUM: emailOTP eklentisinin storeOTP
+ * varsayilani "plain". Bunu degistirmedik (o ayri bir karar, PROGRESS'te
+ * duruyor) - ama degistirilirse burasi da degismek zorunda.
+ */
+export async function readOtpFromDatabase(type: string, email: string): Promise<string> {
+  const connectionString = process.env.E2E_DATABASE_URL;
+  if (!connectionString || connectionString === process.env.DATABASE_URL) {
+    throw new Error("E2E_DATABASE_URL yok ya da DATABASE_URL ile ayni.");
+  }
+
+  const prisma = new PrismaClient({
+    adapter: new PrismaNeon({ connectionString }),
+  });
+  try {
+    const row = await prisma.verification.findFirst({
+      where: { identifier: `${type}-otp-${email}` },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!row) {
+      throw new Error(`${email} icin "${type}" kodu bulunamadi.`);
+    }
+    // Son iki nokta ustusteye gore ayiriyoruz: kodun kendisi rakamlardan
+    // olusuyor ama bicim degisirse ilk ":" yanlis yerde olabilir.
+    const separator = row.value.lastIndexOf(":");
+    return separator === -1 ? row.value : row.value.slice(0, separator);
   } finally {
     await prisma.$disconnect();
   }

@@ -17,6 +17,7 @@ src/
 │  ├─ join/[token]/             Davet kabul sayfası (giriş gerektirmez)
 │  ├─ privacy/, support/        Gizlilik ve destek (giriş gerektirmez, mağazalar zorunlu tutuyor)
 │  ├─ sign-in/, sign-up/        Bizim giriş/kayıt sayfalarımız (Faz 25.4)
+│  ├─ reset-password/          Parola belirle/yenile (giriş gerektirmez, Faz 27.3)
 │  ├─ layout.tsx                Kök layout: dil, tema, Toaster
 │  └─ page.tsx                  Karşılama sayfası
 ├─ components/

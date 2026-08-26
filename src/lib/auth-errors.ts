@@ -29,6 +29,21 @@ const CODES: Record<string, string> = {
   PASSWORD_TOO_SHORT: "auth.password_too_short",
 
   /**
+   * PAROLA YANLIS - ve bu, "e-posta ya da parola hatali"dan AYRI bir cumle
+   * olmak zorunda.
+   *
+   * Bu kod yalnizca kullanicinin ZATEN GIRMIS oldugu ekranlarda cikiyor:
+   * iki adimli dogrulamayi acarken, kapatirken, yedek kodlari yenilerken
+   * (/two-factor/*, hepsi parola istiyor). Orada e-posta diye bir alan yok;
+   * "e-posta ya da parola hatali" demek kullaniciyi olmayan bir alani
+   * kontrol etmeye gonderirdi.
+   *
+   * ESLENMEDIGI SURECE "Bir seyler ters gitti" gorunuyordu - yani guvenlik
+   * ekranindaki EN OLASI hata, en anlamsiz cumleyi aliyordu.
+   */
+  INVALID_PASSWORD: "auth.invalid_password",
+
+  /**
    * IKI ADIMLI DOGRULAMA. Kodlar paketten geldi
    * (two-factor/error-code.mjs), ezberden yazilmadi.
    */

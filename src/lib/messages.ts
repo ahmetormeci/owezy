@@ -170,6 +170,9 @@ export const MESSAGES_TR = {
     "Çok fazla hatalı deneme oldu. Hesabın bir süreliğine kilitlendi; biraz sonra tekrar dene.",
   "auth.two_factor_expired": "Doğrulama süresi doldu. Baştan giriş yapman gerekiyor.",
   "auth.password_too_short": "Parola en az 8 karakter olmalı.",
+  // Yalnizca parola sorulan ekranlarda (guvenlik ayarlari): orada e-posta
+  // diye bir alan yok, o yuzden "e-posta ya da parola hatali" demiyoruz.
+  "auth.invalid_password": "Parola hatalı.",
   "auth.email_taken": "Bu e-posta adresi zaten kayıtlı. Giriş yapmayı dene.",
   // Ikinci faktor adimi. Ucu de AYNI ekrani kullaniyor, yalnizca baslik ve
   // ipucu degisiyor - kullanicinin yaptigi is her durumda ayni: bir kod gir.
@@ -192,6 +195,47 @@ export const MESSAGES_TR = {
   // ve parola yenileme gibi tamamlanmamis durumlar).
   "ui.sign_in_needs_web": "Bu giriş ek bir doğrulama istiyor. Şimdilik web üzerinden giriş yapman gerekiyor: owezy.net",
   "ui.sign_in_failed": "Bir şeyler ters gitti. Tekrar dener misin?",
+
+  // --- Guvenlik ekrani ve parola belirleme (Faz 27.3) ---
+  //
+  // "IKI ADIMLI DOGRULAMA" deniyor, "2FA" degil. Kisaltma bize bir sey
+  // anlatiyor, kullaniciya anlatmiyor.
+  "ui.two_factor_is_on": "Açık",
+  "ui.two_factor_is_off": "Kapalı",
+  "ui.two_factor_off_hint":
+    "Parolana ek olarak telefonundaki uygulamadan bir kod istenir. Parolan başkasının eline geçse bile hesabına girilemez.",
+  "ui.two_factor_on_hint": "Girişte parolandan sonra ayrıca bir kod isteniyor.",
+  "ui.two_factor_enable": "Aç",
+  "ui.two_factor_disable": "Kapat",
+  "ui.two_factor_enabled": "İki adımlı doğrulama açıldı",
+  "ui.two_factor_disabled": "İki adımlı doğrulama kapatıldı",
+  "ui.two_factor_password_hint": "Devam etmek için parolanı gir.",
+  "ui.two_factor_scan": "Kimlik doğrulayıcı uygulamanla bu kodu okut.",
+  "ui.two_factor_qr_label": "Kurulum için QR kodu",
+  "ui.two_factor_secret": "Okutamıyorsan bu anahtarı elle gir:",
+  "ui.two_factor_confirm_hint": "Kurulumu bitirmek için uygulamadaki 6 haneli kodu gir.",
+  "ui.two_factor_verify": "Doğrula",
+  // Kullanicinin 2FA'yi actiktan sonra parolasini unutursa girebilecegi TEK
+  // yol bu kodlar degil - parola yenileme de var - ama telefonunu
+  // kaybettiginde tek yol bu. O yuzden "sonra bakarim" denmeyecek kadar net
+  // yaziliyor.
+  "ui.backup_codes": "Yedek kodlar",
+  "ui.backup_codes_hint":
+    "Telefonuna erişemezsen bu kodlarla girebilirsin. Her kod yalnızca bir kez çalışır. Şimdi kaydet — bir daha gösterilmeyecek.",
+  "ui.backup_codes_copied": "Yedek kodlar kopyalandı",
+  "ui.backup_codes_copy_failed": "Kodlar kopyalanamadı, elle seçip kopyalayabilirsin",
+  "ui.backup_codes_regenerate": "Yedek kodları yenile",
+  "ui.backup_codes_regenerated": "Yeni yedek kodlar üretildi; eskiler artık çalışmıyor.",
+  "ui.two_factor_needs_password":
+    "İki adımlı doğrulama için hesabında bir parola olması gerekiyor. Şu anda yalnızca e-posta koduyla giriyorsun.",
+  "ui.set_password": "Parola belirle",
+  "ui.remember_this_device": "Bu cihazı 30 gün hatırla",
+  "ui.forgot_password": "Parolamı unuttum",
+  "ui.reset_password_title": "Parolanı belirle",
+  "ui.reset_password_hint":
+    "E-posta adresine bir kod gönderelim, sonra yeni parolanı yazarsın. Hesabında hiç parola yoksa bu adım parolanı ilk kez kurar.",
+  "ui.new_password": "Yeni parola",
+  "ui.password_updated": "Parolan kaydedildi. Şimdi giriş yapabilirsin.",
   // --- E-posta (Faz 25.2) ---
   // Bunlar ARAYUZ metni degil, gonderilen postanin metni. Yine de sozlukte:
   // ADR-020'nin garantisi (eksik ceviri = derleme hatasi) burada da gecerli
@@ -631,6 +675,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
     "Too many wrong attempts. Your account is locked for a while; try again shortly.",
   "auth.two_factor_expired": "The verification window closed. Please sign in again.",
   "auth.password_too_short": "Your password needs at least 8 characters.",
+  "auth.invalid_password": "That password is wrong.",
   "auth.email_taken": "That email address is already registered. Try signing in.",
   "ui.two_factor_title": "Two-step verification",
   "ui.totp_hint": "Enter the 6-digit code from your authenticator app.",
@@ -645,6 +690,39 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.code_resent": "Code sent again.",
   "ui.sign_in_needs_web": "This sign-in needs another verification step. For now, please sign in on the web: owezy.net",
   "ui.sign_in_failed": "Something went wrong. Care to try again?",
+
+  "ui.two_factor_is_on": "On",
+  "ui.two_factor_is_off": "Off",
+  "ui.two_factor_off_hint":
+    "On top of your password, you'll be asked for a code from an app on your phone. Even someone who has your password can't get in.",
+  "ui.two_factor_on_hint": "After your password, signing in asks for a code as well.",
+  "ui.two_factor_enable": "Turn on",
+  "ui.two_factor_disable": "Turn off",
+  "ui.two_factor_enabled": "Two-step verification is on",
+  "ui.two_factor_disabled": "Two-step verification is off",
+  "ui.two_factor_password_hint": "Enter your password to continue.",
+  "ui.two_factor_scan": "Scan this with your authenticator app.",
+  "ui.two_factor_qr_label": "Setup QR code",
+  "ui.two_factor_secret": "Can't scan it? Enter this key by hand:",
+  "ui.two_factor_confirm_hint": "Enter the 6-digit code from the app to finish setting up.",
+  "ui.two_factor_verify": "Verify",
+  "ui.backup_codes": "Backup codes",
+  "ui.backup_codes_hint":
+    "Use one of these if you can't reach your phone. Each code works once. Save them now — they won't be shown again.",
+  "ui.backup_codes_copied": "Backup codes copied",
+  "ui.backup_codes_copy_failed": "The codes could not be copied, you can select and copy them manually",
+  "ui.backup_codes_regenerate": "Generate new backup codes",
+  "ui.backup_codes_regenerated": "New backup codes are ready; the old ones no longer work.",
+  "ui.two_factor_needs_password":
+    "Two-step verification needs a password on your account. Right now you only sign in with an emailed code.",
+  "ui.set_password": "Set a password",
+  "ui.remember_this_device": "Remember this device for 30 days",
+  "ui.forgot_password": "I forgot my password",
+  "ui.reset_password_title": "Set your password",
+  "ui.reset_password_hint":
+    "We'll email you a code, then you choose a new password. If your account has no password yet, this sets one for the first time.",
+  "ui.new_password": "New password",
+  "ui.password_updated": "Your password is saved. You can sign in now.",
   "email.otp_subject_sign_in": "Your Owezy sign-in code",
   "email.otp_subject_email_verification": "Verify your email address",
   "email.otp_subject_forget_password": "Reset your password",

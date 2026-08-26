@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,21 @@ import { PersonAvatar } from "@/components/person-avatar";
 import { apiRequest } from "@/lib/api-client";
 import { updateMeSchema } from "@/lib/me-schemas";
 import { useTranslate } from "@/lib/i18n";
+
+/**
+ * GUVENLIK EKRANI TEMBEL YUKLENIYOR.
+ *
+ * Bu bilesen (app)/layout.tsx'in icinde, yani uygulamanin HER sayfasinda.
+ * Guvenlik ekrani ise QR ureticisini (uqr) ve Better Auth'un tarayici
+ * istemcisini tasiyor. Dogrudan import edilseydi ikisi de her sayfanin
+ * istemci paketine girerdi - oysa o ekran yilda birkac kez aciliyor.
+ *
+ * next/dynamic + kosullu render: modul, kullanici menuden guvenlik satirina
+ * BASTIGINDA indiriliyor.
+ */
+const SecurityDialog = dynamic(() =>
+  import("@/components/security-dialog").then((m) => m.SecurityDialog),
+);
 
 /**
  * Basliktaki kullanici menusu. Clerk'in <UserButton /> bileseninin yerini
@@ -38,16 +54,20 @@ export function UserMenu({
   email,
   avatarUrl,
   hasImage,
+  twoFactorEnabled,
 }: {
   displayName: string;
   email: string;
   avatarUrl?: string | null;
   hasImage?: boolean | null;
+  twoFactorEnabled: boolean;
 }) {
   const router = useRouter();
   const t = useTranslate();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [securityOpen, setSecurityOpen] = useState(false);
   const [name, setName] = useState(displayName);
   const [error, setError] = useState<string | null>(null);
 
@@ -146,7 +166,19 @@ export function UserMenu({
   }
 
   return (
-    <Popover onOpenChange={(open) => !open && stopEditing()}>
+    <>
+    {/*
+      MENU KONTROLLU (open + onOpenChange). Denetimsizken guvenlik ekrani
+      acildiginda menu ARKADA ACIK kaliyordu; dialog kapaninca kullanici
+      hic dokunmadigi bir menuyle karsi karsiya geliyordu.
+    */}
+    <Popover
+      open={menuOpen}
+      onOpenChange={(open) => {
+        setMenuOpen(open);
+        if (!open) stopEditing();
+      }}
+    >
       {/* asChild YOK: buradaki Popover Base UI uzerine kurulu, Radix degil -
           tetikleyici kendi <button>'ini render ediyor. notification-bell.tsx
           de ayni sekilde kullaniyor. */}
@@ -209,6 +241,30 @@ export function UserMenu({
             >
               {t("ui.edit")}
             </Button>
+            {/*
+              DURUM SATIRIN UZERINDE YAZIYOR ("Kapali" / "Acik"). Yalnizca
+              baslik olsaydi kullanici, iki adimli dogrulamanin acik olup
+              olmadigini ogrenmek icin ekrani ACMAK zorunda kalirdi - oysa
+              cevap zaten burada, bedava.
+
+              Deger PROP'tan geliyor: layout kullanici satirini zaten
+              okuyor, yani ek bir sorgu yok. Ekranin KENDISI durumu bir kez
+              daha sunucudan cekiyor, cunku orada tazelik onemli.
+            */}
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => {
+                setMenuOpen(false);
+                setSecurityOpen(true);
+              }}
+            >
+              <span className="truncate">{t("ui.two_factor_title")}</span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {t(twoFactorEnabled ? "ui.two_factor_is_on" : "ui.two_factor_is_off")}
+              </span>
+            </Button>
             <Button
               type="button"
               variant="ghost"
@@ -222,5 +278,11 @@ export function UserMenu({
         )}
       </PopoverContent>
     </Popover>
+    {/* Popover'in DISINDA: menu kapaninca dialog da kapanmamali. Popover
+        kapandiginda icerigini agactan cikariyor. */}
+    {securityOpen ? (
+      <SecurityDialog open onOpenChange={setSecurityOpen} />
+    ) : null}
+    </>
   );
 }

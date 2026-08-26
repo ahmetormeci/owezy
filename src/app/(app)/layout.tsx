@@ -87,6 +87,9 @@ export default async function AppLayout({
               email={user.email}
               avatarUrl={user.avatarUrl}
               hasImage={user.hasImage}
+              // Sutun zaten okunan satirda: menudeki "Acik / Kapali" bilgisi
+              // BEDAVA geliyor, ek bir sorgu yok.
+              twoFactorEnabled={user.twoFactorEnabled}
             />
           </div>
         </div>

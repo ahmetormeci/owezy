@@ -8,15 +8,14 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 24 faz tamamlandı; **Faz 25 uygulama tarafında bitti**, **Faz 26
-sürüyor** (ikisi de `better-auth` dalında; `main`'e alınması bir kontrol
-listesine bağlı, bkz. CURRENT_TASK).
-Uygulama canlıda ve `main`'e giden her değişiklik CI'dan geçiyor.
+**Özet:** 26 faz tamamlandı ve **Faz 25 ile 26 canlıda** (`main`'e alındı).
+**Faz 27** (iki adımlı doğrulama) web tarafında bitti; geriye mobil arayüzü
+kaldı. Uygulama canlıda ve `main`'e giden her değişiklik CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 510 | ✅ tümü geçiyor |
-| E2E (Playwright) | 43 | ✅ tümü geçiyor |
+| Birim (Vitest) | 534 | ✅ tümü geçiyor |
+| E2E (Playwright) | 55 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -1114,6 +1113,67 @@ Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yarama
 
 ---
 
+## Faz 27 — İki adımlı doğrulama · **BİTTİ (arayüz web'de)**
+
+Faz 25'in ertelediği iş. 25.6'da "eklentiyi tak" sanılıyordu; ölçünce üç ayrı
+karar işi çıktı ve fazın kendisi oldu.
+
+| Adım | Durum | Commit |
+|---|---|---|
+| 27.1 Şema (`TwoFactor` + `User.twoFactorEnabled`) | ✅ | `98d79b5` |
+| 27.2 Sunucu (eklenti + e-posta kodu kapısı) | ✅ | `98d79b5` |
+| 27.3 Web arayüzü + parola kurtarma | ✅ | — |
+| 27.4 Mobil arayüz | ⏳ sırada | — |
+| 27.5 Dokümanlar (ADR-040) | ✅ | — |
+
+**Kararın kendisi ADR-040'ta.** Özeti: 2FA açıksa giriş **parolayla** olur,
+çünkü Better Auth'un eklentisi ikinci faktörü bizim birincil giriş yolumuzda
+(`/sign-in/email-otp`) **hiç sormuyor** — ölçüldü, kaynağında o yol yok.
+
+**27.3'ün asıl bulgusu bir arayüz işi değildi:** bu karar "parolamı unuttum"un
+o güne kadarki tek kaçış kapısını kapatıyor. Kapatıp yerine bir şey
+konmasaydı, 2FA açan biri parolasını unuttuğu anda hesabına bir daha
+giremezdi. Bu yüzden `/reset-password` aynı fazda geldi — ve **sunucuya tek
+satır eklenmeden**: iki uç da `emailOTP` ile zaten geliyordu, gönderdikleri
+posta bizim `sendOtpEmail`'imizden geçiyor, konu metni sözlükte hazırdı.
+`reset-password` credential hesabı olmayan kullanıcıya onu **yaratıyor**, yani
+aynı ekran hem "unuttum"a hem "hiç parolam yok"a yetiyor.
+
+**Parolasız kullanıcı için düğme gösterilmiyor.** `/two-factor/enable` parola
+istiyor ve `allowPasswordless` **kapalı kalmak zorunda** (açık olsaydı
+parolasız biri 2FA açar ve kendini tamamen dışarıda bırakırdı). Arayüz bunu
+`GET /api/v1/me`'nin yeni `hasPassword` alanından biliyor ve "Aç" yerine
+"önce parola belirle" diyor — çalışmayan bir düğme değil.
+
+**QR kodu için tek yeni bağımlılık: `uqr`** (bağımlılığı yok). `renderSVG`
+değil `encode` kullanılıyor: dönen boolean matristen `<path>` React'in kendi
+içinde üretiliyor, yani sayfaya ham HTML enjekte eden bir satır yok. Gizli
+anahtar QR'ın yanında metin olarak da duruyor — kamerası olmayan da kurabilsin.
+
+**Güvenlik ekranı tembel yükleniyor.** Kullanıcı menüsü `(app)/layout.tsx`
+içinde, yani her sayfada; QR üreticisi ve Better Auth istemcisi doğrudan
+import edilseydi ikisi de her sayfanın istemci paketine girerdi.
+
+**Test:** Birim 534 ✅ · E2E 55 ✅. On bir yeni E2E: sekizi 2FA
+(`e2e/two-factor.spec.ts`), üçü parola kurtarma (`e2e/password-reset.spec.ts`).
+Testler **gerçek TOTP kodu üretiyor** ve burada ölçülmüş bir tuzak var:
+`createOTP(secret).url(...)` gizli anahtarı URI'ye **base32'leyerek** yazıyor,
+yani ekrandaki değer ham anahtar değil. Doğrudan kullanılırsa yanlış kod
+üretiliyor ve test "2FA çalışmıyor" gibi düşüyor.
+
+**Dört test düzeltme geri alınarak doğrulandı** — her biri kendi düzeltmesi
+kaldırılınca gerçekten düşüyor: kanca (e-posta koduyla giriş reddediliyor),
+`twoFactorRedirect` dalı (girişte ikinci faktör soruluyor), `INVALID_PASSWORD`
+eşlemesi (yanlış parola anlaşılır bir cümle veriyor), `trustDevice` (bu cihazı
+hatırla).
+
+**Bir boşluk testi yazarken çıktı:** Better Auth'un `INVALID_PASSWORD` kodu
+`auth-errors.ts`'te eşlenmemişti. Güvenlik ekranının **en olası** hatası —
+parolayı yanlış yazmak — en anlamsız cümleyi alıyordu ("Bir şeyler ters
+gitti").
+
+---
+
 ## Faz 26 — Güvenlik başlıkları ve hız sınırı · **CANLIDA**
 
 Gizlilik politikasındaki "makul teknik tedbirler" cümlesini gerçek yapan iş.
@@ -1376,6 +1436,21 @@ zaten Cloudflare'de, ADR-026; çıkış trafiği ücretsiz).
 - **Mobilde yeni bağımlılık** (`expo-image-picker`) ve yeni bir native izin.
 
 ## Bilinen teknik borç
+
+- **Tek seferlik kodlar veritabanında DÜZ METİN duruyor.** `emailOTP`
+  eklentisinin `storeOTP` varsayılanı `"plain"` ve değiştirmedik (ölçüldü:
+  `email-otp/otp-token.mjs`). `Verification.value` alanında kodun kendisi
+  yazıyor — yani veritabanına okuma erişimi olan biri (sızmış bir yedek,
+  salt-okunur bir replika) o an uçuşta olan bir kodla giriş yapabilir. Kod 5
+  dakika yaşıyor, ama yine de bir kimlik bilgisi.
+
+  **`"hashed"` bedava değil, karar gerekiyor:** `tryReuseOTP` hash'li bir
+  kodu geri okuyamıyor, yani "kodu yeniden gönder" diyen kullanıcıya **yeni**
+  bir kod gidiyor ve **ilk e-postadaki kod ölüyor**. İki e-postası olan
+  kullanıcı yanlış olanı deneyebilir. Takas ölçülmeden değiştirilmemeli.
+
+  **Değiştirilirse `e2e/db-cleanup.ts`'teki `readOtpFromDatabase` de
+  değişmek zorunda** — iki E2E dosyası kodu oradan okuyor.
 
 - **Harcama formu kaydettikten sonra "Kaydediliyor..."da takılabiliyor.**
   26 Ağustos'ta iki E2E testi bu yüzden düştü, aynı koşu tekrarlandığında

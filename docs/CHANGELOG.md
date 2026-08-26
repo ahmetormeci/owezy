@@ -8,6 +8,52 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-26 (5) — İki adımlı doğrulama web'de; parola kurtarma
+
+2FA artık kullanılabilir: kullanıcı menüsünün içindeki güvenlik ekranından
+açılıyor (QR + gizli anahtar + yedek kodlar + doğrulama), girişte ikinci adım
+olarak soruluyor, "bu cihazı 30 gün hatırla" seçeneği var, yedek kodlar
+yenilenebiliyor ve kapatılabiliyor.
+
+**Kural ADR-040'ta:** 2FA açıksa giriş **parolayla** olur. Sebebi kütüphaneden
+ölçüldü — `twoFactor` eklentisi ikinci faktörü bizim birincil giriş yolumuzda
+(`/sign-in/email-otp`) hiç sormuyor.
+
+### Bu karar bir kapıyı kapattı, aynı fazda yerine yenisi kondu
+2FA'dan önce "parolamı unuttum"un çıkışı e-posta koduyla girmekti. 2FA açıkken
+o yol kapalı — yani ekran olmasaydı, parolasını unutan bir 2FA kullanıcısı
+hesabına **bir daha giremezdi**. Yedek kodlar kurtarmıyor: onlar *ikinci*
+faktör, birincisi yine parola.
+
+`/reset-password` geldi ve **sunucuya tek satır eklenmedi**: iki uç da
+`emailOTP` ile zaten vardı, postası bizim `sendOtpEmail`'imizden geçiyor, konu
+metni sözlükte hazırdı. Üstelik credential hesabı olmayan kullanıcıya onu
+yaratıyor — yani aynı ekran "hiç parolam yok" durumunu da çözüyor.
+
+### Parolasız kullanıcıya çalışmayan düğme gösterilmiyor
+`/two-factor/enable` parola istiyor ve `allowPasswordless` kapalı kalmak
+zorunda (açık olsaydı parolasız biri 2FA açar ve kendini tamamen dışarıda
+bırakırdı). `GET /api/v1/me` artık `hasPassword` döndürüyor; güvenlik ekranı
+"Aç" yerine "önce parola belirle" diyor.
+
+### Yeni bağımlılık: `uqr` (bağımlılığı yok)
+QR kodu için. `renderSVG` yerine `encode` kullanılıyor — dönen boolean
+matristen `<path>` React içinde üretiliyor, yani `dangerouslySetInnerHTML`
+yok. Güvenlik ekranı `next/dynamic` ile tembel yükleniyor: kullanıcı menüsü
+her sayfada duruyor, QR üreticisinin her sayfanın paketinde olmasına gerek yok.
+
+### Testler yazılırken bir boşluk çıktı
+Better Auth'un `INVALID_PASSWORD` kodu hata haritasında yoktu: güvenlik
+ekranının **en olası** hatası — parolayı yanlış yazmak — en anlamsız cümleyi
+alıyordu ("Bir şeyler ters gitti"). Eklendi, kendi cümlesiyle ("Parola
+hatalı." — "e-posta ya da parola hatalı" değil, çünkü o ekranda e-posta diye
+bir alan yok).
+
+**Test:** 534 birim, 55 E2E (11 yeni). E2E gerçek TOTP kodu üretiyor. **Dört
+test düzeltme geri alınarak doğrulandı.**
+
+---
+
 ## 2026-08-26 (4) — Faz 25 ve 26 canlıda; davet akışında bir hata
 
 Göç `main`'e alındı (`069523e`) ve ~70 saniyede yayına girdi. Canlıda gerçek

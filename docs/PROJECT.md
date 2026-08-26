@@ -26,6 +26,8 @@ hesaptan okunur (`User.locale`).
 | Gruptan ayrılma, üye çıkarma, sahiplik devri | ✅ |
 | Bildirimler (6 olay, zil menüsü) | ✅ |
 | Kimlik doğrulama: e-posta kodu ya da parola (web + mobil, kendi uçlarımız) | ✅ |
+| İki adımlı doğrulama (TOTP + yedek kod) | ✅ web · ⏳ mobil |
+| Parola belirleme / yenileme (e-posta koduyla) | ✅ web |
 | Hesap silme (anonimleştirme) | ✅ |
 | İki dil (TR/EN), açık/koyu tema, avatarlar | ✅ |
 

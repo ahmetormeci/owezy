@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { mockGetOrCreateCurrentUser, mockUserUpdate, mockEnforceWriteLimit } = vi.hoisted(() => ({
+const {
+  mockGetOrCreateCurrentUser,
+  mockUserUpdate,
+  mockEnforceWriteLimit,
+  mockAccountFindFirst,
+} = vi.hoisted(() => ({
   mockEnforceWriteLimit: vi.fn(),
   mockGetOrCreateCurrentUser: vi.fn(),
   mockUserUpdate: vi.fn(),
+  mockAccountFindFirst: vi.fn(),
 }));
 
 vi.mock("@/lib/api-rate-limit", () => ({
@@ -16,10 +22,13 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: { user: { update: mockUserUpdate } },
+  prisma: {
+    user: { update: mockUserUpdate },
+    account: { findFirst: mockAccountFindFirst },
+  },
 }));
 
-const { PATCH } = await import("./route");
+const { GET, PATCH } = await import("./route");
 
 const USER_ID = "22222222-2222-4222-8222-222222222222";
 
@@ -38,6 +47,8 @@ beforeEach(() => {
   mockEnforceWriteLimit.mockResolvedValue(null);
   mockGetOrCreateCurrentUser.mockReset();
   mockUserUpdate.mockReset();
+  mockAccountFindFirst.mockReset();
+  mockAccountFindFirst.mockResolvedValue(null);
 
   mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
   mockUserUpdate.mockImplementation(async ({ data }: { data: { locale: string } }) => ({
@@ -100,5 +111,64 @@ describe("PATCH /api/v1/me", () => {
     expect(json.ok).toBe(false);
     expect(typeof json.code).toBe("string");
     expect(json.code).toMatch(/^[a-z]+\.[a-z_]+$/);
+  });
+});
+
+/**
+ * GET'in hasPassword alani ARAYUZ ICIN KRITIK, o yuzden testi var.
+ *
+ * Guvenlik ekrani buna bakip "2FA'yi ac" dugmesini gosteriyor ya da yerine
+ * "once parola belirle" diyor. Yanlis hesaplanirsa iki yonde de kotu:
+ * parolasiz kullanici basip INVALID_PASSWORD aliyor ("dugme calismiyor"),
+ * ya da parolasi olan kullanici hic acamiyor.
+ */
+describe("GET /api/v1/me", () => {
+  it("giris yapilmamissa 401 doner ve hesap tablosuna hic bakmaz", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue(null);
+
+    const response = await GET();
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ ok: false, code: "auth.not_signed_in" });
+    expect(mockAccountFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("parolali hesapta hasPassword true doner", async () => {
+    mockAccountFindFirst.mockResolvedValue({ id: "hesap-1" });
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, hasPassword: true });
+  });
+
+  it("parolasiz hesapta hasPassword false doner", async () => {
+    mockAccountFindFirst.mockResolvedValue(null);
+
+    expect(await (await GET()).json()).toMatchObject({ hasPassword: false });
+  });
+
+  it("yalnizca OTURUMDAKI kullanicinin parolali hesabini arar", async () => {
+    // Uc kosulun ucu de onemli: baskasinin satiri sayilmamali, sosyal
+    // saglayici hesabi parola sayilmamali, ve parolasi NULL olan bir
+    // credential satiri da parola sayilmamali.
+    await GET();
+
+    expect(mockAccountFindFirst).toHaveBeenCalledWith({
+      where: { userId: USER_ID, providerId: "credential", password: { not: null } },
+      select: { id: true },
+    });
+  });
+
+  it("hesap satirini DEGIL, yalnizca 'var mi' bilgisini doner", async () => {
+    // Yanitin ALANLARI sayiliyor, icerigi degil: boylece ileride biri
+    // findFirst'un sonucunu dogrudan yanita eklerse (icinde parola hash'i
+    // olabilecek bir nesne) bu test duser.
+    mockAccountFindFirst.mockResolvedValue({ id: "hesap-1" });
+
+    const json = await (await GET()).json();
+
+    expect(Object.keys(json).sort()).toEqual(["hasPassword", "ok", "user"]);
+    expect(json.hasPassword).toBe(true);
   });
 });
