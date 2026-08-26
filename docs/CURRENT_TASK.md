@@ -15,10 +15,23 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-26 (18)
+Updated: 2026-08-26 (19)
 
-DAL: better-auth. YEREL main = origin/main = CANLIDAKI HAL.
+MAIN'E ALINDI VE CANLIDA (26 Agustos, 069523e). Faz 25 ve 26 yayinda.
 CLERK ARTIK KODDA HIC YOK. Paketler de kalkti.
+
+  MERGE SONRASI DOGRULANDI - gercek isteklerle, canlida:
+    basliklar          CSP + Permissions-Policy + Referrer-Policy +
+                       X-Content-Type-Options + X-Frame-Options
+    x-clerk-*          YOK
+    x-powered-by       YOK
+    /api/webhooks/clerk 404 (rota silinmis)
+    /api/auth/get-session 200 + null (Better Auth ayakta)
+    /groups oturumsuz  307 -> /sign-in
+    VERITABANI TURU    olmayan hesapla giris -> 401 INVALID_EMAIL_OR_PASSWORD
+                       (User tablosuna gercek sorgu; clerkId dusurulmus
+                        semayla saglam calisiyor)
+    /privacy           Clerk gecen satir sayisi 0, Resend beyan edilmis
 
 Current task:
   YOK - KULLANICIDAN GOREV BEKLENIYOR.
@@ -29,10 +42,12 @@ Current task:
     26.3  CSP (nonce'suz, ADR-039)                 BITTI  fbfed02
     26.4  /api/v1 yazma butcesi                    BITTI  c698eaa
 
-  SIRADAKI ADAYLAR (karar kullanicinin):
-    - 2FA - asagida, uc secenek var, hicbiri secilmedi
-    - main'e gecis - asagidaki kontrol listesi, sende bekleyen adimlar var
-    - PROGRESS.md'deki aday listesi (fis gorseli, mobilde otomatik test, ...)
+  SIRADAKI IS: 2FA - ve SECENEK ARTIK SECILDI.
+    Kullanici App Store gonderimini once halletmeyi tercih etti; 2FA ondan
+    sonra. Secenek A: 2FA aciksa giris PAROLAYLA olur. Gerekce asagida.
+
+  DIGER ADAYLAR: PROGRESS.md'deki liste (fis gorseli, mobilde otomatik test,
+  silineni geri alma arayuzu, ...)
 
   FAZ 26'DAN AKILDA TUTULACAKLAR:
     - /api/v1 YAZMA BUTCESI: kullanici basina dakikada 60. Kural 15 dosyaya
@@ -96,7 +111,8 @@ SONRAKI BUYUK IS - 2FA, VE ONCE BIR KARAR GEREKIYOR:
   UCUNCUSU: 2FA'yi acacak ekran yok. /two-factor/enable oturum + PAROLA
   istiyor; hesap/guvenlik ekranimiz ise 25.4'te bilerek yazilmadi.
 
-  UC SECENEK VAR, HICBIRI SECILMEDI:
+  SECILEN: A. (26 Agustos, kullanici karari - "hangisi daha mantikli"
+  sorusunun cevabi olarak sunuldu ve kabul edildi.)
     A) 2FA aciksa giris PAROLAYLA olur. Desteklenen yol; Better Auth'un ic
        API'lerine dokunulmuyor; faktor karisimi da ders kitabina uygun
        (bilgi + sahiplik). Bedeli: 2FA acan kullanici parolasiz giris
@@ -107,34 +123,34 @@ SONRAKI BUYUK IS - 2FA, VE ONCE BIR KARAR GEREKIYOR:
        bozulma sekli de "2FA artik sorulmuyor", yani en kotusu.
     C) Hic yapmamak.
 
-MAIN'E GECIS KONTROL LISTESI - SIRA ONEMLI:
-  Canlidaki uygulama hala main'i kosuyor ve main CLERK'IN TA KENDISI. Adimlar
-  bu sirayla yapilmali; ortasinda durulursa uygulama coker.
+MERGE BITTI - GERIYE KALANLAR:
 
-  1. VERCEL'E EKLE (dal main'e girmeden ONCE):
-       BETTER_AUTH_SECRET   (openssl rand -base64 32)
-       BETTER_AUTH_URL      https://owezy.net
-       RESEND_API_KEY
-     Neden once: betterAuth() secret yoksa MODUL YUKLENIRKEN firlatiyor
-     ("BETTER_AUTH_SECRET is missing", kaynakta dogrulandi) ve src/lib/auth.ts
-     neredeyse her sayfa tarafindan import ediliyor. Anahtarsiz push =
-     UYGULAMANIN TAMAMI 500.
+  1. APP REVIEW DEMO HESABI - SENDE, VE ACIL.
+     Eski demo hesap Clerk production'daydi ve ARTIK CALISMIYOR. Yenisi
+     https://owezy.net/sign-up adresinden PAROLAYLA kurulmali (kod akisi
+     inceleyiciye posta kutusu gerektirir - ADR-035). Sonra App Store
+     Connect -> App Review Information'daki kullanici adi/parola
+     guncellenmeli. YAPILMAZSA INCELEYICI UYGULAMAYA GIREMEZ.
+     Ardindan hesaba birkac harcama/odeme girilmeli (bos ekran gosteren
+     uygulama incelemede soru aliyor).
 
-  2. APP REVIEW DEMO HESABI YENIDEN KURULMALI. Su an Clerk production'da;
-     Better Auth tarafinda karsiligi YOK. Merge sonrasi /sign-up'tan
-     parolayla yeniden yaratilacak ve App Store Connect'teki bilgiler
-     guncellenecek. YAPILMAZSA INCELEYICI UYGULAMAYA GIREMEZ.
+  2. APP PRIVACY ANKETI GOZDEN GECIRILMELI - SENDE.
+     /privacy 25.7'de degisti: parola artik BIZIM sunucumuza geliyor ve
+     hash'lenip veritabanimizda duruyor; Resend yeni bir veri isleyici.
+     Anket eski metne bakilarak doldurulmustu.
 
-  3. MERGE + DEPLOY. Iki migration canliya gidiyor: Better Auth tablolari ve
-     clerkId'nin dusurulmesi. Production'da SIFIR kullanici oldugu icin veri
-     riski yok (dogrulandi).
-
-  4. SONRA SILINEBILIR:
-       Vercel      : CLERK_SECRET_KEY, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-       .env.local  : ayni ikisi
+  3. TEMIZLIK (aceleye gerek yok, ama unutulmasin):
+       Vercel            : CLERK_SECRET_KEY, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+       .env.local        : ayni ikisi
        mobile/.env.local : EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
-       Clerk hesabi: development ornegi de dahil kapatilabilir
-     ONCE DEGIL: Clerk panelinde bir seye bakmak gerekirse secret key lazim.
+       Clerk paneli      : Webhooks -> Endpoints'teki kayit (adres zaten olu:
+                           split-app-mauve.vercel.app 404 donuyor)
+       Clerk hesabi      : development ornegi de dahil kapatilabilir
+     E2E ARTIK CLERK'E BAGLI DEGIL - kurulum test kullanicilarini kendisi
+     yaratiyor, yani development ornegi de gerekmiyor.
+
+  4. better-auth DALI birlesti; silinebilir (git push origin --delete
+     better-auth). Aceleye gerek yok.
 
 25.7'DE ACILAN VE KAPATILAN BOSLUK:
   Clerk gidince gorunen adi degistirmenin HICBIR yolu kalmiyordu - o is

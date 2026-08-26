@@ -1114,7 +1114,7 @@ Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yarama
 
 ---
 
-## Faz 26 — Güvenlik başlıkları ve hız sınırı · **BİTTİ**
+## Faz 26 — Güvenlik başlıkları ve hız sınırı · **CANLIDA**
 
 Gizlilik politikasındaki "makul teknik tedbirler" cümlesini gerçek yapan iş.
 Faz 25 onu aciller listesine taşıdı: **giriş denemelerini eskiden Clerk
@@ -1176,14 +1176,18 @@ koşulup konsol okundu ✅
 
 ---
 
-## Faz 25 — Clerk'ten Better Auth'a geçiş · **UYGULAMA TARAFINDA BİTTİ**
+## Faz 25 — Clerk'ten Better Auth'a geçiş · **CANLIDA**
 
-`better-auth` dalında ve **`main`'e henüz girmedi.** Girmesi bir sıraya bağlı:
-`betterAuth()` `BETTER_AUTH_SECRET` yokken **modül yüklenirken** fırlatıyor ve
-`src/lib/auth.ts` onu neredeyse her sayfaya taşıyor — yani Vercel değişkenleri
-girilmeden bir push, uygulamanın tamamını 500 yapar. Ayrıca App Review demo
-hesabı Clerk production'da duruyor ve merge'den sonra işe yaramaz; yeniden
-kurulması gerekiyor. Tam kontrol listesi CURRENT_TASK'ta.
+26 Ağustos'ta `main`'e alındı (`069523e`) ve ~70 saniyede yayına girdi.
+Merge'den önceki son kontrol preview'da yapıldı: `/api/auth/get-session`
+`null` döndü, yani Better Auth Vercel'in kendi ortamında ayağa kalkıyordu —
+derlemeyi düşürebilecek tek şey (`BETTER_AUTH_SECRET`) böylece elendi.
+
+Merge sonrası canlıda doğrulandı: güvenlik başlıkları yerinde, `x-clerk-*` ve
+`x-powered-by` yok, `/api/webhooks/clerk` 404, `/privacy`'de Clerk geçen satır
+sayısı sıfır. En önemlisi **veritabanı turu**: olmayan bir hesapla giriş
+denemesi `401 INVALID_EMAIL_OR_PASSWORD` döndü — `User` tablosuna gerçek bir
+sorgu, yani `clerkId`'nin düşürüldüğü şema sağlam.
 
 Yayından **önce** yapılıyor: production'da sıfır kullanıcı var. Sonra yapmak
 herkese parola sıfırlatmak demekti (Clerk parola hash'ini dışarı vermiyor).
