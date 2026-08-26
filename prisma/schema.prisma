@@ -140,12 +140,18 @@ model User {
   settlementsCreated   Settlement[] @relation("createdBy")
   settlementsCancelled Settlement[] @relation("cancelledBy")
 
+  // Iki adimli dogrulama acik mi? Better Auth yonetiyor; biz yalnizca
+  // OKUYORUZ (giris akisinda "bu hesap parolayla girer" karari icin).
+  // Varsayilan false: mevcut hesaplarin hicbiri bir sey secmis sayilmaz.
+  twoFactorEnabled Boolean @default(false)
+
   // Better Auth'un yonettigi kayitlar. Cascade BILEREK: bunlar finansal
   // kayit degil, oturum artifaktlari - "finansal kayitlar fiziksel olarak
   // silinmez" kurali onlari baglamiyor. Zaten hesap silme SOFT delete
   // (deletedAt) oldugu icin bu cascade pratikte hic tetiklenmiyor.
   sessions Session[]
   accounts Account[]
+  twoFactors TwoFactor[]
 
   expenseEdits  ExpenseEdit[]  @relation("changedBy")
   groupInvites  GroupInvite[]  @relation("invitedBy")
@@ -492,6 +498,41 @@ model RateLimit {
   key         String @unique
   count       Int
   lastRequest BigInt
+}
+
+/**
+ * Iki adimli dogrulama (TOTP) kayitlari. Better Auth yonetiyor.
+ *
+ * ALANLAR CALISMA ZAMANINDAN ALINDI: @better-auth/core'daki getAuthTables()
+ * kendi ayarlarimizla cagrilip liste karsilastirildi. 25.4'te sema bir CLI
+ * surumunden uretilmisti ve Account.issuer atlanmisti; ayni hataya bir daha
+ * dusulmedi.
+ *
+ * secret INDEXLI ve bu kutuphanenin istegi - biz eklemedik.
+ *
+ * backupCodes tek bir metin sutunu: Better Auth kodlari SIFRELEYIP birlikte
+ * sakliyor. Ayri satirlara bolmek bizim isimiz degil, onun ic bicimi.
+ *
+ * failedVerificationCount + lockedUntil: hesap bazinda kilitleme. Ardarda
+ * yanlis kod girilirse hesap bir sure kilitleniyor (NIST SP 800-63B 5.2.2).
+ * Sayaç BASARILI dogrulamada sifirlaniyor, yani yalnizca ARDISIK hatalari
+ * sayiyor.
+ *
+ * CASCADE: Session ve Account ile ayni gerekce - bu bir finansal kayit degil.
+ */
+model TwoFactor {
+  id                      String    @id @default(uuid()) @db.Uuid
+  secret                  String
+  backupCodes             String
+  userId                  String    @db.Uuid
+  verified                Boolean   @default(true)
+  failedVerificationCount Int       @default(0)
+  lockedUntil             DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([secret])
 }
 
 model Verification {

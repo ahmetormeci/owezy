@@ -27,6 +27,23 @@ const CODES: Record<string, string> = {
   USER_NOT_FOUND: "auth.invalid_credentials",
 
   PASSWORD_TOO_SHORT: "auth.password_too_short",
+
+  /**
+   * IKI ADIMLI DOGRULAMA. Kodlar paketten geldi
+   * (two-factor/error-code.mjs), ezberden yazilmadi.
+   */
+  // Bizim kendi kancamizin firlattigi kod (bkz. better-auth.ts): 2FA acik
+  // olan hesap e-posta koduyla giremiyor.
+  TWO_FACTOR_REQUIRES_PASSWORD: "auth.two_factor_requires_password",
+  // Yanlis TOTP ya da yanlis yedek kod: kullanicinin yapacagi sey ayni,
+  // o yuzden ayni cumle. "Hangisi yanlisti" bilgisi saldirgana da yarar.
+  INVALID_CODE: "auth.invalid_two_factor_code",
+  INVALID_BACKUP_CODE: "auth.invalid_two_factor_code",
+  OTP_HAS_EXPIRED: "auth.invalid_two_factor_code",
+  // Hesap gecici olarak kilitlendi (ardarda yanlis kod).
+  ACCOUNT_TEMPORARILY_LOCKED: "auth.two_factor_locked",
+  // Meydan okuma suresi doldu ya da cerez kayboldu: bastan baslamak gerek.
+  INVALID_TWO_FACTOR_COOKIE: "auth.two_factor_expired",
   USER_ALREADY_EXISTS: "auth.email_taken",
   // Calisma zamaninda donen GERCEK kod bu - kaynak dosyalarindaki kisa ad
   // degil. Kayit formunda olculdu.

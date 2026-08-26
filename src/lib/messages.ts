@@ -163,6 +163,12 @@ export const MESSAGES_TR = {
   // kuralini kimlik dogrulamada delmek olurdu.
   "auth.invalid_code": "Kod hatalı ya da süresi dolmuş. Yeni bir kod isteyebilirsin.",
   "auth.invalid_credentials": "E-posta ya da parola hatalı.",
+  "auth.two_factor_requires_password":
+    "Bu hesap iki adımlı doğrulama kullanıyor. Parolanla giriş yap.",
+  "auth.invalid_two_factor_code": "Kod doğrulanamadı. Tekrar dener misin?",
+  "auth.two_factor_locked":
+    "Çok fazla hatalı deneme oldu. Hesabın bir süreliğine kilitlendi; biraz sonra tekrar dene.",
+  "auth.two_factor_expired": "Doğrulama süresi doldu. Baştan giriş yapman gerekiyor.",
   "auth.password_too_short": "Parola en az 8 karakter olmalı.",
   "auth.email_taken": "Bu e-posta adresi zaten kayıtlı. Giriş yapmayı dene.",
   // Ikinci faktor adimi. Ucu de AYNI ekrani kullaniyor, yalnizca baslik ve
@@ -618,6 +624,12 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.already_have_account": "Already have an account?",
   "auth.invalid_code": "That code is wrong or has expired. You can ask for a new one.",
   "auth.invalid_credentials": "That email or password is wrong.",
+  "auth.two_factor_requires_password":
+    "This account uses two-step verification. Sign in with your password.",
+  "auth.invalid_two_factor_code": "That code did not check out. Care to try again?",
+  "auth.two_factor_locked":
+    "Too many wrong attempts. Your account is locked for a while; try again shortly.",
+  "auth.two_factor_expired": "The verification window closed. Please sign in again.",
   "auth.password_too_short": "Your password needs at least 8 characters.",
   "auth.email_taken": "That email address is already registered. Try signing in.",
   "ui.two_factor_title": "Two-step verification",

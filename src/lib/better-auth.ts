@@ -1,8 +1,10 @@
 import { after } from "next/server";
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { bearer } from "better-auth/plugins/bearer";
 import { emailOTP } from "better-auth/plugins/email-otp";
+import { twoFactor } from "better-auth/plugins/two-factor";
 import { sendOtpEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
@@ -134,6 +136,57 @@ export const auth = betterAuth({
     enabled: true,
   },
 
+  hooks: {
+    /**
+     * 2FA ACIK OLAN HESAP E-POSTA KODUYLA GIREMEZ.
+     *
+     * NEDEN GEREKLI - OLCULDU: Better Auth'un twoFactor eklentisi ikinci
+     * faktoru yalnizca su yollarda soruyor (two-factor/index.mjs:245):
+     *     /sign-in/email, /sign-in/username, /sign-in/phone-number
+     * Bizim BIRINCIL yolumuz olan /sign-in/email-otp listede YOK ve
+     * email-otp eklentisinin kaynaginda "twoFactor" diye bir iz de yok.
+     * Yani bu kanca olmasaydi: kullanici 2FA'yi acar, her zamanki gibi
+     * e-posta koduyla girer ve IKINCI FAKTOR HIC SORULMAZDI. Korundugunu
+     * sanan ama korunmayan bir kullanici - bir guvenlik ozelliginin en kotu
+     * ariza bicimi.
+     *
+     * NEDEN BU COZUM, eklentinin kancasini taklit etmek DEGIL: o kanca
+     * internalAdapter, createAuthCookie, HMAC ve setNewSession uzerine
+     * kurulu. Taklit etmek, bir surum yukseltmesinde SESSIZCE bozulacak bir
+     * kod demekti - ve bozulma sekli yine "2FA artik sorulmuyor" olurdu.
+     * Buradaki kanca genel API (hooks.before) ve tek bir sey yapiyor.
+     *
+     * KOD DOGRULAMA ADIMINDA REDDEDILIYOR, kod GONDERME adiminda degil.
+     * Gondermede reddetseydik, bir adresin kayitli olup olmadigi disaridan
+     * tek tek sinanabilirdi. Burada reddedilen kisi kodu ZATEN OKUMUS
+     * olan biri, yani posta kutusuna erisimi olan biri.
+     */
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/sign-in/email-otp") {
+        return;
+      }
+
+      const email = (ctx.body as { email?: unknown } | undefined)?.email;
+      if (typeof email !== "string" || email.length === 0) {
+        return;
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: { twoFactorEnabled: true },
+      });
+
+      if (user?.twoFactorEnabled) {
+        // KOD DONULUYOR, METIN DEGIL (ADR-017). Istemci sozlukten cumleyi
+        // koyuyor; eslesme src/lib/auth-errors.ts'te.
+        throw new APIError("BAD_REQUEST", {
+          message: "This account uses two-step verification. Sign in with your password.",
+          code: "TWO_FACTOR_REQUIRES_PASSWORD",
+        });
+      }
+    }),
+  },
+
   databaseHooks: {
     user: {
       create: {
@@ -220,6 +273,30 @@ export const auth = betterAuth({
      * (authClient.getCookie()) oneriyor; onu SECMEDIK cunku sunucu
      * tarafinda /api/v1 uclarinin tamami bugun Bearer bekliyor.
      */
+    /**
+     * IKI ADIMLI DOGRULAMA - TOTP + YEDEK KOD.
+     *
+     * E-POSTA KODU IKINCI FAKTOR OLARAK SUNULMUYOR (otpOptions verilmedi).
+     * Ilk faktor zaten parola; ustune e-posta kodu koymak gercek bir 2FA
+     * olurdu ama gucu posta kutusunun guvenligine inerdi. TOTP belirli bir
+     * CIHAZ istiyor. "Telefonumu kaybettim" durumunu yedek kodlar
+     * karsiliyor.
+     *
+     * issuer: authenticator uygulamasinda hesabin yaninda gorunen ad.
+     *
+     * twoFactorTable: semadaki diger modeller gibi PascalCase. Varsayilani
+     * "twoFactor"; birakirsak sema okuyan biri iki ayri adlandirma gorurdu.
+     *
+     * trustDeviceMaxAge'e DOKUNULMUYOR (varsayilan 30 gun). "Bu cihazi
+     * hatirla" yalnizca WEB'de sunuluyor: ozellik cerez tabanli ve mobil
+     * cerez tasimiyor (ADR-038). Asimetri bilincli - mobil oturum belirteci
+     * uzun omurlu oldugu icin orada zaten nadiren giris yapiliyor.
+     */
+    twoFactor({
+      issuer: "Owezy",
+      twoFactorTable: "TwoFactor",
+    }),
+
     bearer(),
   ],
 });
