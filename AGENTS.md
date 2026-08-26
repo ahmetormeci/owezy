@@ -132,6 +132,14 @@ Bunlar tartışılmış ve karara bağlanmıştır (gerekçeler DECISIONS.md'de)
   Belirtisi yanıltıcı: Playwright "Process from config.webServer was not able
   to start" diyor, sanki testlerde bir sorun varmış gibi. Gerçek satır bir
   üstte: `⨯ Another next dev server is already running.`
+- **iOS simülatöründe mobil uygulamayı denerken iki tuzak var** (Faz 27.4'te
+  ikisi de yaşandı). `xcrun simctl boot` cihazı başlatır ama **görünür bir
+  pencere açmaz** — kullanıcı hiçbir şey yazamaz. `open -a Simulator` da
+  çalıştırılmalı. İkincisi: uzun metinleri tek seferde yazdırmak **karakter
+  düşürüyor** (31 karakterlik bir e-postanın 14'ü gitti ve hata "geçersiz
+  e-posta" gibi göründü). Kısa parçalar hâlinde yaz ve her adımda ekran
+  görüntüsüyle doğrula.
+
 - E2E çıktısındaki `[WebServer]` satırları dev sunucusunun stderr'i: tarayıcı
   kapanınca çıkan `ECONNRESET` / `Error: aborted` gürültüsüdür. Playwright'ta `stdout` zaten kapalı; `stderr`
   **bilerek açık** çünkü gerçek sunucu hataları da oradan geliyor.
