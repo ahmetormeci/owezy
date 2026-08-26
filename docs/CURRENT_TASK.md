@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-26 (20)
+Updated: 2026-08-26 (21)
 
 MAIN'E ALINDI VE CANLIDA (26 Agustos, 069523e). Faz 25 ve 26 yayinda.
 CLERK ARTIK KODDA HIC YOK. Paketler de kalkti.
@@ -227,10 +227,18 @@ APP STORE HAZIRLIGI - NEREDE KALDIK:
     - App Privacy anketi dolduruldu
     - App Review Information -> "Sign-in required" + telefon girildi
     - En az bir grup olusturuldu
+  BITTI (26 Agustos, merge sonrasi - kullanici dogruladi):
+    - YENI DEMO HESAP KURULDU: appreview@owezy.net, PAROLAYLA (ADR-035).
+      Eski Clerk hesabinin e-postasi kullanilamadi: satir veritabaninda
+      duruyor ama PAROLASI Clerk'teydi ve gocte gelmedi - "sonra yapmak
+      herkese parola sifirlatmak demek" cumlesinin fiilen yasandigi tek
+      hesap bu oldu.
+    - "example" grubu olusturuldu, davet linkiyle ikinci bir hesap katildi,
+      harcamalar ve odemeler girildi. UCTAN UCA CALISIYOR.
+
   ACIK:
-    - DEMO HESAP YENIDEN KURULACAK (yukaridaki gecis listesi, madde 2).
-      Mevcut demo hesap Clerk production'da ve merge'den sonra ise yaramaz.
-    - Ornek veri GOZLE DOGRULANMADI; kullanici kendisi kontrol edecek.
+    - APP STORE CONNECT -> App Review Information: kullanici adi/parola
+      YENI hesabin bilgileriyle guncellenmeli. Eskisi calismiyor.
     - GIZLILIK ANKETI GOZDEN GECIRILMELI: /privacy degisti (25.7). Parola
       artik BIZIM sunucumuza geliyor ve hash'lenip veritabanimizda duruyor;
       Resend yeni bir veri isleyici. App Privacy anketi eski metne bakilarak
