@@ -1377,6 +1377,16 @@ zaten Cloudflare'de, ADR-026; çıkış trafiği ücretsiz).
 
 ## Bilinen teknik borç
 
+- **Harcama formu kaydettikten sonra "Kaydediliyor..."da takılabiliyor.**
+  26 Ağustos'ta iki E2E testi bu yüzden düştü, aynı koşu tekrarlandığında
+  geçti. Playwright'ın sayfa görüntüsü sebebi açıkça gösteriyor: POST
+  **başarılı** (toast "Harcama eklendi" çıkmış), ama ardından gelen gezinme
+  tamamlanmamış — düğme devre dışı, sayfa formda kalmış.
+  `expense-form.tsx:352-353` `router.push(...)` çağırıp **hemen ardından**
+  `router.refresh()` çağırıyor. Kullanıcı tarafında görünen hâli: kayıt
+  gitti ama ekran öyle söylemiyor. Aynı aile: giriş formlarındaki donma
+  (25.7'de düzeltildi). Ölçülmeden değiştirilmemeli — `refresh()` kaldırılırsa
+  fişin güncellenmemesi riski var
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi

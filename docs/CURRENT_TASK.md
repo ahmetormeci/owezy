@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-26 (21)
+Updated: 2026-08-26 (22)
 
 MAIN'E ALINDI VE CANLIDA (26 Agustos, 069523e). Faz 25 ve 26 yayinda.
 CLERK ARTIK KODDA HIC YOK. Paketler de kalkti.
@@ -34,7 +34,39 @@ CLERK ARTIK KODDA HIC YOK. Paketler de kalkti.
     /privacy           Clerk gecen satir sayisi 0, Resend beyan edilmis
 
 Current task:
-  YOK - KULLANICIDAN GOREV BEKLENIYOR.
+  FAZ 27 - IKI ADIMLI DOGRULAMA (2FA). SECENEK A: 2FA aciksa giris PAROLAYLA.
+    27.1  Sema (TwoFactor + User.twoFactorEnabled)  BITTI  98d79b5
+    27.2  Sunucu (eklenti + email-otp kapisi)       BITTI  98d79b5
+    27.3  Web arayuzu                               SIRADA
+    27.4  Mobil arayuzu                             KALDI
+    27.5  Dokumanlar (ADR dahil)                    KALDI
+
+  KARARLAR (27.1'de kullaniciya soruldu, cevaplandi):
+    - E-POSTA IKINCI FAKTOR OLARAK YOK. Sadece TOTP + yedek kod. Ilk faktor
+      zaten parola; ustune e-posta kodu koymak gucu posta kutusuna baglardi.
+    - "BU CIHAZI HATIRLA" YALNIZCA WEB'DE (30 gun). Ozellik cerez tabanli,
+      mobil cerez tasimiyor (ADR-038). Asimetri bilincli: mobil oturum
+      belirteci uzun omurlu, orada zaten nadiren giris yapiliyor.
+
+  27.2'DE OLCULEN (sunucuda, gercek isteklerle):
+    2FA kapali + e-posta kodu -> INVALID_OTP            (kanca susuyor)
+    2FA acik  + e-posta kodu -> TWO_FACTOR_REQUIRES_PASSWORD
+    2FA acik  + parola       -> INVALID_EMAIL_OR_PASSWORD
+    Ucuncusu onemli: kanca, 2FA kullanicisinin girmek ZORUNDA oldugu yolu
+    kazara kapatmiyor.
+
+  27.3'TE YAPILACAKLAR:
+    - Hesap/guvenlik bolumu (kullanici menusunun icinde, ayri ekran ACMADAN):
+      2FA'yi ac (QR + gizli anahtar), dogrula, yedek kodlari GOSTER, kapat
+    - Giris formunda ikinci faktor adimi + "bu cihazi hatirla"
+    - /two-factor/enable PAROLA ISTIYOR; parolasiz kullanici (e-posta koduyla
+      girmis) 2FA acamaz. Bu, secenek A ile TUTARLI - ama arayuzde ANLASILIR
+      sekilde soylenmeli, "dugme calismiyor" gibi gorunmemeli.
+
+  27.4'TE DIKKAT: meydan okuma CEREZLE tasiniyor (verify-two-factor.mjs) ve
+  mobil credentials:"omit" kullaniyor. Mobil icin: Set-Cookie'yi yakala ->
+  geri gonder -> Origin basligi ekle -> sunucuda trustedOrigins. 25.5'te
+  kaldirilan cerez makinesi YALNIZCA bu iki cagri icin geri geliyor.
 
   FAZ 26 (guvenlik basliklari ve hiz siniri) BITTI:
     26.1  /api/auth hiz siniri gercekten sayiyor   BITTI  ee9e32e
