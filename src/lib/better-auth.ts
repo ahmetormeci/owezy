@@ -75,6 +75,44 @@ export const auth = betterAuth({
   account: { modelName: "Account" },
   verification: { modelName: "Verification" },
 
+  /**
+   * HIZ SINIRI. Kurallar Better Auth'un varsayilanlari - degistirmiyoruz,
+   * cunku olculdugunde makul cikti (rate-limiter/index.mjs:302):
+   *     /sign-in*, /sign-up*                     3 istek / 10 sn
+   *     /email-otp/send-verification-otp         3 istek / 60 sn
+   *     digerleri                              100 istek / 10 sn
+   *
+   * DEGISTIRDIGIMIZ TEK SEY SAYACIN DURDUGU YER, ve sebebi olculdu.
+   * Varsayilan "memory" ve Vercel'de her serverless ornegi kendi bellegini
+   * tasiyor; ornekler de kisa omurlu. Yani sayac surekli sifirlaniyordu ve
+   * "10 saniyede 3 deneme" pratikte cok daha fazlasina izin veriyordu.
+   * Kural degil, saydigi yer yanlisti.
+   *
+   * HER ORTAMDA ACIK. Kutuphanenin varsayilani "yalnizca production" ve
+   * birakilsaydi mekanizmanin ilk gercek kosusu CANLIDA olurdu - yanlis bir
+   * ayarin bedeli de orada odenirdi. Acik tutmanin bedeli olculdu: E2E
+   * kurulumu uc kullaniciyi arka arkaya yaratiyor ve /sign-up/email'in
+   * siniri 10 saniyede 3 istek, yani kurulum tavana TAM oturuyordu (kosu
+   * sonrasi sayac 3'te kaldi). Cozum sinirdan degil kurulumdan geldi:
+   * hazirlik kendi biriktirdigi sayaci siliyor, hiz siniri testler boyunca
+   * tam olarak acik kaliyor (bkz. e2e/db-cleanup.ts).
+   *
+   * ANAHTAR "IP + YOL" VE BUNUN BIR TUZAGI VAR: IP cozulemezse anahtar
+   * "no-trusted-ip" oluyor, yani BUTUN KULLANICILAR TEK KOVAYA dusuyor -
+   * uygulama 10 saniyede 3 girise kapaniyor. getIP, trustedProxies
+   * verilmediginde x-forwarded-for'u yalnizca TEK bir IP tasiyorsa kabul
+   * ediyor (core/utils/ip.mjs:188). Cloudflare proxy'miz kapali (ADR-026),
+   * yani Vercel'e dogrudan gidiyoruz ve tek IP bekleniyor - ama bu
+   * PRODUCTION'DA DOGRULANMALI. Belirtisi "uygulama herkese kapandi" olur.
+   */
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    // Semadaki diger modeller gibi PascalCase. Varsayilani "rateLimit";
+    // birakirsak sema okuyan biri iki ayri adlandirma gorurdu.
+    modelName: "RateLimit",
+  },
+
   advanced: {
     database: {
       /**

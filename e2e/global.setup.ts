@@ -1,5 +1,5 @@
 import { test as setup, expect, request, type APIRequestContext } from "@playwright/test";
-import { resetE2EDatabase } from "./db-cleanup";
+import { clearRateLimits, resetE2EDatabase } from "./db-cleanup";
 import { E2E_USERS, type E2EUser } from "./users";
 
 const BASE_URL = "http://localhost:3100";
@@ -34,6 +34,11 @@ setup("onceki kosulardan kalan test verisini temizle", async () => {
 setup("test kullanicilarinin oturumlarini hazirla", async ({ browser }) => {
   for (const user of E2E_USERS) {
     await createUser(user);
+
+    // Kurulum, testlerin hiz siniri butcesini harcamamali - gerekcesi
+    // db-cleanup.ts'te. Kullanici basina cagriliyor cunku asil sikisan yer
+    // KAYIT ucu: uc kayit tek pencerede tavana tam oturuyor.
+    await clearRateLimits();
 
     const context = await browser.newContext();
     const page = await context.newPage();

@@ -44,6 +44,11 @@ export async function resetE2EDatabase() {
     // Session/Account/Verification'i ayrica yazmaya gerek yok - CASCADE
     // onlari User uzerinden goturuyor. Yine de yaziliyorlar: TRUNCATE'in
     // hangi tablolara dokundugu, okuyan icin acikta durmali.
+    //
+    // RateLimit hicbir kullaniciya bagli DEGIL, o yuzden CASCADE onu
+    // goturmez. Bugun E2E'de hic satir yazilmiyor (hiz siniri yalnizca
+    // production'da acik) ama burada durmasi ucuz: biri onu acarsa, bir
+    // onceki kosudan kalan sayac yeni kosuyu 429'a dusururdu.
     await prisma.$executeRawUnsafe(
       `TRUNCATE TABLE
          "ExpenseEdit",
@@ -57,9 +62,41 @@ export async function resetE2EDatabase() {
          "Session",
          "Account",
          "Verification",
+         "RateLimit",
          "User"
        CASCADE`,
     );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
+ * Hiz siniri sayaclarini siler.
+ *
+ * NEDEN VAR: kurulum uc test kullanicisini ARKA ARKAYA yaratiyor ve
+ * /sign-up/email'in siniri 10 saniyede 3 istek. Yani kurulum tavana TAM
+ * OTURUYOR - olculdu, bir kosunun ardindan sayac 3'te kaldi. Dorduncu bir
+ * test kullanicisi eklendigi gun kurulum 429 alir ve hata "kayit basarisiz"
+ * gibi gorunur; hiz siniri gibi degil. Sebebini bulmak saatler alirdi.
+ *
+ * KURULUM, TESTLERIN BUTCESINI HARCAMAMALI. Hiz siniri testler boyunca TAM
+ * OLARAK ACIK kaliyor; yalnizca hazirlik asamasinin biriktirdigi sayac
+ * siliniyor. Bu bir guvenlik ayarini kapatmak DEGIL - uretim
+ * yapilandirmasina dokunulmuyor, yalnizca test veritabanindaki bir sayac
+ * sifirlaniyor.
+ */
+export async function clearRateLimits() {
+  const connectionString = process.env.E2E_DATABASE_URL;
+  if (!connectionString || connectionString === process.env.DATABASE_URL) {
+    throw new Error("E2E_DATABASE_URL yok ya da DATABASE_URL ile ayni.");
+  }
+
+  const prisma = new PrismaClient({
+    adapter: new PrismaNeon({ connectionString }),
+  });
+  try {
+    await prisma.rateLimit.deleteMany();
   } finally {
     await prisma.$disconnect();
   }

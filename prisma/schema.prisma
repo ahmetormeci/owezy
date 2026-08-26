@@ -436,6 +436,36 @@ model Account {
   @@index([userId])
 }
 
+/**
+ * Hiz siniri sayaclari. Better Auth yonetiyor, biz hic yazmiyoruz.
+ *
+ * NEDEN VERITABANI, VARSAYILAN "memory" DEGIL: Vercel'de her serverless
+ * ornegi kendi bellegini tasiyor ve ornekler kisa omurlu. Bellekteki sayac
+ * her yeni ornekte sifirdan basliyor, yani "10 saniyede 3 giris denemesi"
+ * kurali pratikte cok daha fazlasina izin veriyordu. Kural degil, SAYDIGI
+ * YER yanlisti.
+ *
+ * ALANLAR CALISMA ZAMANINDAN ALINDI - @better-auth/core'daki getAuthTables()
+ * kendi ayarlarimizla cagrilip liste karsilastirildi. 25.4'te sema bir CLI
+ * surumunden uretilmisti ve Account.issuer atlanmisti; ayni hataya iki kez
+ * dusulmedi.
+ *
+ * lastRequest BigInt VE BU ZORUNLU: deger Date.now(), yani milisaniye
+ * (~1,77 x 10^12). Prisma'nin Int'i 32 bit INTEGER'dir ve bu sayi ORAYA
+ * SIGMAZ. Kutuphanenin kendi kodundaki "typeof data.lastRequest === bigint"
+ * kontrolu de bunu soyluyor.
+ *
+ * Kullaniciya BAGLI DEGIL: anahtar "IP + yol" ve limit henuz kimligi
+ * bilinmeyen isteklere de uygulanmali - zaten korumaya calistigi sey giris
+ * denemesi.
+ */
+model RateLimit {
+  id          String @id @default(uuid()) @db.Uuid
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+}
+
 model Verification {
   id         String   @id @default(uuid()) @db.Uuid
   // E-posta adresi gibi "neyi dogruluyoruz" degeri. Tek seferlik kodlar
