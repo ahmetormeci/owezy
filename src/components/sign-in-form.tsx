@@ -45,59 +45,63 @@ export function SignInForm() {
     router.refresh();
   }
 
-  function fail(apiError: { code?: string } | null | undefined) {
-    setError(t(authErrorCode(apiError) ?? "ui.sign_in_failed"));
+  /**
+   * Butun cagrilarin ORTAK kuyrugu.
+   *
+   * try/catch/finally UCU DE ZORUNLU ve bu OLCULEREK ogrenildi. Once boyle
+   * degildi: cagri await ediliyor, hemen ardindan setBusy(false) yaziliyordu.
+   * better-fetch ag hatasinda { error } DONDURMUYOR, FIRLATIYOR - yani o satira
+   * hic gelinmiyordu. Sonucu su oluyordu: dugme sonsuza kadar kapali kaliyor ve
+   * ekranda HICBIR SEY yazmiyor. Kullanicinin gordugu sey "uygulama dondu".
+   *
+   * Tarayicida yeniden uretildi: sunucu kapatilip dugmeye basildi, konsolda
+   * "Uncaught (in promise) TypeError: Failed to fetch" cikti, dugme soluk kaldi.
+   *
+   * finally SART: catch icinde setBusy(false) yazmak yetmez - ileride buraya
+   * erken bir return eklenirse dugme yine kilitlenirdi.
+   */
+  async function run(
+    call: () => Promise<{ error?: { code?: string } | null }>,
+  ): Promise<boolean> {
+    if (busy) return false;
+    setBusy(true);
+    setError(null);
+
+    try {
+      const { error: apiError } = await call();
+      if (apiError) {
+        setError(t(authErrorCode(apiError) ?? "ui.sign_in_failed"));
+        return false;
+      }
+      return true;
+    } catch (caught) {
+      // Buraya yalnizca istek HIC GONDERILEMEDIGINDE geliniyor: sunucu kapali,
+      // cihaz cevrimdisi, DNS yok. Sozlukteki cumle mobilde de ayni durumda
+      // gosteriliyor (mobile/lib/api.ts).
+      console.error("[auth] istek gönderilemedi:", caught);
+      setError(t("server.offline"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function sendCode(event: React.FormEvent) {
     event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-
-    const { error: sendError } = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type: "sign-in",
-    });
-    setBusy(false);
-
-    if (sendError) {
-      fail(sendError);
-      return;
-    }
-    setStep("code");
+    const ok = await run(() =>
+      authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" }),
+    );
+    if (ok) setStep("code");
   }
 
   async function verifyCode(event: React.FormEvent) {
     event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-
-    const { error: signInError } = await authClient.signIn.emailOtp({ email, otp: code });
-    setBusy(false);
-
-    if (signInError) {
-      fail(signInError);
-      return;
-    }
-    finish();
+    if (await run(() => authClient.signIn.emailOtp({ email, otp: code }))) finish();
   }
 
   async function signInWithPassword(event: React.FormEvent) {
     event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-
-    const { error: signInError } = await authClient.signIn.email({ email, password });
-    setBusy(false);
-
-    if (signInError) {
-      fail(signInError);
-      return;
-    }
-    finish();
+    if (await run(() => authClient.signIn.email({ email, password }))) finish();
   }
 
   /** Basa donus: adimi VE girilen kodu birlikte temizliyor. */

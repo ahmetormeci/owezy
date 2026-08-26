@@ -122,7 +122,24 @@ export function UserMenu({
      * kullaniciyi ICERIDE tutardi. Sistem tek kalinca ikinci cagriya da
      * gerek kalmadi.
      */
-    await fetch("/api/auth/sign-out", { method: "POST" });
+    /**
+     * try/catch: fetch AG HATASINDA FIRLATIYOR. Once sarilmamisti ve sonucu
+     * giris formundakinin aynisiydi - istek gonderilemeyince setBusy(false)
+     * hic calismiyor, dugme sonsuza kadar kapali kaliyordu.
+     *
+     * BASARISIZ CIKISTA YONLENDIRME YAPMIYORUZ ve bu bilincli: oturum cerezi
+     * hala yerinde oldugu icin /sign-in bizi aninda geri atardi. Kullanici
+     * cikamadigini BILMELI - sessizce ayni yerde kalmak, "bastim ama bir sey
+     * olmadi" demek olurdu (Faz 24'te mobilde tam bu hata duzeltildi).
+     */
+    try {
+      await fetch("/api/auth/sign-out", { method: "POST" });
+    } catch (caught) {
+      console.error("[auth] çıkış isteği gönderilemedi:", caught);
+      toast.error(t("server.offline"));
+      setBusy(false);
+      return;
+    }
 
     router.replace("/sign-in");
     router.refresh();

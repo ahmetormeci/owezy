@@ -39,22 +39,35 @@ export function SignUpForm() {
     setBusy(true);
     setError(null);
 
-    const { error: signUpError } = await authClient.signUp.email({
-      name: name.trim(),
-      email,
-      password,
-    });
-    setBusy(false);
+    /**
+     * try/catch/finally: better-fetch ag hatasinda FIRLATIYOR, { error }
+     * dondurmuyor. Once yalnizca donen hataya bakiliyordu ve sunucuya
+     * ulasilamadiginda setBusy(false) hic calismiyordu - dugme sonsuza kadar
+     * kapali, ekranda hicbir mesaj yok. Giris formunda tarayicida yeniden
+     * uretildi; ayni hata buradaydi.
+     */
+    try {
+      const { error: signUpError } = await authClient.signUp.email({
+        name: name.trim(),
+        email,
+        password,
+      });
 
-    if (signUpError) {
-      setError(t(authErrorCode(signUpError) ?? "ui.sign_in_failed"));
-      return;
+      if (signUpError) {
+        setError(t(authErrorCode(signUpError) ?? "ui.sign_in_failed"));
+        return;
+      }
+
+      // Giris formuyla ayni gerekce: giris/kayit ekrani gecmise yazilmamali,
+      // ve sunucu bilesenleri yeni oturumu gormek icin yeniden calismali.
+      router.replace("/");
+      router.refresh();
+    } catch (caught) {
+      console.error("[auth] kayıt isteği gönderilemedi:", caught);
+      setError(t("server.offline"));
+    } finally {
+      setBusy(false);
     }
-
-    // Giris formuyla ayni gerekce: giris/kayit ekrani gecmise yazilmamali,
-    // ve sunucu bilesenleri yeni oturumu gormek icin yeniden calismali.
-    router.replace("/");
-    router.refresh();
   }
 
   return (
