@@ -15,13 +15,47 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-26 (16)
+Updated: 2026-08-26 (17)
 
 DAL: better-auth. YEREL main = origin/main = CANLIDAKI HAL.
 CLERK ARTIK KODDA HIC YOK. Paketler de kalkti.
 
 Current task:
-  YOK - KULLANICIDAN GOREV BEKLENIYOR.
+  FAZ 26 - GUVENLIK BASLIKLARI VE HIZ SINIRI. Uc adim bitti, biri kaldi.
+    26.1  /api/auth hiz siniri gercekten sayiyor   BITTI  ee9e32e
+    26.2  Guvenlik basliklari                      BITTI  abb6697
+    26.3  CSP (nonce'suz, ADR-039)                 BITTI  fbfed02
+    26.4  /api/v1 hiz siniri                       KALDI
+
+  26.4 HENUZ TASARLANMADI ve gercek bir karar iceriyor:
+    - NEYE GORE sinirliyoruz? IP mi, kullanici mi? /api/v1'in tamami oturum
+      istiyor, yani tehdit anonim sel degil; hesap acip yazma uclarini
+      dovmek. Kullanici kimligi daha dogru anahtar gibi duruyor - IP
+      operatorler ve NAT arkasinda paylasiliyor ve masumu cezalandirir.
+    - NEREDE duruyor? 15 yazma ucunun basinda bir yardimci mi, yoksa proxy
+      mi? proxy 25.7'de silindi ve ADR-039 onu CSP icin de geri getirmedi;
+      ucuncu kez gundeme gelirse karar bilincli verilmeli.
+    - HANGI UCLAR? Okuma uclari oturumla korunuyor ve ucuz; yazma uclari hem
+      veri buyutuyor hem bildirim yayiyor. 21 route dosyasinin 15'i yazma.
+
+  FAZ 26'DAN AKILDA TUTULACAKLAR:
+    - HIZ SINIRI HER ORTAMDA ACIK (kutuphane yalnizca production'da aciyor).
+      Oyle birakilsaydi mekanizmanin ILK GERCEK KOSUSU CANLIDA olurdu.
+    - E2E kurulumu sinirin tavanina TAM oturuyordu (kosu sonrasi sayac 3'te
+      kaldi). Cozum sinirdan degil kurulumdan geldi: hazirlik kendi harcadigi
+      sayaci siliyor (e2e/db-cleanup.ts). TEST KULLANICISI SAYISI ARTIRILIRSA
+      burasi yine bakilmali.
+    - PRODUCTION'DA DOGRULANACAK: hiz siniri anahtari "IP + yol" ve IP
+      cozulemezse anahtar "no-trusted-ip" oluyor - yani BUTUN KULLANICILAR
+      TEK KOVAYA duser, uygulama 10 saniyede 3 girise kapanir. getIP,
+      trustedProxies verilmediginde x-forwarded-for'u yalnizca TEK bir IP
+      tasiyorsa kabul ediyor (core/utils/ip.mjs:188). Cloudflare proxy'miz
+      kapali (ADR-026), yani tek IP bekleniyor - ama bu BIR BEKLENTI,
+      OLCUM DEGIL.
+    - HSTS'e DOKUNULMADI: Vercel zaten gonderiyor (max-age iki yil). Kendi
+      basligimizi eklersek ayni baslik iki kez gidebilir ve bu deploy
+      etmeden olculemez. Vercel'inki "includeSubDomains" tasimiyor; bugun
+      HTTP konusan alt alan adimiz yok, o yuzden acil degil.
 
   FAZ 25 (Clerk -> Better Auth) uygulama tarafinda BITTI:
     25.1  Sema ve iskelet                    BITTI  aa6f6cb
@@ -38,7 +72,7 @@ Current task:
   Sebep asagidaki iki olcum - 2FA "eklentiyi tak" isi degil, uc ayri karar
   isiymis; oysa 25.7 ve 25.8 dali main'e alinabilir hale getiren adimlardi.
 
-SIRADAKI IS - 2FA, VE ONCE BIR KARAR GEREKIYOR:
+SONRAKI BUYUK IS - 2FA, VE ONCE BIR KARAR GEREKIYOR:
 
   OLCULDU 1 - BETTER AUTH'UN 2FA'SI BIZIM ANA GIRIS YOLUMUZU GORMUYOR.
     Eklentinin sign-in kancasinin eslestiricisi (two-factor/index.mjs:245):

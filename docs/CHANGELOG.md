@@ -8,6 +8,49 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-26 (3) — Güvenlik başlıkları ve hız sınırı
+
+### Giriş denemesi artık gerçekten sınırlı
+Clerk bunu bizim için yapıyordu; 25.7'den beri iş bizde ve **yapılmıyordu.**
+Better Auth'un sınırlayıcısı varsayılan olarak belleğe sayıyor, Vercel'de ise
+her serverless örneği kendi belleğini taşıyor ve kısa ömürlü — sayaç sürekli
+sıfırlanıyordu. Kural değil, **saydığı yer** yanlıştı. Artık veritabanına
+sayıyor.
+
+Doğrulandı: `/sign-in/email`'e dört istek → **401, 401, 401, 429**.
+
+Sınır **her ortamda açık** (kütüphane yalnızca production'da açıyor): öyle
+bırakılsaydı mekanizmanın ilk gerçek koşusu canlıda olurdu. E2E kurulumu
+sınırın tavanına tam oturuyordu; çözüm sınırı gevşetmek değil, hazırlığın
+kendi harcadığı sayacı silmesi oldu.
+
+### Uygulamanın hiç göndermediği güvenlik başlıkları
+Canlıya `curl -I` atıldı: Vercel yalnızca HSTS gönderiyordu, gerisi yoktu.
+Eklendi: `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`,
+`Permissions-Policy`. `x-powered-by` kapatıldı.
+
+`Referrer-Policy`'nin burada genel değil **somut** bir gerekçesi var: davet
+linki bir sırdır (`/join/<token>`) ve adres çubuğunda durur.
+
+### CSP — nonce'suz, ve bu bir karar (ADR-039)
+Next 16'nın nonce yolu `proxy.ts`'i geri getiriyor (25.7'de bilerek silinmişti)
+ve **her sayfayı dinamik render'a zorluyor**. Karşılığı ölçüldüğünde küçük
+çıktı: kod tabanında tek bir `dangerouslySetInnerHTML` yok, yani her kullanıcı
+metni zaten React'in kaçışından geçiyor.
+
+Sıra kararın parçasıydı: önce `Report-Only` ile ana yüzeyler gezildi, sonra
+zorlayıcıya çevrilip 43 E2E koşuldu — zorlayıcı modda bir ihlal *gerçekten*
+bir şeyi bozar, Report-Only ise Playwright'ın bakmadığı bir konsola yazar.
+Dev ile üretim aynı politikayı almadığı için (`'unsafe-eval'` yalnızca dev'de)
+üretim derlemesi ayrıca yerelde koşuldu.
+
+İki direktifin ölçülmüş gerekçesi var: `connect-src` Sentry'yi adıyla
+taşıyor — `'self'` bırakılsaydı hata bildirimi sessizce kesilirdi — ve
+`img-src` dar, çünkü `avatarUrl`'i yazan kimse kalmadı ve `hasImage=true` olan
+tek bir kullanıcı bile yok.
+
+---
+
 ## 2026-08-26 (2) — Clerk söküldü (hâlâ `better-auth` dalında)
 
 ### Kimlik doğrulamayı artık tamamen biz yapıyoruz

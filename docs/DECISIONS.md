@@ -523,6 +523,57 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-039 — CSP nonce'suz kurulur; `proxy.ts` bunun için geri getirilmez
+**Tarih:** 2026-08-26 · **Durum:** Kabul edildi
+
+**Karar:** İçerik Güvenliği Politikası `next.config.ts`'te **statik** olarak
+tanımlanır ve `script-src` ile `style-src` `'unsafe-inline'` taşır. Nonce
+üretilmez, `src/proxy.ts` geri getirilmez.
+
+**Neden:** Next 16'nın nonce yolu (kendi CSP rehberi) iki şey istiyor:
+
+1. **`proxy.ts`'in geri gelmesi.** O dosya 25.7'de bilerek silindi — tek işi
+   Clerk'in oturum bağlamını taşımaktı ve hiçbir route'u korumuyordu
+   (bkz. ARCHITECTURE.md).
+2. **Her sayfanın dinamik render'a zorlanması.** Rehberin kendi cümlesi:
+   *"you must use dynamic rendering to add nonces"*. Bu, sessiz bir
+   performans ve önbellek kaybı.
+
+Karşılığında kazanılan şey **ölçüldüğünde küçük çıktı**: kod tabanında tek bir
+`dangerouslySetInnerHTML` ya da `innerHTML` yok. Kullanıcıdan gelen her metin
+React'in kaçışından geçiyor. Yani buradaki CSP bilinen bir deliği yamamıyor,
+**derinlemesine savunma** yapıyor.
+
+**Ne kapatmıyor:** enjekte edilmiş satır içi script — ve onun için önce bir XSS
+deliği gerekiyor.
+
+**Ne kapatıyor (hepsi gerçek):** saldırganın kendi sunucusundan script
+yüklemesi (`script-src 'self'`), `<base>` enjeksiyonuyla bütün göreli
+adreslerin çalınması, formun dışarı gönderilmesi, çerçeveleme, eklenti
+çalıştırma.
+
+**Alternatifler:** Nonce'lu sıkı CSP (yukarıdaki iki bedel); CSP'yi hiç
+yazmamak (kapattığı gerçek şeyler var, bedava değil).
+
+**Sonuç — iki direktifin ölçülmüş gerekçesi var:**
+
+- `connect-src` Sentry'nin ingest adreslerini adıyla taşıyor. `'self'` ile
+  bırakılsaydı hata bildirimi **sessizce kesilirdi**; yani gözümüzü kapatan
+  şey, görmemiz gereken şeyin ta kendisi olurdu. İki bölge birden yazılı çünkü
+  DSN Vercel'deki bir değişkende ve buradan görünmüyor.
+- `img-src` dar (`'self' data: blob:`) çünkü `avatarUrl`'i artık yazan kimse
+  yok ve veritabanında `hasImage=true` olan **tek bir kullanıcı bile yok**
+  (ölçüldü). Fiş fotoğrafı özelliği gelirse bu satır onunla birlikte değişir —
+  sessizce yüklenmeyen bir görsel olarak değil.
+
+**Doğrulama sırası kararın parçası:** önce `Report-Only` ile ana yüzeyler
+gezildi (sıfır ihlal), sonra zorlayıcıya çevrilip 43 E2E koşuldu — zorlayıcı
+modda bir ihlal gerçekten bir şeyi bozuyor, yani testler yakalıyor. Dev ve
+üretim aynı politikayı almıyor (`'unsafe-eval'` yalnızca dev'de), o yüzden
+üretim derlemesi ayrıca yerelde koşulup tarayıcı konsolu okundu.
+
+---
+
 ## ADR-038 — Mobil, Better Auth ile elle konuşur; istemci kütüphanesi kullanılmaz
 **Tarih:** 2026-08-26 · **Durum:** Kabul edildi
 

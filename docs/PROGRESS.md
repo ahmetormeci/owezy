@@ -8,8 +8,9 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 24 faz tamamlandı, **Faz 25 uygulama tarafında bitti** (`better-auth`
-dalında; `main`'e alınması bir kontrol listesine bağlı, bkz. CURRENT_TASK).
+**Özet:** 24 faz tamamlandı; **Faz 25 uygulama tarafında bitti**, **Faz 26
+sürüyor** (ikisi de `better-auth` dalında; `main`'e alınması bir kontrol
+listesine bağlı, bkz. CURRENT_TASK).
 Uygulama canlıda ve `main`'e giden her değişiklik CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
@@ -1110,6 +1111,52 @@ genişletirse uygulama mağazadan döner ve sebebi hiçbir yerde görünmez.
 
 **Yayına almadan önce SENDE kalan:** `destek@owezy.net` kutusu (Cloudflare
 Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yaramaz.
+
+---
+
+## Faz 26 — Güvenlik başlıkları ve hız sınırı · **SÜRÜYOR**
+
+Gizlilik politikasındaki "makul teknik tedbirler" cümlesini gerçek yapan iş.
+Faz 25 onu aciller listesine taşıdı: **giriş denemelerini eskiden Clerk
+sınırlıyordu, artık biz sorumluyuz.**
+
+| Adım | Durum | Commit |
+|---|---|---|
+| 26.1 `/api/auth` hız sınırı gerçekten sayıyor | ✅ | `ee9e32e` |
+| 26.2 Güvenlik başlıkları | ✅ | `abb6697` |
+| 26.3 CSP | ✅ | `fbfed02` |
+| 26.4 `/api/v1` hız sınırı | — | |
+
+**26.1 — sayaç yanlış yerdeydi, kural değil.** Better Auth'un varsayılan
+kuralları okununca makul çıktı (giriş/kayıt 3/10sn, e-posta kodu 3/60sn). Ama
+depolama varsayılanı `"memory"` ve Vercel'de her serverless örneği kendi
+belleğini taşıyor; sayaç sürekli sıfırlanıyordu. `storage: "database"` +
+`RateLimit` tablosu. `lastRequest` **BigInt**: değer `Date.now()`, doğrulama
+sırasında yazılan satır `1787719884665` — 32-bit `INTEGER` 2.147.483.647'de
+biter.
+
+Sınır **her ortamda açık**, kütüphanenin production-only varsayılanında
+bırakılmadı: öyle kalsaydı mekanizmanın ilk gerçek koşusu canlıda olurdu.
+Bedeli ölçüldü ve çözüm sınırdan değil kurulumdan geldi — E2E üç kullanıcıyı
+arka arkaya yaratıyor ve tavana tam oturuyordu (koşu sonrası sayaç 3'te
+kaldı); hazırlık artık kendi harcadığı sayacı siliyor, sınır testler boyunca
+tam olarak açık kalıyor.
+
+**26.2 — canlı ölçülerek yazıldı.** `curl -I` ile bakıldı: Vercel yalnızca
+HSTS gönderiyor (iki yıl), gerisi yoktu. Eklenenler: `X-Content-Type-Options`,
+`Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy`; `x-powered-by`
+kapatıldı. HSTS'e dokunulmadı — kendi başlığımızı eklersek aynı başlık iki kez
+gidebilir ve bu deploy etmeden ölçülemez.
+
+`Referrer-Policy`'nin bizde **somut** bir sebebi var: davet linki bir sır
+taşıyor (`/join/<token>`) ve adres çubuğunda duruyor.
+
+**26.3 — CSP, nonce'suz (ADR-039).** Nonce yolu `proxy.ts`'i geri getirir ve
+her sayfayı dinamik render'a zorlar; karşılığında kazanılan şey ölçüldüğünde
+küçük çıktı — kod tabanında tek bir `dangerouslySetInnerHTML` yok.
+
+**Test:** Birim 510 ✅ · E2E 43 ✅ (üç kez: hız sınırı, başlıklar, zorlayıcı
+CSP) · üretim derlemesi yerelde koşulup konsol okundu ✅
 
 ---
 
