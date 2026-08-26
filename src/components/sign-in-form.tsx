@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { authErrorCode } from "@/lib/auth-errors";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import { useTranslate } from "@/lib/i18n";
 
 /**
@@ -27,6 +28,7 @@ type Step = "email" | "code" | "password";
 export function SignInForm() {
   const router = useRouter();
   const t = useTranslate();
+  const searchParams = useSearchParams();
 
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -37,11 +39,27 @@ export function SignInForm() {
 
   /** Giris tamamlandi: sunucu tarafi yeniden calissin diye tam gecis. */
   function finish() {
+    /**
+     * NEREYE DONECEGIMIZ ADRESTE YAZILI OLABILIR ve bu bir sussuz ihtiyacti:
+     * davet sayfasi girisi olmayan ziyaretciyi
+     * /sign-in?redirect_url=/join/<token> adresine gonderiyor. Bu satir
+     * eksikken giris calisiyor ama kullanici davet sayfasina DONMUYORDU -
+     * uygulamanin ana ekranina dusuyor ve "Gruba katil" dugmesini hic
+     * gormuyordu. Yani davet linki, girisi olmayan biri icin ise yaramiyordu.
+     *
+     * Clerk'in <SignIn /> bileseni bunu kendisi yapiyordu; 25.4'te yerine
+     * kendi formumuzu koyduk ve davranis taşınmadı.
+     *
+     * DEGER DOGRULANIYOR: adres cubugundan geliyor, yani saldirgan yazabilir
+     * (bkz. lib/safe-redirect.ts).
+     */
+    const target = safeRedirectPath(searchParams.get("redirect_url"));
+
     // router.push DEGIL, replace + refresh: giris ekrani gecmise
     // yazilmamali (geri tusu kullaniciyi oturum acmis haldeyken giris
     // formuna dondururdu), ve sunucu bileseni yeni oturumu gormek icin
     // yeniden calismali.
-    router.replace("/");
+    router.replace(target);
     router.refresh();
   }
 
@@ -197,7 +215,16 @@ export function SignInForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         {t("ui.no_account_yet")}{" "}
-        <Link href="/sign-up" className="underline underline-offset-4">
+        {/* redirect_url TASINIYOR: kullanici buradan kayda gecerse davet
+            adresi kaybolmamali - zincir orada kopardi. */}
+        <Link
+          href={`/sign-up${
+            searchParams.get("redirect_url")
+              ? `?redirect_url=${encodeURIComponent(searchParams.get("redirect_url")!)}`
+              : ""
+          }`}
+          className="underline underline-offset-4"
+        >
           {t("ui.sign_up")}
         </Link>
       </p>

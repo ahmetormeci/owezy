@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { authErrorCode } from "@/lib/auth-errors";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import { useTranslate } from "@/lib/i18n";
 
 /**
@@ -26,6 +27,7 @@ import { useTranslate } from "@/lib/i18n";
 export function SignUpForm() {
   const router = useRouter();
   const t = useTranslate();
+  const searchParams = useSearchParams();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -60,7 +62,9 @@ export function SignUpForm() {
 
       // Giris formuyla ayni gerekce: giris/kayit ekrani gecmise yazilmamali,
       // ve sunucu bilesenleri yeni oturumu gormek icin yeniden calismali.
-      router.replace("/");
+      // redirect_url de ayni sebeple okunuyor: davet linkiyle gelen biri
+      // kayit olduktan sonra davet sayfasina donmeli.
+      router.replace(safeRedirectPath(searchParams.get("redirect_url")));
       router.refresh();
     } catch (caught) {
       console.error("[auth] kayıt isteği gönderilemedi:", caught);
@@ -122,7 +126,14 @@ export function SignUpForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         {t("ui.already_have_account")}{" "}
-        <Link href="/sign-in" className="underline underline-offset-4">
+        <Link
+          href={`/sign-in${
+            searchParams.get("redirect_url")
+              ? `?redirect_url=${encodeURIComponent(searchParams.get("redirect_url")!)}`
+              : ""
+          }`}
+          className="underline underline-offset-4"
+        >
           {t("ui.sign_in")}
         </Link>
       </p>

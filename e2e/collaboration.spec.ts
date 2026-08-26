@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { userByKey } from "./users";
 import {
   addEqualExpense,
   createGroupAndOpen,
@@ -10,6 +11,57 @@ import {
 } from "./helpers";
 
 test.describe("cok kullanicili akislar", () => {
+  /**
+   * CIKIS YAPMIS BIRI DAVET LINKINE TIKLARSA.
+   *
+   * BU TEST BIR URETIM HATASINDAN SONRA YAZILDI. Davet sayfasi girisi olmayan
+   * ziyaretciyi /sign-in?redirect_url=/join/<token> adresine gonderiyor, ama
+   * giris formu redirect_url'i OKUMUYORDU: giris calisiyor, kullanici
+   * uygulamanin ana ekranina dusuyor ve "Gruba katil" dugmesini HIC gormuyordu.
+   * Yani davet linki, girisi olmayan biri icin ise yaramiyordu - ve gruba
+   * katilmanin tek yolu o.
+   *
+   * NEDEN KACTI: diger butun davet testleri daveti ZATEN GIRISLI bir
+   * tarayiciyla aciyor (storageState). "Cikisken tikla -> giris yap -> geri
+   * don" yolunu hicbiri yurumuyordu.
+   *
+   * Clerk'in <SignIn /> bileseni redirect_url'i kendisi hallediyordu; 25.4'te
+   * yerine kendi formumuzu koyduk ve davranis tasinmadi.
+   */
+  test("cikis yapmis kullanici davet linkinden girip gruba katilir", async ({ browser }) => {
+    const owner = await pageAs(browser, "owner");
+    const groupName = uniqueGroupName("cikisli-davet");
+
+    await createGroupAndOpen(owner, groupName);
+    const inviteLink = await createInviteLink(owner, groupName);
+
+    // KAYITLI OTURUM YUKLENMIYOR: testin konusu tam olarak bu.
+    const context = await browser.newContext();
+    const guest = await context.newPage();
+    const outsider = userByKey("outsider");
+
+    await guest.goto(inviteLink);
+    await guest.getByRole("link", { name: "Giriş yap" }).click();
+
+    // Adres redirect_url tasimali - zincirin ilk halkasi.
+    await expect(guest).toHaveURL(/redirect_url=/);
+
+    await guest.getByRole("button", { name: "Parolayla gir" }).click();
+    await guest.getByLabel("E-posta").fill(outsider.email);
+    await guest.getByLabel("Parola").fill(outsider.password);
+    await guest.getByRole("button", { name: "Giriş yap", exact: true }).click();
+
+    // ESAS IDDIA: giristen sonra DAVET SAYFASINA donulmus olmali.
+    await expect(guest).toHaveURL(new RegExp(inviteLink.replace(/^https?:\/\/[^/]+/, "") + "$"));
+    await guest.getByRole("button", { name: "Gruba katıl" }).click();
+
+    await expect(guest).toHaveURL(/\/groups\/[0-9a-f-]{36}/);
+    await expect(guest.getByRole("heading", { name: groupName })).toBeVisible();
+
+    await context.close();
+  });
+
+
   test("davet linkiyle gruba katilinir ve borc bakiyeye yansir", async ({ browser }) => {
     const owner = await pageAs(browser, "owner");
     const member = await pageAs(browser, "member");
