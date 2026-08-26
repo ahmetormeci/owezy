@@ -8,6 +8,36 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-26 (4) — Faz 25 ve 26 canlıda; davet akışında bir hata
+
+Göç `main`'e alındı (`069523e`) ve ~70 saniyede yayına girdi. Canlıda gerçek
+isteklerle doğrulandı: güvenlik başlıkları yerinde, `x-clerk-*` ve
+`x-powered-by` yok, `/api/webhooks/clerk` 404, `/privacy`'de Clerk geçen satır
+sayısı sıfır. Şemanın sağlam olduğunu kanıtlayan kontrol: olmayan bir hesapla
+giriş denemesi `401 INVALID_EMAIL_OR_PASSWORD` döndü — `User` tablosuna
+gerçek bir sorgu.
+
+### Davet linki, girişi olmayan biri için çalışmıyordu
+Merge'den sonra **kullanıcı buldu**, ilk gerçek kullanımda. `/join/<token>`
+ziyaretçiyi `/sign-in?redirect_url=...` adresine gönderiyor ama giriş formu o
+parametreyi okumuyordu: giriş çalışıyor, kullanıcı ana ekrana düşüyor ve
+"Gruba katıl" düğmesini hiç görmüyordu. Gruba katılmanın başka yolu yok.
+
+25.4'te girmiş: Clerk'in `<SignIn />` bileşeni `redirect_url`'i kendisi
+hallediyordu, kendi formumuzu koyduk ve davranış taşınmadı.
+
+**Testler neden kaçırdı:** bütün davet testleri daveti *zaten girişli* bir
+tarayıcıyla açıyordu. "Çıkışken tıkla → giriş yap → geri dön" yolunu hiçbiri
+yürümüyordu. Artık yürüyen bir test var ve düzeltme geri alınarak doğrulandı —
+üretimdeki belirtinin aynısıyla düştü.
+
+**Parametre doğrulanıyor.** Olduğu gibi kullanılsaydı açık yönlendirme
+açığı olurdu: kullanıcı **gerçek** owezy.net'te giriş yapar, sonra
+saldırganın sayfasına düşürülür ve oradaki sahte forma bilgilerini yazar.
+16 birim testi bilinen kaçış yollarını tek tek deniyor.
+
+---
+
 ## 2026-08-26 (3) — Güvenlik başlıkları ve hız sınırı
 
 ### Giriş denemesi artık gerçekten sınırlı

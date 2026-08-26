@@ -15,7 +15,7 @@ Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
 durumunu dogrula, sonra bu dosyayi duzelt.
 -->
 
-Updated: 2026-08-26 (19)
+Updated: 2026-08-26 (20)
 
 MAIN'E ALINDI VE CANLIDA (26 Agustos, 069523e). Faz 25 ve 26 yayinda.
 CLERK ARTIK KODDA HIC YOK. Paketler de kalkti.
@@ -122,6 +122,28 @@ SONRAKI BUYUK IS - 2FA, VE ONCE BIR KARAR GEREKIYOR:
        uzerine yaslanir ve bir surum yukseltmesinde SESSIZCE bozulur -
        bozulma sekli de "2FA artik sorulmuyor", yani en kotusu.
     C) Hic yapmamak.
+
+MERGE SONRASI BULUNAN VE DUZELTILEN HATA (833b3e5):
+  DAVET LINKI, GIRISI OLMAYAN BIRI ICIN CALISMIYORDU. /join/<token> sayfasi
+  ziyaretciyi /sign-in?redirect_url=... adresine gonderiyor ama giris formu o
+  parametreyi OKUMUYORDU; giris calisiyor, kullanici ana ekrana dusuyor ve
+  "Gruba katil" dugmesini hic gormuyordu. Gruba katilmanin baska yolu yok.
+
+  NE ZAMAN GIRDI: 25.4. Clerk'in <SignIn /> bileseni redirect_url'i kendisi
+  hallediyordu; kendi formumuzu koyduk ve davranis tasinmadi.
+
+  TESTLER NEDEN KACIRDI: butun davet testleri daveti ZATEN GIRISLI bir
+  tarayiciyla aciyordu (storageState). "Cikisken tikla -> giris yap -> geri
+  don" yolunu hicbiri yurumuyordu. Artik yuruyen bir test var
+  (collaboration.spec.ts) ve duzeltme geri alinarak dogrulandi: uretimdeki
+  belirtinin aynisiyla dustu.
+
+  PARAMETRE DOGRULANIYOR (lib/safe-redirect.ts, 16 birim testi): oldugu gibi
+  kullanilsaydi ACIK YONLENDIRME olurdu - kullanici GERCEK owezy.net'te giris
+  yapar, sonra saldirganin sayfasina dusurulurdu.
+
+  KULLANICI BULDU. Bu ders kayda deger: uretimde ilk gercek kullanim, otuz
+  uc test dosyasinin gormedigi yolu ilk denemede yurudu.
 
 MERGE BITTI - GERIYE KALANLAR:
 
