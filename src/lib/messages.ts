@@ -95,6 +95,9 @@ export const MESSAGES_TR = {
   // yonlendiriyor. Yine de bir yerde gorunurse anlamli bir cumle olsun.
   "auth.not_signed_in": "Bu işlem için giriş yapman gerekiyor",
   "server.unexpected": "Beklenmeyen bir hata oluştu",
+  // 429. Kullaniciya "sinir" ya da "kota" demiyoruz: yapmasi gereken sey
+  // beklemek ve bunu anlatan cumle, mekanizmayi anlatan cumleden iyi.
+  "server.too_many_requests": "Çok hızlı gidiyorsun. Biraz bekleyip tekrar dener misin?",
   "server.bad_response": "Sunucudan beklenmeyen bir cevap alındı",
   // Yalnizca MOBILDE olusuyor: istek hic gonderilemedigi zaman
   // (mobile/lib/api.ts fetch'i yakaliyor, status 0). Web'de karsiligi yok -
@@ -568,6 +571,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   // --- General ---
   "auth.not_signed_in": "You need to sign in to do that",
   "server.unexpected": "Something went wrong",
+  "server.too_many_requests": "That was a lot at once. Give it a moment and try again.",
   "server.bad_response": "The server sent an unexpected response",
   "server.offline": "No connection. Get back online and try again.",
 

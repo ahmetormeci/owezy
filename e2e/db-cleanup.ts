@@ -45,8 +45,8 @@ export async function resetE2EDatabase() {
     // onlari User uzerinden goturuyor. Yine de yaziliyorlar: TRUNCATE'in
     // hangi tablolara dokundugu, okuyan icin acikta durmali.
     //
-    // RateLimit hicbir kullaniciya bagli DEGIL, o yuzden CASCADE onu
-    // goturmez. Bugun E2E'de hic satir yazilmiyor (hiz siniri yalnizca
+    // RateLimit ve ApiRateLimit hicbir kullaniciya bagli DEGIL (ikisinde de
+    // foreign key yok), o yuzden CASCADE onlari goturmez. Bugun E2E'de hic satir yazilmiyor (hiz siniri yalnizca
     // production'da acik) ama burada durmasi ucuz: biri onu acarsa, bir
     // onceki kosudan kalan sayac yeni kosuyu 429'a dusururdu.
     await prisma.$executeRawUnsafe(
@@ -63,6 +63,7 @@ export async function resetE2EDatabase() {
          "Account",
          "Verification",
          "RateLimit",
+         "ApiRateLimit",
          "User"
        CASCADE`,
     );

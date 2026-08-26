@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findCurrentUser } from "@/lib/auth";
+import { enforceWriteLimit } from "@/lib/api-rate-limit";
 import { getGroupForUser, updateGroup } from "@/lib/groups";
 import { updateGroupSchema } from "@/lib/group-schemas";
 import { handleApiError } from "@/lib/api";
@@ -38,6 +39,9 @@ export async function PATCH(
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
+
+    const limited = await enforceWriteLimit(user.id);
+    if (limited) return limited;
 
     const { groupId } = await params;
     const body = updateGroupSchema.parse(await request.json());

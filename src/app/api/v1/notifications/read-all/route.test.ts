@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockGetOrCreateCurrentUser, mockMarkAllRead } = vi.hoisted(() => ({
+const { mockGetOrCreateCurrentUser, mockMarkAllRead, mockEnforceWriteLimit } = vi.hoisted(() => ({
+  mockEnforceWriteLimit: vi.fn(),
   mockGetOrCreateCurrentUser: vi.fn(),
   mockMarkAllRead: vi.fn(),
+}));
+
+vi.mock("@/lib/api-rate-limit", () => ({
+  enforceWriteLimit: mockEnforceWriteLimit,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -18,6 +23,10 @@ const { POST } = await import("./route");
 const USER_ID = "22222222-2222-4222-8222-222222222222";
 
 beforeEach(() => {
+  // Hiz siniri bu testlerin konusu DEGIL: varsayilan "asilmadi".
+  // Sinirin kendisi kendi olcumuyle dogrulandi (bkz. lib/api-rate-limit.ts).
+  mockEnforceWriteLimit.mockReset();
+  mockEnforceWriteLimit.mockResolvedValue(null);
   mockGetOrCreateCurrentUser.mockReset();
   mockMarkAllRead.mockReset();
 

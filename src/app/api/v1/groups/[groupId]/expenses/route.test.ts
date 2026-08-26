@@ -5,10 +5,15 @@ import { ForbiddenError } from "@/lib/errors";
 // Route'un kendi sorumlulugunu (auth kontrolu, Zod dogrulama, cevap sekli, hata
 // esleme) izole test etmek icin auth ve expenses servislerini mock'luyoruz.
 // createExpense'in ic mantigi zaten src/lib/expenses.test.ts'te test edildi.
-const { mockGetOrCreateCurrentUser, mockCreateExpense, mockListExpenses } = vi.hoisted(() => ({
+const { mockGetOrCreateCurrentUser, mockCreateExpense, mockListExpenses, mockEnforceWriteLimit } = vi.hoisted(() => ({
+  mockEnforceWriteLimit: vi.fn(),
   mockGetOrCreateCurrentUser: vi.fn(),
   mockCreateExpense: vi.fn(),
   mockListExpenses: vi.fn(),
+}));
+
+vi.mock("@/lib/api-rate-limit", () => ({
+  enforceWriteLimit: mockEnforceWriteLimit,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -40,6 +45,10 @@ function callRoute(body: unknown) {
 
 describe("POST /api/v1/groups/[groupId]/expenses", () => {
   beforeEach(() => {
+  // Hiz siniri bu testlerin konusu DEGIL: varsayilan "asilmadi".
+  // Sinirin kendisi kendi olcumuyle dogrulandi (bkz. lib/api-rate-limit.ts).
+  mockEnforceWriteLimit.mockReset();
+  mockEnforceWriteLimit.mockResolvedValue(null);
     mockGetOrCreateCurrentUser.mockReset();
     mockCreateExpense.mockReset();
   });

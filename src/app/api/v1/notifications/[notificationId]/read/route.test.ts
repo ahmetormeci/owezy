@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockGetOrCreateCurrentUser, mockMarkRead } = vi.hoisted(() => ({
+const { mockGetOrCreateCurrentUser, mockMarkRead, mockEnforceWriteLimit } = vi.hoisted(() => ({
+  mockEnforceWriteLimit: vi.fn(),
   mockGetOrCreateCurrentUser: vi.fn(),
   mockMarkRead: vi.fn(),
+}));
+
+vi.mock("@/lib/api-rate-limit", () => ({
+  enforceWriteLimit: mockEnforceWriteLimit,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -25,6 +30,10 @@ function callRoute() {
 }
 
 beforeEach(() => {
+  // Hiz siniri bu testlerin konusu DEGIL: varsayilan "asilmadi".
+  // Sinirin kendisi kendi olcumuyle dogrulandi (bkz. lib/api-rate-limit.ts).
+  mockEnforceWriteLimit.mockReset();
+  mockEnforceWriteLimit.mockResolvedValue(null);
   mockGetOrCreateCurrentUser.mockReset();
   mockMarkRead.mockReset();
 

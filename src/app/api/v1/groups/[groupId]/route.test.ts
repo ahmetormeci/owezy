@@ -4,10 +4,15 @@ import { ForbiddenError, NotFoundError } from "@/lib/errors";
 
 // Route'un kendi sorumlulugunu (auth kontrolu, cevap sekli, hata esleme) izole
 // test ediyoruz. getGroupForUser'in ic mantigi src/lib/groups.test.ts'te.
-const { mockGetOrCreateCurrentUser, mockGetGroupForUser, mockUpdateGroup } = vi.hoisted(() => ({
+const { mockGetOrCreateCurrentUser, mockGetGroupForUser, mockUpdateGroup, mockEnforceWriteLimit } = vi.hoisted(() => ({
+  mockEnforceWriteLimit: vi.fn(),
   mockGetOrCreateCurrentUser: vi.fn(),
   mockGetGroupForUser: vi.fn(),
   mockUpdateGroup: vi.fn(),
+}));
+
+vi.mock("@/lib/api-rate-limit", () => ({
+  enforceWriteLimit: mockEnforceWriteLimit,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -41,6 +46,10 @@ function callRoute() {
 
 describe("GET /api/v1/groups/[groupId]", () => {
   beforeEach(() => {
+  // Hiz siniri bu testlerin konusu DEGIL: varsayilan "asilmadi".
+  // Sinirin kendisi kendi olcumuyle dogrulandi (bkz. lib/api-rate-limit.ts).
+  mockEnforceWriteLimit.mockReset();
+  mockEnforceWriteLimit.mockResolvedValue(null);
     mockGetOrCreateCurrentUser.mockReset();
     mockGetGroupForUser.mockReset();
   });

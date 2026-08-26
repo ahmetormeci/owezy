@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findCurrentUser } from "@/lib/auth";
+import { enforceWriteLimit } from "@/lib/api-rate-limit";
 import { createGroup, listGroupsForUser } from "@/lib/groups";
 import { createGroupSchema } from "@/lib/group-schemas";
 import { handleApiError } from "@/lib/api";
@@ -24,6 +25,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
+
+    const limited = await enforceWriteLimit(user.id);
+    if (limited) return limited;
 
     const body = createGroupSchema.parse(await request.json());
     const group = await createGroup(user.id, body);

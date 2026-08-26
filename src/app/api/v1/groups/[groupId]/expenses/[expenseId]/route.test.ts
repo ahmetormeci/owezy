@@ -9,11 +9,17 @@ const {
   mockGetExpenseForUser,
   mockUpdateExpense,
   mockDeleteExpense,
+  mockEnforceWriteLimit,
 } = vi.hoisted(() => ({
+  mockEnforceWriteLimit: vi.fn(),
   mockGetOrCreateCurrentUser: vi.fn(),
   mockGetExpenseForUser: vi.fn(),
   mockUpdateExpense: vi.fn(),
   mockDeleteExpense: vi.fn(),
+}));
+
+vi.mock("@/lib/api-rate-limit", () => ({
+  enforceWriteLimit: mockEnforceWriteLimit,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -62,6 +68,10 @@ function callRoute(body: unknown) {
 
 describe("PUT /api/v1/groups/[groupId]/expenses/[expenseId]", () => {
   beforeEach(() => {
+  // Hiz siniri bu testlerin konusu DEGIL: varsayilan "asilmadi".
+  // Sinirin kendisi kendi olcumuyle dogrulandi (bkz. lib/api-rate-limit.ts).
+  mockEnforceWriteLimit.mockReset();
+  mockEnforceWriteLimit.mockResolvedValue(null);
     mockGetOrCreateCurrentUser.mockReset();
     mockUpdateExpense.mockReset();
   });

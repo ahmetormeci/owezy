@@ -459,6 +459,34 @@ model Account {
  * bilinmeyen isteklere de uygulanmali - zaten korumaya calistigi sey giris
  * denemesi.
  */
+/**
+ * /api/v1 YAZMA uclarinin hiz siniri sayaclari. Better Auth'un RateLimit
+ * tablosundan AYRI ve bu ayrilik zorunlu, tercih degil.
+ *
+ * NEDEN AYNI TABLOYA YAZILAMIYOR: Better Auth kendi tablosunu buduyor
+ * (rate-limiter/index.mjs, deleteExpiredRows) ve budama esigini YALNIZCA
+ * KENDI kurallarindan hesapliyor:
+ *     const cutoff = now - longestObservedWindow * 1000;
+ *     db.deleteMany({ model, where: [{ field: "lastRequest", op: "lt", ... }] })
+ * Bizim penceremiz onunkilerden uzun oldugu icin satirlarimiz sessizce
+ * silinirdi - yani sinir zaman zaman hic uygulanmazdi. Bulunmasi en zor
+ * hata turu.
+ *
+ * BUDAMAYA GEREK YOK: anahtar kullaniciya bagli, yani satir sayisi kullanici
+ * sayisiyla sinirli. Better Auth'unki "IP + yol" oldugu icin sinirsiz
+ * buyuyebiliyor ve budamak zorunda.
+ *
+ * SABIT PENCERE, kayan degil: pencere dolunca sayac sifirlaniyor. Kayan
+ * pencere daha adil ama daha fazla satir ve daha karmasik sorgu demek;
+ * amacimiz kacak bir istemciyi durdurmak, adaleti gram gram olcmek degil.
+ */
+model ApiRateLimit {
+  id          String @id @default(uuid()) @db.Uuid
+  key         String @unique
+  count       Int
+  windowStart BigInt
+}
+
 model RateLimit {
   id          String @id @default(uuid()) @db.Uuid
   key         String @unique

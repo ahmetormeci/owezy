@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findCurrentUser } from "@/lib/auth";
+import { enforceWriteLimit } from "@/lib/api-rate-limit";
 import { deleteExpense, getExpenseForUser, updateExpense } from "@/lib/expenses";
 import {
   deleteExpenseQuerySchema,
@@ -41,6 +42,9 @@ export async function PUT(
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
 
+    const limited = await enforceWriteLimit(user.id);
+    if (limited) return limited;
+
     const { groupId, expenseId } = await params;
 
     // Ayni ham govde iki semadan geciyor: biri harcamanin kendisi (POST ile
@@ -65,6 +69,9 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
+
+    const limited = await enforceWriteLimit(user.id);
+    if (limited) return limited;
 
     const { groupId, expenseId } = await params;
     const { version } = deleteExpenseQuerySchema.parse(

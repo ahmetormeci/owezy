@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findCurrentUser } from "@/lib/auth";
+import { enforceWriteLimit } from "@/lib/api-rate-limit";
 import { prisma } from "@/lib/prisma";
 import { updateMeSchema } from "@/lib/me-schemas";
 import { handleApiError } from "@/lib/api";
@@ -31,6 +32,9 @@ export async function PATCH(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
     }
+
+    const limited = await enforceWriteLimit(user.id);
+    if (limited) return limited;
 
     const body = updateMeSchema.parse(await request.json());
 

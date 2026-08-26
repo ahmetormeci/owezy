@@ -2,13 +2,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { ForbiddenError } from "@/lib/errors";
 
-const { mockGetOrCreateCurrentUser, mockCreateSettlement, mockListSettlements } = vi.hoisted(
+const {
+  mockGetOrCreateCurrentUser,
+  mockCreateSettlement,
+  mockListSettlements,
+  mockEnforceWriteLimit,
+} = vi.hoisted(
   () => ({
+    mockEnforceWriteLimit: vi.fn(),
     mockGetOrCreateCurrentUser: vi.fn(),
     mockCreateSettlement: vi.fn(),
     mockListSettlements: vi.fn(),
   }),
 );
+
+vi.mock("@/lib/api-rate-limit", () => ({
+  enforceWriteLimit: mockEnforceWriteLimit,
+}));
 
 vi.mock("@/lib/auth", () => ({
   findCurrentUser: mockGetOrCreateCurrentUser,
@@ -50,6 +60,10 @@ function callGet(queryString = "") {
 
 describe("POST /api/v1/groups/[groupId]/settlements", () => {
   beforeEach(() => {
+  // Hiz siniri bu testlerin konusu DEGIL: varsayilan "asilmadi".
+  // Sinirin kendisi kendi olcumuyle dogrulandi (bkz. lib/api-rate-limit.ts).
+  mockEnforceWriteLimit.mockReset();
+  mockEnforceWriteLimit.mockResolvedValue(null);
     mockGetOrCreateCurrentUser.mockReset();
     mockCreateSettlement.mockReset();
   });
