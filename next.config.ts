@@ -19,7 +19,81 @@ import { withSentryConfig } from "@sentry/nextjs";
  * bozar (stil yuklenmez, Sentry sustur, sayfa bos gorunur). Kendi isi olarak
  * ve once Content-Security-Policy-Report-Only ile olculerek eklenecek.
  */
+const isDev = process.env.NODE_ENV === "development";
+
+/**
+ * Icerik Guvenligi Politikasi (CSP).
+ *
+ * NONCE YOK VE BU BIR KARAR, eksiklik degil. Next 16'nin nonce yolu
+ * (docs/01-app/02-guides/content-security-policy.md) iki sey istiyor:
+ * proxy.ts'in geri gelmesi - 25.7'de bilerek silmistik - ve "you must use
+ * dynamic rendering to add nonces", yani HER SAYFANIN dinamik render'a
+ * zorlanmasi. Ikisi de sessiz bir bedel.
+ *
+ * Kapattigi boslukla karsilastirildiginda bu bedel agir kaliyor, cunku
+ * OLCTUK: kod tabaninda tek bir dangerouslySetInnerHTML ya da innerHTML yok.
+ * Kullanicidan gelen her metin React'in kacisindan geciyor. Yani buradaki
+ * CSP bilinen bir deligi yamamiyor, DERINLEMESINE SAVUNMA yapiyor.
+ *
+ * 'unsafe-inline' ile bu politikanin KAPATMADIGI sey enjekte edilmis satir
+ * ici script'tir - ve onun icin once bir XSS deligi gerekiyor. KAPATTIKLARI
+ * ise gercek: saldirganin kendi sunucusundan script yuklemesi, <base>
+ * enjeksiyonu, formun disari gonderilmesi, cerceveleme, eklenti calistirma.
+ */
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  // 'unsafe-inline': Next'in kendi onyukleme script'i satir ici. 'unsafe-eval'
+  // YALNIZCA gelistirmede - Turbopack'in sicak yenilemesi kullaniyor, yayinda
+  // hicbir sey kullanmiyor.
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  // Tailwind ve Next satir ici stil uretiyor.
+  "style-src 'self' 'unsafe-inline'",
+  /**
+   * DIS KAYNAKLI GORSEL BEKLENMIYOR ve bu olculdu: avatarUrl'i artik yazan
+   * kimse yok (Clerk 25.7'de sokuldu, yeni kayit akisi fotograf sormuyor) ve
+   * veritabaninda hasImage=true olan tek bir kullanici bile yok. Fis
+   * fotografi ozelligi gelirse (PROGRESS'teki aday) bu satir ONUNLA BIRLIKTE
+   * degisir - sessizce yuklenmeyen bir gorsel olarak degil.
+   */
+  "img-src 'self' data: blob:",
+  // next/font yazi tiplerini derleme aninda kendi barindirmamiza aliyor.
+  "font-src 'self'",
+  /**
+   * Sentry'nin tarayici SDK'si hatalari kendi ucuna POST ediyor. 'self' ile
+   * birakilsaydi hata bildirimi SESSIZCE kesilirdi - yani gozumuzu kapatan
+   * sey, gormemiz gereken seyin ta kendisi olurdu. Iki bolge birden yazili
+   * cunku DSN'in hangi bolgede oldugu Vercel'deki degiskende ve buradan
+   * gorunmuyor.
+   */
+  "connect-src 'self' https://*.ingest.sentry.io https://*.ingest.de.sentry.io",
+  // Cerceveleme: X-Frame-Options'in modern karsiligi. Ikisi birden duruyor,
+  // cunku eski tarayicilar frame-ancestors'i bilmiyor.
+  "frame-ancestors 'none'",
+  // <base> enjeksiyonu butun goreli adresleri saldirganin sunucusuna
+  // cevirebiliyor.
+  "base-uri 'self'",
+  // Form baska bir yere gonderilemesin.
+  "form-action 'self'",
+  // <object>/<embed> ile eklenti calistirma.
+  "object-src 'none'",
+].join("; ");
+
 const SECURITY_HEADERS = [
+  {
+    /**
+     * ZORLAYICI - ama once Report-Only ile olculdu ve sirasi onemliydi.
+     * Yanlis bir CSP uygulamayi SESSIZCE bozuyor: stil yuklenmez, Sentry
+     * susar, sayfa bos gorunur.
+     *
+     * OLCUM: Report-Only ile giris, grup sayfasi, tema degistirme, bildirim
+     * zili, satir ici harcama ekleme (POST + toast) ve koyu tema gezildi -
+     * sifir ihlal. Ardindan zorlayiciya cevrilip 43 E2E kosuldu: zorlayici
+     * modda bir ihlal GERCEKTEN bir seyi bozar, yani testler onu yakalar.
+     * Report-Only'de yalnizca konsola yazardi ve Playwright oraya bakmiyor.
+     */
+    key: "Content-Security-Policy",
+    value: CONTENT_SECURITY_POLICY,
+  },
   {
     // Tarayici, sunucunun soyledigi Content-Type'i TAHMIN ETMEYE calismasin.
     // Sniffing, kullanicinin yukledigi bir dosyanin script gibi
