@@ -1281,10 +1281,35 @@ karar vermemiştir.
 | **Mobilde bildirimler / dil seçimi / grup düzenleme** | Web'de var, mobilde yok |
 | **Fişin canlıda gözle görülmesi** | Uzun açıklamalarda noktalı ayraç ve çok aylı katlama yalnızca yapay veriyle sınandı |
 | **`disableLogger` ölçümü** | `next.config.ts`'teki satır Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
+| **Harcamaya fiş / fatura görseli** | Aşağıda ayrıca; kayda hiç geçmemişti |
+
+### Aday ayrıntısı — harcamaya fiş / fatura görseli
+
+Kullanıcı bunu bir kere sormuş ("veritabanını çok şişirir mi?") ama **kayda
+hiç geçmemişti**: ne ADR, ne aday listesi, ne teknik borç, ne git geçmişi.
+26 Ağustos'ta sorulunca ortaya çıktı ve unutulmasın diye buraya yazıldı.
+**Karar değil, seçenek.**
+
+Şişirme sorusunun cevabı: **görsel veritabanına konmaz.** Nesne depolamada
+durur, veritabanında yalnızca anahtar + metadata olur — harcama başına birkaç
+yüz bayt, yani ölçülemeyecek kadar az. Telefon fotoğrafı ~1600px'e küçültülüp
+WebP'ye çevrilince 200–500 KB; ayda 25 fişli harcama ≈ 10 MB/ay/grup. Bunu
+Postgres'e koymak Neon'da depolama ücreti demek ve o baytlar **her yedekte ve
+her branch'te** çoğalır. Yığınımızdaki doğal yer **Cloudflare R2** (alan adı
+zaten Cloudflare'de, ADR-026; çıkış trafiği ücretsiz).
+
+**Asıl maliyet depolama değil, ve karar verilirken tartılacak olan bunlar:**
+- **Gizlilik politikası yine değişir.** Bugün açıkça "dosya yükleme diye bir
+  şey yok" diyor. Fiş fotoğrafı yeni bir veri kategorisi ve yeni bir işleyici.
+- **App Store**: kamera/galeri izin metinleri `Info.plist`'e girer, App
+  Privacy anketi değişir, izin isteyen uygulama incelemede daha çok soru alır.
+- **Silme anlamı belirsiz.** Değiştirilemez kural finansal kayıtların fiziksel
+  olarak silinmemesi; harcama soft-delete olunca fotoğraf ne olacak? Kalırsa
+  "sildim" diyen kullanıcının fişi duruyor demektir.
+- **Mobilde yeni bağımlılık** (`expo-image-picker`) ve yeni bir native izin.
 
 ## Bilinen teknik borç
 
-- `@clerk/clerk-expo` kullanımdan kaldırıldı; `@clerk/expo` (core-3) geçişi yapılmadı. Clerk bir süre var olmayan bir sürüme bağımlı paket yayınladığı için kurulamıyordu; `@clerk/shared@4.30.0` çıktı ve engel kalktı, geçiş bekliyor
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi
@@ -1319,7 +1344,9 @@ karar vermemiştir.
 - Dil düğmesi `/api/v1/me`'ye **çıkış yapmışken de** PATCH atıyor; herkese
   açık sayfalarda bu her zaman 401 dönüyor ve tarayıcı konsoluna hata
   düşüyor. Zararsız (kod bunu bekliyor ve yutuyor) ama gereksiz istek ve
-  gürültü. Clerk'in `useAuth().isSignedIn` değeriyle atlanabilir.
+  gürültü. Çözüm bir prop: `PublicControls` zaten herkese açık sayfalarda
+  kullanılıyor, oturum durumunu sunucudan geçirmek yeterli. (Öneri bir ara
+  "Clerk'in `useAuth().isSignedIn`'i" diyordu — Clerk 25.7'de söküldü.)
 - `PublicControls` konumunu `fixed` ile kendisi belirliyor. Dar ve kısa bir
   ekranda üstteki kartla çakışabilir. **11.6'nın listesindeydi, yapılmadı** —
   ölçülmedi de; kalan tek 11.6 maddesi bu.
