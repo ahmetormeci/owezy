@@ -1108,8 +1108,10 @@ derleme hatası" garantisi korunuyor.
 cümle: bu iki adres **giriş yapmadan** açılabilmek zorunda; biri korumayı
 genişletirse uygulama mağazadan döner ve sebebi hiçbir yerde görünmez.
 
-**Yayına almadan önce SENDE kalan:** `destek@owezy.net` kutusu (Cloudflare
-Email Routing) — adres sayfada yazılı ama kutu açılmazsa sayfa işe yaramaz.
+**`destek@owezy.net` açık** (26 Ağustos, kullanıcı doğruladı): Cloudflare
+Email Routing kuralı var, oraya gelen postalar kullanıcının kendi kutusuna
+yönleniyor. Alan adının MX'i de `route1/2/3.mx.cloudflare.net` — yani
+destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
