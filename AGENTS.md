@@ -121,6 +121,12 @@ Bunlar tartışılmış ve karara bağlanmıştır (gerekçeler DECISIONS.md'de)
   çalışmayı reddeder.
 - Tam E2E koşusu ~8 dakika sürer ve gerçek bir dev sunucusu başlatır (3100).
   **Koşu sürerken proje dosyalarına dokunma.**
+- **Tek testi `-g` ile koşturmak KURULUMU DA ELER.** Filtre bütün projelere
+  uygulanıyor ve `global.setup.ts`'teki adımların adı eşleşmediği için
+  çalışmıyorlar: veritabanı sıfırlanmıyor, kullanıcılar yeniden
+  yaratılmıyor. Kalıcı kayıt bırakan bir testi (örneğin dil tercihi) böyle
+  koşturmak **sahte sonuç** üretir — önceki koşudan kalan durum yüzünden
+  düşer. Şüphe varsa tam koşu.
 - **E2E'den önce 3000'deki dev sunucusunu kapat.** Next 16 aynı dizinden
   ikinci bir `next dev` başlatmayı reddediyor — farklı port olsa bile.
   Belirtisi yanıltıcı: Playwright "Process from config.webServer was not able

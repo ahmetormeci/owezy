@@ -79,7 +79,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Arayüz dili tercihin",
               "Parola belirlediysen: parolanın geri döndürülemez özeti (hash). " +
                 "Parolanın kendisi hiçbir yerde saklanmaz.",
-              "Açık oturumların — hangi cihazda girişli olduğunu takip eden kayıt",
+              "Açık oturumların. Her oturumla birlikte bağlandığın IP adresi ve " +
+                "tarayıcı/cihaz bilgisi (user agent) saklanır — oturumu yönetmek ve " +
+                "hesabını korumak için. Reklam ya da ölçüm için kullanılmaz.",
             ],
           },
           {
@@ -339,7 +341,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Your interface language preference",
               "If you set a password: an irreversible digest (hash) of it. The password " +
                 "itself is stored nowhere.",
-              "Your open sessions — the record of which device you are signed in on",
+              "Your open sessions. Each one stores the IP address you connected from " +
+                "and your browser/device string (user agent) — to manage the session " +
+                "and protect your account. Never for advertising or measurement.",
             ],
           },
           { kind: "p", text: "You create the rest by using the app:" },

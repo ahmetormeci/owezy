@@ -84,15 +84,32 @@ test.describe("dil degistirme", () => {
     await page.goto("/groups");
     await expect(page.getByRole("heading", { name: "Gruplarım" })).toBeVisible();
 
-    // Dugmeye basmak PATCH'i ARKADA gonderiyor (arayuz ag istegini
-    // beklemiyor). Cerezi silmeden once o istegin bittiginden emin olmaliyiz,
-    // yoksa test kendi yarisini kaybeder.
-    const saved = page.waitForResponse(
-      (response) =>
-        response.url().endsWith("/api/v1/me") && response.request().method() === "PATCH",
-    );
+    /**
+     * KAYDIN DUSTUGUNU API'DEN OKUYARAK dogruluyoruz, ag olayini izleyerek
+     * DEGIL - ve bu ayrim bir hatadan sonra ogrenildi.
+     *
+     * Once page.waitForResponse ile PATCH'in cevabi bekleniyordu. Ama dil
+     * dugmesi istegi BILEREK "gonder ve unut" yapiyor: fetch(..., keepalive)
+     * hemen ardindan window.location.reload() geliyor (ADR-023). keepalive
+     * istegin GONDERILMESINI garanti ediyor, sayfanin cevabi GORECEK KADAR
+     * YASAMASINI degil. Yani test bastan beri sayfanin yikimiyla yarisiyordu
+     * ve genelde kazaniyordu.
+     *
+     * Yarisi 26.4 bozdu: /api/v1/me PATCH'ine hiz siniri kontrolu eklendi,
+     * yani cevaba bir veritabani gidis-donusu bindi. Istek yavasladi,
+     * yeniden yukleme one gecti, test dustu.
+     *
+     * Buradaki okuma AYRI bir istek baglamindan gidiyor (context.request,
+     * ayni cerezleri tasiyor), yani sayfanin omruyle ilgisi yok. Ustelik
+     * dogru seyi olcuyor: tercih GERCEKTEN kaydedildi mi.
+     */
     await page.getByRole("button", { name: "İngilizceye geç" }).click();
-    expect((await saved).status()).toBe(200);
+    await expect
+      .poll(async () => {
+        const response = await context.request.get("/api/v1/me");
+        return (await response.json()).user.locale;
+      })
+      .toBe("en");
 
     await expect(page.getByRole("heading", { name: "My groups" })).toBeVisible();
 
@@ -108,13 +125,16 @@ test.describe("dil degistirme", () => {
     await expect(page.getByRole("heading", { name: "My groups" })).toBeVisible();
 
     // Sonraki kosular Turkce baslasin diye tercihi geri aliyoruz: bu test
-    // kalici bir kayit birakiyor ve diger 26 test Turkce metin bekliyor.
-    const restored = page.waitForResponse(
-      (response) =>
-        response.url().endsWith("/api/v1/me") && response.request().method() === "PATCH",
-    );
+    // KALICI bir kayit birakiyor ve diger testler Turkce metin bekliyor.
+    // Geri alma adimi dusen bir kosu, ardindan gelen kosulari da dusurur -
+    // nitekim dusurdu.
     await page.getByRole("button", { name: "Switch to Turkish" }).click();
-    expect((await restored).status()).toBe(200);
+    await expect
+      .poll(async () => {
+        const response = await context.request.get("/api/v1/me");
+        return (await response.json()).user.locale;
+      })
+      .toBe("tr");
     await expect(page.getByRole("heading", { name: "Gruplarım" })).toBeVisible();
 
     await context.close();

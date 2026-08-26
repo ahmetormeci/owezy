@@ -61,11 +61,19 @@ const CONTENT_SECURITY_POLICY = [
   /**
    * Sentry'nin tarayici SDK'si hatalari kendi ucuna POST ediyor. 'self' ile
    * birakilsaydi hata bildirimi SESSIZCE kesilirdi - yani gozumuzu kapatan
-   * sey, gormemiz gereken seyin ta kendisi olurdu. Iki bolge birden yazili
-   * cunku DSN'in hangi bolgede oldugu Vercel'deki degiskende ve buradan
-   * gorunmuyor.
+   * sey, gormemiz gereken seyin ta kendisi olurdu.
+   *
+   * BOLGE ADI YAZILMIYOR ve bunun sebebi olculdu. Once
+   * "*.ingest.sentry.io" ve "*.ingest.de.sentry.io" yaziliydi; Sentry'nin
+   * guncel adresleri ise "o12345.ingest.US.sentry.io" bicimde, yani
+   * ".ingest.sentry.io" ile BITMIYOR ve o kalip onlari eslestirmiyordu.
+   * Bolgeyi tek tek saymak, yanlis bolgede sessizce kirilan bir CSP demek -
+   * ve kirildigini gosterecek olan sey de tam olarak Sentry'nin kendisi.
+   *
+   * Tek girdi, Sentry'nin butun alan adi. Ucuncu taraf zaten beyan edilmis
+   * bir isleyici (bkz. /privacy).
    */
-  "connect-src 'self' https://*.ingest.sentry.io https://*.ingest.de.sentry.io",
+  "connect-src 'self' https://*.sentry.io",
   // Cerceveleme: X-Frame-Options'in modern karsiligi. Ikisi birden duruyor,
   // cunku eski tarayicilar frame-ancestors'i bilmiyor.
   "frame-ancestors 'none'",
