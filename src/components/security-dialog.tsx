@@ -66,6 +66,9 @@ export function SecurityDialog({
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [account, setAccount] = useState<{ email: string; verified: boolean } | null>(null);
+  const [verifyStep, setVerifyStep] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
 
   /**
    * Ekran acilirken hesabin durumu bir kez okunuyor.
@@ -91,7 +94,9 @@ export function SecurityDialog({
   useEffect(() => {
     let cancelled = false;
     void readSecurityState().then((next) => {
-      if (!cancelled) setStage(next);
+      if (cancelled) return;
+      setStage(next.stage);
+      setAccount({ email: next.email, verified: next.emailVerified });
     });
     return () => {
       cancelled = true;
@@ -101,7 +106,43 @@ export function SecurityDialog({
   /** "Tekrar dene" - bir olaydan tetiklendigi icin burada setState serbest. */
   function reload() {
     setStage({ name: "loading" });
-    void readSecurityState().then(setStage);
+    void readSecurityState().then((next) => {
+      setStage(next.stage);
+      setAccount({ email: next.email, verified: next.emailVerified });
+    });
+  }
+
+  /**
+   * E-POSTA DOGRULAMA - ve buranin varlik sebebi 2FA degil, BIR VERI KAYBI.
+   *
+   * Dogrulanmamis bir hesapta e-posta koduyla giris yapmak PAROLAYI SILIYOR
+   * (Better Auth'un revokeUnprovenAccountAccess'i; olculdu ve yeniden
+   * uretildi). Kayit formundaki adim atlanabildigi icin, atlayan kullanicinin
+   * bunu bir daha gorecegi yer burasi.
+   */
+  async function sendVerification() {
+    if (!account) return;
+    const { ok } = await run(() =>
+      authClient.emailOtp.sendVerificationOtp({
+        email: account.email,
+        type: "email-verification",
+      }),
+    );
+    if (ok) setVerifyStep(true);
+  }
+
+  async function confirmVerification(event: React.FormEvent) {
+    event.preventDefault();
+    if (!account) return;
+    const { ok } = await run(() =>
+      authClient.emailOtp.verifyEmail({ email: account.email, otp: verifyCode }),
+    );
+    if (!ok) return;
+    setVerifyCode("");
+    setVerifyStep(false);
+    setAccount({ ...account, verified: true });
+    toast.success(t("ui.verify_email_done"));
+    router.refresh();
   }
 
   /**
@@ -253,6 +294,52 @@ export function SecurityDialog({
             {stage.name === "on" ? t("ui.two_factor_on_hint") : t("ui.two_factor_off_hint")}
           </DialogDescription>
         </DialogHeader>
+
+        {/*
+          DOGRULANMAMIS E-POSTA UYARISI - 2FA durumundan BAGIMSIZ, o yuzden
+          asamalarin disinda ve hepsinin ustunde duruyor. Kaybedilecek sey
+          somut yaziliyor ("parolan silinir"), "guvenlik icin" denmiyor.
+        */}
+        {account && !account.verified ? (
+          <div className="flex flex-col gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+            <p className="text-sm font-medium">{t("ui.email_not_verified")}</p>
+            <p className="text-xs text-muted-foreground">{t("ui.verify_email_why")}</p>
+            {verifyStep ? (
+              <form onSubmit={confirmVerification} className="flex flex-col gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {t("ui.verify_email_hint", { email: account.email })}
+                </p>
+                <Input
+                  id="verify-code"
+                  // Gorunur bir <Label> yok (uyari kutusunun icinde baslik
+                  // zaten var), o yuzden erisilebilir adi burada veriyoruz -
+                  // aksi halde ekran okuyucu icin adsiz bir alan olurdu.
+                  aria-label={t("ui.verify_email_title")}
+                  value={verifyCode}
+                  onChange={(e) => setVerifyCode(e.target.value)}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder={t("ui.code_placeholder")}
+                  required
+                  disabled={busy}
+                />
+                <Button type="submit" size="sm" disabled={busy}>
+                  {t("ui.verify_email_action")}
+                </Button>
+              </form>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void sendVerification()}
+              >
+                {t("ui.send_verification_code")}
+              </Button>
+            )}
+          </div>
+        ) : null}
 
         {stage.name === "loading" ? (
           <p className="text-sm text-muted-foreground">{t("ui.loading")}</p>
@@ -420,23 +507,39 @@ function readSecret(totpURI: string): string {
  * degilse "unreadable" donuyor. Sessizce "kapali" demek, kullaniciya iki
  * adimli dogrulamasinin kapali oldugunu SOYLEMEK olurdu - oysa bilmiyoruz.
  */
-async function readSecurityState(): Promise<Stage> {
+type AccountState = {
+  stage: Stage;
+  /** Dogrulama kodunu nereye gonderecegimiz - kullanicidan sormuyoruz. */
+  email: string;
+  emailVerified: boolean;
+};
+
+async function readSecurityState(): Promise<AccountState> {
+  const unreadable = { stage: { name: "unreadable" } as Stage, email: "", emailVerified: true };
   try {
     const response = await fetch("/api/v1/me");
     const body: unknown = await response.json();
     if (!response.ok || typeof body !== "object" || body === null) {
-      return { name: "unreadable" };
+      return unreadable;
     }
     const { user, hasPassword } = body as {
-      user?: { twoFactorEnabled?: boolean };
+      user?: { twoFactorEnabled?: boolean; email?: string; emailVerified?: boolean };
       hasPassword?: boolean;
     };
-    if (!hasPassword) {
-      return { name: "no-password" };
-    }
-    return user?.twoFactorEnabled ? { name: "on", backupCodes: null } : { name: "off" };
+    const stage: Stage = !hasPassword
+      ? { name: "no-password" }
+      : user?.twoFactorEnabled
+        ? { name: "on", backupCodes: null }
+        : { name: "off" };
+    return {
+      stage,
+      email: user?.email ?? "",
+      // OKUNAMAZSA "dogrulanmis" SAYIYORUZ: yanlis bir uyari gostermek,
+      // gostermemekten daha kotu - kullanici yapacak bir sey bulamaz.
+      emailVerified: user?.emailVerified !== false,
+    };
   } catch (caught) {
     console.error("[security] hesap durumu okunamadı:", caught);
-    return { name: "unreadable" };
+    return unreadable;
   }
 }

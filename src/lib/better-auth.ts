@@ -227,6 +227,40 @@ export const auth = betterAuth({
     emailOTP({
       otpLength: 6,
       expiresIn: OTP_EXPIRES_IN_SECONDS,
+
+      /**
+       * KAYITTA DOGRULAMA KODU GONDERILIYOR - ve bu kozmetik degil, BIR VERI
+       * KAYBINI KAPATIYOR.
+       *
+       * OLCULDU (dort adim, yeniden uretildi):
+       *   1. parolayla kayit          -> credential hesap: 1
+       *   2. kod gonder               -> credential hesap: 1
+       *   3. E-POSTA KODUYLA GIRIS    -> credential hesap: 0
+       *   4. parolayla giris          -> 401
+       * Yani parolayla kaydolan biri bir gun e-posta kodunu kullandiginda
+       * PAROLASINI KAYBEDIYORDU, sessizce.
+       *
+       * SEBEP BETTER AUTH'UN HATASI DEGIL, BIZIM EKSIGIMIZDI.
+       * revokeUnprovenAccountAccess, emailVerified=false olan bir satira
+       * e-posta koduyla ulasildiginda o satirin BUTUN hesap baglarini ve
+       * oturumlarini siliyor. Kaynagindaki gerekce dogru ve bizde de gecerli:
+       * "bir emailVerified:false satiri, bagli erisimin posta kutusunun
+       * sahibine ait oldugunun KANITINI tasimaz". Yani biri baskasinin
+       * adresiyle kaydolup parola koyabilir; gercek sahibi koduyla girdiginde
+       * o parola calismaya devam etmemeli.
+       *
+       * Biz e-postayi HIC dogrulamadigimiz icin parolayla kaydolan HERKES
+       * kalici olarak "kanitlanmamis" kaliyordu - yani korumanin hedefi
+       * saldirgan degil, kendi kullanicilarimiz oluyordu.
+       *
+       * GIRIS ENGELLENMIYOR (requireEmailVerification acilmadi). Sebep
+       * ADR-035: parolali yolun var olma sebebi App Store inceleyicisini
+       * posta kutusuna bagimli birakmamakti; kaydi dogrulama arkasina almak
+       * o bagimliligi geri getirirdi. Bunun bedeli acikca kabul edildi:
+       * dogrulamayan kullanici korunmuyor, ve arayuz bunu SOYLUYOR
+       * (kayit formundaki adim + guvenlik ekranindaki uyari).
+       */
+      sendVerificationOnSignUp: true,
       async sendVerificationOTP({ email, otp, type }, ctx) {
         /**
          * GONDERIM BEKLENMIYOR - ve bunun iki ayri sebebi var.

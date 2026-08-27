@@ -119,7 +119,9 @@ test.describe.serial("iki adimli dogrulama", () => {
     // davranisi ve iyi ki oyle: QR'i okutamayan kullanici yari yolda
     // kilitlenmiyor.
     await page.getByLabel("Doğrulama kodu").fill(await authenticatorCode());
-    await page.getByRole("button", { name: "Doğrula" }).click();
+    // exact: guvenlik ekraninda "Doğrulama kodu gönder" dugmesi de var
+    // (e-posta dogrulama uyarisi) ve exact olmadan ikisi birden esliyor.
+    await page.getByRole("button", { name: "Doğrula", exact: true }).click();
 
     await expect(page.getByText("İki adımlı doğrulama açıldı")).toBeVisible();
 

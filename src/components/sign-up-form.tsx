@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,17 @@ import { useTranslate } from "@/lib/i18n";
  * yok - Better Auth'un sign-in/email-otp ucu yalnizca e-posta ve kod
  * aliyor. Ad istiyorsak kayit parolayla kurulmali. Kod isteyenler zaten
  * giris ekranindan, kaydolmadan girebiliyor.
+ *
+ * KAYITTAN SONRA DOGRULAMA ADIMI VAR (Faz 28) ve bu bir veri kaybini
+ * kapatiyor: dogrulanmamis bir hesapta e-posta koduyla giris yapmak
+ * PAROLAYI SILIYOR. Sebep Better Auth'un revokeUnprovenAccountAccess'i ve
+ * gerekcesi dogru - emailVerified=false bir satir, bagli erisimin posta
+ * kutusu sahibine ait oldugunun kaniti degil. Biz e-postayi hic
+ * dogrulamadigimiz icin parolayla kaydolan HERKES bu tuzaga acikti.
+ *
+ * ADIM ATLANABILIR ("Simdi degil"): girisi engellemek ADR-035'i geri
+ * acardi. Atlayan kullanici korunmuyor ve bunu guvenlik ekraninda
+ * gormeye devam ediyor.
  */
 export function SignUpForm() {
   const router = useRouter();
@@ -32,8 +44,41 @@ export function SignUpForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  /** Kayit bitti, dogrulama kodu bekleniyor. */
+  const [verifying, setVerifying] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /** Kayit ya da dogrulama bitti: sunucu tarafi yeniden calissin diye tam gecis. */
+  function finish() {
+    router.replace(safeRedirectPath(searchParams.get("redirect_url")));
+    router.refresh();
+  }
+
+  async function verifyEmail(event: React.FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { error: verifyError } = await authClient.emailOtp.verifyEmail({
+        email,
+        otp: code,
+      });
+      if (verifyError) {
+        setError(t(authErrorCode(verifyError) ?? "ui.sign_in_failed"));
+        return;
+      }
+      toast.success(t("ui.verify_email_done"));
+      finish();
+    } catch (caught) {
+      console.error("[auth] doğrulama isteği gönderilemedi:", caught);
+      setError(t("server.offline"));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -60,18 +105,55 @@ export function SignUpForm() {
         return;
       }
 
-      // Giris formuyla ayni gerekce: giris/kayit ekrani gecmise yazilmamali,
-      // ve sunucu bilesenleri yeni oturumu gormek icin yeniden calismali.
-      // redirect_url de ayni sebeple okunuyor: davet linkiyle gelen biri
-      // kayit olduktan sonra davet sayfasina donmeli.
-      router.replace(safeRedirectPath(searchParams.get("redirect_url")));
-      router.refresh();
+      /**
+       * KAYIT BITTI AMA HENUZ ICERI GONDERMIYORUZ. Sunucu kayitla birlikte
+       * bir dogrulama kodu yolladi (better-auth.ts: sendVerificationOnSignUp)
+       * ve bu adim, kullanicinin parolasini ilerideki bir veri kaybindan
+       * koruyan tek sey. Oturum ZATEN acildi; atlayan da iceri giriyor.
+       */
+      setVerifying(true);
     } catch (caught) {
       console.error("[auth] kayıt isteği gönderilemedi:", caught);
       setError(t("server.offline"));
     } finally {
       setBusy(false);
     }
+  }
+
+  if (verifying) {
+    return (
+      <form onSubmit={verifyEmail} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="verify-code">{t("ui.verify_email_title")}</Label>
+          <p className="text-sm text-muted-foreground">
+            {t("ui.verify_email_hint", { email })}
+          </p>
+          <Input
+            id="verify-code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder={t("ui.code_placeholder")}
+            autoFocus
+            required
+          />
+        </div>
+
+        {/* NE KAYBEDECEGI YAZILI, "guvenlik icin" denmiyor. Kullanicinin
+            atlayip atlamayacagina karar verebilmesi icin somut olmali. */}
+        <p className="text-sm text-muted-foreground">{t("ui.verify_email_why")}</p>
+
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+        <Button type="submit" disabled={busy}>
+          {t("ui.verify_email_action")}
+        </Button>
+        <Button type="button" variant="ghost" onClick={finish} disabled={busy}>
+          {t("ui.verify_email_later")}
+        </Button>
+      </form>
+    );
   }
 
   return (

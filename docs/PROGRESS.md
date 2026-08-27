@@ -8,14 +8,14 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 26 faz tamamlandı ve **Faz 25 ile 26 canlıda** (`main`'e alındı).
-**Faz 27** (iki adımlı doğrulama) web tarafında bitti; geriye mobil arayüzü
-kaldı. Uygulama canlıda ve `main`'e giden her değişiklik CI'dan geçiyor.
+**Özet:** 28 faz tamamlandı. **Faz 27** (iki adımlı doğrulama) web ve mobilde
+bitti; **Faz 28** planlanmamıştı — App Store hazırlığı sırasında bulunan
+sessiz bir parola kaybını kapattı. Uygulama canlıda ve `main`'e giden her değişiklik CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
 | Birim (Vitest) | 534 | ✅ tümü geçiyor |
-| E2E (Playwright) | 55 | ✅ tümü geçiyor |
+| E2E (Playwright) | 56 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
 
@@ -1115,6 +1115,53 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 28 — E-posta doğrulama; sessiz bir parola kaybı · **BİTTİ**
+
+Planlanmış bir faz değildi. App Store ekran görüntüsü için demo veri
+kurarken bir kullanıcının parolasının kaybolduğu fark edildi ve iz sürüldü.
+
+**Ölçüldü, dört adımda yeniden üretildi:** doğrulanmamış bir hesapta e-posta
+koduyla giriş yapmak **parolayı siliyor** — credential hesap 1'den 0'a
+düşüyor, sonraki parola girişi 401 dönüyor.
+
+**Sebep kütüphanenin hatası değildi.** `revokeUnprovenAccountAccess`,
+`emailVerified: false` bir satıra e-posta koduyla ulaşıldığında o satırın
+bütün hesap bağlarını siliyor; gerekçesi doğru ve bizde de geçerli — böyle
+bir satır, bağlı erişimin posta kutusu sahibine ait olduğunun kanıtı değil.
+Eksik olan bizim tarafımızdı: e-postayı **hiç** doğrulamıyorduk, yani
+parolayla kaydolan herkes kalıcı olarak "kanıtlanmamış" kalıyordu.
+
+**Kimi vuruyordu:** parolayla kaydolup sonra bir kez e-posta kodunu kullanan
+herkesi. 2FA açık kullanıcılar etkilenmiyordu (o yol onlarda zaten kapalı),
+ama 2FA'yı **açmadan önce** kodu kullanan biri parolasını kaybediyor ve
+artık 2FA açamıyordu — yani delik ADR-040'ı da altından oyuyordu.
+
+**Çözüm (ADR-041):** kayıtta doğrulama kodu gidiyor
+(`sendVerificationOnSignUp`), kayıt formunda atlanabilir bir doğrulama adımı
+var, ve güvenlik ekranı doğrulanmamış hesapta kalıcı bir uyarı + doğrulama
+yolu gösteriyor. Giriş doğrulamaya **bağlanmadı** — o, ADR-035'i geri
+açardı.
+
+**Metin somut, "güvenlik için" demiyor:** *"Doğrulanmamış bir hesapta
+e-posta koduyla giriş yaparsan parolan silinir."* Kullanıcı atlayıp
+atlamayacağına ancak kaybedeceği şeyi bilerek karar verebilir.
+
+**Test:** birim 534 ✅ · E2E 56 ✅. Yeni test `password-reset.spec.ts` içinde
+ve **düzeltmesi kaldırılarak** doğrulandı.
+
+**Aynı turda bulunan iki şey daha:**
+- **Uygulama ikonu tasarım kılavuz çizgileriyle duruyordu** — kesikli merkez
+  çizgileri, kılavuz daireleri, artı işareti. Bitmiş bir ikon değil, çalışma
+  dosyasıydı; App Store'a aynen gidecekti. Üstelik uygulamanın kendi kimliğiyle
+  de alakasızdı (web'deki `BrandMark` eşit olmayan iki parçaya bölünmüş bir
+  daire). Yenisi uygulamanın kendi SVG'sinden üretildi, marka rengi
+  `--brand` token'ından çözüldü, 1024×1024 ve alfa kanalsız.
+- **Node 24'ün `fetch`'i `Sec-Fetch-*` başlıkları gönderiyor**, bu da Better
+  Auth'un origin doğrulamasını zorluyor. Sunucuya betikle istek atarken
+  `Origin` başlığı şart; yoksa `MISSING_OR_NULL_ORIGIN`.
+
+---
+
 ## Faz 27 — İki adımlı doğrulama · **BİTTİ (web + mobil)**
 
 Faz 25'in ertelediği iş. 25.6'da "eklentiyi tak" sanılıyordu; ölçünce üç ayrı
@@ -1471,6 +1518,24 @@ zaten Cloudflare'de, ADR-026; çıkış trafiği ücretsiz).
 - **Mobilde yeni bağımlılık** (`expo-image-picker`) ve yeni bir native izin.
 
 ## Bilinen teknik borç
+
+- **E2E bir kez ACIKLANAMAYAN sekilde yavasladi ve sonra kendiliginden
+  duzeldi.** 27 Agustos: ayni test kumesi 10 dk -> 26 dk -> 1.6 saat diye
+  uzadi, tek tek testler 15 DAKIKA surdu (oysa test zaman asimi 60 sn) ve
+  ilgisiz testler dustu - hepsi ayni aileden, "kaydettim ama ekran
+  guncellenmedi".
+
+  **Sebep BULUNAMADI, ama neyin olmadigi olculdu:** veritabani normaldi
+  (140 ms sorgu, 901 baglantidan 13'u kullanimda), bellek %56 bostu,
+  14 cekirdek, isinma yok, kacak surec yok, sunucu logunda hata yok.
+  **Degisiklikler de suclu degildi:** ayni yavaslama, o turun butun
+  degisiklikleri stash'lenmis TEMIZ AGACTA da uretildi - temiz agacta ilk
+  test 10 dakikada bile bitmedi.
+
+  Bir sure sonra ayni kod, ayni makinede 56/56 ve 10.4 dakika. Yani gecici
+  bir dis etkendi. **Bir daha olursa once bu madde okunmali** ve zaman
+  kodda aranmamali; dogrudan "temiz agacta da oluyor mu" sorusuyla
+  baslanmali - o soru bir turu bastan eliyor.
 
 - **Tek seferlik kodlar veritabanında DÜZ METİN duruyor.** `emailOTP`
   eklentisinin `storeOTP` varsayılanı `"plain"` ve değiştirmedik (ölçüldü:

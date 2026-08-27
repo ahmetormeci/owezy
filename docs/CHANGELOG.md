@@ -8,6 +8,52 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-27 — E-posta koduyla giren kullanıcı parolasını kaybediyordu
+
+App Store ekran görüntüsü için demo veri kurarken bir hesabın parolasının
+kaybolduğu fark edildi. Dört adımda yeniden üretildi: parolayla kaydol,
+e-posta koduyla gir, parola artık çalışmıyor. **credential hesap 1'den 0'a
+düşüyor.**
+
+Kütüphanenin hatası değil. `revokeUnprovenAccountAccess`,
+`emailVerified: false` bir satıra e-posta koduyla ulaşıldığında o satırın
+bütün hesap bağlarını siliyor — ve gerekçesi doğru: böyle bir satır, bağlı
+erişimin posta kutusu sahibine ait olduğunun kanıtını taşımıyor. Biri
+başkasının adresiyle kaydolup parola koyabilir; gerçek sahibi kendi koduyla
+girdiğinde o parola çalışmaya devam etmemeli.
+
+**Eksik olan bizim tarafımızdı:** e-postayı hiç doğrulamıyorduk, yani
+parolayla kaydolan herkes kalıcı olarak "kanıtlanmamış" kalıyordu.
+
+Artık kayıtla birlikte doğrulama kodu gidiyor, kayıt formunda atlanabilir bir
+doğrulama adımı var, ve doğrulamayan kullanıcı güvenlik ekranında kalıcı bir
+uyarı görüyor. Giriş doğrulamaya **bağlanmadı** — o, ADR-035'i (parolalı
+yolun App Store inceleyicisini posta kutusundan bağımsız kılması) geri
+açardı. Gerekçenin tamamı ADR-041'de.
+
+Uyarı somut: *"Doğrulanmamış bir hesapta e-posta koduyla giriş yaparsan
+parolan silinir."* Kullanıcı ancak kaybedeceği şeyi bilerek karar verebilir.
+
+### Uygulama ikonu kılavuz çizgileriyle duruyordu
+Simülatörde açılış ekranı görülünce fark edildi: `icon.png` kesikli merkez
+çizgileri, kılavuz daireleri ve bir artı işareti taşıyordu — bitmiş bir ikon
+değil, çalışma dosyası, ve App Store'a aynen gidecekti. Üstelik uygulamanın
+kendi kimliğiyle alakasızdı. Yenisi uygulamanın kendi `BrandMark` SVG'sinden
+üretildi, marka rengi `--brand` token'ından çözüldü (`#065ac0`), 1024×1024,
+alfa kanalsız.
+
+### Derleme ve gönderim hattı kuruldu
+`eas.json` yazıldı; `EXPO_PUBLIC_API_BASE_URL` üretim profilinde
+`https://owezy.net` olarak sabitlendi — o satır olmadan TestFlight'taki
+uygulama `localhost:3000`'e bağlanmaya çalışırdı. İlk derleme bir bağımlılık
+çakışmasında düştü (`react-native-worklets` 0.12 ile `expo-modules-core`
+uyumsuz; `expo-router` reanimated'i joker yazdığı için npm en yenisini
+seçmişti) — ikisi de sabitlendi ve derleme geçti.
+
+**Test:** 534 birim, 56 E2E. Yeni test düzeltmesi kaldırılarak doğrulandı.
+
+---
+
 ## 2026-08-26 (6) — İki adımlı doğrulama mobilde de yürüyor
 
 Faz 27 bitti. 2FA açan bir hesap artık mobilde de girebiliyor: parola → ikinci

@@ -240,6 +240,22 @@ export const MESSAGES_TR = {
     "E-posta adresine bir kod gönderelim, sonra yeni parolanı yazarsın. Hesabında hiç parola yoksa bu adım parolanı ilk kez kurar.",
   "ui.new_password": "Yeni parola",
   "ui.password_updated": "Parolan kaydedildi. Şimdi giriş yapabilirsin.",
+
+  // --- E-posta dogrulama (Faz 28) ---
+  //
+  // NEDEN VAR: dogrulanmamis bir hesapta e-posta koduyla giris yapmak
+  // PAROLAYI SILIYOR (Better Auth'un revokeUnprovenAccountAccess'i). Metin
+  // bunu "guvenlik" diye soyut birakmiyor, olacak seyi yaziyor - cunku
+  // kullanicinin kaybedecegi sey somut.
+  "ui.verify_email_title": "E-postanı doğrula",
+  "ui.verify_email_hint": "{email} adresine 6 haneli bir kod gönderdik.",
+  "ui.verify_email_why":
+    "Doğrulanmamış bir hesapta e-posta koduyla giriş yaparsan parolan silinir. Doğrulamak bunu kalıcı olarak önler.",
+  "ui.verify_email_action": "Doğrula",
+  "ui.verify_email_later": "Şimdi değil",
+  "ui.verify_email_done": "E-posta adresin doğrulandı",
+  "ui.email_not_verified": "E-postan doğrulanmadı",
+  "ui.send_verification_code": "Doğrulama kodu gönder",
   // --- E-posta (Faz 25.2) ---
   // Bunlar ARAYUZ metni degil, gonderilen postanin metni. Yine de sozlukte:
   // ADR-020'nin garantisi (eksik ceviri = derleme hatasi) burada da gecerli
@@ -729,6 +745,16 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
     "We'll email you a code, then you choose a new password. If your account has no password yet, this sets one for the first time.",
   "ui.new_password": "New password",
   "ui.password_updated": "Your password is saved. You can sign in now.",
+
+  "ui.verify_email_title": "Verify your email",
+  "ui.verify_email_hint": "We sent a 6-digit code to {email}.",
+  "ui.verify_email_why":
+    "On an unverified account, signing in with an emailed code deletes your password. Verifying prevents that for good.",
+  "ui.verify_email_action": "Verify",
+  "ui.verify_email_later": "Not now",
+  "ui.verify_email_done": "Your email address is verified",
+  "ui.email_not_verified": "Your email isn't verified",
+  "ui.send_verification_code": "Send a verification code",
   "email.otp_subject_sign_in": "Your Owezy sign-in code",
   "email.otp_subject_email_verification": "Verify your email address",
   "email.otp_subject_forget_password": "Reset your password",

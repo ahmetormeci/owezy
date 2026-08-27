@@ -523,6 +523,64 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-041 — Kayıtta e-posta doğrulanır, ama giriş doğrulamaya bağlanmaz
+**Tarih:** 2026-08-27 · **Durum:** Kabul edildi
+
+**Karar:** `emailOTP` eklentisi `sendVerificationOnSignUp: true` ile
+çalışır — parolayla kaydolan herkese kayıtla birlikte bir doğrulama kodu
+gider. Kayıt formunda bir doğrulama adımı vardır ve **atlanabilir**;
+`requireEmailVerification` açılmaz. Doğrulamayan kullanıcı, güvenlik
+ekranında kalıcı bir uyarı ve doğrulama yolu görür.
+
+**Neden — ölçülmüş bir veri kaybı:** doğrulanmamış bir hesapta e-posta
+koduyla giriş yapmak **parolayı siliyordu**. Dört adımda yeniden üretildi:
+
+```
+1. parolayla kayit          200  credential hesap: 1
+2. kod gonder               200  credential hesap: 1
+3. E-POSTA KODUYLA GIRIS    200  credential hesap: 0   ← siliniyor
+4. parolayla giris          401
+```
+
+**Kütüphanenin hatası değil.** `revokeUnprovenAccountAccess`,
+`emailVerified: false` olan bir satıra e-posta koduyla ulaşıldığında o
+satırın bütün hesap bağlarını ve oturumlarını siliyor. Kaynağındaki gerekçe
+doğru ve **bizde de geçerli**: böyle bir satır, bağlı erişimin posta kutusu
+sahibine ait olduğunun kanıtını taşımaz. Yani biri başkasının adresiyle
+kaydolup parola koyabilir; gerçek sahibi kendi koduyla girdiğinde o parola
+çalışmaya devam etmemelidir.
+
+Eksik olan bizim tarafımızdı: e-postayı **hiç** doğrulamıyorduk, dolayısıyla
+parolayla kaydolan herkes kalıcı olarak "kanıtlanmamış" kalıyordu — korumanın
+hedefi saldırgan değil, kendi kullanıcılarımız oluyordu.
+
+**Neden giriş engellenmiyor:** `requireEmailVerification`, ADR-035'i geri
+açardı. Parolalı yolun var olma sebebi App Store inceleyicisini **posta
+kutusuna bağımlı bırakmamaktı**; kaydı doğrulama arkasına almak o bağımlılığı
+geri getirirdi. Bedeli açıkça kabul edildi: doğrulamayan kullanıcı korunmuyor.
+
+**Bedel görünür kılınıyor, "güvenlik için" denmiyor.** Hem kayıt adımında hem
+güvenlik ekranında yazan cümle somut: *"Doğrulanmamış bir hesapta e-posta
+koduyla giriş yaparsan parolan silinir."* Kullanıcının atlayıp atlamayacağına
+karar verebilmesi için kaybedeceği şeyin adı konmalı.
+
+**Bu kararın 2FA ile ilişkisi:** ADR-040 girişin parolayla olmasını
+şart koşuyor. Parolasını sessizce kaybeden bir kullanıcı 2FA'yı **açamaz**
+(`/two-factor/enable` parola istiyor). Yani bu delik, ADR-040'ı da altından
+oyuyordu. 2FA **açık** olan kullanıcılar etkilenmiyordu: e-posta kodu yolu
+onlarda zaten kapalı.
+
+**Alternatifler:** `requireEmailVerification: true` (deliği tamamen kapatır,
+ADR-035'i açar); `emailVerified`'ı kayıtta elle `true` yapmak (korumayı
+tamamen iptal eder, reddedildi); parolalı kaydı kaldırıp parolayı yalnızca
+`/reset-password` üzerinden kurdurmak (tutarlı ama en büyük değişiklik).
+İlki, doğrulama oranı ölçüldükten sonra yeniden değerlendirilecek.
+
+**Doğrulama:** düzeltmeden önce 4. adım `401`, sonra `200`. Uçtan uca test
+`e2e/password-reset.spec.ts` içinde ve **düzeltmesi kaldırılarak** doğrulandı.
+
+---
+
 ## ADR-040 — İki adımlı doğrulama açıksa giriş parolayla olur
 **Tarih:** 2026-08-26 · **Durum:** Kabul edildi
 
