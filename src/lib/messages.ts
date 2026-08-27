@@ -155,7 +155,10 @@ export const MESSAGES_TR = {
   // --- Kayit / giris sayfalari (Faz 25.4) ---
   "ui.display_name": "Adın",
   "ui.name_saved": "Adın güncellendi",
-  "ui.display_name_placeholder": "Ahmet Örmeci",
+  // KURGUSAL BIR ISIM OLMALI. Bir sure burada uygulamanin sahibinin
+  // GERCEK adi yaziyordu: kaydolan herkes ornek olarak onu goruyordu.
+  // Ingilizcesi bastan beri "Alex Doe" - yani kurgusal oldugu belli.
+  "ui.display_name_placeholder": "Ayşe Yılmaz",
   "ui.no_account_yet": "Hesabın yok mu?",
   "ui.already_have_account": "Zaten hesabın var mı?",
   // Better Auth'un hata KODLARI icin karsiliklar. Ham Ingilizce mesaji

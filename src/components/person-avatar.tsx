@@ -13,6 +13,23 @@
  * profil fotografi ozelligi geldiginde yazacak yer hazir - ve o gun geldiginde
  * hasImage ayrimi yine gerekecek.
  *
+ * AMA ESKI SATIRLARDAKI DEGERLER YUKLENEMIYOR ve bu KULLANICI TARAFINDAN
+ * BULUNDU: uye listesinde kirik bir gorsel kutusu goruluyordu.
+ *
+ * Iki sebep birden var:
+ *   1. Adresler Clerk'in CDN'ini gosteriyor; o ornek sokuldu (Faz 25.7).
+ *   2. Sokulmasaydi bile CSP gecirmezdi: img-src 'self' data: blob:
+ *      (next.config.ts). Yani UZAK ADRESLI HICBIR GORSEL yuklenemez.
+ *
+ * Bu yuzden adres CSP'den gecemeyecekse GORSEL HIC DENENMIYOR. Denemek
+ * kirik bir kutu gostermek demekti; denememek bas harfe dusmek. Kontrol
+ * sunucuda yapiliyor - onError ile istemcide yakalamak, once kirik gorseli
+ * gostermek ve ustune her sayfaya JavaScript eklemek olurdu.
+ *
+ * BIR FOTOGRAF OZELLIGI GELIRSE: gorseller kendi kokenimizden servis
+ * edilirse burasi kendiliginden calisir. Uzak bir depodan gelecekse CSP de
+ * ONUNLA BIRLIKTE degismeli - ADR-039 zaten bunu ongoruyor.
+ *
  * Renk isimden TURETILIYOR, veritabaninda saklanmiyor: ayni kisi her
  * ekranda ayni rengi aliyor ve yeni bir kolon gerekmiyor. Ton araligi
  * bilerek genis, doygunluk ve aciklik sabit - boylece dort daire yan yana
@@ -42,6 +59,22 @@ function initial(name: string): string {
   return [...name.trim()][0]?.toLocaleUpperCase("tr") ?? "?";
 }
 
+/**
+ * Bu adres CSP'den gecer mi? (img-src 'self' data: blob:)
+ *
+ * Ayni kokenden gelen goreli adresler ve gomulu veri gecer; "https://..."
+ * gibi mutlak bir adres gecmez. Kontrol dar tutuluyor: emin olamadigimiz
+ * her adres "gecmez" sayiliyor, cunku yanlis tarafta hata yapmanin bedeli
+ * kullanicinin gordugu kirik bir kutu.
+ */
+export function canRenderAvatar(url: string): boolean {
+  // "//example.com/a.png" DE "/" ile basliyor ama ayni koken DEGIL -
+  // protokol-goreli bir adres, tarayici onu dis bir sunucudan cekmeye
+  // calisir. Ilk yazimda gozden kacti; testi yakaladi.
+  if (url.startsWith("//")) return false;
+  return url.startsWith("/") || url.startsWith("data:") || url.startsWith("blob:");
+}
+
 export function PersonAvatar({
   displayName,
   avatarUrl,
@@ -57,7 +90,7 @@ export function PersonAvatar({
 }) {
   const base = `${SIZES[size]} shrink-0 rounded-full ${className}`;
 
-  if (hasImage && avatarUrl) {
+  if (hasImage && avatarUrl && canRenderAvatar(avatarUrl)) {
     return (
       // next/image DEGIL duz img: next/image her dis kaynak icin
       // next.config'de bir remotePatterns tanimi ister; bu goruntuler ise
