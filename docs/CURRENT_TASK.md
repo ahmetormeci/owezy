@@ -23,7 +23,7 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-27 (3)
+Updated: 2026-08-28
 
 Current task:
   APP STORE'A ILK GONDERIM, ADI APPLE'DA BEKLIYOR.
@@ -55,12 +55,11 @@ GONDERIM DURUMU - NEREDEYSE HAZIR:
     - App Review Information: appreview@owezy.net, 2FA KAPALI (kapatilmali
       idi - inceleyicide authenticator yok)
     - Kullanici kendi hesabinda e-postayi dogruladi
+    - appreview@owezy.net'te de E-POSTA DOGRULAMA YAPILDI (28 Agustos).
+      Once Resend'in susturma listesinden cikarilmasi gerekti - asagida.
 
   ACIK:
     - Uygulama adi (yukarida)
-    - appreview@owezy.net'te E-POSTA DOGRULAMA henuz yapilmadi. Yapilana
-      kadar o hesapta "Kod gonder" yolu kullanilmamali (ADR-041). Parolayla
-      giris guvenli.
     - Build 3, "1.0 Prepare for Submission" sayfasindaki Build alanindan
       SECILMELI (Apple'in islemesi bittikten sonra gorunur).
 
@@ -75,7 +74,8 @@ SENDE KALAN DIGER ISLER (aceleye gerek yok):
 BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
   DNS      v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r   (dig ile)
   SENTRY   "Prevent Storing of IP Addresses" acik
-  POSTA    destek@owezy.net acik, kullanicinin kutusuna yonleniyor
+  POSTA    destek@owezy.net VE appreview@owezy.net acik, kullanicinin
+           kutusuna yonleniyor (Cloudflare Email Routing)
   TEMIZLIK Vercel, .env.local, mobile/.env.local'de CLERK adi gecen hicbir
            sey kalmadi (degisken ADLARI okunarak dogrulandi)
   IKON     assets/icon.png degisti: kilavuz cizgileri vardi ve uygulamanin
@@ -84,6 +84,31 @@ BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
   EAS      eas.json yazildi, imzalama Expo'da, hat calisiyor.
 
 AKILDA TUTULACAKLAR:
+
+  BIR ADRES BIR KEZ SERT SEKERSE RESEND ONU KALICI OLARAK SUSTURUR - ve
+  ARAYUZ YINE "GONDERILDI" DER. Ikisi bir araya gelince teshis edilmesi cok
+  zor bir sessizlik cikiyor; 28 Agustos'ta bir tur kaybettirdi.
+
+    Olan sira: appreview@owezy.net hesabi acildi -> kayit kodu gitti ->
+    o anda Cloudflare'de O ADRES ICIN KURAL YOKTU -> kalici ret (hard
+    bounce) -> Resend adresi susturma listesine aldi. Kural sonradan
+    eklendi AMA SUSTURMA KALDI, yani posta Cloudflare'e hic ulasmiyordu.
+
+    Belirtisi yok: sendVerificationOTP'nin hatasi bilerek kullaniciya
+    YANSITILMIYOR (zamanlama sizintisi, better-auth.ts'te yazili) ve
+    yalnizca sunucu loguna dusuyor.
+
+    TESHIS SIRASI - kod ve DNS'i kurcalamadan once:
+      1. https://resend.com/emails - o adrese giden satirin DURUMU ne?
+         "Suppressed" ise gonderim hic denenmemistir.
+      2. https://resend.com/emails/suppressions - satirin ... menusunden
+         "Remove email address". ONCE yonlendirme kuralinin var oldugundan
+         emin ol, yoksa aninda yeniden susturulur.
+      3. dash.cloudflare.com -> owezy.net -> Email -> Email Routing ->
+         Routing rules: adres ekli mi VE anahtari acik mi?
+
+    Bu makineden 25. porta cikilamiyor, yani SMTP ile alici sinamasi
+    YAPILAMAZ. dig calisiyor; alici testi calismiyor.
 
   DOGRULANMAMIS HESAP + E-POSTA KODU = PAROLA SILINIYOR (ADR-041).
     Better Auth'un revokeUnprovenAccountAccess'i, emailVerified=false bir
