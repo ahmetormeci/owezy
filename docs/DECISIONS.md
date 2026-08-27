@@ -523,6 +523,53 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-042 — Mobil testleri `mobile/` içinde yaşar ve React Native'e dokunmayan katmanı kapsar
+**Tarih:** 2026-08-27 · **Durum:** Kabul edildi
+
+**Karar:** Mobil uygulamanın birim testleri `mobile/` altında, **kendi
+vitest kurulumuyla** koşar (`mobile/vitest.config.mts`, `cd mobile && npm
+test`). Kapsam bilinçli olarak dardır: yalnızca `react-native` import
+**etmeyen** modüller — `lib/api.ts`, `lib/auth.tsx`, `lib/session-store.ts`,
+`lib/two-factor-cookie.ts`. Ekranlar ve `components/*` bu kurulumun dışındadır.
+
+**Neden ayrı kurulum, kökün vitest'i değil — iki ölçülmüş sebep:**
+
+1. **Ağaçta iki ayrı React kopyası var** (kökte 19.2.4, mobilde 19.2.3).
+   `mobile/lib/i18n.tsx` bunun sonucunu zaten kaydediyor: web'in bir React
+   bileşenini mobilden import etmek `Cannot read property 'useContext' of
+   null` ile düşüyor, çünkü kanca çağrıları boş bir dispatcher'a gidiyor.
+   Kökten koşan bir test `SessionProvider`'ı **kökün** React'iyle render
+   ederdi — kaçınılan şeyin aynısı. Mobilden koşunca `react`,
+   `mobile/node_modules`'tan çözülüyor; uygulamadaki gibi.
+
+2. **`mobile/tsconfig.json` `**/*.ts`'i kapsıyor** ve CI `cd mobile && npx
+   tsc --noEmit` koşuyor. Test dosyaları orada durup `vitest` mobilde kurulu
+   olmasaydı, tipleri hiçbir yerde kontrol edilmezdi.
+
+**Neden kapsam dar:** `lib/theme.ts`, `components/*` ve `app/*` gerçekten
+React Native import ediyor; onları render etmek `@testing-library/react-native`
++ jest-expo demek — ikinci bir koşucu, ayrı bir babel yapılandırması. Buna
+karşılık **en riskli mantık zaten RN'e dokunmayan katmanda**: iki adımlı
+doğrulamanın bütün durum makinesi `lib/auth.tsx`'te ve o dosya `react`
+dışında native hiçbir şey import etmiyor (ölçüldü). Yani ağır makine
+kurmadan asıl riskin üstü örtülüyor.
+
+**Alternatifler:** (a) Kökün vitest'ine `mobile/**` eklemek — 1. maddedeki
+React tuzağına giriyordu. (b) Doğrudan jest-expo ile başlamak — ekranları da
+kapsardı ama kurulum maliyeti bu turda kazandırdığından fazlaydı.
+(c) Maestro/Detox ile cihaz üstü E2E — en pahalısı; macOS koşucusu gerektiriyor.
+
+**Sonuç:** 53 test, ~0.5 saniye. Sekiz mutasyonla doğrulandı: kapattıkları
+hataların sekizini de düşerek yakalıyorlar. CI'da `npm test` adımı olarak
+koşuyor. Gönderilen ikiliğe dokunulmuyor — `expo export` çıktısı değişmiyor.
+
+**Açıkta kalan:** mobil kodu bugün **hiçbir lint görmüyor**; kökün eslint
+yapılandırması `mobile/**`'ı yok sayıyor ve gerekçesi olan
+`mobile/eslint.config.js` hiç var olmadı. Bu kararın kapsamı değil, ayrı bir
+aday (PROGRESS.md).
+
+---
+
 ## ADR-041 — Kayıtta e-posta doğrulanır, ama giriş doğrulamaya bağlanmaz
 **Tarih:** 2026-08-27 · **Durum:** Kabul edildi
 

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { authErrorCode } from "@/lib/auth-errors";
 import { apiBaseUrl } from "./api";
 import { clearSessionToken, readSessionToken, writeSessionToken } from "./session-store";
+import { readChallengeCookie } from "./two-factor-cookie";
 
 /**
  * Mobilin Better Auth ile konustugu TEK yer.
@@ -42,31 +43,6 @@ export type AuthResult = { ok: true } | { ok: false; code: string };
 export type PasswordSignInResult =
   | { ok: true; twoFactor: boolean }
   | { ok: false; code: string };
-
-/**
- * MEYDAN OKUMA CEREZININ ADI. Sunucudan gercek bir yanitla olculdu; yanit UC
- * Set-Cookie satiri tasiyor (ikisi oturum cerezlerini SILEN bos satirlar,
- * biri bu). Yani "gelen Set-Cookie'yi oldugu gibi geri gonder" yanlis olurdu.
- */
-const TWO_FACTOR_COOKIE = "better-auth.two_factor";
-
-/**
- * Set-Cookie basligindan yalnizca meydan okuma cerezini cikarir.
- *
- * React Native, birden fazla Set-Cookie satirini TEK bir baslikta ", " ile
- * birlestirerek veriyor. O yuzden ada gore ariyoruz ve degeri ilk ";" ye
- * kadar aliyoruz - degerin kendisi imzali, icinde nokta ve yuzde isareti
- * olabiliyor, ama ";" olamiyor.
- */
-function readChallengeCookie(setCookie: string | null): string | null {
-  if (!setCookie) return null;
-  const start = setCookie.indexOf(`${TWO_FACTOR_COOKIE}=`);
-  if (start === -1) return null;
-  const end = setCookie.indexOf(";", start);
-  const pair = end === -1 ? setCookie.slice(start) : setCookie.slice(start, end);
-  // Max-Age=0 ile gelen bir SILME satirini meydan okuma sanmayalim.
-  return pair === `${TWO_FACTOR_COOKIE}=` ? null : pair;
-}
 
 type SessionStatus = "loading" | "signed-in" | "signed-out";
 
@@ -329,8 +305,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       // (ADR-040). Ozellik bir cereze daha dayaniyor ve mobilde tasinmasi
       // ikinci bir kalici sir demek olurdu.
       const result = await post(path, { code }, null, cookie);
+
+      /**
+       * YANLIS KODDA MEYDAN OKUMA KORUNUYOR - bilincli.
+       *
+       * 6 haneli kodu yanlis yazan kullanici parolasini bastan girmek zorunda
+       * kalmamali; en sik yasanacak sey bu ve cerezi orada yakmak akisi
+       * gereksiz yere cezalandirirdi. Kaba kuvveti durduran sey cerezin
+       * tukenmesi degil, SUNUCUNUN HIZ SINIRI: /two-factor/* uclari 10
+       * saniyede 3 istekle sinirli (olculdu, better-auth two-factor eklentisi).
+       * Cerezin omru 600 saniye, yani en fazla ~180 deneme - 6 haneli kodun
+       * uzayi 10^6.
+       *
+       * (Bu satirlarin yerinde once "basarili ya da degil, bu cerez bitti"
+       * yazan bir yorum vardi; asagidaki erken donus yuzunden kodun yaptigi
+       * sey o degildi. Dogru olan koddu, yanlis olan cumleydi.)
+       */
       if (!result.ok) return result;
-      // Meydan okuma tek kullanimlik; basarili ya da degil, bu cerez bitti.
+
+      // Basarili dogrulamadan sonra cerez TUKENIYOR: sunucu meydan okumayi
+      // kapatti, elimizdeki deger artik bir ise yaramaz.
       challengeRef.current = null;
       return accept(result.token);
     },

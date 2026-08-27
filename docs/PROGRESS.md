@@ -1115,6 +1115,57 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 29 — Mobilde ilk otomatik testler · **BİTTİ**
+
+App Store adı Apple'da beklerken seçilen iş. Seçilme sebebi tek cümle:
+**gönderilen ikiliğe dokunmuyor** — `expo export` çıktısı değişmiyor, yeni
+derleme gerekmiyor, App Privacy anketi aynı kalıyor. Fotoğraf adayı bunların
+üçünü de geri sardırırdı.
+
+**Başlangıç durumu ölçüldü:** mobilde **3745 satır kod, sıfır test**, test
+koşucusu bile kurulu değil. CI mobilde üç şeye bakıyordu — tip kontrolü,
+`expo-doctor`, `expo export` — üçü de kodun **derlendiğine** bakıyor,
+hiçbiri ne yaptığına bakmıyor.
+
+**Kapsamı ikinci bir ölçüm belirledi.** `mobile/lib` ve `mobile/components`
+taranınca `react-native` importları şurada çıktı: `lib/theme.ts`
+(`useColorScheme`), `components/*`, `app/*`. Çıkmadığı yerler: `lib/api.ts`,
+`lib/auth.tsx`, `lib/i18n.tsx`, `lib/use-api.ts`. Yani **en riskli mantık —
+iki adımlı doğrulamanın bütün durum makinesi — native hiçbir şeye
+dokunmuyor** ve jsdom ile render edilebiliyor. Karar ve gerekçeleri ADR-042.
+
+| Dosya | Ne sabitleniyor | Test |
+|---|---|---|
+| `lib/api.test.ts` | HTTP → sözleşme eşlemesi; `credentials: "omit"`; `Content-Type` yalnızca gövdeyle | 13 |
+| `lib/two-factor-cookie.test.ts` | RN'in virgülle birleştirdiği üçlü `Set-Cookie`'den yalnızca meydan okumanın çıkarılması | 7 |
+| `lib/session-store.test.ts` | Keychain patlarsa **fırlatmama** — girişi/çıkışı yarıda kesmemek | 9 |
+| `lib/auth.test.tsx` | Giriş durum makinesinin tamamı | 24 |
+
+**Geçen test hiçbir şey kanıtlamaz; düşen test kanıtlar.** Sekiz mutasyon
+uygulandı, sekizi de yakalandı — en önemlisi 27.4'te bulunan hata (2FA dalı
+silindiğinde 6 test düşüyor). Diğerleri: `credentials` `include`'a
+çevrilince, silme satırı meydan okuma sanılınca, Keychain hatası fırlatılınca,
+çıkışta önce sunucu çağrılınca, yanlış kodda meydan okuma yakılınca, ikinci
+faktörde `Origin` düşürülünce, belirteçsiz 200 girişli sayılınca.
+
+**Yanlış bir yorum bulundu ve düzeltildi.** `verifySecondFactor` "başarılı ya
+da değil, bu çerez bitti" diyordu ama üstündeki erken `return` yüzünden
+**başarısızlıkta çerezi silmiyordu**. Doğru olan koddu: 6 haneli kodu yanlış
+yazan kullanıcı parolasını baştan girmemeli. Kaba kuvveti durduran şey de
+çerezin tükenmesi değil — `/two-factor/*` uçları **10 saniyede 3 istekle**
+sınırlı (`better-auth` two-factor eklentisinden okundu).
+
+**Yan bulgu:** kökün eslint yapılandırması `mobile/**`'ı yok sayarken gerekçe
+olarak `mobile/eslint.config.js`'i gösteriyordu — o dosya **hiç var olmadı**.
+Yorum düzeltildi, boşluk aday listesine yazıldı; kapsam genişletilmedi.
+
+**Doğrulama:** 53 mobil test (~0,5 sn), mobil `tsc` temiz, `expo-doctor`
+20/21 (düşen tek kontrol CocoaPods — makinede kurulu değil, dört yeni
+devDep'le ilgisi yok), kök `tsc` + lint temiz, 538 kök birim testi.
+E2E'ye dokunan bir şey yok.
+
+---
+
 ## Faz 28 — E-posta doğrulama; sessiz bir parola kaybı · **BİTTİ**
 
 Planlanmış bir faz değildi. App Store ekran görüntüsü için demo veri
@@ -1485,7 +1536,8 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Mobilde otomatik test** | CI artık derleniyor mu diye bakıyor ama **davranışa** bakan hiçbir şey yok; mobilin doğrulaması hâlâ simülatörde elle |
+| **Mobil ekran testleri** | Birim katmanı 27 Ağustos'ta kapandı (ADR-042) ama `components/*` ve `app/*` hâlâ yalnızca simülatörde elle doğrulanıyor. `@testing-library/react-native` + jest-expo gerektiriyor — ikinci bir koşucu |
+| **Mobil kodu lint görmüyor** | Kökün eslint'i `mobile/**`'ı yok sayıyor ve gerekçe olarak gösterdiği `mobile/eslint.config.js` **hiç var olmadı** (27 Ağustos'ta ölçüldü). Yani 3745 satır hiçbir kural görmüyor. `eslint-config-expo` var, kurulumu küçük |
 | **Silineni geri alma arayüzü** | `restore` ucu var, hiçbir istemci kullanmıyor |
 | **Mobilde bildirimler / dil seçimi / grup düzenleme** | Web'de var, mobilde yok |
 | **Fişin canlıda gözle görülmesi** | Uzun açıklamalarda noktalı ayraç ve çok aylı katlama yalnızca yapay veriyle sınandı |

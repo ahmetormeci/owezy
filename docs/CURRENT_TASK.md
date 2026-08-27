@@ -23,10 +23,15 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-27 (2)
+Updated: 2026-08-27 (3)
 
 Current task:
-  APP STORE'A ILK GONDERIM. Kod tarafinda tikanan bir sey YOK.
+  APP STORE'A ILK GONDERIM, ADI APPLE'DA BEKLIYOR.
+  Kod tarafinda tikanan bir sey YOK.
+
+  Beklerken Faz 29 yapildi: mobilde ilk otomatik testler (53 test, ADR-042).
+  GONDERILEN IKILIGE DOKUNMADI - expo export ciktisi ayni, yeni derleme
+  gerekmiyor. Ayrintisi PROGRESS.md.
 
 TIKANAN TEK SEY - UYGULAMA ADI:
   "Owezy" adi App Store Connect'te alinamiyor. Kullanici Apple destege yazdi,
@@ -111,6 +116,20 @@ AKILDA TUTULACAKLAR:
 
   DESTEKLENEN PARA BIRIMI YALNIZCA TRY VE USD (money.ts). EUR ile grup
     acilmiyor.
+
+TESTLER - NE NEREDE:
+  KOK      npm test                  538 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      53 birim (vitest, RN'e dokunmayan katman)
+  E2E      npm run test:e2e           56 test, ~10 dk
+
+  MOBIL TESTLER KOKTEN KOSMUYOR ve kosmamali: agacta IKI AYRI REACT kopyasi
+  var (kokte 19.2.4, mobilde 19.2.3). Mobilin provider'ini kokun React'iyle
+  render etmek "useContext of null" demek - lib/i18n.tsx bunu zaten anlatiyor.
+  Gerekce ADR-042.
+
+  MOBIL KODU HICBIR LINT GORMUYOR. Kokun eslint'i mobile/**'i yok sayiyor;
+  gerekce olarak gosterilen mobile/eslint.config.js HIC VAR OLMADI (olculdu).
+  Aday olarak PROGRESS.md'de.
 
 E2E - NASIL CALISIYOR:
   - Tam kosu ~10 dakika, 56 test. KOSU SURERKEN PROJE DOSYALARINA DOKUNMA.

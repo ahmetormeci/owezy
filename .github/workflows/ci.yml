@@ -119,6 +119,22 @@ jobs:
         run: npx tsc --noEmit
         working-directory: mobile
 
+      - name: Mobil birim testleri
+        # BU ADIM EKLENENE KADAR MOBILDE DAVRANISA BAKAN HICBIR SEY YOKTU.
+        # Ustteki uc adim (tip kontrolu, expo-doctor, paket derlemesi) kodun
+        # DERLENIP DERLENMEDIGINE bakiyor; hicbiri ne yaptigina bakmiyor.
+        #
+        # Kapsam react-native'e DOKUNMAYAN katman: lib/api.ts, lib/auth.tsx,
+        # lib/session-store.ts, lib/two-factor-cookie.ts. Ekranlar ve
+        # components/* icin ayri bir kosucu gerekiyor (@testing-library/
+        # react-native + jest-expo) - bilerek disarida, PROGRESS.md'de aday.
+        #
+        # Kendi vitest'i var, kokun kosucusu DEGIL: iki agacta iki ayri React
+        # kopyasi duruyor (19.2.4 / 19.2.3) ve mobilin provider'ini kokun
+        # React'iyle render etmek lib/i18n.tsx'in anlattigi hataya girer.
+        run: npm test
+        working-directory: mobile
+
       - name: Expo tanilamasi
         # Bagimliliklarin SDK ile uyumunu ve eksik native es bagimliliklari
         # kontrol ediyor. Ilk kosuldugunda gercek bir sey buldu: ClerkProvider

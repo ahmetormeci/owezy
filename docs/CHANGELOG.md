@@ -8,6 +8,36 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-27 (3) — Mobilde ilk otomatik testler
+
+Mobilde **3745 satır kod ve sıfır test** vardı; CI kodun derlendiğine
+bakıyordu, ne yaptığına bakan hiçbir şey yoktu. 53 test eklendi
+(`cd mobile && npm test`, ~0,5 sn) ve CI'a bir adım olarak girdi.
+
+Kapsam ölçümle belirlendi: yalnızca `react-native` import **etmeyen**
+katman — `lib/api.ts`, `lib/auth.tsx`, `lib/session-store.ts`,
+`lib/two-factor-cookie.ts`. En riskli mantık zaten orada: iki adımlı
+doğrulamanın bütün durum makinesi. Ekranlar ve `components/*` dışarıda
+(ADR-042).
+
+`readChallengeCookie`, `lib/auth.tsx`'ten kendi modülüne (`lib/two-factor-cookie.ts`)
+taşındı. Testler sekiz mutasyonla doğrulandı; sekizi de yakalandı.
+
+**Yanlış bir yorum düzeltildi:** `verifySecondFactor` "başarılı ya da değil,
+bu çerez bitti" diyordu ama erken `return` yüzünden başarısızlıkta çerezi
+silmiyordu. Doğru olan koddu — yanlış kod giren kullanıcı parolasını baştan
+girmemeli; kaba kuvveti sunucunun hız sınırı durduruyor (10 sn / 3 istek).
+
+**Yan bulgu:** kökün eslint yapılandırması `mobile/**`'ı yok sayarken
+gerekçe olarak `mobile/eslint.config.js`'i gösteriyordu — o dosya hiç var
+olmadı, yani mobil kodu hiçbir lint görmüyor. Yorum düzeltildi, boşluk
+PROGRESS.md'ye aday olarak yazıldı.
+
+Gönderilen ikiliğe dokunulmadı: `expo export` çıktısı aynı, yeni derleme
+gerekmiyor.
+
+---
+
 ## 2026-08-27 (2) — Kullanıcının bulduğu iki şey
 
 İkisini de **kullanıcı buldu**, ikisi de aynı aileden: bir zamanlar doğru
