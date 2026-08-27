@@ -9,8 +9,7 @@ BAYAT MI?
 
   git log --oneline $(git log -1 --format=%H -- docs/CURRENT_TASK.md)..HEAD -- src prisma mobile
 
-Cikti bossa dosya guncel. Commit listeliyorsa once repository'nin gercek
-durumunu dogrula, sonra bu dosyayi duzelt.
+Cikti bossa dosya guncel.
 
 AMA BU KONTROL YALNIZCA KODU KAPSIYOR. "SENDE KALANLAR" maddeleri DIS
 DUNYAYI anlatiyor: DNS, Vercel, Sentry, App Store Connect, Expo, saglayici
@@ -24,72 +23,49 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-27
+Updated: 2026-08-27 (2)
 
 Current task:
-  APP STORE'A ILK GONDERIM. Kod tarafinda tikanan bir sey yok; kalan is
-  agirlikla App Store Connect'te ve KULLANICIDA.
+  APP STORE'A ILK GONDERIM. Kod tarafinda tikanan bir sey YOK.
 
-BEKLEYEN TEK ENGEL - UYGULAMA ADI:
-  "Owezy" adi App Store Connect'te alinamiyor. Olculdu: App Store'da o adda
-  YAYINLANMIS bir uygulama yok (itunes arama, TR ve dunya: 0 sonuc). Yani
-  adi baska bir gelistirici tutmuyor - kullanicinin KENDI sildigi kaydin
-  rezervasyonu tutuyor.
+TIKANAN TEK SEY - UYGULAMA ADI:
+  "Owezy" adi App Store Connect'te alinamiyor. Kullanici Apple destege yazdi,
+  cevap bekleniyor.
 
-  NEDEN IKI KAYIT VARDI: eski kayit YANLIS bundle ID ile acilmis
-  (net.wezy.app - "o" eksik). eas submit o kimlige ait bir kayit bulamayinca
-  yenisini yaratti ve ad dolu oldugu icin sonuna ek koydu.
-  DOGRU KAYIT: Apple ID 6805650395, bundle net.owezy.app.
+  OLCULDU: App Store'da o adda YAYINLANMIS uygulama yok (itunes arama, TR ve
+  dunya: 0 sonuc). Yani adi baska bir gelistirici tutmuyor - kullanicinin
+  KENDI sildigi kaydin rezervasyonu tutuyor. Yeniden adlandirma ve silme
+  denendi, ikisi de birakmadi.
 
-  YAPILACAK (kullanicida): developer.apple.com/contact/app-store uzerinden
-  "App Name Availability" konusuyla adin serbest birakilmasi isteniyor.
-  Yeniden adlandirma ve silme denendi, ikisi de birakmadi.
+  NEDEN IKI KAYIT VARDI: eski kayit YANLIS bundle ID ile acilmisti
+  (net.wezy.app - "o" eksik). eas submit o kimlige ait kayit bulamayinca
+  yenisini yaratti. DOGRU KAYIT: Apple ID 6805650395, bundle net.owezy.app.
 
-  ACELE DEGIL: ad, listenin EN SON ihtiyac duyulan parcasi. Telefonda gorunen
-  ad app.json'dan geliyor ve zaten "Owezy"; TestFlight magaza adina bakmiyor.
+GONDERIM DURUMU - NEREDEYSE HAZIR:
+  BITTI:
+    - Build 3 (yeni ikonla) App Store Connect'e yuklendi, eas submit basarili
+    - Ekran goruntuleri verildi: 7 kare, 1284x2778 (6.5"), TR + EN
+    - Magaza metinleri verildi (Description, Keywords, Promotional, Subtitle)
+    - App Privacy dolduruldu ve yayinlandi
+    - App Review Information: appreview@owezy.net, 2FA KAPALI (kapatilmali
+      idi - inceleyicide authenticator yok)
+    - Kullanici kendi hesabinda e-postayi dogruladi
 
-DERLEME VE GONDERIM - HAT CALISIYOR:
-  eas.json yazildi (production + preview profilleri).
-  EXPO_PUBLIC_API_BASE_URL uretim profilinde https://owezy.net'e SABITLENDI -
-  o satir olmadan TestFlight'taki uygulama localhost:3000'e baglanmaya
-  calisir ve belirtisi "sunucu kapali" gibi gorunur.
-  Ilk derleme gecti, eas submit binary'yi App Store Connect'e yukledi.
+  ACIK:
+    - Uygulama adi (yukarida)
+    - appreview@owezy.net'te E-POSTA DOGRULAMA henuz yapilmadi. Yapilana
+      kadar o hesapta "Kod gonder" yolu kullanilmamali (ADR-041). Parolayla
+      giris guvenli.
+    - Build 3, "1.0 Prepare for Submission" sayfasindaki Build alanindan
+      SECILMELI (Apple'in islemesi bittikten sonra gorunur).
 
-  DIKKAT: IKON O DERLEMEDEN SONRA DEGISTI. Gonderimden once BIR KEZ DAHA
-  derlenmeli:
+  IKON YA DA app.json DEGISIRSE yeniden derlenmeli:
       cd mobile && npx eas-cli build --platform ios --profile production
       cd mobile && npx eas-cli submit --platform ios --latest
 
-  Ilk derleme bir bagimlilik cakismasinda dusmustu ve sebebi kayda deger:
-  expo-router, react-native-reanimated'i JOKER (*) yaziyor; npm en yenisini
-  (4.6.0) sectii, o da worklets 0.12'yi getirdi ve expo-modules-core en fazla
-  0.10 ile derleniyor. Ikisi de artik DOGRUDAN bagimlilik ve SABIT
-  (reanimated 4.5.1, worklets 0.10.1) - sabitlenmeseydi ayni hata her
-  npm install'da geri gelirdi. Expo Go'da gorunmuyordu: o, native kodu hazir
-  tasiyor, derlemiyor.
-
-SENDE KALANLAR:
-
-  1. UYGULAMA ADI - yukarida.
-
-  2. E-POSTA DOGRULAMA - IKI HESAPTA YAPILMALI (yayindan sonra):
-     appreview@owezy.net VE kendi hesabin.
-       parolayla gir -> kullanici menusu -> Iki adimli dogrulama ->
-       kirmizi uyaridaki "Dogrulama kodu gonder" -> gelen kodu gir
-     YAPILANA KADAR O HESAPLARDA "Kod gonder" YOLUNU KULLANMA: dogrulanmamis
-     bir hesapta e-posta koduyla giris PAROLAYI SILIYOR (ADR-041). App Review
-     Information'daki parola boyle olurse inceleyici giremez.
-     NOT: 2FA acip kapatmak dogrulama SAYILMIYOR - emailVerified'a dokunmuyor.
-
-  3. APP STORE CONNECT - "1.0 Prepare for Submission" doldurulacak:
-     ekran goruntuleri, Description, Keywords, Promotional Text, Category
-     (Finance / Utilities), Age Rating (hepsi None -> 4+), Support URL.
-     App Privacy'de 7 veri turunun her biri "Set Up" ile yapilandirilip
-     Publish edilecek: Purpose hepsinde App Functionality, Linked ilk beste
-     Yes / Crash+Diagnostic No, Tracking hepsinde No.
-
-  4. CLERK'IN SON IZLERI (aceleye gerek yok): panelin webhook kaydi, Clerk
-     hesabi, better-auth dali (git push origin --delete better-auth).
+SENDE KALAN DIGER ISLER (aceleye gerek yok):
+  Clerk'in son izleri: panelin webhook kaydi, Clerk hesabi,
+  better-auth dali (git push origin --delete better-auth).
 
 BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
   DNS      v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r   (dig ile)
@@ -97,10 +73,10 @@ BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
   POSTA    destek@owezy.net acik, kullanicinin kutusuna yonleniyor
   TEMIZLIK Vercel, .env.local, mobile/.env.local'de CLERK adi gecen hicbir
            sey kalmadi (degisken ADLARI okunarak dogrulandi)
-  IKON     assets/icon.png degistirildi: kilavuz cizgileri vardi ve uygulama
-           kimligiyle alakasizdi. Yenisi uygulamanin kendi BrandMark
-           SVG'sinden, marka rengi --brand token'indan (#065ac0),
-           1024x1024, alfa kanalsiz.
+  IKON     assets/icon.png degisti: kilavuz cizgileri vardi ve uygulamanin
+           kendi kimligiyle alakasizdi. Yenisi kendi BrandMark SVG'sinden,
+           marka rengi --brand token'indan (#065ac0), 1024x1024, alfasiz.
+  EAS      eas.json yazildi, imzalama Expo'da, hat calisiyor.
 
 AKILDA TUTULACAKLAR:
 
@@ -108,27 +84,41 @@ AKILDA TUTULACAKLAR:
     Better Auth'un revokeUnprovenAccountAccess'i, emailVerified=false bir
     satira e-posta koduyla ulasildiginda butun hesap baglarini siliyor.
     Gerekcesi DOGRU; eksik olan bizim e-postayi hic dogrulamamamizdi.
-    Artik kayitta kod gidiyor ve arayuz iki yerde uyariyor. Giris
-    dogrulamaya BAGLANMADI - o, ADR-035'i geri acardi.
+    Artik kayitta kod gidiyor ve arayuz iki yerde uyariyor.
+
+  BIR OLCUM, OLCULDUGU ANIN DOGRUSUDUR. 27 Agustos'ta iki kere isirdi:
+    ADR-039 "hasImage=true olan tek kullanici bile yok" diye yaziyordu ve
+    kullanicinin kendi hesabi oyleydi -> kirik avatar. CURRENT_TASK da DNS
+    isini "yapilacak" diye tasiyordu, oysa bitmisti. Gerekce "su an sifir
+    satir var" diyorsa, o cumle zamanla yalan olabilir.
+
+  UZAK ADRESLI GORSEL YUKLENMIYOR: CSP img-src 'self' data: blob:.
+    canRenderAvatar bunu kodda sabitliyor ve testi var. Bir fotograf
+    ozelligi gelirse IKISI BIRLIKTE degismeli.
 
   NODE 24'UN fetch'i Sec-Fetch-* BASLIKLARI GONDERIYOR, bu da Better Auth'un
     origin dogrulamasini ZORLUYOR. Betikle /api/auth'a istek atarken Origin
     basligi sart; yoksa MISSING_OR_NULL_ORIGIN.
 
-  EXPO GO ILE MAGAZA EKRAN GORUNTUSU ALINAMIYOR (dil): uygulama dili cihaz
-    dilinden okunuyor ama Expo Go'nun kendi yerellestirmesi araya giriyor ve
-    Intl "en" donduruyor. Turkce kare icin ya gercek bir derleme ya da
-    _layout.tsx'te gecici bir sabit gerekiyor.
+  EXPO GO ILE MAGAZA EKRAN GORUNTUSU: uygulama dili cihaz dilinden okunuyor
+    ama Expo Go'nun kendi yerellestirmesi araya giriyor ve Intl "en"
+    donduruyor. Turkce kare icin _layout.tsx'te GECICI bir sabit gerekiyor
+    (kullanildi ve geri alindi).
 
   SIMULATOR TUZAKLARI: simctl boot pencere ACMIYOR (open -a Simulator de
-    gerekli), ve uzun metin tek seferde yazdirilinca KARAKTER DUSUYOR.
-    Ayrintisi AGENTS.md'de.
+    gerekli), ve metin tek seferde yazdirilinca KARAKTER DUSUYOR - 5 karakterlik
+    parcalar bile guvenli degil, her adimda ekran goruntusuyle dogrula.
+
+  DESTEKLENEN PARA BIRIMI YALNIZCA TRY VE USD (money.ts). EUR ile grup
+    acilmiyor.
 
 E2E - NASIL CALISIYOR:
   - Tam kosu ~10 dakika, 56 test. KOSU SURERKEN PROJE DOSYALARINA DOKUNMA.
   - 3000'deki dev sunucusu KAPALI OLMALI.
   - Sema degistiyse once: npm run db:migrate:e2e
   - Tek seferlik kodlar veritabanindan okunuyor (readOtpFromDatabase).
+  - RESEND_API_KEY bos geciliyor: testler kodu veritabanindan okuyor, ucuncu
+    tarafa istek atmanin kapsama katkisi yok.
 
 MOBILDE HENUZ YOK (bilincli kapsam disi):
   2FA acma/kapatma (web'de kaliyor, ADR-040), "bu cihazi hatirla",
@@ -137,3 +127,6 @@ MOBILDE HENUZ YOK (bilincli kapsam disi):
   daveti kabul etme, odeme duzenleme, uye cikarma, grup adi duzenleme.
 
 DIGER ADAYLAR: PROGRESS.md'deki liste - PLAN DEGIL, secenek listesi.
+  Kullanici 27 Agustos'ta bir tanesini birlestirdi: profil fotografi ve fis
+  fotografi ARTIK TEK ADAY (ayni depo, ayni yukleme arayuzu, ayni beyan
+  guncellemeleri).

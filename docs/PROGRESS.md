@@ -14,7 +14,7 @@ sessiz bir parola kaybını kapattı. Uygulama canlıda ve `main`'e giden her de
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 534 | ✅ tümü geçiyor |
+| Birim (Vitest) | 538 | ✅ tümü geçiyor |
 | E2E (Playwright) | 56 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz |
 | `npm run lint` | — | ✅ temiz |
@@ -1490,32 +1490,49 @@ karar vermemiştir.
 | **Mobilde bildirimler / dil seçimi / grup düzenleme** | Web'de var, mobilde yok |
 | **Fişin canlıda gözle görülmesi** | Uzun açıklamalarda noktalı ayraç ve çok aylı katlama yalnızca yapay veriyle sınandı |
 | **`disableLogger` ölçümü** | `next.config.ts`'teki satır Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
-| **Harcamaya fiş / fatura görseli** | Aşağıda ayrıca; kayda hiç geçmemişti |
+| **Fiş / fatura VE profil fotoğrafı** | Aşağıda ayrıca. İkisi tek aday: aynı depo, aynı yükleme arayüzü, aynı beyan güncellemeleri |
 
-### Aday ayrıntısı — harcamaya fiş / fatura görseli
+### Aday ayrıntısı — fiş / fatura VE profil fotoğrafı
 
-Kullanıcı bunu bir kere sormuş ("veritabanını çok şişirir mi?") ama **kayda
-hiç geçmemişti**: ne ADR, ne aday listesi, ne teknik borç, ne git geçmişi.
-26 Ağustos'ta sorulunca ortaya çıktı ve unutulmasın diye buraya yazıldı.
-**Karar değil, seçenek.**
+**İkisi tek aday**, çünkü ikisi de aynı üç şeyi gerektiriyor: bir nesne
+deposu, bir yükleme arayüzü, ve gizlilik/mağaza beyanlarının güncellenmesi.
+Ayrı ayrı yapılırsa aynı bedel iki kez ödenir.
 
-Şişirme sorusunun cevabı: **görsel veritabanına konmaz.** Nesne depolamada
-durur, veritabanında yalnızca anahtar + metadata olur — harcama başına birkaç
-yüz bayt, yani ölçülemeyecek kadar az. Telefon fotoğrafı ~1600px'e küçültülüp
-WebP'ye çevrilince 200–500 KB; ayda 25 fişli harcama ≈ 10 MB/ay/grup. Bunu
-Postgres'e koymak Neon'da depolama ücreti demek ve o baytlar **her yedekte ve
-her branch'te** çoğalır. Yığınımızdaki doğal yer **Cloudflare R2** (alan adı
-zaten Cloudflare'de, ADR-026; çıkış trafiği ücretsiz).
+Kullanıcı fiş fotoğrafını bir kere sormuş ("veritabanını çok şişirir mi?")
+ve **kayda hiç geçmemişti**; 26 Ağustos'ta sorulunca ortaya çıktı. Profil
+fotoğrafı ise 27 Ağustos'ta kendini gösterdi: kullanıcı kendi hesabında
+kırık bir görsel kutusu gördü. Sebep bir özellik eksikliği değil, Clerk'ten
+kalan ölü bir adresti — ama isteğin kendisi oradan doğdu.
 
-**Asıl maliyet depolama değil, ve karar verilirken tartılacak olan bunlar:**
+**Şişirme sorusunun cevabı: görsel veritabanına konmaz.** Nesne depolamada
+durur, veritabanında yalnızca anahtar + metadata olur — kayıt başına birkaç
+yüz bayt. Telefon fotoğrafı ~1600px'e küçültülüp WebP'ye çevrilince
+200–500 KB; ayda 25 fişli harcama ≈ 10 MB/ay/grup. Bunu Postgres'e koymak
+Neon'da depolama ücreti demek ve o baytlar **her yedekte ve her branch'te**
+çoğalır. Yığınımızdaki doğal yer **Cloudflare R2** (alan adı zaten
+Cloudflare'de, ADR-026; çıkış trafiği ücretsiz).
+
+**Asıl maliyet depolama değil:**
+- **CSP değişmek zorunda.** Bugün `img-src 'self' data: blob:` ve bu, uzak
+  adresli her görseli engelliyor — 27 Ağustos'ta ölçüldü, kırık avatarın
+  sebeplerinden biri buydu. Görseller kendi kökenimizden servis edilirse
+  değişiklik gerekmez; R2'den doğrudan gelecekse gerekir.
 - **Gizlilik politikası yine değişir.** Bugün açıkça "dosya yükleme diye bir
-  şey yok" diyor. Fiş fotoğrafı yeni bir veri kategorisi ve yeni bir işleyici.
+  şey yok" diyor. Fotoğraf yeni bir veri kategorisi ve yeni bir işleyici.
 - **App Store**: kamera/galeri izin metinleri `Info.plist`'e girer, App
-  Privacy anketi değişir, izin isteyen uygulama incelemede daha çok soru alır.
-- **Silme anlamı belirsiz.** Değiştirilemez kural finansal kayıtların fiziksel
-  olarak silinmemesi; harcama soft-delete olunca fotoğraf ne olacak? Kalırsa
-  "sildim" diyen kullanıcının fişi duruyor demektir.
+  Privacy anketine "Photos or Videos" eklenir, izin isteyen uygulama
+  incelemede daha çok soru alır.
+- **Silme anlamı belirsiz.** Değiştirilemez kural finansal kayıtların
+  fiziksel olarak silinmemesi; harcama soft-delete olunca fotoğraf ne
+  olacak? Kalırsa "sildim" diyen kullanıcının fişi duruyor demektir.
+  Profil fotoğrafında aynı soru hesap silmede çıkıyor (ADR-031).
 - **Mobilde yeni bağımlılık** (`expo-image-picker`) ve yeni bir native izin.
+
+**Kod tarafında hazır olan:** `User.avatarUrl` ve `User.hasImage` sütunları
+duruyor (Clerk devrinden), `PersonAvatar` da `hasImage` ayrımını taşıyor.
+Yani profil fotoğrafı geldiğinde yazacak yer hazır — ama `canRenderAvatar`
+bugün yalnızca aynı kökenden gelen adresleri geçiriyor, uzak depo seçilirse
+o da CSP ile birlikte değişmeli.
 
 ## Bilinen teknik borç
 

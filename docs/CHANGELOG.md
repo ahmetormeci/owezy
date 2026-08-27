@@ -8,6 +8,46 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-27 (2) — Kullanıcının bulduğu iki şey
+
+İkisini de **kullanıcı buldu**, ikisi de aynı aileden: bir zamanlar doğru
+olan bir ölçüm eskimişti.
+
+### Kayıt formu örnek isim olarak uygulamanın sahibinin adını gösteriyordu
+`ui.display_name_placeholder` sözlükte harfi harfine `"Ahmet Örmeci"`
+yazıyordu; yani kaydolan herkes örnek olarak onu görüyordu. İngilizcesi
+baştan beri `"Alex Doe"` — kurgusal olduğu belli. Türkçesi artık
+`"Ayşe Yılmaz"`.
+
+### Avatar hiçbir zaman yüklenemezdi, kırık bir kutu gösteriyordu
+Kullanıcı kendi hesabında ve demo hesabında kırık görsel kutusu gördü. İki
+sebep üst üste geliyordu:
+
+1. `avatarUrl` ve `hasImage`'i **yazan hiçbir kod yok** — o değerler Clerk
+   devrinden kalma ve Clerk örneği 25.7'de söküldü.
+2. Sökülmeseydi bile CSP geçirmezdi: `img-src 'self' data: blob:`, yani
+   **uzak adresli hiçbir görsel yüklenemiyor.**
+
+`PersonAvatar` ise `hasImage && avatarUrl` görünce `<img>` basıyor, geri
+düşüşü yoktu. Artık adres CSP'den geçemeyecekse **görsel hiç denenmiyor**,
+doğrudan baş harfe düşülüyor. Kontrol sunucuda: `onError` ile istemcide
+yakalamak, önce kırık görseli göstermek ve üstüne avatar gösteren her
+sayfaya JavaScript eklemek olurdu.
+
+**ADR-039'un bir ölçümü çürüdü.** O karar `img-src`'i dar tutarken
+*"veritabanında hasImage=true olan tek bir kullanıcı bile yok"* diye
+ölçmüştü. Kullanıcının kendi hesabı öyle değilmiş. Karar değişmiyor — CSP
+hâlâ dar — ama gerekçedeki cümle düzeltildi.
+
+**Test kendi hatasını yakaladı:** ilk yazımda `//example.com/a.png` kabul
+ediliyordu, çünkü o da `/` ile başlıyor — oysa protokol-göreli bir adres ve
+tarayıcı onu dış sunucudan çeker. Dört birim testinden biri düştü ve kural
+düzeltildi.
+
+**Test:** 538 birim, 56 E2E.
+
+---
+
 ## 2026-08-27 — E-posta koduyla giren kullanıcı parolasını kaybediyordu
 
 App Store ekran görüntüsü için demo veri kurarken bir hesabın parolasının

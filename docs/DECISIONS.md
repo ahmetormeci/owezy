@@ -733,9 +733,18 @@ yazmamak (kapattığı gerçek şeyler var, bedava değil).
   şey, görmemiz gereken şeyin ta kendisi olurdu. İki bölge birden yazılı çünkü
   DSN Vercel'deki bir değişkende ve buradan görünmüyor.
 - `img-src` dar (`'self' data: blob:`) çünkü `avatarUrl`'i artık yazan kimse
-  yok ve veritabanında `hasImage=true` olan **tek bir kullanıcı bile yok**
-  (ölçüldü). Fiş fotoğrafı özelliği gelirse bu satır onunla birlikte değişir —
-  sessizce yüklenmeyen bir görsel olarak değil.
+  yok. Fiş ya da profil fotoğrafı özelliği gelirse bu satır onunla birlikte
+  değişir — sessizce yüklenmeyen bir görsel olarak değil.
+
+  **DÜZELTME (27 Ağustos):** burada bir zamanlar *"veritabanında
+  `hasImage=true` olan tek bir kullanıcı bile yok (ölçüldü)"* yazıyordu. O
+  ölçüm eskimişti: Clerk devrinden kalan satırlarda değer duruyor ve
+  kullanıcının kendi hesabı onlardan biri. Sonucu, üye listesinde **kırık bir
+  görsel kutusu** oldu — CSP uzak adresi engelliyor, `PersonAvatar`'ın da geri
+  düşüşü yoktu. Karar değişmedi (CSP hâlâ dar); değişen, o adresin artık hiç
+  denenmemesi (`canRenderAvatar`). Ders kayda değer: **bir ölçüm, ölçüldüğü
+  anın doğrusudur.** Bir gerekçe "şu an sıfır satır var" diyorsa, o cümle
+  zamanla yalan olabilir ve gerekçeyi taşıyan kod sessizce bozulur.
 
 **Doğrulama sırası kararın parçası:** önce `Report-Only` ile ana yüzeyler
 gezildi (sıfır ihlal), sonra zorlayıcıya çevrilip 43 E2E koşuldu — zorlayıcı
