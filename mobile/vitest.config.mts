@@ -32,8 +32,15 @@ export default defineConfig({
     // icin. Testlerin cogu DOM'a hic dokunmuyor ama ayri ortamlarla iki
     // proje tanimlamak, kazandirdigindan fazla yapilandirma isterdi.
     environment: "jsdom",
-    include: ["**/*.test.ts", "**/*.test.tsx"],
-    // node_modules disarida: kurulu paketlerin kendi testleri toplanmasin.
+    /**
+     * YALNIZCA lib/. components/ ve app/ jest'e ait (jest.config.js) cunku
+     * onlar gercekten react-native import ediyor ve jsdom onlari render
+     * edemiyor. Sinir DIZINE gore cizili, dosya adina gore degil.
+     *
+     * BU LISTE GENISLETILIRSE ikisi ayni dosyayi toplar, test iki kez kosar
+     * ve jest tarafi kesin duser.
+     */
+    include: ["lib/**/*.test.ts", "lib/**/*.test.tsx"],
     exclude: ["node_modules/**"],
     /**
      * SABIT VE SAHTE bir API adresi. lib/api.ts bunu MODUL YUKLENIRKEN

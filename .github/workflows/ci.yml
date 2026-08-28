@@ -136,19 +136,19 @@ jobs:
         run: npm run lint
         working-directory: mobile
 
-      - name: Mobil birim testleri
+      - name: Mobil testler
         # BU ADIM EKLENENE KADAR MOBILDE DAVRANISA BAKAN HICBIR SEY YOKTU.
-        # Ustteki uc adim (tip kontrolu, expo-doctor, paket derlemesi) kodun
-        # DERLENIP DERLENMEDIGINE bakiyor; hicbiri ne yaptigina bakmiyor.
+        # Ustteki adimlar (tip kontrolu, lint, expo-doctor, paket derlemesi)
+        # kodun DERLENIP DERLENMEDIGINE bakiyor; hicbiri ne yaptigina bakmiyor.
         #
-        # Kapsam react-native'e DOKUNMAYAN katman: lib/api.ts, lib/auth.tsx,
-        # lib/session-store.ts, lib/two-factor-cookie.ts. Ekranlar ve
-        # components/* icin ayri bir kosucu gerekiyor (@testing-library/
-        # react-native + jest-expo) - bilerek disarida, PROGRESS.md'de aday.
+        # "npm test" IKI KOSUCU birden calistiriyor ve sinir DIZINE gore:
+        #   vitest -> lib/**            (react-native'e dokunmayan katman)
+        #   jest   -> components/**, app/**  (dokunan katman, jest-expo preset)
+        # Ikisinin ayri olmasinin gerekcesi ADR-042 ve ADR-043'te.
         #
-        # Kendi vitest'i var, kokun kosucusu DEGIL: iki agacta iki ayri React
-        # kopyasi duruyor (19.2.4 / 19.2.3) ve mobilin provider'ini kokun
-        # React'iyle render etmek lib/i18n.tsx'in anlattigi hataya girer.
+        # Kokun kosucusu DEGIL: iki agacta iki ayri React kopyasi duruyor
+        # (19.2.4 / 19.2.3) ve mobilin provider'ini kokun React'iyle render
+        # etmek lib/i18n.tsx'in anlattigi hataya girer.
         run: npm test
         working-directory: mobile
 

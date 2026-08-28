@@ -523,6 +523,62 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-043 — Ekran testleri jest-expo ile, `lib/` testleri vitest'te kalır
+**Tarih:** 2026-08-28 · **Durum:** Kabul edildi
+
+**Karar:** Mobilde **iki test koşucusu** çalışır ve sınır **dizine göre**
+çizilir:
+
+| Dizin | Koşucu | Neden |
+|---|---|---|
+| `lib/**` | vitest (`vitest.config.mts`) | `react-native` import etmiyor, jsdom yetiyor |
+| `components/**`, `app/**` | jest (`jest.config.js`, `jest-expo` preset) | Gerçekten `react-native` import ediyor |
+
+`npm test` ikisini birden koşar (`vitest run && jest`).
+
+**Neden vitest'i genişletmedik:** ekranlar `<View>`, `<Pressable>`,
+`StyleSheet` kullanıyor ve bunları render etmek React Native'in kendi
+dönüşümünü gerektiriyor. Vitest'i RN'i anlayacak şekilde zorlamak mümkündü
+ama **desteklenmeyen bir yapılandırma** olurdu — ADR-038'de Better Auth'un
+tarayıcı istemcisini aynı gerekçeyle reddetmiştik. jest-expo, Expo'nun
+belgelediği yol.
+
+**Neden jest'e tamamen geçmedik:** `lib/**` testleri çalışıyor, hızlı (~0,5
+sn) ve React kopyası tuzağına karşı ADR-042'de gerekçelendirilmiş bir kurulumu
+var. Çalışan kod gereksiz yere silinmez.
+
+**Sınırın dizine göre olması bilinçli:** "bu dosya hangi koşucuya ait" sorusu
+dosyanın yerinden okunuyor, adından değil. İkisi aynı dosyayı toplarsa test
+iki kez koşar ve biri kesin düşer; `vitest.config.mts`'teki `include` bu
+yüzden `lib/` ile sınırlı.
+
+**Kurulum sırasında dört engel çıktı, dördü de ölçülerek çözüldü:**
+
+1. **RNTL 14'te `render` ve `fireEvent` ASENKRON.** v13'te ikisi de senkrondu.
+   Belirtisi yanıltıcı: senkron kullanılınca `render` bir Promise dönüyor,
+   sorgular ise *"render function has not been called"* diyor — mesaj sebebi
+   göstermiyor.
+2. **`jest.mock()` fabrikası dışarıdaki değişkene erişemiyor.** Tek istisna
+   `mock` ön eki. Taklit değişkenleri bu yüzden `mockSendCode` gibi adlandı.
+3. **`expo-modules-core` hoist edilmiyor**, `expo/node_modules` içinde duruyor
+   ve jest-expo onu kendi konumundan arıyor. Doğrudan bağımlılık olarak
+   eklemek çalıştı ama `expo-doctor` haklı olarak itiraz etti; çözüm jest'in
+   `moduleDirectories`'ine `node_modules/expo/node_modules` eklemek oldu.
+4. **`tsconfig.json`'a `types: ["jest"]` gerekti.** Dikkat: bu alan
+   ayarlandığında diğer bütün `@types` paketlerinin **otomatik dahil
+   edilmesi kapanıyor**; ileride başka bir ambient tip gerekirse listeye
+   eklenmeli.
+
+**Parola ve kod alanlarına `testID` eklendi** — RNTL 14'te `UNSAFE_*`
+sorguları kaldırıldı ve o alanların görünür etiketi yok. Üretim kodunda
+yalnızca test için duran iki öznitelik; yorumları bunu söylüyor.
+
+**Sonuç:** 14 ekran testi. Altı mutasyonla doğrulandı, altısı da yakalandı —
+en önemlisi 27.4'ün 2FA hatası, ekran katmanında geri getirildiğinde 6 test
+düşüyor.
+
+---
+
 ## ADR-042 — Mobil testleri `mobile/` içinde yaşar ve React Native'e dokunmayan katmanı kapsar
 **Tarih:** 2026-08-27 · **Durum:** Kabul edildi
 

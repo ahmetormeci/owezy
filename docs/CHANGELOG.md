@@ -8,6 +8,23 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-28 (3) — Giriş ekranı otomatik doğrulanıyor
+
+`app/sign-in.tsx` için 14 test (`jest-expo` + `@testing-library/react-native`).
+Mobilde artık iki koşucu var ve sınır dizine göre: `lib/**` vitest'te,
+`components/**` ve `app/**` jest'te (ADR-043). `npm test` ikisini birden
+koşuyor.
+
+En öğretici engel: **RNTL 14'te `render` ve `fireEvent` asenkron** — v13'te
+senkrondu ve hata mesajı sebebi göstermiyor.
+
+Üretim kodunda iki `testID` eklendi (parola ve iki adımlı kod alanları);
+RNTL 14'te `UNSAFE_*` sorguları kaldırıldı ve o alanların görünür etiketi yok.
+
+Altı mutasyonla doğrulandı, altısı da yakalandı.
+
+---
+
 ## 2026-08-28 (2) — Mobil kodu artık lint görüyor
 
 3745 satır hiçbir kural görmüyordu. `eslint-config-expo` kuruldu,

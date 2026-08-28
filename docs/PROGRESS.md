@@ -1115,6 +1115,48 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 32 — Giriş ekranı artık otomatik doğrulanıyor · **BİTTİ**
+
+`app/sign-in.tsx` mobilin en riskli ekranıydı ve **yalnızca simülatörde, elle**
+doğrulanıyordu. 14 test eklendi (`jest-expo` + `@testing-library/react-native`,
+ADR-043).
+
+**Neden bu ekran:** Faz 29 bir kat aşağısını — sunucuyla konuşan durum
+makinesini — kapsıyordu. Buradaki soru farklı: o katmanın verdiği cevaba ekran
+doğru tepkiyi veriyor mu? İkisi ayrı ayrı doğru olup birlikte yanlış olabilir
+ve 27.4'te tam olarak bu oldu.
+
+**Altı mutasyon, altısı da yakalandı:**
+
+| Geri getirilen hata | Düşen test |
+|---|---|
+| 2FA dalı silinirse (ekran katmanı) | **6** |
+| `replace` yerine `push` | 3 |
+| `forgetChallenge()` çağrılmazsa | 1 |
+| Yedek koda geçerken kod temizlenmezse | 1 |
+| Yedek kod bayrağı hep `false` gönderilirse | 1 |
+| Kod isteme başarısızken de adım ilerlerse | 1 |
+
+**Kurulum dört engel çıkardı** ve dördü de ADR-043'te yazılı. En öğreticisi:
+**RNTL 14'te `render` ve `fireEvent` asenkron** — v13'te senkrondu ve belirtisi
+yanıltıcı, çünkü hata mesajı (*"render function has not been called"*) sebebi
+göstermiyor. Diğerleri: `jest.mock()` fabrikasının `mock` ön eki zorunluluğu,
+`expo-modules-core`'un hoist edilmemesi, ve `tsconfig`'e `types: ["jest"]`
+gerekmesi.
+
+**Üretim kodunda iki satır değişti:** parola ve iki adımlı kod alanlarına
+`testID` eklendi. RNTL 14'te `UNSAFE_*` sorguları kaldırıldı ve o alanların
+görünür etiketi yok.
+
+**Kapsam dışı kalanlar:** `components/*` (fiş, harcama düzenleyici, grup
+oluşturucu) ve diğer ekranlar. Makine artık kurulu, sıradaki testler ucuz.
+
+**Doğrulama:** mobil `tsc` + lint + 53 vitest + 14 jest, kök `tsc` + lint +
+538 test, `expo-doctor` 20/21 (düşen tek kontrol CocoaPods — makinede kurulu
+değil, Linux'ta koşmuyor).
+
+---
+
 ## Faz 31 — Mobil kodu artık lint görüyor · **BİTTİ**
 
 3745 satır hiçbir kural görmüyordu. Boşluk 27 Ağustos'ta ortaya çıktı: kökün

@@ -177,6 +177,9 @@ export default function SignInScreen() {
               {usingBackupCode ? t("ui.backup_code_hint") : t("ui.totp_hint")}
             </Text>
             <TextInput
+              // testID YALNIZCA test icin: RNTL 14'te UNSAFE_getAllByType
+              // kaldirildi ve parola/kod alanlarinin gorunur bir etiketi yok.
+              testID="two-factor-code"
               style={styles.input}
               value={code}
               onChangeText={setCode}
@@ -262,6 +265,7 @@ export default function SignInScreen() {
               <>
                 <Text style={styles.label}>{t("ui.password")}</Text>
                 <TextInput
+                  testID="password"
                   style={styles.input}
                   value={password}
                   onChangeText={setPassword}
