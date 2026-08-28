@@ -23,7 +23,7 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-28
+Updated: 2026-08-28 (2)
 
 Current task:
   APP STORE'A ILK GONDERIM, ADI APPLE'DA BEKLIYOR.
@@ -33,18 +33,35 @@ Current task:
   GONDERILEN IKILIGE DOKUNMADI - expo export ciktisi ayni, yeni derleme
   gerekmiyor. Ayrintisi PROGRESS.md.
 
-TIKANAN TEK SEY - UYGULAMA ADI:
-  "Owezy" adi App Store Connect'te alinamiyor. Kullanici Apple destege yazdi,
-  cevap bekleniyor.
+UYGULAMA ADI - BEKLEME BIRAKILDI, VARYANT ADLA GIDILIYOR:
+  KARAR (28 Agustos): magaza listesine benzersiz bir varyant ad yaziliyor
+  (TR "Owezy: Hesap Paylas", EN "Owezy: Split Expenses"). TELEFONDA ADI
+  DEGISTIRMIYOR - ikonun altindaki ad mobile/app.json'daki "name"den geliyor
+  ve o "Owezy" olarak KALIYOR. Yeni derleme GEREKMIYOR.
+
+  NEDEN BEKLEMEYI BIRAKTIK - APPLE'IN KENDI BELGESI:
+    "If you remove an app, you'll lose ownership of the app name."
+    (developer.apple.com/help/app-store-connect/create-an-app-record/
+     remove-an-app)
+  Yani silmek adi GECICI olarak degil, sahiplik olarak birakiyor. Once bunu
+  "Apple destek donunce cozulur" diye tasiyorduk; belge bunu desteklemiyor.
 
   OLCULDU: App Store'da o adda YAYINLANMIS uygulama yok (itunes arama, TR ve
-  dunya: 0 sonuc). Yani adi baska bir gelistirici tutmuyor - kullanicinin
-  KENDI sildigi kaydin rezervasyonu tutuyor. Yeniden adlandirma ve silme
-  denendi, ikisi de birakmadi.
+  dunya: 0 sonuc). Yani adi baska bir gelistirici TUTMUYOR - kullanicinin
+  kendi silme islemi tutuyor.
 
   NEDEN IKI KAYIT VARDI: eski kayit YANLIS bundle ID ile acilmisti
   (net.wezy.app - "o" eksik). eas submit o kimlige ait kayit bulamayinca
   yenisini yaratti. DOGRU KAYIT: Apple ID 6805650395, bundle net.owezy.app.
+
+  net.wezy.app SILINEMEZ VE SILINMEYE CALISILMAMALI. Panel
+  "appears to be in use by the App Store" donuyor; Apple'in belgesi sebebini
+  yaziyor: build yuklenmis bir bundle ID ayni organizasyonda YENIDEN
+  KULLANILAMAZ ve kalir. Zarari yok, listede duracak.
+
+  DESTEKTEN ISTENECEK SEY SOMUT OLMALI: "adi kullanamiyorum" degil,
+  "net.wezy.app ile actigim ve sildigim kayit 'Owezy' adini tutuyordu, bu adi
+  hesabima yeniden acar misiniz".
 
 GONDERIM DURUMU - NEREDEYSE HAZIR:
   BITTI:
