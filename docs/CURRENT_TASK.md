@@ -23,7 +23,7 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-28 (4)
+Updated: 2026-08-28 (5)
 
 Current task:
   APP STORE'A ILK GONDERIM. TIKANAN HICBIR SEY KALMADI.
@@ -63,12 +63,24 @@ GONDERIM DURUMU - NEREDEYSE HAZIR:
       Once Resend'in susturma listesinden cikarilmasi gerekti - asagida.
 
   ACIK:
-    - BUILD 4 SECILMELI - 3 DEGIL. "1.0 Prepare for Submission" sayfasindaki
-      Build alanindan, Apple'in islemesi bittikten sonra. Build 3 ESKI IKONU
-      tasiyor; 4 yeni isaretle derlendi (commit 60a6086).
+    - BUILD 5 SECILMELI. Onceki ikisi ELENDI:
+        build 3 -> eski ikon
+        build 4 -> yeni ikon AMA supportsTablet hala true, yani App Store
+                   Connect 13 inclik iPad ekran goruntusu istiyor
+        build 5 -> yeni ikon + supportsTablet false  (commit 9f12cd6)
+    - Privacy Policy URL: https://owezy.net/privacy  (App Privacy sayfasinda;
+      sayfa canlida, 200 donuyor)
     - Sonra "Submit for Review". Diger butun alanlar dolu (kullanici
       kontrol etti: Category, Age Rating, Pricing, Content Rights,
       Version Release).
+
+  "ADD FOR REVIEW" IKI SEBEPLE REDDETTI ve ikisi de ogreticiydi:
+    1. iPad ekran goruntusu istiyordu cunku IKILIK iPad destegi BEYAN
+       EDIYORDU (supportsTablet, Expo sablonunun varsayilani - kimsenin
+       verdigi bir karar degildi). Uygulama iPad'de HIC acilmadi. Iddia
+       geri cekildi; iPad'e yine kuruluyor, iPhone kipinde calisiyor.
+    2. Privacy Policy URL bostu. Sayfa BASTAN BERI vardi (/privacy),
+       yalnizca App Store Connect'e yazilmamisti.
 
   IKON YA DA app.json DEGISIRSE yeniden derlenmeli:
       cd mobile && npx eas-cli build --platform ios --profile production
