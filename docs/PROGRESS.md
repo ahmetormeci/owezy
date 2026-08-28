@@ -1115,6 +1115,48 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 31 — Mobil kodu artık lint görüyor · **BİTTİ**
+
+3745 satır hiçbir kural görmüyordu. Boşluk 27 Ağustos'ta ortaya çıktı: kökün
+eslint yapılandırması `mobile/**`'ı yok sayıyordu ve gerekçe olarak
+`mobile/eslint.config.js`'i gösteriyordu — **o dosya hiç var olmamıştı**.
+
+Kurulum `eslint-config-expo` (flat config), `mobile/eslint.config.js`,
+`cd mobile && npm run lint`, ve CI'da ayrı bir adım. Prettier **bilerek
+alınmadı**: web tarafında da yok, yalnızca mobile eklemek iki ağaç arasında
+tutarsızlık ve 3745 satırlık biçimlendirme gürültüsü demekti.
+
+### İki tuzak, ikisi de ölçülerek bulundu
+
+**`npx expo lint` bu dosyayı üretmedi.** "ESLint has been configured 🎉" dedi,
+sonra `all of the files matching the glob pattern .../mobile/app are ignored`
+diye düştü. Sebep: `mobile/` içinde config olmadığı için ESLint yukarı yürüyüp
+**kökün** config'ini buluyor, araç da "zaten yapılandırılmış" sanıp geçiyor.
+Sessiz değil, yanıltıcı bir başarısızlık.
+
+**`expo lint` gerçek bir lint HATASINDA BİLE 0 dönüyor.** Kanca kuralı ihlali
+enjekte edilip ölçüldü: `expo lint → 0`, `eslint . → 1`. CI'a `expo lint`
+koymak, hiçbir zaman kırılmayan ama kırılıyormuş gibi duran bir adım demekti —
+hiç olmamasından kötü. Komut `eslint . --max-warnings 0`; eşik bilinçli, çünkü
+uyarılar da kırmazsa görünmeden birikiyor.
+
+### İlk koşuda bulduğu dört şey
+
+| Bulgu | Ne yapıldı |
+|---|---|
+| `sign-in.tsx`: `usePassword` "kanca callback içinde çağrılamaz" | **Gerçek isim hatası.** Düz bir olay işleyicisiydi ama `use` öneki React'te kancaya işaret ediyor — hem linter hem okuyan insan yanılıyor. `submitPassword` oldu; kardeşi `requestCode()` ile aynı aileden |
+| `app/index.tsx`: kullanılmayan `View` importu | Kaldırıldı |
+| `groups/[groupId]/index.tsx`: efekt içinde `setState` | Susturuldu, gerekçesiyle: dış veri çekmek efektin meşru kullanımı, döngü riski `!months[openMonth]` koşuluyla kapalı |
+| `lib/auth.tsx`: render sırasında ref erişimi | Susturuldu, gerekçesiyle: efekte taşınamaz — `getToken()` o sözü beklemek zorunda, yoksa girişli kullanıcı her açılışta bir kez dışarı atılır. Davranış `auth.test.tsx`'te testle sabit |
+
+Susturmaların ikisi de **hedefli** (`eslint-disable-next-line`), kural
+kapatma yok.
+
+**Doğrulama:** mobil lint + `tsc` + 53 test, kök lint + `tsc` + 538 test,
+`expo export` hâlâ çalışıyor.
+
+---
+
 ## Faz 30 — Kimlik işareti ve mağaza kimliği · **BİTTİ**
 
 İki iş bir arada yürüdü: yeni bir marka işareti ve günlerdir tıkalı olan

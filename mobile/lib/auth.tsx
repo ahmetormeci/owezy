@@ -197,7 +197,25 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const challengeRef = useRef<string | null>(null);
 
   const readyRef = useRef<Promise<void> | null>(null);
+  /**
+   * KURAL BILEREK SUSTURULUYOR (react-hooks/refs): "render sirasinda ref'e
+   * erisme".
+   *
+   * Kural genelde hakli - render sirasinda okunan bir ref, ekranin
+   * guncellenmemesine yol acabiliyor. Burada okunan sey EKRANA HIC
+   * GIRMIYOR: yalnizca "Keychain okumasi basladi mi" sorusunun cevabi.
+   *
+   * EFEKTE TASINAMAZ, ve sebebi bir hatanin duzeltmesi: getToken() bu sozu
+   * BEKLEYEBILMEK zorunda. Efekte tasinsaydi, ilk render ile efektin
+   * calismasi arasinda atilan istek belirtecsiz gider ve 401 yerdi - yani
+   * girisli kullanici HER ACILISTA bir kez disari atilirdi.
+   *
+   * DAVRANIS TESTLE SABIT: lib/auth.test.tsx icindeki "getToken, Keychain
+   * okumasini BEKLER" testi bilerek booted() cagirmadan soruyor. Burayi
+   * efekte tasiyan bir degisiklik o testi dusurur.
+   */
   if (readyRef.current === null) {
+    // eslint-disable-next-line react-hooks/refs
     readyRef.current = (async () => {
       tokenRef.current = await readSessionToken();
     })();

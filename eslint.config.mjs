@@ -17,11 +17,13 @@ const eslintConfig = defineConfig([
      * next/core-web-vitals ile denetlemek anlamsiz uyarilar uretir (orn.
      * <img> yerine next/image). Disarida kalma sebebi bu ve gecerli.
      *
-     * AMA BU SATIR BIR ARA "mobil kendi kurallariyla dogrulaniyor
-     * (mobile/eslint.config.js)" DIYORDU VE O DOSYA HIC VAR OLMADI - 27
-     * Agustos 2026'da olculdu. Yani mobil kodu bugun HICBIR lint gormuyor.
-     * Bosluk PROGRESS.md'de aday olarak duruyor; buradaki cumle, kapanmadan
-     * once kapandi sanilmasin diye duzeltildi.
+     * MOBIL ARTIK KENDI KURALLARIYLA DENETLENIYOR: mobile/eslint.config.js
+     * (eslint-config-expo), "cd mobile && npm run lint", CI'da ayri bir adim.
+     *
+     * Bu cumle 27 Agustos 2026'da BIR YALANDI - ayni seyi soyluyordu ama o
+     * dosya hic var olmamisti, yani mobil kodu hicbir lint gormuyordu. 28'inde
+     * dosya gercekten yazildi. Ikisini ayirt etmek icin: dosyanin VARLIGINA
+     * bak, bu yoruma degil.
      */
     "mobile/**",
   ]),

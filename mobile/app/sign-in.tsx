@@ -109,7 +109,13 @@ export default function SignInScreen() {
     }
   }
 
-  async function usePassword() {
+  /**
+   * ADI ONCEDEN "usePassword" IDI VE BU YANILTICIYDI: React'te "use" oneki
+   * kancaya isarettir. Hem okuyan insan hem lint onu kanca sanip
+   * "React Hook cannot be called inside a callback" hatasi veriyordu.
+   * Kardesi requestCode(); adlari artik ayni ailedan.
+   */
+  async function submitPassword() {
     if (busy) return;
     setBusy(true);
     setError(null);
@@ -270,7 +276,7 @@ export default function SignInScreen() {
 
             <Pressable
               style={styles.button}
-              onPress={() => void (step === "password" ? usePassword() : requestCode())}
+              onPress={() => void (step === "password" ? submitPassword() : requestCode())}
               disabled={busy}
             >
               {busy ? (

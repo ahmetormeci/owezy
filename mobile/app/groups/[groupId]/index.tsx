@@ -160,6 +160,23 @@ export default function GroupScreen() {
   // Acik ay kendiliginden aciliyor; digerlerini kullanici aciyor.
   useEffect(() => {
     if (openMonth && !months[openMonth]) {
+      /**
+       * KURAL BILEREK SUSTURULUYOR (react-hooks/set-state-in-effect).
+       *
+       * Kural haklı bir seyden korkuyor: efekt icinde setState cagirmak
+       * ardarda render uretebiliyor. Ama React'in kendi belgesi DIS VERI
+       * CEKMEYI efektin mesru kullanimi sayiyor ve burada yapilan tam olarak
+       * o - acilan ayin harcamalari sunucudan geliyor.
+       *
+       * DONGU RISKI KAPALI: efekt "months" bagimliligini tasiyor ve
+       * loadMonth "months"u guncelliyor, yani onlemsiz birakilsa kendini
+       * tetiklerdi. Onlem ustteki kosul: !months[openMonth]. Bir ay bir kez
+       * yukleniyor, sonra girdi dolu oldugu icin cagri yapilmiyor.
+       *
+       * BURAYI DEGISTIREN KISI o kosulu da kontrol etsin; kaldirilirsa
+       * sonsuz istek dongusu olur ve belirtisi "sayfa surekli yukleniyor".
+       */
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadMonth(openMonth);
     }
   }, [openMonth, months, loadMonth]);

@@ -119,6 +119,23 @@ jobs:
         run: npx tsc --noEmit
         working-directory: mobile
 
+      - name: Mobil lint
+        # 28 Agustos'a kadar mobil kodu HICBIR lint gormuyordu: kokun
+        # eslint'i mobile/**'i yok sayiyor (gerekcesi gecerli, React Native
+        # dosyalarini next/core-web-vitals ile denetlemek anlamsiz uyarilar
+        # uretir) ve mobilin kendi yapilandirmasi yoktu.
+        #
+        # KOMUT "expo lint" DEGIL ve bu OLCULDU: expo lint, gercek bir lint
+        # HATASINDA BILE 0 donuyor. CI'a onu koymak, hicbir zaman kirilmayan
+        # ama kiriliyormus gibi duran bir adim demekti - hic olmamasindan
+        # kotu. "eslint ." hatada 1 donuyor.
+        #
+        # --max-warnings 0 BILINCLI: uyari da kirsin. Bugun sifir uyaridayiz;
+        # esik konmazsa uyarilar gorunmeden birikir (ilk kosuda kullanilmayan
+        # bir import tam boyle duruyordu).
+        run: npm run lint
+        working-directory: mobile
+
       - name: Mobil birim testleri
         # BU ADIM EKLENENE KADAR MOBILDE DAVRANISA BAKAN HICBIR SEY YOKTU.
         # Ustteki uc adim (tip kontrolu, expo-doctor, paket derlemesi) kodun

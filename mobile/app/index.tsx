@@ -1,6 +1,6 @@
 import { Redirect } from "expo-router";
 import { useMemo } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../lib/auth";
 import { useTranslate } from "../lib/i18n";

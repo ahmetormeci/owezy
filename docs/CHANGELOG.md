@@ -8,6 +8,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-28 (2) — Mobil kodu artık lint görüyor
+
+3745 satır hiçbir kural görmüyordu. `eslint-config-expo` kuruldu,
+`mobile/eslint.config.js` yazıldı, CI'a adım eklendi.
+
+İki ölçüm kayda değer. `npx expo lint` config üretmedi — `mobile/` içinde
+yapılandırma olmadığı için ESLint kökünkini buluyor ve araç "zaten
+yapılandırılmış" sanıyor. Ve `expo lint` gerçek bir hatada bile **0 dönüyor**,
+o yüzden CI komutu `eslint . --max-warnings 0`.
+
+İlk koşu dört şey buldu: `usePassword` adlı bir olay işleyicisi (React'te
+`use` öneki kanca demek — `submitPassword` oldu), kullanılmayan bir import, ve
+gerekçesiyle susturulan iki kanca kuralı.
+
+---
+
 ## 2026-08-28 — Yeni kimlik işareti, ve adın nasıl çözüldüğü
 
 `BrandMark` yenilendi: dolu iki parçalı daire yerine açık bir dış halka ve
