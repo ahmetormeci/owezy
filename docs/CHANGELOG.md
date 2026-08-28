@@ -8,6 +8,28 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-28 — Yeni kimlik işareti, ve adın nasıl çözüldüğü
+
+`BrandMark` yenilendi: dolu iki parçalı daire yerine açık bir dış halka ve
+içinde kısa bir yay. Claude Design'da altı tur sonunda seçilen `6a`.
+Uygularken geometri değişti — tasarımdan geldiği hâliyle **16 pikselte** iki
+yay birbirine yapışıyordu (`size-4` iki yerde kullanılıyor). İç yarıçap
+`4` → `3.6`; net açıklık 0,80 pikselden 1,07 piksele çıktı. İkon
+DEĞİŞTİRİLMEDİ.
+
+Uygulama adı çözüldü ve sebebi beklediğimiz değildi. Apple'ın belgesi
+"silince ismin sahipliğini kaybedersin" diyor — yani bekleyerek geri
+gelmiyordu. Çözüm bir deneyden çıktı: **kilit yerelleştirme başına**. Türkçe
+yerelleştirmede `Owezy` kabul edildi.
+
+  Türkçe    Owezy                  · Grup hesabı, kolay ödeşme
+  İngilizce Owezy: Split Expenses  · Group bills, settled fast
+
+Türkçe ad alanına bir daha dokunulmayacak; gerekçesi PROGRESS.md'de.
+Telefondaki ad `app.json`'dan geliyor ve değişmedi.
+
+---
+
 ## 2026-08-27 (3) — Mobilde ilk otomatik testler
 
 Mobilde **3745 satır kod ve sıfır test** vardı; CI kodun derlendiğine

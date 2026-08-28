@@ -1115,6 +1115,89 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 30 — Kimlik işareti ve mağaza kimliği · **BİTTİ**
+
+İki iş bir arada yürüdü: yeni bir marka işareti ve günlerdir tıkalı olan
+uygulama adı.
+
+### Yeni işaret (`6a`)
+
+Claude Design'da altı tur, 24 seçenek üretildi. Seçilen `6a`: açık bir dış
+halka ve içinde daha kısa ikinci bir yay — aynı merkez, farklı uzunluklar.
+Eskisi eşit olmayan iki parçaya bölünmüş **dolu** bir daireydi; yeni hâli
+aynı fikri konturla kuruyor.
+
+**Elenenlerin sebebi kayda değer.** `4a` ve `4d` fikir olarak iyiydi ama
+ADR-015'i ihlal ediyordu: kimlik rengi olarak `#FF4F3B` ve `#FFB43A`
+kullanıyorlardı, oysa bu üründe kırmızı "sen borçlusun" demek. Ayrıca
+`4a`'nın dilimleri birbirinden yalnızca **renkle** ayrılıyordu — arayüzde
+işaret `currentColor` ile çizildiği için tek renge inince fikir yok oluyordu.
+`6d`'yi tasarımın kendisi eledi: Wi-Fi/sinyal ikonuna fazla yakın.
+
+**Uygularken gerçek bir arıza çıktı ve geometri değişti.** Tasarımdan geldiği
+hâliyle 16 pikselte iki yay birbirine yapışıp lekeye dönüyordu — ve `size-4`
+iki yerde kullanılıyor (`(app)/layout.tsx`, `legal-page.tsx`). Ölçüldü: dış
+halka ile iç yay arasındaki net açıklık 1,2 birim, yani 16 pikselte **0,80
+piksel**. Bir pikselin altındaki boşluk dolar. Önce ince kontur denendi ama o
+da büyük boyları zayıflattı; tek değer ikisini birden vermiyordu. Çözüm iç
+yarıçapı `4` → `3.6` çekmek oldu: açıklık 1,6 birime, 16 pikselte 1,07
+piksele çıktı. Sayılar ve sebepleri bileşenin yorumunda duruyor — bir sonraki
+kişinin aklına "konturu kalınlaştırayım" gelecek ve **16 pikselte** denemek
+gelmeyecek.
+
+**Telif/marka sorusu soruldu ve ayrıştırıldı.** Telif basit geometrik
+biçimleri korumuyor, risk orada değil; asıl risk marka benzerliği ve
+biçimler basit olduğu için **daha yüksek**. TMview görsel aramasıyla
+(`tmdn.org/tmview`, 142 milyon marka) bakıldı, aynı sınıfta bariz bir
+çakışma çıkmadı. Bu bir clearance değil, not düşülüyor.
+
+**İkon uygulanmadı.** `mobile/assets/icon.png` ve `app.json` duruyor; ikonu
+değiştirmek yeni derleme + `eas submit` demek ve o an isim meselesi hâlâ
+açıktı. İkon adayları üretildi, uygulanmadı.
+
+### Uygulama adı — çözüldü, ama beklediğimiz gibi değil
+
+Günlerce "Apple destek dönünce çözülür" diye bekledik. **Yanlıştı.** Apple'ın
+kendi belgesi şunu yazıyor:
+
+> "If you remove an app, you'll lose ownership of the app name."
+
+Yani silmek adı geçici olarak değil, sahiplik olarak bırakıyor. Ölçüm de
+tutarlıydı: mağazada o adı **kimse** kullanmıyordu, ama hesap alamıyordu —
+sorun rekabet değil, kendi silme işlemimizdi.
+
+**Kullanıcı `Certificates, Identifiers & Profiles` ekranında ikinci kanıtı
+buldu:** eski yanlış bundle ID (`net.wezy.app`) silinemiyor, panel
+*"appears to be in use by the App Store"* diyor. Apple bunu da belgeliyor —
+build almış bir bundle ID aynı organizasyonda bir daha kullanılamaz. Zararsız
+ama silinen kaydın kalıcı iz bıraktığını gösteriyor.
+
+**Asıl çözüm bir deneyden çıktı: kilit YERELLEŞTİRME BAŞINA.** İngilizce
+tarafa varyant ad yazıldıktan sonra Türkçe yerelleştirmede sadece `Owezy`
+denendi ve **kabul edildi**. Yani engel hesabın tamamında değildi.
+
+| Dil | Ad | Altyazı |
+|---|---|---|
+| Türkçe | `Owezy` | `Grup hesabı, kolay ödeşme` |
+| İngilizce | `Owezy: Split Expenses` | `Group bills, settled fast` |
+
+**TÜRKÇE AD ALANINA BİR DAHA DOKUNULMAYACAK.** Normalde tavsiye tersi
+olurdu — ad en ağır indekslenen alan ve "Owezy" uydurma bir kelime, kimse
+aramıyor. Ama bu hesap bu ismi bir kez kalıcı olarak kaybetti; bırakılırsa
+geri alınabileceğinin garantisi yok. Jenerik terimlerin altyazı ve anahtar
+kelime alanında başka yolu var, adın geri gelmesinin yok.
+
+Ad ile altyazının kelimeleri **bilerek çakışmıyor**: App Store ikisini de
+indeksliyor, aynı kelimeyi ikisine koymak adın arama değerini harcamak olurdu.
+
+**Telefondaki ad değişmedi:** ikonun altındaki ad `mobile/app.json`'daki
+`name`den geliyor ve `"Owezy"` olarak kaldı. Yeni derleme gerekmedi.
+
+**Doğrulama:** kök `tsc` + lint + 538 birim. E2E bu değişikliğe hiç bakmıyor
+(`BrandMark` `aria-hidden`, hiçbir test onu seçmiyor), tam koşu yapılmadı.
+
+---
+
 ## Faz 29 — Mobilde ilk otomatik testler · **BİTTİ**
 
 App Store adı Apple'da beklerken seçilen iş. Seçilme sebebi tek cümle:

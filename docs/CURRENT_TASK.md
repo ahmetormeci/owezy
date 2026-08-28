@@ -23,45 +23,32 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-28 (2)
+Updated: 2026-08-28 (3)
 
 Current task:
-  APP STORE'A ILK GONDERIM, ADI APPLE'DA BEKLIYOR.
-  Kod tarafinda tikanan bir sey YOK.
+  APP STORE'A ILK GONDERIM. TIKANAN HICBIR SEY KALMADI.
+  Ad cozuldu (asagida), kod tarafinda da acik yok.
 
-  Beklerken Faz 29 yapildi: mobilde ilk otomatik testler (53 test, ADR-042).
-  GONDERILEN IKILIGE DOKUNMADI - expo export ciktisi ayni, yeni derleme
-  gerekmiyor. Ayrintisi PROGRESS.md.
+  Beklerken iki faz yapildi: Faz 29 mobilde ilk otomatik testler (53 test,
+  ADR-042), Faz 30 yeni kimlik isareti + magaza kimligi. IKISI DE GONDERILEN
+  IKILIGE DOKUNMADI - yeni derleme gerekmiyor. Ayrintilari PROGRESS.md.
 
-UYGULAMA ADI - BEKLEME BIRAKILDI, VARYANT ADLA GIDILIYOR:
-  KARAR (28 Agustos): magaza listesine benzersiz bir varyant ad yaziliyor
-  (TR "Owezy: Hesap Paylas", EN "Owezy: Split Expenses"). TELEFONDA ADI
-  DEGISTIRMIYOR - ikonun altindaki ad mobile/app.json'daki "name"den geliyor
-  ve o "Owezy" olarak KALIYOR. Yeni derleme GEREKMIYOR.
+UYGULAMA ADI - COZULDU (28 Agustos):
+  Turkce     Owezy                  · Grup hesabi, kolay odesme
+  Ingilizce  Owezy: Split Expenses  · Group bills, settled fast
 
-  NEDEN BEKLEMEYI BIRAKTIK - APPLE'IN KENDI BELGESI:
-    "If you remove an app, you'll lose ownership of the app name."
-    (developer.apple.com/help/app-store-connect/create-an-app-record/
-     remove-an-app)
-  Yani silmek adi GECICI olarak degil, sahiplik olarak birakiyor. Once bunu
-  "Apple destek donunce cozulur" diye tasiyorduk; belge bunu desteklemiyor.
+  TURKCE AD ALANINA BIR DAHA DOKUNMA. Kilit YERELLESTIRME BASINA cikti ve
+  Turkce tarafta "Owezy" kabul edildi. Bu hesap bu ismi bir kez KALICI olarak
+  kaybetti (Apple: "If you remove an app, you'll lose ownership of the app
+  name"); birakilirsa geri alinabilecegi garanti DEGIL. Jenerik arama
+  terimlerinin altyazi + anahtar kelimede baska yolu var, adin yok.
 
-  OLCULDU: App Store'da o adda YAYINLANMIS uygulama yok (itunes arama, TR ve
-  dunya: 0 sonuc). Yani adi baska bir gelistirici TUTMUYOR - kullanicinin
-  kendi silme islemi tutuyor.
+  Ad ile altyazi BILEREK cakismiyor: App Store ikisini de indeksliyor.
 
-  NEDEN IKI KAYIT VARDI: eski kayit YANLIS bundle ID ile acilmisti
-  (net.wezy.app - "o" eksik). eas submit o kimlige ait kayit bulamayinca
-  yenisini yaratti. DOGRU KAYIT: Apple ID 6805650395, bundle net.owezy.app.
+  net.wezy.app SILINEMEZ, silinmeye calisilmasin - build almis bir bundle ID
+  ayni organizasyonda bir daha kullanilamiyor (Apple belgeliyor). Zararsiz.
 
-  net.wezy.app SILINEMEZ VE SILINMEYE CALISILMAMALI. Panel
-  "appears to be in use by the App Store" donuyor; Apple'in belgesi sebebini
-  yaziyor: build yuklenmis bir bundle ID ayni organizasyonda YENIDEN
-  KULLANILAMAZ ve kalir. Zarari yok, listede duracak.
-
-  DESTEKTEN ISTENECEK SEY SOMUT OLMALI: "adi kullanamiyorum" degil,
-  "net.wezy.app ile actigim ve sildigim kayit 'Owezy' adini tutuyordu, bu adi
-  hesabima yeniden acar misiniz".
+  TELEFONDAKI AD app.json'daki "name"den geliyor ve "Owezy" olarak kaldi.
 
 GONDERIM DURUMU - NEREDEYSE HAZIR:
   BITTI:
@@ -76,7 +63,6 @@ GONDERIM DURUMU - NEREDEYSE HAZIR:
       Once Resend'in susturma listesinden cikarilmasi gerekti - asagida.
 
   ACIK:
-    - Uygulama adi (yukarida)
     - Build 3, "1.0 Prepare for Submission" sayfasindaki Build alanindan
       SECILMELI (Apple'in islemesi bittikten sonra gorunur).
 
