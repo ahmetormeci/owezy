@@ -23,7 +23,7 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-28 (3)
+Updated: 2026-08-28 (4)
 
 Current task:
   APP STORE'A ILK GONDERIM. TIKANAN HICBIR SEY KALMADI.
@@ -63,12 +63,24 @@ GONDERIM DURUMU - NEREDEYSE HAZIR:
       Once Resend'in susturma listesinden cikarilmasi gerekti - asagida.
 
   ACIK:
-    - Build 3, "1.0 Prepare for Submission" sayfasindaki Build alanindan
-      SECILMELI (Apple'in islemesi bittikten sonra gorunur).
+    - BUILD 4 SECILMELI - 3 DEGIL. "1.0 Prepare for Submission" sayfasindaki
+      Build alanindan, Apple'in islemesi bittikten sonra. Build 3 ESKI IKONU
+      tasiyor; 4 yeni isaretle derlendi (commit 60a6086).
+    - Sonra "Submit for Review". Diger butun alanlar dolu (kullanici
+      kontrol etti: Category, Age Rating, Pricing, Content Rights,
+      Version Release).
 
   IKON YA DA app.json DEGISIRSE yeniden derlenmeli:
       cd mobile && npx eas-cli build --platform ios --profile production
       cd mobile && npx eas-cli submit --platform ios --latest
+
+  eas.json'DAKI ascAppId BOS BIRAKILMAMALI (28 Agustos'ta eklendi: 6805650395).
+    Bos oldugunda eas submit hedefi ETKILESIMLI soruyor - ve etkilesimsiz
+    kosuda "Set ascAppId in the submit profile" diye dusuyor. Ama asil mesele
+    su: BUTUN ISIM KAZASININ KOKENI buydu. Alan bos oldugu icin eas submit
+    bundle kimligine ait kayit bulamadi ve App Store Connect'te IKINCI BIR
+    UYGULAMA yaratti; o kayit yanlis bundle ID tasiyordu (net.wezy.app) ve
+    silinince "Owezy" adi kilitlendi. Artik hedef dosyada yazili.
 
 SENDE KALAN DIGER ISLER (aceleye gerek yok):
   Clerk'in son izleri: panelin webhook kaydi, Clerk hesabi,
