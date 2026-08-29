@@ -12,6 +12,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { EXPENSE_CATEGORY_CODES, EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
+import { guessCategory } from "@/lib/expense-category-guess";
 import { formatMoney, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
@@ -81,6 +83,14 @@ export default function NewExpenseScreen() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   /** EXACT ve PERCENTAGE icin: kisi basina girilen ham metin. */
   const [shareText, setShareText] = useState<Record<string, string>>({});
+  /**
+   * KATEGORI. Kullanici SECMEDIYSE null kaliyor ve gonderilmiyor - sunucu o
+   * zaman aciklamadan kendisi tahmin ediyor (ADR-028: karari sunucu verir).
+   * Tahmin ekranda GORUNUYOR ama secim olarak yazilmiyor: gorunen ile
+   * kaydedilen ayrismasin diye ikisi ayni saf fonksiyondan geciyor, tipki
+   * hizli ekleyicideki gibi.
+   */
+  const [category, setCategory] = useState<keyof typeof EXPENSE_CATEGORY_CODES | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +103,10 @@ export default function NewExpenseScreen() {
   // hizli ekleyicide degistiremiyordu ve bu ekranin varlik sebeplerinden biri o.
   const payer = paidById ?? currentUserId;
   const amount = parseMoney(amountText);
+  // Tahmin BURADA DA hesaplaniyor ama GONDERILMIYOR - yalnizca ipucu satiri
+  // icin. Karari sunucu veriyor; ekranda gorunen ile kaydedilen ayrismasin
+  // diye ikisi ayni saf fonksiyondan geciyor (hizli ekleyiciyle ayni desen).
+  const guessed = guessCategory(description);
 
   // Hicbir kutu isaretlenmemisken HERKES paylasiyor sayiliyor: bos bir liste
   // gondermek yerine en yaygin niyeti varsayiyoruz. Kullanici birini
@@ -145,7 +159,11 @@ export default function NewExpenseScreen() {
       return;
     }
     if (!payer) {
-      setError(t("server.unexpected"));
+      // Buraya ancak /api/v1/me yuklenmediyse dusulur. Onceden burada
+      // "Beklenmeyen bir hata" yaziyordu ve kullaniciya HICBIR SEY
+      // anlatmiyordu - kullanici bu hatayi 29 Agustos'ta gordu, sebebi de
+      // sunucunun kapali olmasiydi.
+      setError(t("server.offline"));
       return;
     }
 
@@ -182,6 +200,8 @@ export default function NewExpenseScreen() {
       amount,
       paidById: payer,
       splitType,
+      // Secilmediyse HIC gonderilmiyor; sunucu tahmin ediyor.
+      ...(category ? { category } : {}),
       ...body,
     });
     setBusy(false);
@@ -198,6 +218,23 @@ export default function NewExpenseScreen() {
     return (
       <SafeAreaView style={s.centered} edges={["bottom", "left", "right"]}>
         <ActivityIndicator color={theme.brand} />
+      </SafeAreaView>
+    );
+  }
+
+  /**
+   * YUKLEME BASARISIZSA FORM GOSTERILMIYOR.
+   *
+   * Onceden yalnizca "loading" ele aliniyordu; "error" durumunda ekran BOS
+   * BIR FORM ciziyor, kullanici dolduruyor ve kaydederken anlamsiz bir hata
+   * aliyordu. Uye listesi bos oldugu icin odeyen de secilemiyordu ama bu
+   * hicbir yerde yazmiyordu.
+   */
+  if (members.state.kind === "error" || group.state.kind === "error") {
+    const text = members.state.kind === "error" ? members.state.text : "";
+    return (
+      <SafeAreaView style={s.centered} edges={["bottom", "left", "right"]}>
+        <Text style={s.error}>{text || t("server.offline")}</Text>
       </SafeAreaView>
     );
   }
@@ -256,6 +293,31 @@ export default function NewExpenseScreen() {
               placeholderTextColor={theme.muted}
               editable={!busy}
             />
+
+            {/* KATEGORI. Secilmezse sunucu aciklamadan tahmin ediyor ve
+                tahmin asagida yaziyor - yani kullanici hicbir sey yapmadan
+                da dogru kategoriye dusuyor, ama katilmiyorsa duzeltebiliyor. */}
+            <Cap>{t("ui.category")}</Cap>
+            <View style={s.chips}>
+              {EXPENSE_CATEGORY_OPTIONS.map(([value, code]) => {
+                const active = category === value;
+                return (
+                  <Pressable
+                    key={value}
+                    style={[s.chip, active && s.chipActive]}
+                    onPress={() => setCategory(active ? null : value)}
+                    disabled={busy}
+                  >
+                    <Text style={[s.chipText, active && s.chipTextActive]}>{t(code)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {category === null && guessed ? (
+              <Text style={s.guess}>
+                {t("ui.category_guessed", { category: t(EXPENSE_CATEGORY_CODES[guessed]) })}
+              </Text>
+            ) : null}
           </View>
           ) : (
           <>
@@ -470,6 +532,7 @@ function createStyles(theme: Theme) {
     },
     primaryText: { color: "#fff", fontSize: 16, fontWeight: "600" },
     error: { color: theme.debt, fontSize: 14 },
+    guess: { color: theme.muted, fontSize: 12, marginTop: 2 },
     stepHint: { color: theme.muted, fontSize: 12, letterSpacing: 1, marginBottom: 2 },
     headerBack: { color: theme.brand, fontSize: 30, lineHeight: 32, paddingHorizontal: 4 },
     recap: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },

@@ -416,6 +416,8 @@ export const MESSAGES_TR = {
   "ui.amount_required": "Geçerli ve sıfırdan büyük bir tutar gir. Örnek: 120,50",
   "ui.who_paid": "Kim ödedi?",
   "ui.category": "Kategori",
+  // Kategori secilmediginde sunucunun ne tahmin edecegini onceden gosterir.
+  "ui.category_guessed": "Tahmin: {category}",
   "ui.date": "Tarih",
   "ui.how_to_split": "Nasıl bölünecek?",
   "ui.split_equal": "Eşit böl",
@@ -902,6 +904,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.amount_required": "Enter a valid amount greater than zero. Example: 120.50",
   "ui.who_paid": "Who paid?",
   "ui.category": "Category",
+  "ui.category_guessed": "Guessed: {category}",
   "ui.date": "Date",
   "ui.how_to_split": "How should it be split?",
   "ui.split_equal": "Split equally",
