@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Linking } from "react-native";
-import SignInScreen from "./sign-in";
-import { mockRouter } from "../test/jest-setup";
-import type { PasswordSignInResult } from "../lib/auth";
+import SignInScreen from "../../app/sign-in";
+import { mockRouter } from "../jest-setup";
+import type { PasswordSignInResult } from "../../lib/auth";
 
 /**
  * BU DOSYA NEYI KORUYOR: giris ekraninin ADIM SIRASINI.
@@ -15,6 +15,17 @@ import type { PasswordSignInResult } from "../lib/auth";
  * oturumsuz oldugu icin geri atiliyordu.
  *
  * Bu ekran bugune kadar YALNIZCA simulatorde, elle dogrulandi.
+ *
+ * NEDEN app/ ICINDE DEGIL - BU DOSYA BIR DERLEMEYI DUSURDU:
+ * expo-router, app/ klasorunun TAMAMINI require.context ile pakete aliyor
+ * (bkz. node_modules/expo-router/_ctx.ios.js). Filtresi yalnizca +api, +html
+ * ve +middleware'i eliyor; ".test.tsx" icin istisna YOK. Yani burada duran
+ * bir test dosyasi URETIM PAKETINE giriyor ve @testing-library/react-native'i
+ * de beraberinde surukluyor - EAS build 6 tam olarak bunun yuzunden
+ * "Bundle JavaScript" asamasinda dustu.
+ *
+ * app/ bir ROTA ALANI, test alani degil. components/* testleri yaninda
+ * durabiliyor cunku orayi router taramiyor.
  *
  * DIKKAT - @testing-library/react-native 14'te render VE fireEvent ASENKRON.
  * v13'te ikisi de senkrondu. Bu kirici degisiklik olculerek bulundu ve
@@ -29,7 +40,7 @@ const mockSignInWithPassword = jest.fn();
 const mockVerifySecondFactor = jest.fn();
 const mockForgetChallenge = jest.fn();
 
-jest.mock("../lib/auth", () => ({
+jest.mock("../../lib/auth", () => ({
   useSession: () => ({
     status: "signed-out",
     getToken: async () => null,

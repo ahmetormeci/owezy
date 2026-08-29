@@ -23,7 +23,7 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-28 (5)
+Updated: 2026-08-28 (6)
 
 Current task:
   APP STORE'A ILK GONDERIM. TIKANAN HICBIR SEY KALMADI.
@@ -136,6 +136,21 @@ AKILDA TUTULACAKLAR:
 
     Bu makineden 25. porta cikilamiyor, yani SMTP ile alici sinamasi
     YAPILAMAZ. dig calisiyor; alici testi calismiyor.
+
+  app/ KLASORU BIR ROTA ALANI - ORAYA TEST DOSYASI KOYMA.
+    expo-router, app/'in TAMAMINI require.context ile URETIM PAKETINE aliyor
+    (node_modules/expo-router/_ctx.ios.js). Filtresi yalnizca +api, +html ve
+    +middleware'i eliyor; ".test.tsx" icin istisna YOK.
+
+    EAS build 6 tam olarak bunun yuzunden dustu: app/sign-in.test.tsx pakete
+    girdi ve @testing-library/react-native'i de surukledi. Belirtisi
+    "Unknown error. See logs of the Bundle JavaScript build phase" - yani
+    sebebi SOYLEMIYOR. Ekran testleri artik test/screens/ altinda.
+
+    DERS BENIM TARAFIMDA: "npx expo export" dogrulamadan cikarilmisti.
+    tsc, lint ve testler UCU DE TEMIZ gecerken paket kirikti. Mobilde bir sey
+    degistiginde export DE kosulmali - CI'da o adim var ama push'tan once
+    yerelde gormek gerekiyor.
 
   DOGRULANMAMIS HESAP + E-POSTA KODU = PAROLA SILINIYOR (ADR-041).
     Better Auth'un revokeUnprovenAccountAccess'i, emailVerified=false bir

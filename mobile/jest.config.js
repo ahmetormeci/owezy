@@ -19,10 +19,20 @@
 module.exports = {
   preset: "jest-expo",
 
-  // YALNIZCA RN'e dokunan iki dizin. Kok dizindeki lib/ vitest'in.
+  /**
+   * YALNIZCA RN'e dokunan yerler. lib/ vitest'in (ADR-042).
+   *
+   * EKRAN TESTLERI app/ ICINDE DURAMAZ ve bu kural bir derleme dusurerek
+   * ogrenildi: expo-router app/ klasorunun TAMAMINI require.context ile
+   * pakete aliyor ve filtresi ".test.tsx"i elemiyor. Test dosyasi uretim
+   * paketine girip @testing-library'yi de surukluyor; EAS build 6 boyle
+   * dustu. app/ bir ROTA alani.
+   *
+   * components/* testleri yaninda durabiliyor - orayi router taramiyor.
+   */
   testMatch: [
     "<rootDir>/components/**/*.test.tsx",
-    "<rootDir>/app/**/*.test.tsx",
+    "<rootDir>/test/screens/**/*.test.tsx",
   ],
 
   /**
