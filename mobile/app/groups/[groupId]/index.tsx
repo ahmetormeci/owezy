@@ -13,9 +13,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate, formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
-import { formatMoney, formatSignedMoney } from "@/lib/money";
+import { formatBasisPoints, formatMoney, formatSignedMoney } from "@/lib/money";
 import type { Locale } from "@/lib/locale";
-import { useSession } from "../../../lib/auth";
 import { useLocale, useTranslate } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
@@ -50,8 +49,15 @@ type ExpenseItem = {
 };
 type MonthSlice = { month: string; amount: number; count: number };
 type GroupResponse = { group: { id: string; name: string } };
+type CategorySlice = {
+  category: keyof typeof EXPENSE_CATEGORY_CODES;
+  amount: number;
+  /** Grubun toplamindaki payi. 10000 = %100. */
+  basisPoints: number;
+};
 type SummaryResponse = {
   currency: string;
+  byCategory: CategorySlice[];
   myBalance: number;
   myShare: number;
   myPaid: number;
@@ -62,7 +68,22 @@ type SummaryResponse = {
 type MembersResponse = { members: { userId: string; displayName: string }[] };
 type MeResponse = { user: { id: string } };
 type SuggestedTransfer = { fromUserId: string; toUserId: string; amount: number };
-type BalancesResponse = { suggestedTransfers: SuggestedTransfer[] };
+/**
+ * UYE BAKIYELERI ZATEN GELIYORDU, mobil yalnizca ISTEMIYORDU: /balances ucu
+ * bastan beri "balances" dizisini de donduruyor (src/lib/balances.ts) ve web
+ * onu "Uyeler ve bakiyeler" blogunda kullaniyor. Tip burada dar oldugu icin
+ * veri gelip atiliyordu.
+ */
+type MemberBalance = {
+  userId: string;
+  amount: number;
+  displayName: string;
+  hasLeft: boolean;
+};
+type BalancesResponse = {
+  suggestedTransfers: SuggestedTransfer[];
+  balances: MemberBalance[];
+};
 type ExpensesResponse = { expenses: ExpenseItem[]; nextCursor: string | null };
 
 /**
@@ -81,7 +102,6 @@ type MonthState = {
 
 export default function GroupScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
-  const { signOut } = useSession();
   const router = useRouter();
   const t = useTranslate();
   const locale = useLocale();
@@ -265,8 +285,17 @@ export default function GroupScreen() {
     );
   }
 
-  const { currency, myBalance, myShare, myPaid, totalAmount, byMonth } = summary.state.data;
+  const { currency, myBalance, myShare, myPaid, totalAmount, byMonth, byCategory } =
+    summary.state.data;
   const isEmpty = summary.state.data.expenseCount === 0;
+
+  // Cubuk genisligi EN BUYUK kategoriye gore olceklenıyor (web'le ayni).
+  // Bolen sifir olamaz: liste bosken blok zaten cizilmiyor ama ifade
+  // yine de guvenli kalsin.
+  const largestCategory = byCategory[0]?.amount ?? 1;
+  // Bakiyesi SIFIR OLMAYANLAR ustte kalsin diye sunucu zaten siralamis
+  // (balances.ts, tutara gore azalan). Burada yeniden siralamiyoruz.
+  const memberBalances = balances.state.kind === "ok" ? balances.state.data.balances : [];
 
   const currentUserId = me.state.kind === "ok" ? me.state.data.user.id : null;
   const suggestions =
@@ -317,7 +346,11 @@ export default function GroupScreen() {
       >
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
         <Receipt>
-          <Text style={s.groupName}>{group.state.data.group.name}</Text>
+          {/* Fisin "magaza adi" satiri: ortalanmis, tek arali, harf araligi
+              acik - web'deki fisle ayni. Onceden sola yasli kalin bir yaziydi
+              ve fisin dilinden kopuyordu. Baslik cubugunda da yaziyor ama
+              orasi kaydirinca gorunen bir referans; burasi fisin parcasi. */}
+          <Text style={s.receiptTitle}>{group.state.data.group.name}</Text>
 
           {!isEmpty ? (
             <View style={s.balanceBlock}>
@@ -332,9 +365,20 @@ export default function GroupScreen() {
                   {formatSignedMoney(myBalance, currency, locale)}
                 </Text>
               </View>
-              <Text style={s.balanceLabel}>
-                {settled ? t("ui.settled_up") : owed ? t("ui.owed_to_you") : t("ui.you_owe")}
-              </Text>
+              {/* DAMGA, duz yazi degil. Web'de bakiyenin yanindaki cerceveli
+                  muhur ekranin tek karakterli ani; mobilde gri bir satira
+                  dusmustu. Renk ADR-015'e uyuyor: yesil "sana borclular",
+                  kiremit "borclusun", odesmis halde notr. */}
+              <View
+                style={[
+                  s.stamp,
+                  { borderColor: settled ? theme.muted : owed ? theme.credit : theme.debt },
+                ]}
+              >
+                <Cap color={settled ? theme.muted : owed ? theme.credit : theme.debt}>
+                  {settled ? t("ui.settled_up") : owed ? t("ui.owed_to_you") : t("ui.you_owe")}
+                </Cap>
+              </View>
             </View>
           ) : null}
 
@@ -491,29 +535,99 @@ export default function GroupScreen() {
           ) : null}
         </Receipt>
 
-        <View style={s.footer}>
-          {/* "/" DEGIL "/groups". Onceki hali tek gruplu kullanicida hicbir
-              sey yapmiyordu: "/" adresi tek grupta gruba GERI yonlendiriyor,
-              yani baglanti ayni ekrana carpip donuyordu (Faz 18.7). */}
-          <Link href="/groups" asChild>
-            <Pressable>
-              <Text style={s.footerText}>{t("ui.my_groups")}</Text>
-            </Pressable>
-          </Link>
-          <Link href={`/groups/${groupId}/settlements`} asChild>
-            <Pressable>
-              <Text style={s.footerText}>{t("ui.settlements")}</Text>
-            </Pressable>
-          </Link>
-          <Link href={`/groups/${groupId}/members`} asChild>
-            <Pressable>
-              <Text style={s.footerText}>{t("ui.manage_members")}</Text>
-            </Pressable>
-          </Link>
-          <Pressable onPress={() => void signOut()}>
-            <Text style={s.footerText}>{t("ui.sign_out")}</Text>
+        {/* NEREYE GITTI. Web'de fisin altinda duran kategori kirilimi;
+            mobilde HIC YOKTU - oysa veri bastan beri /summary ile geliyordu.
+            Web'deki iki kural aynen gecerli: hic harcama yoksa ve TEK
+            kategori varsa blok cizilmiyor. Tek cubuk her zaman tam boy olur
+            ve "%100" yazar - hicbir sey anlatmaz. */}
+        {byCategory.length > 1 ? (
+          <View style={s.card}>
+            <Cap>{t("ui.summary_by_category")}</Cap>
+            <View style={s.cardBody}>
+              {byCategory.map((slice) => (
+                <View key={slice.category} style={s.catRow}>
+                  <View style={s.catHead}>
+                    <Text style={s.catName} numberOfLines={1}>
+                      {t(EXPENSE_CATEGORY_CODES[slice.category])}
+                    </Text>
+                    <Text style={s.catAmount}>
+                      {formatMoney(slice.amount, currency, locale)} ·{" "}
+                      {formatBasisPoints(slice.basisPoints, locale)}
+                    </Text>
+                  </View>
+                  {/* Genislik EN BUYUK kategoriye gore, toplama gore degil -
+                      web'de de oyle. Toplama gore olsaydi kucuk kategoriler
+                      gorunmez birer cizgiye inerdi. */}
+                  <View style={s.catTrack}>
+                    <View
+                      style={[
+                        s.catFill,
+                        { width: `${(slice.amount / largestCategory) * 100}%` },
+                      ]}
+                    />
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* UYELER VE BAKIYELER. Bu da web'de fisin altinda duruyordu ve
+            mobilde yoktu; veri /balances ile zaten geliyordu. Ayri bir
+            ekrana gitmeden "kim ne durumda" gorunmeli - grubun asil sorusu
+            bu. */}
+        {memberBalances.length > 0 ? (
+          <View style={s.card}>
+            <View style={s.cardHead}>
+              <Cap>{t("ui.members_and_balances")}</Cap>
+              <Link href={`/groups/${groupId}/members`} asChild>
+                <Pressable>
+                  <Text style={s.cardLink}>{t("ui.manage_members")}</Text>
+                </Pressable>
+              </Link>
+            </View>
+            <View style={s.cardBody}>
+              {memberBalances.map((member) => (
+                <View key={member.userId} style={s.memberRow}>
+                  <Text style={s.memberName} numberOfLines={1}>
+                    {member.displayName}
+                    {member.hasLeft ? ` · ${t("ui.member_left")}` : ""}
+                  </Text>
+                  <Text
+                    style={[
+                      s.memberAmount,
+                      {
+                        color:
+                          member.amount === 0
+                            ? theme.muted
+                            : member.amount > 0
+                              ? theme.credit
+                              : theme.debt,
+                      },
+                    ]}
+                  >
+                    {formatSignedMoney(member.amount, currency, locale)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* KAYDEDILEN ODEMELER - web'de ayri bir bolum, mobilde yalnizca
+            alttaki duz baglanti yiginindaydi.
+
+            "Gruplarim" ve "Cikis yap" BURADAN KALKTI: birincisini baslik
+            cubugundaki geri dugmesi karsiliyor, ikincisi Hesap ekraninda.
+            Dordu yan yana duran duz metin, gezinme gibi gorunmuyordu. */}
+        <Link href={`/groups/${groupId}/settlements`} asChild>
+          <Pressable style={s.card}>
+            <View style={s.cardHead}>
+              <Cap>{t("ui.settlements")}</Cap>
+              <Text style={s.cardLink}>→</Text>
+            </View>
           </Pressable>
-        </View>
+        </Link>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -583,6 +697,43 @@ function createStyles(theme: Theme) {
       backgroundColor: theme.surface,
     },
     groupName: { fontSize: 24, fontWeight: "600", color: theme.foreground },
+    // Fisin "magaza adi": ortalanmis, harf araligi acik, tek arali.
+    receiptTitle: {
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      fontSize: 15,
+      letterSpacing: 2,
+      textAlign: "center",
+      color: theme.foreground,
+      marginBottom: 4,
+    },
+    // Cerceveli damga. Zemin YOK: mureklep izlenimi cerceveden geliyor.
+    card: {
+      backgroundColor: theme.paper,
+      borderRadius: 10,
+      padding: 16,
+      marginTop: 12,
+      gap: 10,
+    },
+    cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    cardBody: { gap: 12 },
+    cardLink: { color: theme.brand, fontSize: 13, fontWeight: "500" },
+    catRow: { gap: 5 },
+    catHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },
+    catName: { flex: 1, color: theme.foreground, fontSize: 14 },
+    catAmount: { color: theme.muted, fontSize: 12 },
+    catTrack: { height: 5, borderRadius: 3, backgroundColor: theme.surface, overflow: "hidden" },
+    catFill: { height: "100%", borderRadius: 3, backgroundColor: theme.brand },
+    memberRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },
+    memberName: { flex: 1, color: theme.foreground, fontSize: 15 },
+    memberAmount: { fontSize: 15, fontWeight: "500" },
+    stamp: {
+      alignSelf: "flex-end",
+      borderWidth: 1.5,
+      borderRadius: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      marginTop: 6,
+    },
     balanceBlock: { gap: 2, borderTopWidth: 1, borderStyle: "dashed", borderColor: theme.border, paddingTop: 16 },
     balanceRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" },
     balanceAmount: { fontSize: 26, fontWeight: "500", fontVariant: ["tabular-nums"] },

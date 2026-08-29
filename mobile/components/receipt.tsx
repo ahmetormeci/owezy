@@ -36,16 +36,23 @@ import { useTheme, type Theme } from "../lib/theme";
 export function Cap({
   children,
   tone = "muted",
+  color,
 }: {
   children: string;
   /** "onBrand": kobalt bir zeminin uzerinde - gri metin orada okunmuyor. */
   tone?: "muted" | "onBrand";
+  /**
+   * Etiketin ANLAM TASIDIGI yerler icin. Bakiye muhrunde renk bilgi
+   * tasiyor (ADR-015: yesil "sana borclular", kiremit "borclusun") ve
+   * gri bir etiket o bilgiyi silerdi. Verilmezse tone karar veriyor.
+   */
+  color?: string;
 }) {
   const locale = useLocale();
   const theme = useTheme();
   const s = styles(theme);
   return (
-    <Text style={[s.cap, tone === "onBrand" && s.capOnBrand]}>
+    <Text style={[s.cap, tone === "onBrand" && s.capOnBrand, color ? { color } : null]}>
       {children.toLocaleUpperCase(locale)}
     </Text>
   );
