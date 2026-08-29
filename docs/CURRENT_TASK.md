@@ -23,11 +23,22 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-28 (6)
+Updated: 2026-08-28 (7)
 
 Current task:
-  APP STORE'A ILK GONDERIM. TIKANAN HICBIR SEY KALMADI.
-  Ad cozuldu (asagida), kod tarafinda da acik yok.
+  APP STORE - 1.0 BIR KEZ REDDEDILDI, YENIDEN GONDERIME HAZIRLANIYOR.
+
+  RET: Guideline 2.1 "Information Needed" - hata bildirimi DEGIL, yedi
+  maddelik bir bilgi talebi. Ama cevabi hazirlarken GERCEK bir eksik cikti:
+  istenen ekran kaydi "account deletion flow" gostermeli ve hesap silme YOKTU
+  (Guideline 5.1.1(v) onu zorunlu kiliyor). Faz 33'te uygulandi.
+
+  BUILD 7 GONDERILDI (hesap silme dahil). Onceki alti build ELENDI:
+    3 -> eski ikon
+    4 -> supportsTablet hala true
+    5 -> INCELENEN VE REDDEDILEN build; hesap silme yok
+    6 -> ERRORED (app/ altindaki test dosyasi paketi dusurdu)
+    7 -> secilecek olan
 
   Beklerken iki faz yapildi: Faz 29 mobilde ilk otomatik testler (53 test,
   ADR-042), Faz 30 yeni kimlik isareti + magaza kimligi. IKISI DE GONDERILEN
