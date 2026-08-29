@@ -101,8 +101,10 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
             kind: "ul",
             items: [
               "Telefonda bildirim yok; bildirimler yalnızca web'de görünüyor.",
-              "Telefonda yalnızca eşit bölüşümlü harcamalar düzenlenebiliyor. " +
-                "Tutar veya yüzde girilmiş bir harcamayı düzenlemek için web'i kullan.",
+              "Payları tek tek girilmiş (tutar yazılmış) bir harcamanın " +
+                "TUTARI telefondan değiştirilemiyor — toplamı bozardı. " +
+                "Açıklaması düzenlenebiliyor; yüzdeli bölüşümlerde tutar da " +
+                "değiştirilebiliyor.",
               "Davetler telefonda oluşturulup paylaşılabiliyor ama kabul etmek web'de yapılıyor.",
               "Ödeşme kaydı düzenlenemiyor; yalnızca iptal edilebiliyor.",
               "Grup adı ve açıklaması yalnızca web'de düzenlenebiliyor.",
@@ -217,8 +219,9 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
             kind: "ul",
             items: [
               "No notifications on the phone; they appear on the web only.",
-              "On the phone only equally split expenses can be edited. Use the web to edit " +
-                "an expense entered with exact amounts or percentages.",
+              "The AMOUNT of an expense whose shares were typed in one by one cannot be " +
+                "changed on the phone — it would break the total. Its description can be " +
+                "edited, and for percentage splits the amount can be changed too.",
               "Invites can be created and shared from the phone, but accepting one happens on the web.",
               "Settlements cannot be edited, only cancelled.",
               "A group's name and description can only be edited on the web.",

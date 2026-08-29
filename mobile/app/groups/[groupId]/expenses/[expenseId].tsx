@@ -36,7 +36,7 @@ import { Cap } from "../../../../components/receipt";
  * olarak gondermek ise kullanicinin kurdugu bolusumu SESSIZCE yok etmek
  * olurdu. Ikisi de yapilmiyor.
  */
-type Participant = { userId: string; shareAmount: number };
+type Participant = { userId: string; shareAmount: number; basisPoints: number | null };
 type Expense = {
   id: string;
   description: string;
@@ -140,8 +140,24 @@ export default function ExpenseScreen() {
   // gorunur. ASIL KONTROL HER ZAMAN SUNUCUDA - grup sahibinin, kaydi olusturan
   // kisi grubu terk etmisse mudahale edebildigi bir istisna da var.
   const isMine = currentUserId !== null && item.createdById === currentUserId;
-  const isEqual = item.splitType === "EQUAL";
-  const canEdit = isMine && isEqual;
+  /**
+   * NEYIN DUZENLENEBILECEGI BOLUSME TURUNE GORE DEGISIYOR - ve ayrim veri
+   * modelinden cikiyor, keyfi degil:
+   *
+   *   EQUAL      paylar tutardan turetiliyor; ikisi de degistirilebilir.
+   *   PERCENTAGE paylar YUZDE; tutar degisince sunucu payları yeniden
+   *              hesapliyor, yani tutar da guvenle degistirilebilir.
+   *   EXACT      paylar MUTLAK ve toplamlari tutara ESIT olmak zorunda
+   *              (semadaki degismez kural). Tutar tek basina degistirilirse
+   *              toplam tutmaz; o yuzden burada yalnizca aciklama.
+   *
+   * Onceden UCU DE kilitliydi: ekran "bolusumu duzenlemek icin web'i kullan"
+   * diyordu ve yuzdeli bir harcamanin ADINDAKI yazim hatasi bile telefondan
+   * duzeltilemiyordu.
+   */
+  const isExact = item.splitType === "EXACT";
+  const canEdit = isMine;
+  const canEditAmount = isMine && !isExact;
 
   // Harcama arada silinmisse kaydetmek ya da tekrar silmek anlamsiz; dugmeler
   // kapali ama ekran duruyor, cunku kullanici ne yazdigini gormeye devam etmeli.
@@ -177,12 +193,45 @@ export default function ExpenseScreen() {
       // expenseDate GONDERILMIYOR: sunucu gonderilmediginde mevcut tarihi
       // koruyor (expenses.ts). Gondermek, duzenlemede tarihi sessizce bugune
       // kaydirma riski demekti.
+      /**
+       * GOVDE BOLUSME TURUNE GORE KURULUYOR. Onceden sabit "EQUAL"
+       * gonderiliyordu; o yuzden ekran yalnizca esit bolusumlerde
+       * acilabiliyordu - baska turde gonderilse paylar sessizce esitlenirdi.
+       *
+       * Mevcut paylar OLDUGU GIBI geri gonderiliyor: bu ekran bolusumu
+       * degistirmiyor, yalnizca aciklamayi (ve yuzdeli olanda tutari)
+       * degistiriyor. Sunucu "tam degistirme" bekliyor, yani paylar da
+       * govdede olmak zorunda.
+       */
+      const splitBody =
+        item.splitType === "EQUAL"
+          ? {
+              splitType: "EQUAL" as const,
+              participantUserIds: item.participants.map((p) => p.userId),
+            }
+          : item.splitType === "EXACT"
+            ? {
+                splitType: "EXACT" as const,
+                shares: item.participants.map((p) => ({
+                  userId: p.userId,
+                  amount: p.shareAmount,
+                })),
+              }
+            : {
+                splitType: "PERCENTAGE" as const,
+                // basisPoints yuzdeli kayitlarda dolu; ADR-022 eski satirlar
+                // icin de geri hesaplayip yaziyor. Yine de null gelirse
+                // gondermek semayi dusururdu - o yuzden eleniyor.
+                shares: item.participants
+                  .filter((p) => p.basisPoints !== null)
+                  .map((p) => ({ userId: p.userId, basisPoints: p.basisPoints as number })),
+              };
+
       const result = await put(`/api/v1/groups/${groupId}/expenses/${expenseId}`, {
-        splitType: "EQUAL",
         description: description.trim(),
         amount,
         paidById,
-        participantUserIds: item.participants.map((participant) => participant.userId),
+        ...splitBody,
         version: baseline.version,
       });
 
@@ -347,12 +396,16 @@ export default function ExpenseScreen() {
                 />
 
                 <Cap>{t("ui.amount")}</Cap>
+                {/* EXACT'te salt okunur: paylar mutlak ve toplamlari tutara
+                    esit olmak zorunda, tek basina tutar degistirilemez.
+                    Gorunur kalmasi onemli - alani gizlemek "burada tutar diye
+                    bir sey yok" izlenimi verirdi. */}
                 <TextInput
                   value={amountText}
                   onChangeText={setAmountText}
                   keyboardType="decimal-pad"
-                  editable={!busy}
-                  style={s.input}
+                  editable={!busy && canEditAmount}
+                  style={[s.input, !canEditAmount && s.inputLocked]}
                 />
 
                 <Cap>{t("ui.who_paid")}</Cap>
@@ -404,8 +457,11 @@ export default function ExpenseScreen() {
 
             {/* Neden duzenlenemedigini SOYLUYORUZ. Sessizce salt okunur bir
                 ekran, kullaniciyi "neden dokunamiyorum" sorusuyla birakirdi. */}
-            {isMine && !isEqual ? (
-              <Text style={s.note}>{t("ui.edit_split_on_web")}</Text>
+            {/* Yalnizca EXACT'te ve yalnizca TUTAR icin. Yuzdeli bolusumde
+                tutar da degistirilebiliyor - sunucu paylari yeniden
+                hesapliyor. */}
+            {isMine && isExact ? (
+              <Text style={s.note}>{t("ui.edit_amount_on_web")}</Text>
             ) : null}
             {!isMine ? <Text style={s.note}>{t("access.expense_creator_only")}</Text> : null}
 
@@ -497,6 +553,7 @@ function createStyles(theme: Theme) {
     },
     title: { fontSize: 20, fontWeight: "600", color: theme.foreground },
     bigAmount: { fontSize: 28, color: theme.foreground, fontVariant: ["tabular-nums"] },
+    inputLocked: { opacity: 0.5 },
     input: {
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
