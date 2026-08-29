@@ -535,6 +535,18 @@ export default function GroupScreen() {
           ) : null}
         </Receipt>
 
+        {/* HIZLI EKLEYICI YETMEDIGINDE. Ucu birden - odeyen, katilimcilar,
+            bolusme turu - yalnizca ayri bir ekranda secilebiliyor; fisin
+            altindaki tek satir bilerek dar. */}
+        <Link href={`/groups/${groupId}/expenses/new`} asChild>
+          <Pressable style={s.card}>
+            <View style={s.cardHead}>
+              <Cap>{t("ui.add_expense")}</Cap>
+              <Text style={s.cardLink}>→</Text>
+            </View>
+          </Pressable>
+        </Link>
+
         {/* NEREYE GITTI. Web'de fisin altinda duran kategori kirilimi;
             mobilde HIC YOKTU - oysa veri bastan beri /summary ile geliyordu.
             Web'deki iki kural aynen gecerli: hic harcama yoksa ve TEK

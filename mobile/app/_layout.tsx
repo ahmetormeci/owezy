@@ -104,6 +104,12 @@ function AppStack() {
         name="groups/[groupId]/settlements"
         options={{ title: t("ui.settlements") }}
       />
+      {/* STATIK ROTA DINAMIK OLANDAN ONCE eslesir: "new" adresi
+          [expenseId] tarafindan yakalanmiyor. */}
+      <Stack.Screen
+        name="groups/[groupId]/expenses/new"
+        options={{ title: t("ui.add_expense") }}
+      />
       <Stack.Screen
         name="groups/[groupId]/expenses/[expenseId]"
         options={{ title: t("ui.expenses") }}
