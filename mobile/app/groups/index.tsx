@@ -45,7 +45,7 @@ export default function GroupsScreen() {
 
   if (state.kind === "loading") {
     return (
-      <SafeAreaView style={s.centered}>
+      <SafeAreaView style={s.centered} edges={["bottom", "left", "right"]}>
         <ActivityIndicator />
       </SafeAreaView>
     );
@@ -53,7 +53,7 @@ export default function GroupsScreen() {
 
   if (state.kind === "error") {
     return (
-      <SafeAreaView style={s.centered}>
+      <SafeAreaView style={s.centered} edges={["bottom", "left", "right"]}>
         <Text style={s.error}>{state.text}</Text>
         <Pressable style={s.button} onPress={reload}>
           <Text style={s.buttonText}>{t("ui.try_again")}</Text>
@@ -68,7 +68,7 @@ export default function GroupsScreen() {
   // ve artik yalnizca "grup olustur" DEMIYOR, olusturmayi da sunuyor.
   if (groups.length === 0) {
     return (
-      <SafeAreaView style={s.screen}>
+      <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
         <View style={s.firstRun}>
           <Text style={s.wordmark}>Owezy</Text>
           <Text style={s.firstRunText}>{t("ui.no_groups")}</Text>
@@ -91,8 +91,7 @@ export default function GroupsScreen() {
   }
 
   return (
-    <SafeAreaView style={s.screen}>
-      <Text style={s.title}>{t("ui.my_groups")}</Text>
+    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
 
       <ScrollView style={s.list}>
         {groups.map((group) => (

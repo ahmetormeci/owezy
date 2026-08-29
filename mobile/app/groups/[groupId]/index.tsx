@@ -1,4 +1,4 @@
-import { Link, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { Link, Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -235,7 +235,7 @@ export default function GroupScreen() {
   if (group.state.kind === "error" || summary.state.kind === "error") {
     const text = group.state.kind === "error" ? group.state.text : "…";
     return (
-      <SafeAreaView style={s.centered}>
+      <SafeAreaView style={s.centered} edges={["bottom", "left", "right"]}>
         <Text style={s.error}>{text}</Text>
         <Pressable
           style={s.button}
@@ -259,7 +259,7 @@ export default function GroupScreen() {
     members.state.kind === "loading"
   ) {
     return (
-      <SafeAreaView style={s.centered}>
+      <SafeAreaView style={s.centered} edges={["bottom", "left", "right"]}>
         <ActivityIndicator />
       </SafeAreaView>
     );
@@ -305,7 +305,12 @@ export default function GroupScreen() {
   const owed = myBalance > 0;
 
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
+      {/* Baslik VERIYLE geliyor, o yuzden _layout'ta bos birakilip burada
+          kuruluyor. Grup adi fisin ustunde de yaziyor ama baslik cubugu
+          KAYDIRINCA da yerinde kaliyor - uzun bir listede "hangi gruptayim"
+          sorusunun cevabi kaybolmasin. */}
+      <Stack.Screen options={{ title: group.state.data.group.name }} />
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

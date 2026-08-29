@@ -64,10 +64,8 @@ export default function AccountScreen() {
   }
 
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={s.content}>
-        <Text style={s.title}>{t("ui.account")}</Text>
-
         {state.kind === "loading" ? (
           <ActivityIndicator color={theme.brand} />
         ) : state.kind === "error" ? (

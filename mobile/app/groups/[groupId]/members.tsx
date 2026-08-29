@@ -63,7 +63,7 @@ export default function MembersScreen() {
   }
 
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.paper}>
           <Cap>{t("ui.manage_members")}</Cap>

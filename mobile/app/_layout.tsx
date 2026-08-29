@@ -1,6 +1,7 @@
-import { Slot, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
-import { LocaleProvider } from "../lib/i18n";
+import { LocaleProvider, useTranslate } from "../lib/i18n";
+import { useTheme } from "../lib/theme";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";
 import { SessionProvider, useSession } from "../lib/auth";
 
@@ -35,8 +36,8 @@ function deviceLocale() {
  * yani dugme calismiyor gibi gorunuyor. Her ekrana ayri ayri Redirect
  * koymak, bir sonraki ekranda yine unutulacak bir sey demekti (ADR-037).
  *
- * SLOT HER ZAMAN RENDER EDILIYOR, yonlendirme etkiyle yapiliyor: kok
- * yerlesim <Slot /> yerine baska bir sey donerse gezinme baglami hic
+ * NAVIGATOR HER ZAMAN RENDER EDILIYOR, yonlendirme etkiyle yapiliyor: kok
+ * yerlesim navigator yerine baska bir sey donerse gezinme baglami hic
  * kurulmamis olur ve router.replace cagrilacak bir yer bulamaz.
  *
  * "loading" BEKLENIYOR: belirtec Keychain'den okunana kadar oturumun olup
@@ -57,7 +58,59 @@ function AuthGuard() {
     }
   }, [status, segments, router]);
 
-  return <Slot />;
+  return <AppStack />;
+}
+
+/**
+ * GEZINME YIGINI. Onceden burada <Slot /> vardi ve BU BIR KUSURDU: Slot bir
+ * navigator DEGIL, yalnizca eslesen rotayi yerine koyuyor. Sonucu su oluyordu -
+ * baslik cubugu yok, geri dugmesi yok, iOS'un kenardan kaydirma hareketi de
+ * yok. Kullanici uyeler, odesmeler, harcama detayi ve hesap ekranlarina
+ * girince CIKAMIYORDU; elle konmus tek geri baglantisi grup ekranindaydi.
+ * 29 Agustos'ta kullanici uygulamayi ilk kez actiginda bildirdi.
+ *
+ * BASLIKLAR BURADA, EKRANLARIN ICINDE DEGIL: her ekranin kendi basligini
+ * cizmesi, geri dugmesiyle basligin ayri yerlerde durmasi demekti. Baslik
+ * cubugu ikisini birlikte tasiyor.
+ */
+function AppStack() {
+  const t = useTranslate();
+  const theme = useTheme();
+
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.paper },
+        headerTintColor: theme.brand,
+        headerTitleStyle: { color: theme.foreground, fontSize: 17, fontWeight: "600" },
+        // Geri dugmesinde ONCEKI ekranin adi yerine yalnizca ok: uzun grup
+        // adlari basligi tasiriyor.
+        headerBackButtonDisplayMode: "minimal",
+        contentStyle: { backgroundColor: theme.surface },
+      }}
+    >
+      {/* Yonlendirme ekrani ve giris: baslik cubugu ANLAMSIZ - birinde
+          gorunecek bir sey yok, digerinde geri donulecek yer yok. */}
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+      <Stack.Screen name="groups/index" options={{ title: t("ui.my_groups") }} />
+      {/* Grup adi veriyle geliyor; basligi ekranin kendisi kuruyor. */}
+      <Stack.Screen name="groups/[groupId]/index" options={{ title: "" }} />
+      <Stack.Screen
+        name="groups/[groupId]/members"
+        options={{ title: t("ui.manage_members") }}
+      />
+      <Stack.Screen
+        name="groups/[groupId]/settlements"
+        options={{ title: t("ui.settlements") }}
+      />
+      <Stack.Screen
+        name="groups/[groupId]/expenses/[expenseId]"
+        options={{ title: t("ui.expenses") }}
+      />
+      <Stack.Screen name="account" options={{ title: t("ui.account") }} />
+    </Stack>
+  );
 }
 
 export default function RootLayout() {

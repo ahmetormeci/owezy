@@ -112,7 +112,7 @@ export default function ExpenseScreen() {
 
   if (expense.state.kind === "error") {
     return (
-      <SafeAreaView style={s.centered}>
+      <SafeAreaView style={s.centered} edges={["bottom", "left", "right"]}>
         <Text style={s.error}>{expense.state.text}</Text>
       </SafeAreaView>
     );
@@ -124,7 +124,7 @@ export default function ExpenseScreen() {
     me.state.kind === "loading"
   ) {
     return (
-      <SafeAreaView style={s.centered}>
+      <SafeAreaView style={s.centered} edges={["bottom", "left", "right"]}>
         <ActivityIndicator />
       </SafeAreaView>
     );
@@ -328,7 +328,7 @@ export default function ExpenseScreen() {
   }
 
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

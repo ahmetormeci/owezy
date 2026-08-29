@@ -197,14 +197,14 @@ export default function SettlementsScreen() {
 
   if (members.state.kind === "loading" || me.state.kind === "loading") {
     return (
-      <SafeAreaView style={s.centered}>
+      <SafeAreaView style={s.centered} edges={["bottom", "left", "right"]}>
         <ActivityIndicator />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
