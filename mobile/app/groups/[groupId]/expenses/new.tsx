@@ -41,6 +41,15 @@ import { Cap } from "../../../../components/receipt";
  *
  * currency GONDERILMIYOR - degistirilemez kural. Sunucu her zaman grubun
  * para birimini kullaniyor.
+ *
+ * IKI ADIM, VE SIRASI KEYFI DEGIL: bolusme ekrani TUTARA BAGIMLI. "Tam
+ * tutar" kipinde kalan hesabi tutar girilmeden hicbir sey anlatmiyor
+ * (hedef sifir olur, her sey fazla gorunur); yuzde kipinde de dagitilan
+ * payin karsiligi gosterilemiyor. Yani "ne aldin, kac para" gercekten
+ * "kim odedi, nasil bolusulecek"in oncesinde duruyor.
+ *
+ * ADIM 2'DE TUTAR BASLIKTA TEKRAR YAZIYOR: kullanici neyi bolusturdugunu
+ * gormeden pay dagitamaz.
  */
 type Member = { userId: string; displayName: string };
 type MembersResponse = { members: Member[] };
@@ -72,6 +81,7 @@ export default function NewExpenseScreen() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   /** EXACT ve PERCENTAGE icin: kisi basina girilen ham metin. */
   const [shareText, setShareText] = useState<Record<string, string>>({});
+  const [step, setStep] = useState<1 | 2>(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -105,16 +115,33 @@ export default function NewExpenseScreen() {
   const target = splitType === "EXACT" ? (amount ?? 0) : 10_000;
   const remainder = target - shareTotal;
 
-  async function submit() {
-    if (busy) return;
+  /** Adim 1 -> 2. Ilk adimin dogrulamasi BURADA, kaydetmede degil: hatayi
+      iki ekran sonra gostermek, kullaniciyi geri yollamak demek. */
+  function goToSplit() {
     setError(null);
-
     if (description.trim() === "") {
       setError(t("ui.description_required"));
       return;
     }
     if (amount === null || amount <= 0) {
       setError(t(amountText.trim() === "" ? "ui.amount_required" : "ui.amount_unreadable"));
+      return;
+    }
+    setStep(2);
+  }
+
+  async function submit() {
+    if (busy) return;
+    setError(null);
+
+    if (description.trim() === "") {
+      setError(t("ui.description_required"));
+      setStep(1);
+      return;
+    }
+    if (amount === null || amount <= 0) {
+      setError(t(amountText.trim() === "" ? "ui.amount_required" : "ui.amount_unreadable"));
+      setStep(1);
       return;
     }
     if (!payer) {
@@ -177,12 +204,35 @@ export default function NewExpenseScreen() {
 
   return (
     <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
-      <Stack.Screen options={{ title: t("ui.add_expense") }} />
+      <Stack.Screen
+        options={{
+          title: t("ui.add_expense"),
+          /**
+           * ADIM 2'DE GERI DUGMESI ADIM 1'E DONUYOR, ekrandan cikmiyor.
+           * Varsayilan davranis birakilsaydi kullanici tutari duzeltmek
+           * isteyip her seyi kaybederdi - ve bir yigin ekraninda "geri"nin
+           * ekrandan cikmasi beklenen sey, o yuzden sessizce sasirtirdi.
+           */
+          headerLeft:
+            step === 2
+              ? () => (
+                  <Pressable onPress={() => setStep(1)} hitSlop={12}>
+                    <Text style={s.headerBack}>‹</Text>
+                  </Pressable>
+                )
+              : undefined,
+        }}
+      />
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+          {/* Adim gostergesi: kac adim oldugunu bilmek, ikinci adimda
+              "daha ne kadar var" sorusunu ortadan kaldiriyor. */}
+          <Text style={s.stepHint}>{step === 1 ? "1 / 2" : "2 / 2"}</Text>
+
+          {step === 1 ? (
           <View style={s.card}>
             <Cap>{t("ui.description")}</Cap>
             <TextInput
@@ -206,6 +256,16 @@ export default function NewExpenseScreen() {
               placeholderTextColor={theme.muted}
               editable={!busy}
             />
+          </View>
+          ) : (
+          <>
+          {/* NE BOLUSTURULUYOR: adim 2'de tutar tekrar yaziyor, cunku pay
+              dagitan kisi neyi dagittigini gormeden yapamaz. */}
+          <View style={s.card}>
+            <View style={s.recap}>
+              <Text style={s.recapName} numberOfLines={1}>{description.trim()}</Text>
+              <Text style={s.recapAmount}>{formatMoney(amount ?? 0, currency, locale)}</Text>
+            </View>
           </View>
 
           {/* ODEYEN. Hizli ekleyicide degistirilemiyordu; baskasinin odedigi
@@ -321,20 +381,29 @@ export default function NewExpenseScreen() {
             )}
           </View>
 
+          </>
+          )}
+
           {error ? <Text style={s.error}>{error}</Text> : null}
 
-          <Pressable
-            testID="save"
-            style={s.primary}
-            onPress={() => void submit()}
-            disabled={busy}
-          >
-            {busy ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={s.primaryText}>{t("ui.save_expense")}</Text>
-            )}
-          </Pressable>
+          {step === 1 ? (
+            <Pressable testID="next" style={s.primary} onPress={goToSplit} disabled={busy}>
+              <Text style={s.primaryText}>{t("ui.next")}</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              testID="save"
+              style={s.primary}
+              onPress={() => void submit()}
+              disabled={busy}
+            >
+              {busy ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={s.primaryText}>{t("ui.save_expense")}</Text>
+              )}
+            </Pressable>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -401,5 +470,10 @@ function createStyles(theme: Theme) {
     },
     primaryText: { color: "#fff", fontSize: 16, fontWeight: "600" },
     error: { color: theme.debt, fontSize: 14 },
+    stepHint: { color: theme.muted, fontSize: 12, letterSpacing: 1, marginBottom: 2 },
+    headerBack: { color: theme.brand, fontSize: 30, lineHeight: 32, paddingHorizontal: 4 },
+    recap: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },
+    recapName: { flex: 1, color: theme.foreground, fontSize: 16, fontWeight: "500" },
+    recapAmount: { color: theme.foreground, fontSize: 17, fontWeight: "600" },
   });
 }

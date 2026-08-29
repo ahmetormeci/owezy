@@ -386,6 +386,9 @@ export const MESSAGES_TR = {
   "ui.add_expense": "Harcama ekle",
   "ui.edit_expense": "Harcamayı düzenle",
   "ui.save_expense": "Harcamayı kaydet",
+  // Iki adimli harcama formunun ilk adiminda: bolusme tutara bagli
+  // oldugu icin once "ne aldin, kac para" soruluyor.
+  "ui.next": "Devam",
   "ui.save_changes": "Değişiklikleri kaydet",
   "ui.expense_added": "Harcama eklendi",
   // Fisin son satiri: sayfadan cikmadan harcama ekleme (Faz 16.3).
@@ -869,6 +872,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.add_expense": "Add expense",
   "ui.edit_expense": "Edit expense",
   "ui.save_expense": "Save expense",
+  "ui.next": "Next",
   "ui.save_changes": "Save changes",
   "ui.expense_added": "Expense added",
   "ui.composer_placeholder": "What did you buy?",
