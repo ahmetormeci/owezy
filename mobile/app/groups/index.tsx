@@ -76,9 +76,16 @@ export default function GroupsScreen() {
             <GroupCreator onCreated={reload} />
           </View>
         </View>
-        <Pressable style={s.signOut} onPress={() => void signOut()}>
-          <Text style={s.signOutText}>{t("ui.sign_out")}</Text>
-        </Pressable>
+        <View style={s.footer}>
+          <Link href="/account" asChild>
+            <Pressable style={s.signOut}>
+              <Text style={s.signOutText}>{t("ui.account")}</Text>
+            </Pressable>
+          </Link>
+          <Pressable style={s.signOut} onPress={() => void signOut()}>
+            <Text style={s.signOutText}>{t("ui.sign_out")}</Text>
+          </Pressable>
+        </View>
       </SafeAreaView>
     );
   }
@@ -113,9 +120,19 @@ export default function GroupsScreen() {
         </View>
       </ScrollView>
 
-      <Pressable style={s.signOut} onPress={() => void signOut()}>
-        <Text style={s.signOutText}>{t("ui.sign_out")}</Text>
-      </Pressable>
+      {/* HESAP EKRANINA KAPI. Cikis burada KALIYOR: en sik yapilan islemi
+          bir dokunus derine gommemek icin. Hesap silme icerideki ekranda
+          (App Store Guideline 5.1.1(v) uygulama ici silmeyi zorunlu tutuyor). */}
+      <View style={s.footer}>
+        <Link href="/account" asChild>
+          <Pressable style={s.signOut}>
+            <Text style={s.signOutText}>{t("ui.account")}</Text>
+          </Pressable>
+        </Link>
+        <Pressable style={s.signOut} onPress={() => void signOut()}>
+          <Text style={s.signOutText}>{t("ui.sign_out")}</Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -154,6 +171,7 @@ function createStyles(theme: Theme) {
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
     buttonText: { color: "#fff", fontSize: 15 },
+    footer: { flexDirection: "row", justifyContent: "center", gap: 28 },
     signOut: { paddingVertical: 16 },
     signOutText: { color: theme.muted, fontSize: 14 },
   });

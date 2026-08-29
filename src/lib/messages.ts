@@ -27,6 +27,8 @@ export const MESSAGES_TR = {
 
   // --- Uyelik ---
   "member.not_found": "Üye bulunamadı",
+  // Hesap zaten silinmis ya da hic yok. Silme ucu bunu donduruyor.
+  "user.not_found": "Böyle bir hesap bulunamadı.",
   "member.remove_owner_only": "Üye çıkarma yetkisi yalnızca grup sahibindedir",
   "member.transfer_target_not_active":
     "Sahipliğin devredileceği kişi grubun aktif üyesi değil",
@@ -312,6 +314,24 @@ export const MESSAGES_TR = {
   // Faz 25.4'te web de bu sozluge bagsizlandi - ayni anahtarlari iki istemci
   // birden kullaniyor.
   "ui.sign_out": "Çıkış yap",
+
+  /**
+   * HESAP SILME. App Store Guideline 5.1.1(v) uygulama ici silmeyi zorunlu
+   * kiliyor; metinler de o zorunlulugun bir parcasi - kullanici NE
+   * KAYBEDECEGINI silmeden once bilmeli.
+   */
+  "ui.account": "Hesap",
+  "ui.delete_account": "Hesabımı sil",
+  "ui.delete_account_title": "Hesabını silmek üzeresin",
+  // Kaybedilecek sey somut yaziliyor, "bu islem geri alinamaz" gibi bos bir
+  // cumleyle degil.
+  "ui.delete_account_warning":
+    "Adın ve e-postan silinir, gruplarından çıkarılırsın ve bir daha bu hesapla giriş yapamazsın. Geçmiş harcamalar gruplarda kalır — silinseydi arkadaşlarının bakiyeleri yanlış görünürdü.",
+  // Acik bakiyesi olan da silebilir (ADR-031) ama gormeden degil.
+  "ui.delete_account_balance_warning":
+    "Açık bir hesabın olabilir. Silmek borcunu ortadan kaldırmaz; arkadaşlarınla aranda kalır.",
+  "ui.delete_account_confirm": "Evet, hesabımı sil",
+  "ui.delete_account_done": "Hesabın silindi.",
   "ui.try_again": "Tekrar dene",
   "ui.you": "Sen",
   "ui.member_left": "Ayrıldı",
@@ -578,6 +598,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
 
   // --- Membership ---
   "member.not_found": "Member not found",
+  "user.not_found": "No such account was found.",
   "member.remove_owner_only": "Only the group owner can remove members",
   "member.transfer_target_not_active":
     "The person you are transferring ownership to is not an active member of the group",
@@ -792,6 +813,16 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.role_member": "Member",
 
   "ui.sign_out": "Sign out",
+
+  "ui.account": "Account",
+  "ui.delete_account": "Delete my account",
+  "ui.delete_account_title": "You are about to delete your account",
+  "ui.delete_account_warning":
+    "Your name and email are removed, you leave your groups, and you can no longer sign in with this account. Past expenses stay in the groups — deleting them would make your friends' balances wrong.",
+  "ui.delete_account_balance_warning":
+    "You may have an open balance. Deleting your account does not clear a debt; it stays between you and your friends.",
+  "ui.delete_account_confirm": "Yes, delete my account",
+  "ui.delete_account_done": "Your account has been deleted.",
   "ui.try_again": "Try again",
   "ui.you": "You",
   "ui.member_left": "Left",

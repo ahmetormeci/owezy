@@ -24,6 +24,17 @@ export type Theme = {
   brand: string;
   credit: string;
   debt: string;
+  /**
+   * YIKICI EYLEM rengi - "borc" renginden AYRI ve bu ayrim ADR-015'in
+   * geregi. Kirmizi bu uygulamada BILGI TASIYOR: debt kiremiti "sen
+   * borclusun" demek. Hesap silme dugmesini o renkle boyamak, kullaniciya
+   * borcunu anlatan renkle bir eylemi anlatmak olurdu.
+   *
+   * globals.css'te ikisi zaten ayri (--debt ve --destructive) ve aradaki
+   * farki DOYGUNLUK tasiyor. Mobil temada bugune kadar yoktu cunku mobilde
+   * hic yikici eylem yoktu; hesap silme ilk oldu.
+   */
+  destructive: string;
 };
 
 const LIGHT: Theme = {
@@ -36,6 +47,7 @@ const LIGHT: Theme = {
   brand: "#065ac0", //      --brand
   credit: "#388064", //     --credit
   debt: "#a5564e", //       --debt
+  destructive: "#e7000b", // --destructive
 };
 
 const DARK: Theme = {
@@ -48,6 +60,7 @@ const DARK: Theme = {
   brand: "#5b9af6",
   credit: "#6bbc9a",
   debt: "#cb6d64",
+  destructive: "#ff6467",
 };
 
 export function useTheme(): Theme {

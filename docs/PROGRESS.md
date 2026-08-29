@@ -1115,6 +1115,51 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 33 — Hesap silme · **BİTTİ**
+
+Apple 1.0'ı **Guideline 2.1 — Information Needed** ile reddetti. Ret bir
+anket: yedi madde bilgi istiyor, hiçbiri hata bildirmiyor. Ama cevabı
+hazırlarken gerçek bir eksik çıktı — istenen ekran kaydı şunu göstermeli:
+*"Account registration, login, and **account deletion** flows"*.
+
+**Hesap silme yoktu.** Üç yerden doğrulandı: `/api/v1/me` altında yalnızca
+`GET` ve `PATCH` vardı, ne web'de ne mobilde arayüz vardı, ve ADR-031 zaten
+"HENÜZ UYGULANMADI" diyordu. **Guideline 5.1.1(v)** hesap açılabilen her
+uygulamada uygulama içi silmeyi zorunlu kılıyor; Owezy hesap açıyor. Yani
+kayıt olduğu gibi çekilseydi bir sonraki ret 5.1.1'den gelecekti.
+
+| Katman | Ne geldi |
+|---|---|
+| Servis | `src/lib/account.ts` — tek transaction |
+| Uç | `DELETE /api/v1/me` |
+| Mobil | `app/account.tsx` — yeni ekran, iki adımlı onay |
+| Web | `components/delete-account-dialog.tsx` |
+
+**Korunan şey silinen şeyden önemli.** Testlerin yarısı "şuna dokunmadı mı"
+diye soruyor: harcama ve ödeme satırları yerinde kalıyor, çünkü onlar yalnızca
+silinen kişinin kaydı değil — grupta kalanların bakiyeleri de onlardan
+hesaplanıyor. Silinselerdi başkalarının parası yanlış görünürdü ve bunu
+kimse fark etmezdi; bakiye yine bir sayı döndürürdü.
+
+**Borç engel değil** (ADR-031). `leaveGroup` bakiye kapalı değilse ayrılmayı
+reddediyor ve gruptan çıkma için bu doğru; hesap silmeyi borca bağlamak
+kullanıcıyı kendi verisinin içinde rehin tutmak olurdu. Uyarı arayüzde.
+
+**ADR-015 araya girdi.** Mobil temada `danger` diye bir token yoktu ve
+olmaması tesadüf değil: bu üründe kırmızı "sen borçlusun" demek. Web'de
+`--debt` ile `--destructive` zaten bilerek ayrı (farkı doygunluk taşıyor);
+mobil temaya `destructive` eklendi.
+
+**Bir mutasyon kaçtı ve test düzeltildi.** "En eski üye yerine en yeniye
+devret" yakalanmadı, çünkü taklit `findMany` sıralamayı yok sayıyor. Sonucu
+belirleyen şey sorgunun kendisi; `orderBy` de sabitlendi. 7/7.
+
+**Doğrulama:** 554 kök birim (16 yeni), 53 + 14 mobil, kök ve mobil `tsc` +
+lint, **56 E2E (10,3 dk)** — kullanıcı menüsüne düğme eklendiği için tam koşu
+yapıldı, hiçbir seçici kırılmadı.
+
+---
+
 ## Faz 32 — Giriş ekranı artık otomatik doğrulanıyor · **BİTTİ**
 
 `app/sign-in.tsx` mobilin en riskli ekranıydı ve **yalnızca simülatörde, elle**

@@ -3,6 +3,7 @@ import { findCurrentUser } from "@/lib/auth";
 import { enforceWriteLimit } from "@/lib/api-rate-limit";
 import { prisma } from "@/lib/prisma";
 import { updateMeSchema } from "@/lib/me-schemas";
+import { deleteAccount } from "@/lib/account";
 import { handleApiError } from "@/lib/api";
 
 export async function GET() {
@@ -75,6 +76,40 @@ export async function PATCH(request: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, user: updated });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+/**
+ * HESABI SILER.
+ *
+ * NEDEN BU UC VAR: App Store Guideline 5.1.1(v), hesap acilabilen
+ * uygulamalarda uygulama ici hesap silmeyi ZORUNLU kiliyor. Owezy hesap
+ * aciyor - e-posta koduyla giren biri kayitli degilse yaratiliyor - yani
+ * kural bizi baglıyor. ADR-031 karari 24 Agustos'ta alinmisti; eksiklik
+ * 28 Agustos'ta Apple'in 2.1 reddi sirasinda fark edildi.
+ *
+ * SILME ONAYI GOVDEDE ISTENMIYOR ve bu bilincli: onay ARAYUZUN isi ve orada
+ * iki adimla aliniyor. Uca ikinci bir "gercekten mi" alani koymak, gercek
+ * korumayi degil, gercek koruma HISSINI eklerdi - belirteci olan biri o alani
+ * da doldurabilir.
+ *
+ * YAZMA HIZ SINIRI UYGULANIYOR: tek seferlik bir islem ama ucun kendisi
+ * kimlik dogrulamali her uc gibi korunuyor.
+ */
+export async function DELETE() {
+  try {
+    const user = await findCurrentUser();
+    if (!user) {
+      return NextResponse.json({ ok: false, code: "auth.not_signed_in" }, { status: 401 });
+    }
+
+    const limited = await enforceWriteLimit(user.id);
+    if (limited) return limited;
+
+    const result = await deleteAccount(user.id);
+    return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     return handleApiError(error);
   }

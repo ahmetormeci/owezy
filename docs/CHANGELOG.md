@@ -8,6 +8,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-28 (4) — Hesap silme
+
+Apple 1.0'ı Guideline 2.1 (Information Needed) ile reddetti. Cevabı
+hazırlarken gerçek bir eksik çıktı: **hesap silme yoktu** ve Guideline
+5.1.1(v) onu zorunlu kılıyor.
+
+`DELETE /api/v1/me`, `src/lib/account.ts`, mobilde yeni bir Hesap ekranı,
+web'de bir onay penceresi. Silme soft: kişisel veri anonimleşiyor, üyelikler
+kapanıyor, sahiplik en eski aktif üyeye geçiyor — **harcama ve ödeme
+kayıtlarına dokunulmuyor**, yoksa grupta kalanların bakiyeleri bozulurdu.
+
+ADR-031 uygulandı olarak işaretlendi; kararda değişen tek şey sahiplik
+devrinin otomatik olması.
+
+---
+
 ## 2026-08-28 (3) — Giriş ekranı otomatik doğrulanıyor
 
 `app/sign-in.tsx` için 14 test (`jest-expo` + `@testing-library/react-native`).

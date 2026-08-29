@@ -1237,7 +1237,26 @@ uygulamanın karmaşıklık bütçesini aşardı.
 ---
 
 ## ADR-031 — Hesap silme uygulama içinden, kendi ucumuzla; borç engel değil
-**Tarih:** 2026-08-24 · **Durum:** Kabul edildi — **HENÜZ UYGULANMADI**
+**Tarih:** 2026-08-24 · **Durum:** Kabul edildi · **UYGULANDI: 2026-08-28**
+
+> **Uygulama notu (28 Ağustos).** Karar dört gün "uygulanmadı" olarak durdu ve
+> bu, Apple'ın 2.1 reddiyle ortaya çıktı: inceleyici ekran kaydında "account
+> deletion flow" görmek istedi, gösterecek bir şey yoktu. Kararın dayandığı
+> `markUserDeletedFromClerk` de Better Auth geçişinde kalkmıştı, yani
+> aşağıdaki "zaten var olanın envanteri" bölümü artık geçerli değil —
+> mantık `src/lib/account.ts`'te sıfırdan yazıldı.
+>
+> **Kararda değişen tek şey sahiplik devri:** ADR yeni sahibi kullanıcıya
+> seçtirmeyi öngörmüyordu ama `leaveGroup` öyle yapıyor. Hesap silmede
+> kullanıcı on grubun her biri için ayrı sahip seçemez; **en eski aktif
+> üyeye** otomatik geçiyor.
+>
+> **Bilinçli eksik:** silinen kullanıcının görünen adı veritabanına sabit
+> Türkçe metin olarak yazılıyor. Doğrusu API'nin bir `deleted` bayrağı
+> döndürüp etiketi istemcinin çevirmesiydi (ADR-017), ama `displayName` çok
+> yerde doğrudan basılıyor ve o değişiklik iki istemcide birden DTO dokunuşu
+> demekti. Sonuç: İngilizce arayüz kullanan biri, eski grup arkadaşı hesabını
+> sildiğinde Türkçe bir etiket görür. Uyumla ilgisi yok; PROGRESS.md'de aday.
 
 **Karar:** Kullanıcı hesabını uygulama içinden silebilecek. Silme **kendi
 ucumuzdan** yapılacak (`DELETE /api/v1/me`), Clerk'in kendi silme düğmesi

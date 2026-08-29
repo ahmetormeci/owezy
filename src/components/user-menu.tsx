@@ -24,6 +24,10 @@ import { useTranslate } from "@/lib/i18n";
  * next/dynamic + kosullu render: modul, kullanici menuden guvenlik satirina
  * BASTIGINDA indiriliyor.
  */
+const DeleteAccountDialog = dynamic(() =>
+  import("@/components/delete-account-dialog").then((m) => m.DeleteAccountDialog),
+);
+
 const SecurityDialog = dynamic(() =>
   import("@/components/security-dialog").then((m) => m.SecurityDialog),
 );
@@ -68,6 +72,7 @@ export function UserMenu({
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [name, setName] = useState(displayName);
   const [error, setError] = useState<string | null>(null);
 
@@ -274,6 +279,21 @@ export function UserMenu({
             >
               {t("ui.sign_out")}
             </Button>
+            {/* YIKICI EYLEM EN SONDA ve ayri bir renkte: yanlislikla
+                basilmasi en zor yer burasi. Onay ayri bir dialogda
+                aliniyor - menude tek dokunusla hesap silinmemeli. */}
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-start text-destructive hover:text-destructive"
+              onClick={() => {
+                setMenuOpen(false);
+                setDeleteOpen(true);
+              }}
+              disabled={busy}
+            >
+              {t("ui.delete_account")}
+            </Button>
           </>
         )}
       </PopoverContent>
@@ -282,6 +302,9 @@ export function UserMenu({
         kapandiginda icerigini agactan cikariyor. */}
     {securityOpen ? (
       <SecurityDialog open onOpenChange={setSecurityOpen} />
+    ) : null}
+    {deleteOpen ? (
+      <DeleteAccountDialog open onOpenChange={setDeleteOpen} />
     ) : null}
     </>
   );
