@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,7 +25,6 @@ type InviteResponse = { invite: { token: string } };
 
 export default function MembersScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
-  const router = useRouter();
   const t = useTranslate();
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
@@ -66,8 +65,6 @@ export default function MembersScreen() {
     <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.paper}>
-          <Cap>{t("ui.manage_members")}</Cap>
-
           {members.state.kind === "loading" ? (
             <ActivityIndicator style={s.loading} />
           ) : members.state.kind === "error" ? (
@@ -114,9 +111,6 @@ export default function MembersScreen() {
           {error ? <Text style={s.error}>{error}</Text> : null}
         </View>
 
-        <Pressable onPress={() => router.back()} style={s.backRow}>
-          <Text style={s.back}>{t("ui.cancel")}</Text>
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -163,7 +157,6 @@ function createStyles(theme: Theme) {
     warning: { fontSize: 11, color: theme.muted, lineHeight: 16 },
     shareAgain: { fontSize: 13, color: theme.brand, paddingTop: 4 },
     error: { fontSize: 13, color: theme.debt },
-    backRow: { paddingVertical: 16 },
     back: { color: theme.muted, fontSize: 14 },
   });
 }

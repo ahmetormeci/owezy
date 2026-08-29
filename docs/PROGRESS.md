@@ -1115,6 +1115,58 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 34 — Mobil arayüz, web'in bilgi mimarisine getiriliyor · **SÜRÜYOR**
+
+Kullanıcı mobil uygulamayı **ilk kez** 29 Ağustos'ta açtı ve "dümdüz bir
+metinler topluluğu, web'le hiç alakası yok" dedi. Haklıydı — ve sebebi şu:
+**ben de o güne kadar bu uygulamaya hiç bakmamıştım.** Davranışını testlerle,
+uçlarını ölçümle doğrulamıştım; ekranda neye benzediğini hiç görmemiştim.
+
+Simülatörü açıp hesap yaratıp gruba girince teşhis netleşti. Eksik olan
+**tasarım sistemi değildi**: fiş metaforu mobilde de vardı ve tekniği RN için
+tek tek ölçülerek yazılmıştı (noktalı ayraç `borderStyle: "dotted"` ile
+çalışmıyor, tekrarlanan `·` kullanılmış; yırtık kenar üçgen hilesiyle).
+Eksik olan **içiydi**: web'in grup sayfasındaki dokuz bloktan mobil üçünü
+çiziyordu.
+
+| Adım | Ne yapıldı |
+|---|---|
+| 1 | `<Slot />` → `<Stack />`: başlık çubuğu, geri düğmesi, kaydırma hareketi |
+| 2 | Grup ekranı web'in blok sırasına getirildi: fiş başlığı, ÖDEŞTİN mührü, kategori çubukları, üye bakiyeleri |
+| 3 | Harcama ekleme ekranı: kim ödedi, kimler paylaşıyor, bölüşme türü — **iki adımda** |
+| 4 | Açılış görseli, ekranlardaki tekrarlar (sürüyor) |
+
+**Hiçbiri API işi değildi.** `/summary` kategori kırılımını, `/balances` üye
+bakiyelerini baştan beri döndürüyordu; mobilin tip tanımları dardı ve veri
+gelip **atılıyordu**.
+
+**Geri dönememe gerçek bir kusurdu.** Kök yerleşim `<Slot />` kullanıyordu ve
+`Slot` bir navigator değil — üyeler, ödeşmeler, harcama detayı ve hesap
+ekranlarından çıkış yolu yoktu.
+
+**Adımlama keyfi değil:** bölüşme ekranı tutara bağımlı. Tam tutar kipinde
+kalan hesabı tutar olmadan anlamsız, yüzde kipinde payların karşılığı
+gösterilemiyor.
+
+**Açılış görseli yapılandırması hiç yoktu.** `app.json`'da `splash` anahtarı
+yoktu; Expo Go'da görünen şablon logosu Expo Go'nun kendi ekranıydı, üretimde
+ise hiçbir şey yoktu. Artık `BrandMark`'ın aynı iki path'inden üretilen bir
+görsel, açık ve koyu tema için ayrı.
+
+**Yöntem değişikliği kayda değer:** bu fazda her adımdan sonra simülatörde
+**bakıldı**. Uygulama `tsc`, lint ve 67 test yeşilken kullanılamaz haldeydi;
+yeşil sinyaller ürünün iyi olduğunu değil, yazılanın yazıldığı gibi
+çalıştığını söylüyor.
+
+**Bir yanlış teşhis kaydı:** sunucu logunda "POST'tan sonra hiç GET yok"
+görülüp "geri dönüşte tazelenmiyor" sonucuna varıldı. Yanlıştı — simülatör
+dokunuşları ıskalamıştı, hiç gezinme olmamıştı. Log doğruydu, okuma yanlıştı.
+
+**Kalan:** eşit olmayan bölüşümün mobilde düzenlenmesi (`PUT` + ADR-032
+iyimser kilitleme), arama/süzme, bildirimler, daveti kabul etme.
+
+---
+
 ## Faz 33 — Hesap silme · **BİTTİ**
 
 Apple 1.0'ı **Guideline 2.1 — Information Needed** ile reddetti. Ret bir

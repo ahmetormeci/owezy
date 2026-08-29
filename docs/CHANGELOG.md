@@ -8,6 +8,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-29 — Mobil arayüz elden geçiriliyor
+
+Kullanıcı uygulamayı ilk kez açtı ve haklı bir şikâyette bulundu. Teşhis:
+fiş tasarımı mobilde vardı, ama web'in grup sayfasındaki dokuz bloktan
+yalnızca üçü çiziliyordu.
+
+- `<Slot />` → `<Stack />`: ekranlardan geri dönülemiyordu, artık dönülüyor
+- Grup ekranına ÖDEŞTİN mührü, kategori çubukları ve üye bakiyeleri geldi
+- Harcama ekleme ekranı: kim ödedi, kimler paylaşıyor, bölüşme türü (iki adım)
+- Açılış görseli yapılandırıldı (daha önce hiç yoktu)
+- Üyeler ve ödeşmeler ekranlarındaki başlık tekrarları kalktı
+
+Ayrıntı ve gerekçeler PROGRESS.md, Faz 34.
+
+---
+
 ## 2026-08-28 (4) — Hesap silme
 
 Apple 1.0'ı Guideline 2.1 (Information Needed) ile reddetti. Cevabı

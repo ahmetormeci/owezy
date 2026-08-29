@@ -285,7 +285,6 @@ export default function SettlementsScreen() {
           </View>
 
           <View style={s.paper}>
-            <Cap>{t("ui.settlements")}</Cap>
             {history.state.kind === "loading" ? (
               <ActivityIndicator style={s.loading} />
             ) : settlements.length === 0 ? (
