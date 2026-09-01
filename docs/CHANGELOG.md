@@ -8,6 +8,41 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-01 — Harcama listesi: tekrar temizlendi, mobile arama geldi
+
+Kullanıcı listenin uzadıkça okunmaz hâle geldiğini söyledi; simülatörde
+ölçüldü ve teşhis satır sayısı değil **tekrar** çıktı: dokuz harcamanın
+ikincil satırında 43 karakterin 37'si dokuzunda da birebir aynıydı (aynı
+tarih, aynı ödeyen).
+
+Çizim kuralları `src/lib/expense-list-view.ts`'de toplandı — web ile mobil
+aynı yerden okuyor:
+
+- Tarih ve ödeyen yalnızca bir önceki satırdan **farklıysa** yazılıyor.
+  Karşılaştırma **biçimlenmiş metin** üzerinde: ham güne bakmak, UTC'de aynı
+  güne düşüp yerel saatte ayrı günlere düşen iki satırda yanlış gün
+  okuttururdu.
+- "Senin payın" tutarın aynısıysa yazılmıyor (satırın sağ ucunda zaten o
+  sayı duruyor).
+- Fiş satırında e-posta biçimindeki görünen ad "@" öncesine kısalıyor.
+  Saklanan değer değişmiyor; üye listesi ve bakiyeler tam adresi gösteriyor.
+- `groupByMonth` de buraya taşındı: mobildeki arama sonuçları da aya
+  bölünüyor, ikinci bir kopya UTC gerekçesini taşımazdı.
+
+Mobilde "senin payın" zaten hiç yoktu — eleme yer açınca eklendi.
+
+**Mobile arama ve süzme geldi.** Web'in tek satırlık süzgeç çubuğu telefonda
+bölündü: arama kutusu her zaman açık, kategori ve "yalnızca beni
+ilgilendirenler" `FİLTRE` etiketiyle açılan panelde. Web'in kuralları
+korundu — süzgeç açıkken ay katlama kapanıyor, ay ara toplamları yazılmıyor,
+yerine sonuç sayısı ve toplamı çıkıyor. Sunucuda iş yoktu: uç `q`,
+`category`, `mine` ve `matches`'i baştan beri destekliyordu.
+
+CSV dışa aktarma mobilde yok (paylaşım sayfası ayrı bir bağımlılık); destek
+sayfasındaki "bugünkü sınırlar" listesine yazıldı.
+
+---
+
 ## 2026-08-29 (2) — Mobilde harcama düzenleme ve kategori
 
 Eşit olmayan bölüşümlerin düzenleme kilidi kalktı; ayrım veri modelinden:

@@ -372,6 +372,10 @@ export const MESSAGES_TR = {
   "ui.month_expense_count_other": "{count} harcama",
   "ui.search_expenses": "Harcama ara",
   "ui.all_categories": "Tüm kategoriler",
+  // Mobilde süzgeç satırı kapalı duruyor ve bu etiketle açılıyor; web'de
+  // denetimlerin hepsi zaten görünür olduğu için orada karşılığı yok.
+  "ui.filter": "Filtre",
+  "ui.clear_filters": "Temizle",
   "ui.only_mine": "Yalnızca beni ilgilendirenler",
   "ui.no_matching_expenses": "Aramanla eşleşen harcama yok.",
   "ui.match_count_one": "{count} sonuç",
@@ -857,6 +861,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.month_expense_count_other": "{count} expenses",
   "ui.search_expenses": "Search expenses",
   "ui.all_categories": "All categories",
+  "ui.filter": "Filter",
+  "ui.clear_filters": "Clear",
   "ui.only_mine": "Only ones involving me",
   "ui.no_matching_expenses": "No expenses match your search.",
   "ui.match_count_one": "{count} result",

@@ -23,6 +23,13 @@ import { ApiClientError, apiRequest } from "@/lib/api-client";
 import { formatMoney } from "@/lib/money";
 import { formatDate, formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES, EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
+import {
+  displayNameForLine,
+  groupByMonth,
+  shouldShowShare,
+  visibleSecondaryFields,
+  type SecondaryFields,
+} from "@/lib/expense-list-view";
 import { useLocale, useTranslate } from "@/lib/i18n";
 import { ReceiptLine, ReceiptPerforation } from "@/components/receipt";
 
@@ -54,33 +61,6 @@ type ListState = {
   nextCursor: string | null;
   matches: { count: number; total: number } | null;
 };
-
-/**
- * Yuklenmis harcamalari aya boler.
- *
- * expenseDate ISO metni ve sunucudaki monthKey ile AYNI dilim aliniyor
- * (ilk 7 karakter, UTC). Date'e cevirip getMonth() kullansaydik, UTC'nin
- * gerisindeki bir saat diliminde ayin ilk gunu bir onceki basligin altina
- * duserdi ve o ayin toplami satirlariyla celisirdi.
- *
- * Liste zaten tarihe gore azalan sirali geldigi icin tek gecis yetiyor.
- */
-function groupByMonth(expenses: ExpenseListItem[]) {
-  const groups: { month: string; expenses: ExpenseListItem[] }[] = [];
-
-  for (const expense of expenses) {
-    const month = expense.expenseDate.slice(0, 7);
-    const current = groups[groups.length - 1];
-
-    if (current?.month === month) {
-      current.expenses.push(expense);
-    } else {
-      groups.push({ month, expenses: [expense] });
-    }
-  }
-
-  return groups;
-}
 
 function DeleteExpenseButton({
   groupId,
@@ -505,9 +485,31 @@ export function ExpenseList({
   // nameByUserId ve currentUserId'yi kapaniyor; disari alsak alti prop'u tek
   // tek gecirmek gerekirdi. Iki yerde kullaniliyor: acik ayda ve acilmis eski
   // aylarda - kopyalanan bir satir, zamanla ayrisan bir satirdir.
-  function renderRow(expense: ExpenseListItem) {
+  /**
+   * Bir satirin ikincil alanlari. Uc parca da BURADA bicimleniyor, cunku
+   * elenip elenmeyecegine yazilacak metne bakilarak karar veriliyor
+   * (bkz. expense-line.ts).
+   */
+  function secondaryFieldsOf(expense: ExpenseListItem): SecondaryFields {
+    return {
+      date: formatDate(new Date(expense.expenseDate), locale),
+      category: t(EXPENSE_CATEGORY_CODES[expense.category]),
+      payer: t("ui.paid_by", {
+        name: displayNameForLine(nameByUserId[expense.paidById] ?? t("ui.unknown_user")),
+      }),
+    };
+  }
+
+  // previous EKRANDA BIR USTTEKI satir; ay sinirinda undefined geciliyor ki
+  // her bolumun ilk satiri kendi tarihini yazsin.
+  function renderRow(expense: ExpenseListItem, previous?: ExpenseListItem) {
     const myShare = expense.participants.find(
       (participant) => participant.userId === currentUserId,
+    );
+    const showShare = shouldShowShare(myShare?.shareAmount, expense.amount);
+    const secondary = visibleSecondaryFields(
+      secondaryFieldsOf(expense),
+      previous ? secondaryFieldsOf(previous) : null,
     );
     // Yalnizca kaydi olusturan kisi duzenleyip silebilir; buton da bu
     // kurala gore gosteriliyor. (Asil kontrol her zaman sunucuda.)
@@ -530,17 +532,13 @@ export function ExpenseList({
             uc satira boluneni goz liste degil blok olarak okuyor. */}
         <div className="flex items-baseline gap-3 text-xs text-muted-foreground">
           <span className="min-w-0 truncate">
-            {formatDate(new Date(expense.expenseDate), locale)} ·{" "}
-            {t(EXPENSE_CATEGORY_CODES[expense.category])} ·{" "}
-            {t("ui.paid_by", {
-              name: nameByUserId[expense.paidById] ?? t("ui.unknown_user"),
-            })}
-            {myShare ? (
+            {secondary.join(" · ")}
+            {showShare ? (
               <>
                 {" · "}
                 <span className="money">
                   {t("ui.your_share_amount", {
-                    amount: formatMoney(myShare.shareAmount, currency, locale),
+                    amount: formatMoney(myShare!.shareAmount, currency, locale),
                   })}
                 </span>
               </>
@@ -588,7 +586,9 @@ export function ExpenseList({
             <ReceiptPerforation>{formatMonth(group.month, locale)}</ReceiptPerforation>
 
             <ul className="flex flex-col">
-              {group.expenses.map(renderRow)}
+              {group.expenses.map((expense, index) =>
+                renderRow(expense, group.expenses[index - 1]),
+              )}
             </ul>
 
             {/* Ay ara toplami. Fiste ara toplam satirlarin arkasindan gelir.
@@ -675,7 +675,11 @@ export function ExpenseList({
                     </span>
                   </button>
 
-                  <ul className="flex flex-col">{opened.expenses.map(renderRow)}</ul>
+                  <ul className="flex flex-col">
+                    {opened.expenses.map((expense, index) =>
+                      renderRow(expense, opened.expenses[index - 1]),
+                    )}
+                  </ul>
 
                   <div className="pt-1.5">
                     <ReceiptLine muted amount={formatMoney(slice.amount, currency, locale)}>

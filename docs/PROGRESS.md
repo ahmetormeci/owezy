@@ -1136,6 +1136,7 @@ Eksik olan **içiydi**: web'in grup sayfasındaki dokuz bloktan mobil üçünü
 | 3 | Harcama ekleme ekranı: kim ödedi, kimler paylaşıyor, bölüşme türü — **iki adımda** |
 | 4 | Açılış görseli, ekranlardaki başlık tekrarları |
 | 5 | Eşit olmayan bölüşümün düzenlenmesi, kategori seçimi, yükleme hatasının gösterilmesi |
+| 6 | Liste satırındaki tekrar temizlendi (web + mobil), mobile arama ve süzme geldi |
 
 **Hiçbiri API işi değildi.** `/summary` kategori kırılımını, `/balances` üye
 bakiyelerini baştan beri döndürüyordu; mobilin tip tanımları dardı ve veri
@@ -1180,8 +1181,35 @@ sunucunun kapalı olmasıydı (E2E için kapatılmış, açılmamıştı) ama as
 ekranın üç isteğin **hata** durumunu hiç ele almamasıydı — boş form çizip
 sebebini söylemeden kaydetmiyordu.
 
-**Kalan:** arama/süzme, bildirimler, daveti kabul etme, ödeşme düzenleme,
-silineni geri alma, grup adı düzenleme, uygulama içinden dil seçimi.
+**6. adımda çıkanlar.** Kullanıcı listenin uzadıkça okunmadığını söyledi.
+Simülatörde bakıldı ve teşhis **satır sayısı değil tekrar** çıktı: dokuz
+harcamanın ikincil satırında 43 karakterin 37'si dokuzunda da birebir aynıydı.
+Ölçülen ekran olmasa "daha az satır göster" gibi yanlış bir çözüme gidilirdi.
+
+Çizim kuralları `src/lib/expense-list-view.ts`'de toplandı; web ile mobil
+aynı yerden okuyor. Tarih ve ödeyen yalnızca **değiştiğinde** yazılıyor ve
+karşılaştırma **biçimlenmiş metin** üzerinde — ham güne bakmak, UTC'de aynı
+güne düşüp yerel saatte ayrı günlere düşen iki satırda yanlış gün okuttururdu
+(23:00Z ile 01:00Z, UTC+3'te 30 ve 29 Ağustos). Gün başlıkları denendi ve
+**vazgeçildi**: 20 güne yayılmış bir ayda içerikten çok çerçeve üretiyordu.
+
+Eleme yer açınca mobilde hiç olmayan "senin payın" eklendi — ve hemen
+ardından ölçüm ikinci bir tekrar gösterdi: tek üyeli grupta pay tutarın
+aynısıydı, yani satırın sağ ucundaki sayı iki kez yazılıyordu. Pay artık
+tutardan farklıysa yazılıyor.
+
+Arama/süzme mobile geldi. Web'in **tek satırlık** süzgeç çubuğu telefonda
+dörde sığmadığı için bölündü: arama her zaman açık, kategori ve "yalnızca beni
+ilgilendirenler" `FİLTRE` etiketiyle açılan panelde. Ayrı bir arama ekranı
+denenmedi çünkü sonuçları fişin dışına taşırdı. Web'in üç kuralı korundu:
+süzgeç açıkken katlama kapanıyor, ay ara toplamları yazılmıyor, yerine sonuç
+sayısı ve toplamı çıkıyor (aynı `where`'den gelen `matches`).
+
+**Yine API işi yoktu:** uç `q`, `category`, `mine` ve `matches`'i baştan beri
+destekliyordu.
+
+**Kalan:** bildirimler, daveti kabul etme, ödeşme düzenleme, silineni geri
+alma, grup adı düzenleme, uygulama içinden dil seçimi, CSV dışa aktarma.
 
 ---
 

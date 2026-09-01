@@ -8,14 +8,22 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate, formatMonth } from "@/lib/dates";
-import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
+import { EXPENSE_CATEGORY_CODES, EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
+import {
+  displayNameForLine,
+  groupByMonth,
+  shouldShowShare,
+  visibleSecondaryFields,
+  type SecondaryFields,
+} from "@/lib/expense-list-view";
 import { formatBasisPoints, formatMoney, formatSignedMoney } from "@/lib/money";
 import type { Locale } from "@/lib/locale";
-import { useLocale, useTranslate } from "../../../lib/i18n";
+import { useLocale, useTranslate, type Translator } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
 import { ExpenseComposer } from "../../../components/expense-composer";
@@ -46,6 +54,13 @@ type ExpenseItem = {
   category: keyof typeof EXPENSE_CATEGORY_CODES;
   expenseDate: string;
   paidById: string;
+  /**
+   * PAYLAR ZATEN GELIYORDU, mobil yalnizca ISTEMIYORDU: liste ucu her satirla
+   * birlikte participants'i donduruyor (expenses.ts, include). Web fis
+   * satirinda "senin payin"i bundan yaziyordu; mobilde tip dar oldugu icin
+   * veri gelip atiliyordu - byCategory ve balances'ta oldugu gibi.
+   */
+  participants: { userId: string; shareAmount: number }[];
 };
 type MonthSlice = { month: string; amount: number; count: number };
 type GroupResponse = { group: { id: string; name: string } };
@@ -84,7 +99,22 @@ type BalancesResponse = {
   suggestedTransfers: SuggestedTransfer[];
   balances: MemberBalance[];
 };
-type ExpensesResponse = { expenses: ExpenseItem[]; nextCursor: string | null };
+type ExpensesResponse = {
+  expenses: ExpenseItem[];
+  nextCursor: string | null;
+  /**
+   * YALNIZCA filtre varken dolu (expenses.ts: isFiltered). Ayni where ile
+   * hesaplandigi icin sayilan kume listelenen kumeden ayrisamaz.
+   */
+  matches: { count: number; total: number } | null;
+};
+
+/** Suzgec acikken gosterilen liste. Ay bazli "months" ile AYRI tutuluyor. */
+type FoundState = {
+  expenses: ExpenseItem[];
+  nextCursor: string | null;
+  matches: { count: number; total: number } | null;
+};
 
 /**
  * Bir ayin yuklenmis durumu.
@@ -249,6 +279,127 @@ export default function GroupScreen() {
     [months, loadMonth],
   );
 
+  /**
+   * ARAMA VE SUZME.
+   *
+   * Web'de bu bir TEK SATIR: arama kutusu, kategori secici, "yalnizca beni
+   * ilgilendirenler" ve disa aktarma yan yana, kesikli iki cizgi arasinda.
+   * Telefonda dordu bir satira sigmiyor - ama satirin KENDISI fisin dilinin
+   * parcasi, o yuzden satir korunuyor ve icindekiler bolunuyor: en sik
+   * yapilan is (yazip aramak) sifir dokunusta, nadir olanlar bir dokunus
+   * arkada.
+   *
+   * SUNUCUDA IS YOK: /expenses ucu q, category ve mine parametrelerini ve
+   * "matches" alanini bastan beri kabul edip donduruyor.
+   */
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<keyof typeof EXPENSE_CATEGORY_CODES | null>(
+    null,
+  );
+  const [mine, setMine] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [found, setFound] = useState<FoundState | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  /** "Tekrar dene" bunu artiriyor; efektin bagimliligi oldugu icin istek yenileniyor. */
+  const [retry, setRetry] = useState(0);
+
+  const isFiltered = query.trim() !== "" || category !== null || mine;
+
+  /**
+   * Suzgeclerin sorgu metni. URLSearchParams KULLANILMIYOR: React Native'de
+   * o sinif eksik bir doldurma uzerinden geliyor ve davranisi tarayicidakiyle
+   * birebir ayni degil. Uc parametre icin elle kurmak hem kesin hem de
+   * bagimlilik olarak DUZ BIR METIN veriyor - efektin deps dizisinde her
+   * render'da degisen bir nesne durmuyor.
+   */
+  const filterSuffix = [
+    query.trim() ? `q=${encodeURIComponent(query.trim())}` : null,
+    category ? `category=${category}` : null,
+    mine ? "mine=true" : null,
+  ]
+    .filter((part): part is string => part !== null)
+    .join("&");
+
+  useEffect(() => {
+    // Suzgec yokken hicbir sey yapilmiyor: gosterilecek liste zaten ay bazli
+    // olan. Burada state sifirlamak efekt icinde senkron setState olurdu.
+    if (!isFiltered) {
+      return;
+    }
+
+    let cancelled = false;
+
+    /**
+     * Yazarken HER TUSA istek atmamak icin bekleme. Temizleme fonksiyonu iki
+     * is birden yapiyor: zamanlayiciyi iptal ediyor VE gec donen bir cevabin
+     * yeni sonucun uzerine yazmasini engelliyor.
+     *
+     * setSearching zamanlayicinin ICINDE aciliyor, efekt govdesinde degil -
+     * govdede senkron setState fazladan bir render uretir (web'de de ayni
+     * gerekce).
+     */
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      const result = await get<ExpensesResponse>(
+        `/api/v1/groups/${groupId}/expenses?limit=20${filterSuffix ? `&${filterSuffix}` : ""}`,
+      );
+      if (cancelled) return;
+
+      if (result.ok) {
+        setFound({
+          expenses: result.data.expenses,
+          nextCursor: result.data.nextCursor,
+          matches: result.data.matches,
+        });
+        setSearchError(null);
+      } else {
+        setSearchError(t(result.code));
+      }
+      setSearching(false);
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isFiltered, filterSuffix, groupId, get, t, retry]);
+
+  /** Suzulmus listenin devami. Ay penceresi YOK: arama butun gecmiste calisiyor. */
+  const loadMoreFound = useCallback(async () => {
+    if (!found?.nextCursor || searching) return;
+
+    setSearching(true);
+    const result = await get<ExpensesResponse>(
+      `/api/v1/groups/${groupId}/expenses?limit=20&cursor=${found.nextCursor}${
+        filterSuffix ? `&${filterSuffix}` : ""
+      }`,
+    );
+
+    if (result.ok) {
+      setFound((current) => ({
+        expenses: [...(current?.expenses ?? []), ...result.data.expenses],
+        nextCursor: result.data.nextCursor,
+        matches: result.data.matches,
+      }));
+      setSearchError(null);
+    } else {
+      setSearchError(t(result.code));
+    }
+    setSearching(false);
+  }, [found, searching, get, groupId, filterSuffix, t]);
+
+  const clearFilters = useCallback(() => {
+    setQuery("");
+    setCategory(null);
+    setMine(false);
+    setSearchError(null);
+    // found BILEREK birakilmiyor: suzgec kalkinca ekranda ay bazli liste
+    // cikiyor, bayat sonuclar hicbir yerde gorunmuyor - ama tekrar
+    // suzuldugunde eski sonuclarin bir an gorunmemesi icin siliniyor.
+    setFound(null);
+  }, []);
+
   // SIRA ONEMLI: once hata, sonra yukleniyor, sonra basarili yol. Tek bir
   // boolean ("loading") uzerinden kontrol TypeScript'in daralmasini yapmiyor -
   // asagida state.data'ya erisebilmek icin kosullarin acik yazilmasi gerek.
@@ -314,18 +465,52 @@ export default function GroupScreen() {
     }
   }
 
-  function line(expense: ExpenseItem) {
+  /**
+   * Bir satirin ikincil alanlari. Ucu de BURADA bicimleniyor cunku elenip
+   * elenmeyecegine yazilacak METNE bakilarak karar veriliyor
+   * (bkz. src/lib/expense-line.ts).
+   */
+  function secondaryFieldsOf(expense: ExpenseItem): SecondaryFields {
+    return {
+      date: formatDate(new Date(expense.expenseDate), locale),
+      category: t(EXPENSE_CATEGORY_CODES[expense.category]),
+      payer: t("ui.paid_by", {
+        name: displayNameForLine(nameByUserId[expense.paidById] ?? t("ui.unknown_user")),
+      }),
+    };
+  }
+
+  /**
+   * previous, EKRANDA BIR USTTE DURAN satir - veri sirasindaki degil. Ay
+   * sinirinda undefined geciliyor ki her bolumun ilk satiri kendi tarihini
+   * yazsin.
+   *
+   * "SENIN PAYIN" EN SONDA. Web'de de orada; ustelik tekrar eleme sayesinde
+   * satir uzamiyor - cikan iki alanin yerine bir alan giriyor.
+   */
+  function line(expense: ExpenseItem, previous?: ExpenseItem) {
+    const parts = visibleSecondaryFields(
+      secondaryFieldsOf(expense),
+      previous ? secondaryFieldsOf(previous) : null,
+    );
+    const myShare = expense.participants.find(
+      (participant) => participant.userId === currentUserId,
+    );
+    if (shouldShowShare(myShare?.shareAmount, expense.amount)) {
+      parts.push(
+        t("ui.your_share_amount", {
+          amount: formatMoney(myShare!.shareAmount, currency, locale),
+        }),
+      );
+    }
+
     return (
       <ReceiptLine
         key={expense.id}
         onPress={() => router.push(`/groups/${groupId}/expenses/${expense.id}`)}
         label={expense.description}
         amount={formatMoney(expense.amount, currency, locale)}
-        secondary={[
-          formatDate(new Date(expense.expenseDate), locale),
-          t(EXPENSE_CATEGORY_CODES[expense.category]),
-          t("ui.paid_by", { name: nameByUserId[expense.paidById] ?? t("ui.unknown_user") }),
-        ].join(" · ")}
+        secondary={parts.join(" · ")}
       />
     );
   }
@@ -445,7 +630,109 @@ export default function GroupScreen() {
             <Text style={s.emptyText}>{t("ui.no_expenses")}</Text>
           ) : (
             <>
-              {byMonth.map((slice: MonthSlice, index: number) => {
+              {/* SUZGEC SATIRI. Kesikli iki cizgi arasinda, cercevesiz -
+                  web'dekiyle ayni muamele: kutulu bir form denetimi kagidin
+                  uzerinde yabanci duruyordu.
+
+                  BOS GRUPTA HIC CIZILMIYOR (ustteki isEmpty dali): suzulecek
+                  bir sey yokken arama kutusu gostermek, olmayan bir isi
+                  varmis gibi gostermek olurdu. */}
+              <View>
+                <View style={s.filterBar}>
+                  <TextInput
+                    style={s.filterInput}
+                    value={query}
+                    onChangeText={setQuery}
+                    placeholder={t("ui.search_expenses")}
+                    placeholderTextColor={theme.muted}
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                    returnKeyType="search"
+                    clearButtonMode="while-editing"
+                  />
+                  <Pressable
+                    onPress={() => setFilterOpen((open) => !open)}
+                    hitSlop={10}
+                  >
+                    {/* Etiket, ACIK ya da bir suzgec SECILI oldugunda kobalt:
+                        panel kapaliyken bile "burada bir sey var" demeli. */}
+                    <Cap
+                      color={
+                        filterOpen || category !== null || mine ? theme.brand : theme.muted
+                      }
+                    >
+                      {`${t("ui.filter")} ${filterOpen ? "▾" : "▸"}`}
+                    </Cap>
+                  </Pressable>
+                </View>
+
+                {filterOpen ? (
+                  <View style={s.filterPanel}>
+                    <View style={s.chips}>
+                      <Pressable
+                        style={[s.chip, category === null && s.chipActive]}
+                        onPress={() => setCategory(null)}
+                      >
+                        <Text
+                          style={[s.chipText, category === null && s.chipTextActive]}
+                        >
+                          {t("ui.all_categories")}
+                        </Text>
+                      </Pressable>
+                      {EXPENSE_CATEGORY_OPTIONS.map(([value, code]) => {
+                        const active = category === value;
+                        return (
+                          <Pressable
+                            key={value}
+                            style={[s.chip, active && s.chipActive]}
+                            onPress={() => setCategory(active ? null : value)}
+                          >
+                            <Text style={[s.chipText, active && s.chipTextActive]}>
+                              {t(code)}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+
+                    {/* "Yalnizca beni ilgilendirenler" de bir CIP. Web'de onay
+                        kutusu ama React Native'de yerlesik bir onay kutusu yok
+                        ve bu ekranda cipler zaten acik/kapali anlamini
+                        tasiyor (harcama ekleme ekraninda da oyle). */}
+                    <View style={s.chips}>
+                      <Pressable
+                        style={[s.chip, mine && s.chipActive]}
+                        onPress={() => setMine((value) => !value)}
+                      >
+                        <Text style={[s.chipText, mine && s.chipTextActive]}>
+                          {t("ui.only_mine")}
+                        </Text>
+                      </Pressable>
+                      {isFiltered ? (
+                        <Pressable style={s.clearButton} onPress={clearFilters}>
+                          <Cap>{t("ui.clear_filters")}</Cap>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </View>
+                ) : null}
+              </View>
+
+              {isFiltered ? (
+                <FilteredResults
+                  styles={s}
+                  found={found}
+                  searching={searching}
+                  error={searchError}
+                  onRetry={() => setRetry((n) => n + 1)}
+                  onLoadMore={() => void loadMoreFound()}
+                  renderLine={line}
+                  currency={currency}
+                  locale={locale}
+                  t={t}
+                />
+              ) : (
+                byMonth.map((slice: MonthSlice, index: number) => {
                 const isOpen = index === 0;
                 const state = months[slice.month];
                 const shown = state?.expenses ?? [];
@@ -462,7 +749,7 @@ export default function GroupScreen() {
                       </Pressable>
                     )}
 
-                    {shown.map(line)}
+                    {shown.map((expense, index) => line(expense, shown[index - 1]))}
 
                     {state?.loading ? <ActivityIndicator style={s.monthLoading} /> : null}
                     {state?.error ? (
@@ -499,9 +786,14 @@ export default function GroupScreen() {
                     ) : null}
                   </View>
                 );
-              })}
+                })
+              )}
 
-              {/* Fisin kapanisi. Ucu de ozetten geliyor, yeni sorgu yok. */}
+              {/* Fisin kapanisi. Ucu de ozetten geliyor, yeni sorgu yok.
+                  SUZGEC ACIKKEN DE DURUYOR: bu sayilar GRUBUN tamamini
+                  anlatiyor ve etiketleri de oyle diyor; web'de de fisin
+                  altinda, suzgecten bagimsiz duruyorlar. Ekrandaki kumenin
+                  toplami suzgec satirinin hemen altinda ayrica yaziyor. */}
               <View style={s.totals}>
                 <ReceiptDoubleRule />
                 <ReceiptLine
@@ -648,6 +940,94 @@ export default function GroupScreen() {
 
 
 /**
+ * Suzgec acikken gosterilen liste.
+ *
+ * AY KATLAMA YOK. Katli kalsaydi aranan kayit eski bir ayin icinde durur ve
+ * ekran "sonuc yok" derdi. Sonuclar yine de aya bolunuyor - perfore satirlar
+ * ayirici olarak duruyor, cunku 40 satirlik duz bir listede satirlarin hangi
+ * doneme ait oldugu kaybolur.
+ *
+ * AY ARA TOPLAMLARI YAZILMIYOR. Ayin TAMAMININ toplamini suzulmus bir
+ * listenin altina koymak, yan yana konularak soylenen bir yalan olurdu.
+ * Yerine ustte kac sonuc bulundugu yaziyor ve o sayi listenin kendisiyle
+ * AYNI kosuldan geliyor (sunucu ayni where ile hesapliyor).
+ */
+function FilteredResults({
+  styles: s,
+  found,
+  searching,
+  error,
+  onRetry,
+  onLoadMore,
+  renderLine,
+  currency,
+  locale,
+  t,
+}: {
+  styles: ReturnType<typeof createStyles>;
+  found: FoundState | null;
+  searching: boolean;
+  error: string | null;
+  onRetry: () => void;
+  onLoadMore: () => void;
+  renderLine: (expense: ExpenseItem, previous?: ExpenseItem) => React.ReactElement;
+  currency: string;
+  locale: Locale;
+  t: Translator;
+}) {
+  // Hata SONUCLARIN YERINE cikiyor: mobilde bildirim seridi yok, hata
+  // gorunmezse kullanici bos bir liste gorur ve "hic sonuc yok" saniyordu.
+  if (error) {
+    return (
+      <Pressable onPress={onRetry}>
+        <Text style={s.error}>{error}</Text>
+        <Text style={s.loadMore}>{t("ui.try_again")}</Text>
+      </Pressable>
+    );
+  }
+
+  if (!found) {
+    return <ActivityIndicator style={s.monthLoading} />;
+  }
+
+  if (found.expenses.length === 0) {
+    return <Text style={s.emptyText}>{t("ui.no_matching_expenses")}</Text>;
+  }
+
+  const matches = found.matches;
+
+  return (
+    <View style={s.foundBlock}>
+      {matches ? (
+        <Text style={s.matchLine}>
+          {t(matches.count === 1 ? "ui.match_count_one" : "ui.match_count_other", {
+            count: matches.count,
+          })}
+          {matches.count > 0 ? ` · ${formatMoney(matches.total, currency, locale)}` : ""}
+        </Text>
+      ) : null}
+
+      {groupByMonth(found.expenses).map((group) => (
+        <View key={group.month} style={s.monthBlock}>
+          <ReceiptPerforation>{formatMonth(group.month, locale)}</ReceiptPerforation>
+          {group.expenses.map((expense, index) =>
+            renderLine(expense, group.expenses[index - 1]),
+          )}
+        </View>
+      ))}
+
+      {searching ? <ActivityIndicator style={s.monthLoading} /> : null}
+
+      {found.nextCursor && !searching ? (
+        <Pressable onPress={onLoadMore}>
+          <Text style={s.loadMore}>{t("ui.load_more")}</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+/**
  * Odesme onerilerinin bir grubu.
  *
  * FIIL BASLIKTA, SATIRDA DEGIL. Turkcede "{isim}'e ode" yer tutucuyla dogru
@@ -765,6 +1145,37 @@ function createStyles(theme: Theme) {
     planAmount: { fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
     otherRow: { fontSize: 13, color: theme.muted, paddingVertical: 2 },
     monthBlock: { gap: 4 },
+    // Suzgec satiri: kutusuz, kesikli iki cizgi arasinda - fisin uzerine
+    // yazilmis gibi. Kenarliklar kalkinca denetim kagida ait gorunuyor.
+    filterBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderStyle: "dashed",
+      borderColor: theme.border,
+      paddingVertical: 8,
+    },
+    // padding: 0 SART - iOS'ta TextInput'un kendi ic dolgusu satiri
+    // kalinlastirip kesikli cizgilerden koparıyor.
+    filterInput: { flex: 1, fontSize: 15, color: theme.foreground, padding: 0 },
+    filterPanel: { gap: 10, paddingTop: 12 },
+    chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
+    chip: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      maxWidth: "100%",
+    },
+    chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
+    chipText: { color: theme.foreground, fontSize: 14 },
+    chipTextActive: { color: "#fff", fontWeight: "600" },
+    clearButton: { paddingHorizontal: 6, paddingVertical: 7 },
+    foundBlock: { gap: 12 },
+    matchLine: { fontSize: 12, color: theme.muted },
     monthLoading: { paddingVertical: 12 },
     loadMore: { color: theme.brand, fontSize: 13, paddingVertical: 8 },
     totals: { gap: 4 },

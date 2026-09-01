@@ -23,7 +23,7 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-08-29
+Updated: 2026-09-01
 
 Current task:
   MOBIL UYGULAMAYI TAMAMLAMAK. App Store gonderimi BILEREK BEKLETILIYOR -
@@ -39,14 +39,20 @@ NEDEN BURADAYIZ:
   (Faz 34). Kullanici 29 Agustos'ta tekrar bakti: "sorun yok gibi duruyor".
 
 SIRADAKI IS - MOBILDE KALANLAR:
-  arama / kategori suzme / "yalnizca beni ilgilendirenler"
   bildirimler (mobilde hic yok)
   daveti kabul etme (olusturma var, kabul web'de)
   odesme duzenleme, silineni geri alma, grup adi duzenleme
   uygulama icinden dil secimi (su an cihaz dilinden okunuyor)
+  CSV disa aktarma (web'de suzgec cubugunda; mobilde paylasim sayfasi
+    gerekiyor - expo-sharing + expo-file-system, yeni bagimlilik)
 
   Bu liste destek sayfasinda da yazili (src/content/legal/support.ts,
-  "bugun eksik olanlar"). ORASI DA GUNCELLENMELI - bir madde bitince.
+  "bugunku sinirlar"). ORASI DA GUNCELLENMELI - bir madde bitince.
+
+  BITEN: arama / kategori suzme / "yalnizca beni ilgilendirenler" (1 Eylul).
+  Ayni turda liste satirindaki tekrar da temizlendi - kurallar
+  src/lib/expense-list-view.ts'de ve WEB ILE MOBIL ORTAK. O dosyayi
+  degistiren iki tarafi da gozden gecirsin.
 
 GONDERIM ZINCIRI (mobil tamamlaninca, SIRASI ONEMLI):
   1. eas build   -> build 7 bu islerin HICBIRINI tasimiyor
@@ -128,7 +134,7 @@ AKILDA TUTULACAKLAR:
   DESTEKLENEN PARA BIRIMI YALNIZCA TRY VE USD (money.ts).
 
 TESTLER - NE NEREDE:
-  KOK      npm test                  554 birim (vitest, src/**)
+  KOK      npm test                  572 birim (vitest, src/**)
   MOBIL    cd mobile && npm test      53 vitest + 14 jest
   E2E      npm run test:e2e           56 test, ~10 dk
 
