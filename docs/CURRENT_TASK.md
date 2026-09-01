@@ -106,6 +106,20 @@ UNIVERSAL LINK - NEDEN ERTELENDI:
   Uygulama icinden dil secimi (1 Eylul, Hesap ekraninda).
   Giris ekraninin temaya baglanmasi (1 Eylul, koyu temada bozuktu).
 
+PRODUCTION'DAKI DEMO HESAPLAR - DIKKAT:
+  appreview@owezy.net  inceleme hesabi. SILME, PAROLASINI DEGISTIRME.
+  demo@owezy.net       ICINDE VERI VAR (bir grup, harcamalar, ikinci uye).
+                       Atilabilir DEGIL; 1 Eylul'de silinmek uzereyken
+                       fark edildi. Bir demo hesabi gerekiyorsa YENI bir
+                       adres ac.
+  demo2, demo3         ekran kaydi icin yaratildi ve UYGULAMA ICINDEN
+                       silindi. Cloudflare yonlendirmeleri duruyor.
+
+  YENI BIR ADRES KULLANMADAN ONCE IKI SEY: Cloudflare Email Routing'de
+  ekli mi, ve Resend'in suppressions listesinde DEGIL mi. Ikisi de bu
+  oturumda ayri ayri kosuyu durdurdu - ve arayuz her iki durumda da
+  "Sent to ..." diyor, yani hicbir sey belli olmuyor.
+
 GELISTIRME VERITABANINDA BIRAKILAN TEST VERISI:
   "Deniz'in evi" grubu ve davetci@ornek.test kullanicisi, davet kabulunu
   denemek icin uretildi. BILEREK BIRAKILDI: gelistirmedeki tek COK UYELI
