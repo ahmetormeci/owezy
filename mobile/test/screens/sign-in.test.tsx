@@ -84,14 +84,25 @@ function codeField() {
   return screen.getByTestId("two-factor-code");
 }
 
+/**
+ * ALAN ETIKETLERI BUYUK HARF ve bu bir bicimlendirme kazasi degil: giris
+ * ekrani 1 Eylul'de temaya baglanirken etiketler <Cap> bilesenine gecti -
+ * uygulamanin baska her yerinde alan etiketleri oyle.
+ *
+ * BUYUK HARFE CEVIRME DILE DUYARLI (components/receipt.tsx): JavaScript'te
+ * toLocaleUpperCase(locale) ile yapiliyor, React Native'in textTransform'u
+ * ile DEGIL - o dil bilmiyor ve Turkcede "i" harfini "I" yapardi.
+ * Beklenen dizeler bu yuzden "İKİ ADIMLI DOĞRULAMA" gibi noktali İ tasiyor;
+ * elle yazarken degil, hesaplanarak konuldu.
+ */
 describe("baslangic", () => {
   it("e-posta adiminda acilir", async () => {
     await render(<SignInScreen />);
 
-    expect(screen.getByText("E-posta")).toBeTruthy();
+    expect(screen.getByText("E-POSTA")).toBeTruthy();
     expect(screen.getByText("Kod gönder")).toBeTruthy();
     // Parola IKINCIL: varsayilan akis kodla girmek ve oyle kalmali.
-    expect(screen.queryByText("Parola")).toBeNull();
+    expect(screen.queryByText("PAROLA")).toBeNull();
   });
 });
 
@@ -102,7 +113,7 @@ describe("e-posta koduyla giris", () => {
 
     await fireEvent.press(screen.getByText("Kod gönder"));
 
-    await screen.findByText("Doğrulama kodu");
+    await screen.findByText("DOĞRULAMA KODU");
     expect(mockSendCode).toHaveBeenCalledWith("a@b.co");
     // Adres ekranda tekrar gosteriliyor: yanlis yazan kullanici, gelmeyecek
     // bir kodu beklemesin.
@@ -118,15 +129,15 @@ describe("e-posta koduyla giris", () => {
 
     // Kod adimina GECMEMELI - gecerse kullanici hic gelmeyecek bir kodu bekler.
     await waitFor(() => expect(mockSendCode).toHaveBeenCalled());
-    expect(screen.queryByText("Doğrulama kodu")).toBeNull();
-    expect(screen.getByText("E-posta")).toBeTruthy();
+    expect(screen.queryByText("DOĞRULAMA KODU")).toBeNull();
+    expect(screen.getByText("E-POSTA")).toBeTruthy();
   });
 
   it("dogru kod ana sayfaya yonlendirir", async () => {
     await render(<SignInScreen />);
     await typeEmail();
     await fireEvent.press(screen.getByText("Kod gönder"));
-    await screen.findByText("Doğrulama kodu");
+    await screen.findByText("DOĞRULAMA KODU");
 
     await fireEvent.changeText(screen.getByPlaceholderText("000000"), "123456");
     await fireEvent.press(screen.getByText("Giriş yap"));
@@ -143,7 +154,7 @@ describe("parolayla giris", () => {
 
     await fireEvent.press(screen.getByText("Parolayla gir"));
 
-    await screen.findByText("Parola");
+    await screen.findByText("PAROLA");
     // Dugmenin yazisi da degismeli, yoksa kullanici hala kod istedigini sanir.
     expect(screen.getByText("Giriş yap")).toBeTruthy();
     expect(screen.queryByText("Kod gönder")).toBeNull();
@@ -172,7 +183,7 @@ describe("parolayla giris", () => {
 
     await fireEvent.press(screen.getByText("Giriş yap"));
 
-    await screen.findByText("İki adımlı doğrulama");
+    await screen.findByText("İKİ ADIMLI DOĞRULAMA");
     expect(mockRouter.replace).not.toHaveBeenCalled();
   });
 
@@ -185,7 +196,7 @@ describe("parolayla giris", () => {
 
     await waitFor(() => expect(mockSignInWithPassword).toHaveBeenCalled());
     expect(mockRouter.replace).not.toHaveBeenCalled();
-    expect(screen.getByText("Parola")).toBeTruthy();
+    expect(screen.getByText("PAROLA")).toBeTruthy();
   });
 });
 
@@ -195,7 +206,7 @@ describe("ikinci faktor adimi", () => {
     await render(<SignInScreen />);
     await goToPassword();
     await fireEvent.press(screen.getByText("Giriş yap"));
-    await screen.findByText("İki adımlı doğrulama");
+    await screen.findByText("İKİ ADIMLI DOĞRULAMA");
   }
 
   it("uygulama kodunu gonderir", async () => {
@@ -214,7 +225,7 @@ describe("ikinci faktor adimi", () => {
 
     await fireEvent.press(screen.getByText("Yedek kod kullan"));
 
-    await screen.findByText("Yedek kod");
+    await screen.findByText("YEDEK KOD");
     // Yedek kodlar rakam degil; sayi klavyesinin yer tutucusu da kalkmali.
     expect(screen.queryByPlaceholderText("000000")).toBeNull();
   });
@@ -222,7 +233,7 @@ describe("ikinci faktor adimi", () => {
   it("yedek kod AYRI parametreyle gonderiliyor", async () => {
     await atSecondFactor();
     await fireEvent.press(screen.getByText("Yedek kod kullan"));
-    await screen.findByText("Yedek kod");
+    await screen.findByText("YEDEK KOD");
 
     await fireEvent.changeText(codeField(), "YEDEK-1");
     await fireEvent.press(screen.getByText("Giriş yap"));
@@ -238,7 +249,7 @@ describe("ikinci faktor adimi", () => {
 
     await fireEvent.press(screen.getByText("Yedek kod kullan"));
 
-    await screen.findByText("Yedek kod");
+    await screen.findByText("YEDEK KOD");
     expect((codeField().props as { value: string }).value).toBe("");
   });
 
@@ -261,7 +272,7 @@ describe("parola kurtarma", () => {
   it("WEB'E yonlendiriyor - mobilde ekran yok", async () => {
     await render(<SignInScreen />);
     await fireEvent.press(screen.getByText("Parolayla gir"));
-    await screen.findByText("Parola");
+    await screen.findByText("PAROLA");
 
     const forgot = screen.queryByText("Parolamı unuttum");
     if (!forgot) return; // baglanti yoksa test edilecek bir sey de yok

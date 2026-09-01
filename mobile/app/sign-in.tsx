@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,6 +14,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../lib/auth";
 import { apiBaseUrl } from "../lib/api";
 import { useTranslate } from "../lib/i18n";
+import { useTheme, type Theme } from "../lib/theme";
+import { Cap } from "../components/receipt";
 
 // NEDEN KENDI EKRANIMIZ: mobilde hazir bir giris bileseni kullanmiyoruz;
 // akisi kendimiz kuruyoruz. Web'deki src/components/sign-in-form.tsx ile
@@ -62,6 +64,8 @@ export default function SignInScreen() {
     useSession();
   const router = useRouter();
   const t = useTranslate();
+  const theme = useTheme();
+  const s = useMemo(() => createStyles(theme), [theme]);
 
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -161,26 +165,24 @@ export default function SignInScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={s.screen}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.form}
+        style={s.form}
       >
-        <Text style={styles.title}>{t("ui.app_name")}</Text>
+        <Text style={s.title}>{t("ui.app_name")}</Text>
 
         {step === "two-factor" ? (
           <>
-            <Text style={styles.label}>
-              {usingBackupCode ? t("ui.backup_code") : t("ui.two_factor_title")}
-            </Text>
-            <Text style={styles.muted}>
+            <Cap>{usingBackupCode ? t("ui.backup_code") : t("ui.two_factor_title")}</Cap>
+            <Text style={s.muted}>
               {usingBackupCode ? t("ui.backup_code_hint") : t("ui.totp_hint")}
             </Text>
             <TextInput
               // testID YALNIZCA test icin: RNTL 14'te UNSAFE_getAllByType
               // kaldirildi ve parola/kod alanlarinin gorunur bir etiketi yok.
               testID="two-factor-code"
-              style={styles.input}
+              style={s.input}
               value={code}
               onChangeText={setCode}
               autoCapitalize="none"
@@ -189,18 +191,19 @@ export default function SignInScreen() {
               // zorlastirirdi.
               keyboardType={usingBackupCode ? "default" : "number-pad"}
               textContentType="oneTimeCode"
+              placeholderTextColor={theme.muted}
               placeholder={usingBackupCode ? undefined : t("ui.code_placeholder")}
               editable={!busy}
             />
             <Pressable
-              style={styles.button}
+              style={s.button}
               onPress={() => void verifySecondStep()}
               disabled={busy}
             >
               {busy ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>{t("ui.sign_in")}</Text>
+                <Text style={s.buttonText}>{t("ui.sign_in")}</Text>
               )}
             </Pressable>
             <Pressable
@@ -211,62 +214,64 @@ export default function SignInScreen() {
               }}
               disabled={busy}
             >
-              <Text style={styles.link}>
+              <Text style={s.link}>
                 {usingBackupCode ? t("ui.use_authenticator") : t("ui.use_backup_code")}
               </Text>
             </Pressable>
             {/* Cikis kapisi: telefonu da yedek kodlari da yaninda olmayan biri
                 bu ekranda mahsur kalmamali. */}
             <Pressable onPress={startOver} disabled={busy}>
-              <Text style={styles.link}>{t("ui.change_email")}</Text>
+              <Text style={s.link}>{t("ui.change_email")}</Text>
             </Pressable>
           </>
         ) : step === "code" ? (
           <>
-            <Text style={styles.label}>{t("ui.verification_code")}</Text>
-            <Text style={styles.muted}>{t("ui.code_sent_to", { email })}</Text>
+            <Cap>{t("ui.verification_code")}</Cap>
+            <Text style={s.muted}>{t("ui.code_sent_to", { email })}</Text>
             <TextInput
-              style={styles.input}
+              style={s.input}
               value={code}
               onChangeText={setCode}
               autoCapitalize="none"
               keyboardType="number-pad"
               textContentType="oneTimeCode"
+              placeholderTextColor={theme.muted}
               placeholder={t("ui.code_placeholder")}
               editable={!busy}
             />
-            <Pressable style={styles.button} onPress={() => void verifyCode()} disabled={busy}>
+            <Pressable style={s.button} onPress={() => void verifyCode()} disabled={busy}>
               {busy ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>{t("ui.sign_in")}</Text>
+                <Text style={s.buttonText}>{t("ui.sign_in")}</Text>
               )}
             </Pressable>
             <Pressable onPress={startOver} disabled={busy}>
-              <Text style={styles.link}>{t("ui.change_email")}</Text>
+              <Text style={s.link}>{t("ui.change_email")}</Text>
             </Pressable>
           </>
         ) : (
           <>
-            <Text style={styles.label}>{t("ui.email")}</Text>
+            <Cap>{t("ui.email")}</Cap>
             <TextInput
-              style={styles.input}
+              style={s.input}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
               textContentType="emailAddress"
+              placeholderTextColor={theme.muted}
               placeholder={t("ui.email_placeholder")}
               editable={!busy}
             />
 
             {step === "password" ? (
               <>
-                <Text style={styles.label}>{t("ui.password")}</Text>
+                <Cap>{t("ui.password")}</Cap>
                 <TextInput
                   testID="password"
-                  style={styles.input}
+                  style={s.input}
                   value={password}
                   onChangeText={setPassword}
                   autoCapitalize="none"
@@ -279,14 +284,14 @@ export default function SignInScreen() {
             ) : null}
 
             <Pressable
-              style={styles.button}
+              style={s.button}
               onPress={() => void (step === "password" ? submitPassword() : requestCode())}
               disabled={busy}
             >
               {busy ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>
+                <Text style={s.buttonText}>
                   {step === "password" ? t("ui.sign_in") : t("ui.send_code")}
                 </Text>
               )}
@@ -301,7 +306,7 @@ export default function SignInScreen() {
               }}
               disabled={busy}
             >
-              <Text style={styles.link}>
+              <Text style={s.link}>
                 {step === "password" ? t("ui.sign_in_with_code") : t("ui.sign_in_with_password")}
               </Text>
             </Pressable>
@@ -324,39 +329,66 @@ export default function SignInScreen() {
                 onPress={() => void Linking.openURL(`${apiBaseUrl()}/reset-password`)}
                 disabled={busy}
               >
-                <Text style={styles.link}>{t("ui.forgot_password")}</Text>
+                <Text style={s.link}>{t("ui.forgot_password")}</Text>
               </Pressable>
             ) : null}
           </>
         )}
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={s.error}>{error}</Text> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
-  form: { flex: 1, padding: 24, gap: 8, justifyContent: "center" },
-  title: { fontSize: 32, fontWeight: "600", marginBottom: 24 },
-  label: { fontSize: 11, letterSpacing: 2, color: "#888" },
-  muted: { fontSize: 14, color: "#666" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
-  },
-  button: {
-    marginTop: 8,
-    padding: 16,
-    backgroundColor: "#111",
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: { color: "#fff", fontSize: 16 },
-  link: { color: "#666", paddingVertical: 12, textAlign: "center" },
-  error: { color: "#b3261e", fontSize: 14 },
-});
+/**
+ * RENKLER TEMADAN. Bu ekran uzun sure kendi hex degerlerini tasiyordu
+ * (#fff, #111, #ddd, #666) ve iki sonucu vardi:
+ *
+ *   1. KOYU TEMADA BOZUKTU. useTheme() useColorScheme()'i dinliyor; bu ekran
+ *      onu hic cagirmadigi icin butun uygulama koyuya gecerken giris ekrani
+ *      beyaz kaliyordu - ustelik basligin rengi hic verilmemisti, yani koyu
+ *      zeminde siyah metin riski vardi.
+ *   2. KIMLIKTEN KOPUKTU. Dugme siyahti, oysa uygulamanin her yerinde eylem
+ *      rengi kobalt. Giris UYGULAMANIN ILK EKRANI; gerisinden farkli
+ *      gorunmesi icin bir sebep yok.
+ *
+ * Fark App Store ekran kaydi cekilirken goruldu: videodaki ilk kare, geri
+ * kalanindan baska bir uygulamaya benziyordu.
+ *
+ * ETIKETLER Cap ile: alan etiketleri uygulamanin baska her yerinde oyle
+ * (harcama formu, grup duzenleme, hesap ekrani) ve Cap buyuk harfe cevirmeyi
+ * DILE DUYARLI yapiyor - "Dil" -> "DİL", "DIL" degil.
+ */
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: theme.paper },
+    form: { flex: 1, padding: 24, gap: 8, justifyContent: "center" },
+    // Kelime isareti kobalt ve 34 punto: gruplar ekranindaki ilk acilis
+    // basligiyla AYNI (groups/index.tsx, wordmark). Ayni kelimenin iki
+    // ekranda iki turlu gorunmesi icin sebep yok.
+    title: { fontSize: 34, fontWeight: "600", color: theme.brand, marginBottom: 24 },
+    muted: { fontSize: 14, color: theme.muted },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      padding: 14,
+      fontSize: 16,
+      color: theme.foreground,
+    },
+    button: {
+      marginTop: 8,
+      padding: 16,
+      backgroundColor: theme.brand,
+      borderRadius: 8,
+      alignItems: "center",
+    },
+    buttonText: { color: "#fff", fontSize: 16 },
+    link: { color: theme.muted, paddingVertical: 12, textAlign: "center" },
+    // Hata rengi theme.debt: bu ekranlarda yerlesik olan bu (on ekranda
+    // boyle). ADR-015 kirmizinin ANLAM tasidigi yerleri koruyor; buradaki
+    // kullanim bir bakiye degil, ama projede tek bir hata rengi var.
+    error: { color: theme.debt, fontSize: 14 },
+  });
+}

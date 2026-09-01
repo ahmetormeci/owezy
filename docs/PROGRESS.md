@@ -1140,6 +1140,7 @@ Eksik olan **içiydi**: web'in grup sayfasındaki dokuz bloktan mobil üçünü
 | 7 | Telefondan gruba katılma: davet bağlantısını yapıştırma |
 | 8 | Bildirimler (uygulama içi liste), ve tek gruplu kullanıcının hesaba giden yolu |
 | 9 | Grup adı düzenleme, uygulama içinden dil seçimi |
+| 10 | Giriş ekranı temaya bağlandı (koyu temada bozuktu) |
 
 **Hiçbiri API işi değildi.** `/summary` kategori kırılımını, `/balances` üye
 bakiyelerini baştan beri döndürüyordu; mobilin tip tanımları dardı ve veri
@@ -1258,6 +1259,13 @@ eskisini gösteriyordu**. Odaklanmada yalnızca özet ve bildirim sayacı
 yenileniyordu. Bu ekrandan gidilen her yer buradaki verilerden birini
 değiştirebiliyor ve "hangisi değişti" sorusunu ekranın bilmesinin yolu yok —
 artık beşi de yenileniyor, web'de de karşılığı `router.refresh()`.
+
+**10. adımda çıkanlar.** Giriş ekranı temayı hiç kullanmıyormuş: renkleri
+elle yazılmıştı ve `useTheme()` çağrılmıyordu. Koyu temada bütün uygulama
+koyulaşırken o ekran beyaz kalıyordu. **App Store ekran kaydı çekilirken
+görüldü** — videodaki ilk kare gerisinden başka bir uygulama gibiydi.
+Ekran testleri değişikliği yakaladı ve beklenen dizeler hesaplanarak
+güncellendi (Türkçe büyütme noktalı İ üretiyor).
 
 **Kalan:** CSV dışa aktarma. Ertelenmiş: universal link, push bildirim.
 

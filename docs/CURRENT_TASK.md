@@ -75,6 +75,7 @@ UNIVERSAL LINK - NEDEN ERTELENDI:
   Tek gruplu kullanicinin hesap ekranina ulasamamasi (1 Eylul, asagida).
   Grup adi/aciklamasi duzenleme (1 Eylul, yalnizca SAHIBE gorunuyor).
   Uygulama icinden dil secimi (1 Eylul, Hesap ekraninda).
+  Giris ekraninin temaya baglanmasi (1 Eylul, koyu temada bozuktu).
 
 GELISTIRME VERITABANINDA BIRAKILAN TEST VERISI:
   "Deniz'in evi" grubu ve davetci@ornek.test kullanicisi, davet kabulunu
@@ -122,6 +123,11 @@ BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
   EAS      eas.json'da ascAppId yazili (6805650395)
 
 AKILDA TUTULACAKLAR:
+
+  KOYU TEMA AYRICA DENENMELI: xcrun simctl ui <udid> appearance dark
+  Giris ekrani aylarca renklerini ELLE tasidi (#fff, #111) ve useTheme()'i
+  hic cagirmadi; koyu temada butun uygulama koyulasirken o ekran beyaz
+  kaliyordu. Kimse fark etmedi cunku kimse koyu temada bakmadi.
 
   "Intl CALISIYOR" DIYE BIR BUTUN YOK. Hermes'te Intl.NumberFormat ve
   Intl.DateTimeFormat var ama Intl.RelativeTimeFormat YOK - bildirim ekrani

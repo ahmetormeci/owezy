@@ -8,6 +8,29 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-01 (5) — Giriş ekranı temaya bağlandı
+
+Ekran uzun süre kendi hex değerlerini taşıyordu (`#fff`, `#111`, `#ddd`,
+`#666`) ve `useTheme()`'i hiç çağırmıyordu. İki sonucu vardı:
+
+**Koyu temada bozuktu.** Tema `useColorScheme()`'i dinliyor; bu ekran onu
+sormadığı için bütün uygulama koyuya geçerken giriş ekranı beyaz kalıyordu.
+Başlığın rengi de hiç verilmemişti. Yani estetik değil, gerçek bir kusur.
+
+**Kimlikten kopuktu.** Düğme siyahtı, oysa eylem rengi her yerde kobalt.
+Fark App Store ekran kaydı çekilirken görüldü: videodaki ilk kare
+gerisinden başka bir uygulamaya benziyordu.
+
+Alan etiketleri `Cap` bileşenine geçti — uygulamanın başka her yerinde öyle,
+ve büyük harfe çevirme dile duyarlı (`toLocaleUpperCase`), yani "E-POSTA"
+doğru çıkıyor. Yer tutucu rengi de hiçbir alanda verilmemişti, eklendi.
+
+Ekran testleri bu değişikliği **yakaladı** (13/14 düştü): etiketler artık
+büyük harf. Beklenen dizeler tahminle değil hesaplanarak güncellendi —
+"İKİ ADIMLI DOĞRULAMA" noktalı İ taşıyor.
+
+---
+
 ## 2026-09-01 (4) — Grup adı düzenleme ve uygulama içinden dil seçimi
 
 **Grup adı ve açıklaması** telefondan düzenlenebiliyor. Ayrı ekran, çünkü iki
