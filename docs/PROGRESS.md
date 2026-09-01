@@ -1134,7 +1134,8 @@ Eksik olan **içiydi**: web'in grup sayfasındaki dokuz bloktan mobil üçünü
 | 1 | `<Slot />` → `<Stack />`: başlık çubuğu, geri düğmesi, kaydırma hareketi |
 | 2 | Grup ekranı web'in blok sırasına getirildi: fiş başlığı, ÖDEŞTİN mührü, kategori çubukları, üye bakiyeleri |
 | 3 | Harcama ekleme ekranı: kim ödedi, kimler paylaşıyor, bölüşme türü — **iki adımda** |
-| 4 | Açılış görseli, ekranlardaki tekrarlar (sürüyor) |
+| 4 | Açılış görseli, ekranlardaki başlık tekrarları |
+| 5 | Eşit olmayan bölüşümün düzenlenmesi, kategori seçimi, yükleme hatasının gösterilmesi |
 
 **Hiçbiri API işi değildi.** `/summary` kategori kırılımını, `/balances` üye
 bakiyelerini baştan beri döndürüyordu; mobilin tip tanımları dardı ve veri
@@ -1162,8 +1163,25 @@ yeşil sinyaller ürünün iyi olduğunu değil, yazılanın yazıldığı gibi
 görülüp "geri dönüşte tazelenmiyor" sonucuna varıldı. Yanlıştı — simülatör
 dokunuşları ıskalamıştı, hiç gezinme olmamıştı. Log doğruydu, okuma yanlıştı.
 
-**Kalan:** eşit olmayan bölüşümün mobilde düzenlenmesi (`PUT` + ADR-032
-iyimser kilitleme), arama/süzme, bildirimler, daveti kabul etme.
+**5. adımda çıkanlar.** Harcama düzenleme kilidi bölüşme türüne göre
+gevşetildi ve ayrım veri modelinden geldi: `EQUAL` ve `PERCENTAGE`'ta tutar da
+değiştirilebiliyor (yüzdeli olanda sunucu payları yeniden hesaplıyor),
+`EXACT`'te paylar mutlak olduğu için yalnızca açıklama. Kilit gevşeyince **iki
+metin birden yalan oldu** — ekrandaki uyarı ve destek sayfası; ikisi de
+düzeltildi. İkincisi ancak kaldırılan sözlük anahtarını kimin kullandığı
+aranınca fark edildi.
+
+Kategori seçimi eklendi (yedi kategori, 1. adımda). Seçilmezse sunucu tahmin
+ediyor ve **tahmin ekranda görünüyor** — varsayılan sessiz kalmıyor.
+
+**Kullanıcının bildirdiği "Something went wrong" hatası benim ekranımdandı:**
+ödeyen çözülemediğinde `server.unexpected`'a düşüyordu. Tetikleyen şey
+sunucunun kapalı olmasıydı (E2E için kapatılmış, açılmamıştı) ama asıl kusur
+ekranın üç isteğin **hata** durumunu hiç ele almamasıydı — boş form çizip
+sebebini söylemeden kaydetmiyordu.
+
+**Kalan:** arama/süzme, bildirimler, daveti kabul etme, ödeşme düzenleme,
+silineni geri alma, grup adı düzenleme, uygulama içinden dil seçimi.
 
 ---
 

@@ -8,6 +8,21 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-08-29 (2) — Mobilde harcama düzenleme ve kategori
+
+Eşit olmayan bölüşümlerin düzenleme kilidi kalktı; ayrım veri modelinden:
+`EQUAL`/`PERCENTAGE`'ta tutar da değiştirilebiliyor, `EXACT`'te paylar mutlak
+olduğu için yalnızca açıklama. Kilit gevşeyince ekrandaki uyarı ve destek
+sayfası yalan oldu; ikisi de düzeltildi.
+
+Harcama ekleme ekranına kategori seçimi geldi (yedi kategori). Seçilmezse
+sunucu tahmin ediyor ve tahmin ekranda görünüyor.
+
+Kullanıcının bildirdiği "Something went wrong" düzeltildi: ekran üç isteğin
+hata durumunu ele almıyordu, boş form çizip sebebini söylemeden kaydetmiyordu.
+
+---
+
 ## 2026-08-29 — Mobil arayüz elden geçiriliyor
 
 Kullanıcı uygulamayı ilk kez açtı ve haklı bir şikâyette bulundu. Teşhis:
