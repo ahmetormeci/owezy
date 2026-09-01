@@ -39,20 +39,48 @@ NEDEN BURADAYIZ:
   (Faz 34). Kullanici 29 Agustos'ta tekrar bakti: "sorun yok gibi duruyor".
 
 SIRADAKI IS - MOBILDE KALANLAR:
-  bildirimler (mobilde hic yok)
-  daveti kabul etme (olusturma var, kabul web'de)
-  odesme duzenleme, silineni geri alma, grup adi duzenleme
-  uygulama icinden dil secimi (su an cihaz dilinden okunuyor)
-  CSV disa aktarma (web'de suzgec cubugunda; mobilde paylasim sayfasi
-    gerekiyor - expo-sharing + expo-file-system, yeni bagimlilik)
+  grup adi duzenleme (PATCH /groups/:id hazir)
+  uygulama icinden dil secimi (su an cihaz dilinden; PATCH /me locale kabul
+    ediyor. Web'de dil bir CEREZ - mobilde karsiligi yok, bu is dusunulmeli.)
+  CSV disa aktarma (uc hazir ama telefonda paylasim sayfasi gerekiyor -
+    expo-sharing + expo-file-system, YENI BAGIMLILIK)
+  universal link (ERTELENDI, asagida)
+  PUSH BILDIRIM (ERTELENDI): uygulama ici liste 1 Eylul'de geldi ama push
+    ayri bir is - APNs sertifikasi, expo-notifications, izin istemi, yeni
+    build ve App Privacy anketinde degisiklik. Destek sayfasi bunu ACIKCA
+    yaziyor; oraya dokunmadan push eklenmemeli.
 
   Bu liste destek sayfasinda da yazili (src/content/legal/support.ts,
   "bugunku sinirlar"). ORASI DA GUNCELLENMELI - bir madde bitince.
 
-  BITEN: arama / kategori suzme / "yalnizca beni ilgilendirenler" (1 Eylul).
-  Ayni turda liste satirindaki tekrar da temizlendi - kurallar
-  src/lib/expense-list-view.ts'de ve WEB ILE MOBIL ORTAK. O dosyayi
+LISTEDEN DUSEN IKI MADDE - BIR DAHA "mobilde eksik" DIYE YAZILMASINLAR:
+  odesme duzenleme    -> HICBIR YERDE UC YOK. Web de yalnizca iptal
+                         edebiliyor ve mobil bunu ZATEN yapiyor.
+  silineni geri alma  -> uc var (POST .../restore) ama WEB'DE DE ARAYUZ YOK.
+  Ikisi de urun sinirı, mobil sinirı degil. Yapmak = iki tarafa birden yeni
+  ozellik eklemek; AGENTS.md gorev verilmeden bunu yasakliyor.
+
+UNIVERSAL LINK - NEDEN ERTELENDI:
+  Davet baglantisi (owezy.net/join/<kod>) uygulamada acilmiyor; kullanici
+  onu "Gruba katil" alanina YAPISTIRIYOR. Acilmasi icin uc sey gerekiyor:
+    1. owezy.net/.well-known/apple-app-site-association (yeni web ucu)
+    2. app.json'da associatedDomains + App ID'de Associated Domains yetkisi
+    3. YENI BUILD
+  Ve belirleyici olan: EXPO GO'DA CALISMIYOR, yani simulatorde acip
+  bakilamiyor. Development build sart.
+
+  BITEN: arama / kategori suzme / "yalnizca beni ilgilendirenler" ve liste
+  satirindaki tekrarin temizlenmesi (1 Eylul, commit aa863b9). Kurallar
+  src/lib/expense-list-view.ts'de ve WEB ILE MOBIL ORTAK - o dosyayi
   degistiren iki tarafi da gozden gecirsin.
+  Daveti yapistirarak kabul etme (1 Eylul).
+  Bildirimler - UYGULAMA ICI LISTE (1 Eylul).
+  Tek gruplu kullanicinin hesap ekranina ulasamamasi (1 Eylul, asagida).
+
+GELISTIRME VERITABANINDA BIRAKILAN TEST VERISI:
+  "Deniz'in evi" grubu ve davetci@ornek.test kullanicisi, davet kabulunu
+  denemek icin uretildi. BILEREK BIRAKILDI: gelistirmedeki tek COK UYELI
+  grup o, ve "senin payin" ile "kim odedi" ancak orada gercekten degisiyor.
 
 GONDERIM ZINCIRI (mobil tamamlaninca, SIRASI ONEMLI):
   1. eas build   -> build 7 bu islerin HICBIRINI tasimiyor
@@ -96,6 +124,22 @@ BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
 
 AKILDA TUTULACAKLAR:
 
+  "Intl CALISIYOR" DIYE BIR BUTUN YOK. Hermes'te Intl.NumberFormat ve
+  Intl.DateTimeFormat var ama Intl.RelativeTimeFormat YOK - bildirim ekrani
+  yazilinca uygulama "undefined cannot be used as a constructor" ile coktu.
+  Faz 18.2'deki olcum yalnizca ilk ikisini kapsiyordu. PAYLASILAN BIR MODULE
+  giren her Intl.X mobilde AYRICA denenmeli (ADR-044).
+
+  TEK GRUPLU KULLANICI GRUPLAR LISTESINI HIC GORMUYOR: index.tsx onu
+  Redirect ile dogrudan grubun icine dusuruyor ve Redirect YIGINI
+  DEGISTIRIYOR - geri dugmesi DOGMUYOR. Grup ekranindan bir sey
+  kaldirilirken "geri dugmesi karsilar" DENMEZ; o kullanici icin geri
+  dugmesi yok. Hesap ve bildirim kartlari bu yuzden orada.
+
+  DERIN BAGLANTI Redirect'i TAKLIT ETMIYOR: exp://.../--/groups/<id> acinca
+  expo-router ust rotayi da yigina koyuyor ve geri dugmesi CIKIYOR. Yigin
+  davranisini olcmek icin gercek durumu uretmek gerekiyor.
+
   YESIL SINYALLER URUNUN IYI OLDUGUNU SOYLEMEZ. Uygulama tsc, lint ve 67
   test yesilken KULLANILAMAZ haldeydi: ekranlardan geri donulemiyordu.
   Mobilde bir sey degistiginde SIMULATORDE BAKILMALI - kod okuyarak degil.
@@ -134,8 +178,8 @@ AKILDA TUTULACAKLAR:
   DESTEKLENEN PARA BIRIMI YALNIZCA TRY VE USD (money.ts).
 
 TESTLER - NE NEREDE:
-  KOK      npm test                  572 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      53 vitest + 14 jest
+  KOK      npm test                  574 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      62 vitest + 14 jest
   E2E      npm run test:e2e           56 test, ~10 dk
 
   MOBILDE IKI KOSUCU VAR ve sinir DIZINE gore (ADR-042, ADR-043):
@@ -144,6 +188,33 @@ TESTLER - NE NEREDE:
   Mobil testler KOKTEN kosmuyor: agacta iki ayri React kopyasi var.
 
 E2E - NASIL CALISIYOR:
+
+  ILK KOSU SOGUK DERLEMEYLE YARISIYOR - VE KAYBEDEBILIYOR.
+  Kaynak degistikten SONRAKI ILK kosuda Turbopack rotalari TALEP UZERINE
+  derliyor. Test basina sinir 60 sn ve o yaris kaybedilebiliyor. BELIRTI
+  YANILTICI: yazma istekleri asili kaliyor, dugme "Olusturuluyor..." de
+  donup kaliyor - sanki bir mantik hatasi varmis gibi. Aslinda o uca ILK
+  KEZ gidiliyor ve rota isleyicisi daha derleniyor.
+
+  1 Eylul'de bu YANLIS TESHISE IKI KEZ goturdu: once "ortam kararsiz"
+  denildi, sonra "sebep bende" denildi. Ikisi de yanlisti. OLCUM:
+    kosu 1  degisiklikler, derlenmemis  -> DUSTU  (4.0 dk)
+    kosu 2  stash (daha once derlenmis) -> 7 gecti (32.6 sn)
+    kosu 3  degisiklikler, artik derli  -> 7 gecti (31.7 sn)
+  Ayni kod, iki farkli sonuc. Belirleyici olan ONBELLEK.
+
+  KURAL: E2E dusunce ONCE ISINDIRIP TEKRARLA. Ucuzu:
+      npx playwright test e2e/auth.spec.ts
+  Ayni sonuc iki kez ust uste cikiyorsa gercek bir kusurdur.
+  (Dosya filtresi kurulumu ELEMEZ - chromium projesinin
+  dependencies: ["setup"] bagi var. ELEYEN sey -g.)
+
+  DEGISIKLIGIN SEBEP OLUP OLMADIGINI OLCMENIN YOLU: git stash push -u ile
+  kaldirip kos, sonra pop'layip TEKRAR kos. Yalnizca stash'li kosuyu
+  gormek YANILTIR - o icerik zaten derlenmis oluyor.
+
+  - CIKTIYI "| tail" ILE BORUYA SOKMA. Cikis kodu tail'den gelir (hep 0) ve
+    hata ayrintisi kirpilir. Dosyaya yaz, sonra oku.
   - Tam kosu ~10 dakika, 56 test. KOSU SURERKEN PROJE DOSYALARINA DOKUNMA.
   - 3000'deki dev sunucusu KAPALI OLMALI. (Kapattiktan sonra GERI ACMAYI
     unutma - unutuldugunda mobil uygulama "Something went wrong" veriyor.)

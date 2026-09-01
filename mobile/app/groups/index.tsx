@@ -3,10 +3,11 @@ import { useCallback, useMemo, useRef } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../../lib/auth";
-import { useTranslate } from "../../lib/i18n";
+import { useTranslate, type Translator } from "../../lib/i18n";
 import { useApiGet } from "../../lib/use-api";
 import { useTheme, type Theme } from "../../lib/theme";
 import { GroupCreator } from "../../components/group-creator";
+import { InviteJoiner } from "../../components/invite-joiner";
 
 /**
  * Gruplar listesi. HER ZAMAN gorunur, grup sayisi ne olursa olsun.
@@ -29,10 +30,18 @@ export default function GroupsScreen() {
   const s = useMemo(() => createStyles(theme), [theme]);
 
   const { state, reload } = useApiGet<{ groups: Group[] }>("/api/v1/groups");
+  // Sayac listeyle AYNI cevapta geliyor; limit=1 bir kayit indirmenin
+  // bedeliyle sayiyi veriyor (notifications/route.ts).
+  const unread = useApiGet<{ unreadCount: number }>("/api/v1/notifications?limit=1");
+  const unreadCount = unread.state.kind === "ok" ? unread.state.data.unreadCount : 0;
 
   // Yeni grup olusturup geri donuldugunde liste guncel olsun. Ilk odaklanma
   // atlaniyor: mount aninda veri zaten cekiliyor.
   const firstFocus = useRef(true);
+  // Kancanin bagimliligi olarak nesnenin KENDISI degil, uzerindeki KARARLI
+  // fonksiyon aliniyor: "unread" her cizimde yeni bir nesne, efekt bosuna
+  // yeniden kurulurdu.
+  const reloadUnread = unread.reload;
   useFocusEffect(
     useCallback(() => {
       if (firstFocus.current) {
@@ -40,7 +49,8 @@ export default function GroupsScreen() {
         return;
       }
       reload();
-    }, [reload]),
+      reloadUnread();
+    }, [reload, reloadUnread]),
   );
 
   if (state.kind === "loading") {
@@ -72,20 +82,15 @@ export default function GroupsScreen() {
         <View style={s.firstRun}>
           <Text style={s.wordmark}>Owezy</Text>
           <Text style={s.firstRunText}>{t("ui.no_groups")}</Text>
+          {/* IKI YOL, ESIT AGIRLIKTA. Davet edilen kisi giristen sonra tam
+              buraya dusuyor: katilma yolu burada olmasaydi uygulamayi
+              kurmasinin sebebi olan isi yapamazdi. */}
           <View style={s.firstRunForm}>
             <GroupCreator onCreated={reload} />
+            <InviteJoiner onJoined={reload} />
           </View>
         </View>
-        <View style={s.footer}>
-          <Link href="/account" asChild>
-            <Pressable style={s.signOut}>
-              <Text style={s.signOutText}>{t("ui.account")}</Text>
-            </Pressable>
-          </Link>
-          <Pressable style={s.signOut} onPress={() => void signOut()}>
-            <Text style={s.signOutText}>{t("ui.sign_out")}</Text>
-          </Pressable>
-        </View>
+        <Footer styles={s} t={t} unreadCount={unreadCount} onSignOut={signOut} />
       </SafeAreaView>
     );
   }
@@ -116,23 +121,59 @@ export default function GroupsScreen() {
 
         <View style={s.creator}>
           <GroupCreator onCreated={reload} />
+          <InviteJoiner onJoined={reload} />
         </View>
       </ScrollView>
 
       {/* HESAP EKRANINA KAPI. Cikis burada KALIYOR: en sik yapilan islemi
           bir dokunus derine gommemek icin. Hesap silme icerideki ekranda
           (App Store Guideline 5.1.1(v) uygulama ici silmeyi zorunlu tutuyor). */}
-      <View style={s.footer}>
-        <Link href="/account" asChild>
-          <Pressable style={s.signOut}>
-            <Text style={s.signOutText}>{t("ui.account")}</Text>
-          </Pressable>
-        </Link>
-        <Pressable style={s.signOut} onPress={() => void signOut()}>
-          <Text style={s.signOutText}>{t("ui.sign_out")}</Text>
-        </Pressable>
-      </View>
+      <Footer styles={s} t={t} unreadCount={unreadCount} onSignOut={signOut} />
     </SafeAreaView>
+  );
+}
+
+/**
+ * Alt satir. IKI DONUSTE DE ayni: bos hal ve dolu liste.
+ *
+ * Once iki yere KOPYALANMISTI ve bildirimler eklenirken biri unutulabilirdi -
+ * kopyalanan bir satir, zamanla ayrisan bir satirdir.
+ *
+ * Bildirimler HESAP DUZEYINDE bir sey, o yuzden gruplarin degil bu satirin
+ * yaninda duruyor. Okunmamis sayisi varsa yazi ile birlikte yaziliyor;
+ * yoksa hic - sifir gostermek olmayan bir isi varmis gibi gosterirdi.
+ */
+function Footer({
+  styles: s,
+  t,
+  unreadCount,
+  onSignOut,
+}: {
+  styles: ReturnType<typeof createStyles>;
+  t: Translator;
+  unreadCount: number;
+  onSignOut: () => Promise<void> | void;
+}) {
+  return (
+    <View style={s.footer}>
+      <Link href="/notifications" asChild>
+        <Pressable style={s.signOut}>
+          <Text style={s.signOutText}>
+            {unreadCount > 0
+              ? `${t("ui.notifications")} · ${unreadCount > 9 ? "9+" : unreadCount}`
+              : t("ui.notifications")}
+          </Text>
+        </Pressable>
+      </Link>
+      <Link href="/account" asChild>
+        <Pressable style={s.signOut}>
+          <Text style={s.signOutText}>{t("ui.account")}</Text>
+        </Pressable>
+      </Link>
+      <Pressable style={s.signOut} onPress={() => void onSignOut()}>
+        <Text style={s.signOutText}>{t("ui.sign_out")}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -162,15 +203,15 @@ function createStyles(theme: Theme) {
     rowName: { fontSize: 16, fontWeight: "500", color: theme.foreground },
     rowDescription: { marginTop: 2, fontSize: 12, color: theme.muted },
     rowRole: { fontSize: 12, color: theme.muted },
-    creator: { paddingTop: 18 },
+    creator: { paddingTop: 18, gap: 18 },
     firstRun: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
     wordmark: { fontSize: 34, fontWeight: "600", color: theme.brand },
     firstRunText: { textAlign: "center", color: theme.muted, maxWidth: 300, lineHeight: 22 },
-    firstRunForm: { alignSelf: "stretch", marginTop: 12 },
+    firstRunForm: { alignSelf: "stretch", marginTop: 12, gap: 18 },
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
     buttonText: { color: "#fff", fontSize: 15 },
-    footer: { flexDirection: "row", justifyContent: "center", gap: 28 },
+    footer: { flexDirection: "row", justifyContent: "center", gap: 20 },
     signOut: { paddingVertical: 16 },
     signOutText: { color: theme.muted, fontSize: 14 },
   });

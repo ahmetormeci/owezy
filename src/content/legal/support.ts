@@ -100,12 +100,15 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Telefonda bildirim yok; bildirimler yalnızca web'de görünüyor.",
+              "Bildirimler uygulamanın içinde listeleniyor, ama telefona " +
+                "bildirim GÖNDERİLMİYOR: uygulama kapalıyken bir şey olduğunu " +
+                "haber alamazsın.",
               "Payları tek tek girilmiş (tutar yazılmış) bir harcamanın " +
                 "TUTARI telefondan değiştirilemiyor — toplamı bozardı. " +
                 "Açıklaması düzenlenebiliyor; yüzdeli bölüşümlerde tutar da " +
                 "değiştirilebiliyor.",
-              "Davetler telefonda oluşturulup paylaşılabiliyor ama kabul etmek web'de yapılıyor.",
+              "Davet bağlantısı telefonda kendiliğinden açılmıyor; uygulamadaki " +
+                "\"Gruba katıl\" alanına yapıştırman gerekiyor.",
               "Ödeşme kaydı düzenlenemiyor; yalnızca iptal edilebiliyor.",
               "Grup adı ve açıklaması yalnızca web'de düzenlenebiliyor.",
               "Arayüz dili telefonda cihazın dilinden okunuyor, uygulama içinden değiştirilemiyor.",
@@ -219,11 +222,14 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "No notifications on the phone; they appear on the web only.",
+              "Notifications are listed inside the app, but the phone does not " +
+                "receive push notifications: while the app is closed you will not " +
+                "be told that something happened.",
               "The AMOUNT of an expense whose shares were typed in one by one cannot be " +
                 "changed on the phone — it would break the total. Its description can be " +
                 "edited, and for percentage splits the amount can be changed too.",
-              "Invites can be created and shared from the phone, but accepting one happens on the web.",
+              "An invite link does not open the app by itself; paste it into the " +
+                "\"Join group\" field instead.",
               "Settlements cannot be edited, only cancelled.",
               "A group's name and description can only be edited on the web.",
               "On the phone the interface language follows the device and cannot be changed in the app.",

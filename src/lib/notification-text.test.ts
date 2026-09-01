@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { describeNotification, formatRelativeTime } from "@/lib/notification-text";
+import { translate } from "@/lib/messages";
 
 const FULL_PAYLOAD = {
   groupId: "11111111-1111-4111-8111-111111111111",
@@ -114,5 +115,27 @@ describe("formatRelativeTime", () => {
   // kayit "-1 dakika önce" gibi sacma bir metin uretmemeli.
   it("gelecekte gorunen kayitlar icin 'az önce' der", () => {
     expect(formatRelativeTime(new Date("2026-08-11T12:05:00Z"), now)).toBe("az önce");
+  });
+
+  /**
+   * INGILIZCE TEKIL/COGUL. Bu ayrim bu fonksiyonun VAROLUS SEBEBI: once
+   * Intl.RelativeTimeFormat kullaniliyordu cunku tek bir sablon "1 minutes
+   * ago" derdi. Intl Hermes'te olmadigi icin cogul biçimler sozluge tasindi
+   * (ui.minutes_ago_one / _other); testler o tasimanin ayni ciktiyi
+   * verdigini ve bir daha bozulamayacagini tutuyor.
+   */
+  const en = (date: string) =>
+    formatRelativeTime(new Date(date), now, (code, params) => translate(code, params, "en"), "en");
+
+  it("ingilizcede tekil biçimi kullanir", () => {
+    expect(en("2026-08-11T11:59:00Z")).toBe("1 minute ago");
+    expect(en("2026-08-11T11:00:00Z")).toBe("1 hour ago");
+    expect(en("2026-08-10T12:00:00Z")).toBe("1 day ago");
+  });
+
+  it("ingilizcede cogul biçimi kullanir", () => {
+    expect(en("2026-08-11T11:57:00Z")).toBe("3 minutes ago");
+    expect(en("2026-08-11T09:00:00Z")).toBe("3 hours ago");
+    expect(en("2026-08-09T12:00:00Z")).toBe("2 days ago");
   });
 });

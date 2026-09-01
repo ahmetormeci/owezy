@@ -300,7 +300,11 @@ export const MESSAGES_TR = {
   "ui.group_name_placeholder": "Ev Arkadaşları",
   "ui.group_description": "Açıklama (isteğe bağlı)",
   "ui.group_description_placeholder": "Kira, faturalar, market",
-  "ui.no_groups": "Henüz bir grubun yok. Yeni bir grup oluşturarak başlayabilirsin.",
+  // Davet kabul etmek mobile gelince bu metin eksik kaldı: tek yol
+  // anlatıyordu, oysa davet edilen kişinin gördüğü İLK ekran burası.
+  "ui.no_groups":
+    "Henüz bir grubun yok. Yeni bir grup oluşturabilir ya da sana gönderilen " +
+    "davet bağlantısıyla bir gruba katılabilirsin.",
   "ui.group_created": "Grup oluşturuldu",
   "ui.edit_group": "Grubu düzenle",
   "ui.edit_group_hint":
@@ -520,6 +524,7 @@ export const MESSAGES_TR = {
 
   // --- Davete katilma sayfasi ---
   "ui.join_group": "Gruba katıl",
+  "ui.invite_link_placeholder": "Davet bağlantısı veya kodu",
   "ui.joining": "Katılınıyor...",
   "ui.joined_group": "Gruba katıldın",
   "ui.join_failed": "Gruba katılınamadı",
@@ -567,6 +572,14 @@ export const MESSAGES_TR = {
   // sablon calisiyordu, Ingilizcede calismiyor. "az once" ise bir sayi
   // icermedigi icin Intl'in isi degil, burada kaliyor.
   "ui.just_now": "az önce",
+  // Türkçede çoğul eki yok, iki biçim de aynı - ama İngilizce için ayrı
+  // olmak zorunda ve ADR-020 ikisinin de doldurulmasını garanti ediyor.
+  "ui.minutes_ago_one": "{count} dakika önce",
+  "ui.minutes_ago_other": "{count} dakika önce",
+  "ui.hours_ago_one": "{count} saat önce",
+  "ui.hours_ago_other": "{count} saat önce",
+  "ui.days_ago_one": "{count} gün önce",
+  "ui.days_ago_other": "{count} gün önce",
   "ui.someone": "Birisi",
   "ui.notif_expense_added": "{actor} yeni bir harcama ekledi",
   "ui.notif_expense_updated": "{actor} bir harcamayı güncelledi",
@@ -812,7 +825,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.group_name_placeholder": "Roommates",
   "ui.group_description": "Description (optional)",
   "ui.group_description_placeholder": "Rent, bills, groceries",
-  "ui.no_groups": "You don't have any groups yet. Create one to get started.",
+  "ui.no_groups":
+    "You are not in any group yet. Create one, or join with an invite link " +
+    "someone sent you.",
   "ui.group_created": "Group created",
   "ui.edit_group": "Edit group",
   "ui.edit_group_hint":
@@ -1001,6 +1016,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
 
   // --- Join page ---
   "ui.join_group": "Join group",
+  "ui.invite_link_placeholder": "Invite link or code",
   "ui.joining": "Joining...",
   "ui.joined_group": "You joined the group",
   "ui.join_failed": "Could not join the group",
@@ -1043,6 +1059,12 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.no_notifications": "No notifications yet.",
   "ui.notifications_load_failed": "Notifications could not be loaded",
   "ui.just_now": "just now",
+  "ui.minutes_ago_one": "{count} minute ago",
+  "ui.minutes_ago_other": "{count} minutes ago",
+  "ui.hours_ago_one": "{count} hour ago",
+  "ui.hours_ago_other": "{count} hours ago",
+  "ui.days_ago_one": "{count} day ago",
+  "ui.days_ago_other": "{count} days ago",
   "ui.someone": "Someone",
   "ui.notif_expense_added": "{actor} added a new expense",
   "ui.notif_expense_updated": "{actor} updated an expense",

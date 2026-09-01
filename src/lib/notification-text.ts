@@ -94,26 +94,41 @@ const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-const INTL_LOCALES: Record<Locale, string> = { tr: "tr-TR", en: "en-US" };
-const relativeFormatters: Partial<Record<Locale, Intl.RelativeTimeFormat>> = {};
-
 /**
  * "3 dakika once" / "3 minutes ago".
  *
- * NEDEN SOZLUKTE DEGIL: sablon olarak yazilsaydi Ingilizce "1 minutes ago"
- * derdi. Turkcede cogul eki olmadigi icin "{count} dakika once" her sayi
- * icin dogruydu; Ingilizcede sayiya gore degisiyor. Intl.RelativeTimeFormat
- * bu kurali her dil icin kendisi biliyor.
+ * ONCE Intl.RelativeTimeFormat KULLANIYORDU ve o secimin gerekcesi suydu:
+ * tek bir sablon "1 minutes ago" derdi, cunku Turkcede cogul eki yok ama
+ * Ingilizcede var. Gerekce dogruydu, COZUM YANLISTI.
  *
- * numeric: "always" bilerek. "auto" olsaydi Turkcede "1 gun once" yerine
- * "dun", "2 gun once" yerine "evvelsi gun" yazardi - mevcut cikti degisirdi.
+ * HERMES'TE Intl.RelativeTimeFormat YOK. Mobil bildirim ekrani yazilinca
+ * uygulama "undefined cannot be used as a constructor" ile coktu ve kaynak
+ * tam bu satirdi. Hermes'in Intl destegi 18.2'de olculmustu ama NumberFormat
+ * ile DateTimeFormat icin; bu ucuncusu o olcumun disinda kalmis.
+ *
+ * COZUM: cogul biçimleri SOZLUKTE, tekil ve cogul AYRI anahtarlarda -
+ * projenin baska yerlerde zaten kullandigi desen (ui.match_count_one/other).
+ * Boylece tek bir kod yolu hem web'de hem Hermes'te calisiyor ve ADR-020
+ * iki dilin de doldurulmasini derleme zamaninda garanti ediyor.
+ *
+ * CIKTI DEGISMEDI: eski Intl ciktisi iki dil icin de olculdu ve buradaki
+ * metinler onunla birebir ayni ("1 minute ago" / "3 minutes ago" /
+ * "3 dakika once"). Mevcut testler bu yuzden aynen geciyor.
  */
-function relative(locale: Locale, count: number, unit: Intl.RelativeTimeFormatUnit): string {
-  const formatter = (relativeFormatters[locale] ??= new Intl.RelativeTimeFormat(
-    INTL_LOCALES[locale],
-    { numeric: "always" },
-  ));
-  return formatter.format(-count, unit);
+type RelativeUnit = "minute" | "hour" | "day";
+
+// Kodlar SABIT ve MessageCode olarak yaziliyor: `ui.${unit}s_ago_...` gibi
+// uretilen bir dize ADR-020'nin derleme zamani kontrolunu devre disi
+// birakirdi - eksik bir ceviri ancak calisma aninda fark edilirdi.
+const RELATIVE_CODES: Record<RelativeUnit, { one: MessageCode; other: MessageCode }> = {
+  minute: { one: "ui.minutes_ago_one", other: "ui.minutes_ago_other" },
+  hour: { one: "ui.hours_ago_one", other: "ui.hours_ago_other" },
+  day: { one: "ui.days_ago_one", other: "ui.days_ago_other" },
+};
+
+function relative(t: Translator, count: number, unit: RelativeUnit): string {
+  const codes = RELATIVE_CODES[unit];
+  return t(count === 1 ? codes.one : codes.other, { count });
 }
 
 /**
@@ -136,13 +151,13 @@ export function formatRelativeTime(
     return t("ui.just_now");
   }
   if (diff < HOUR) {
-    return relative(locale, Math.floor(diff / MINUTE), "minute");
+    return relative(t, Math.floor(diff / MINUTE), "minute");
   }
   if (diff < DAY) {
-    return relative(locale, Math.floor(diff / HOUR), "hour");
+    return relative(t, Math.floor(diff / HOUR), "hour");
   }
   if (diff < 7 * DAY) {
-    return relative(locale, Math.floor(diff / DAY), "day");
+    return relative(t, Math.floor(diff / DAY), "day");
   }
 
   // Bir haftadan eskisi icin goreli zaman ("38 gun once") okunmuyor; tarihin

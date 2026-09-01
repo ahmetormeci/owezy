@@ -523,6 +523,40 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-044 — Çoğul biçimler sözlükte, `Intl.RelativeTimeFormat` kullanılmaz
+**Tarih:** 2026-09-01 · **Durum:** Kabul edildi
+
+**Karar:** Tekil/çoğul ayrımı gereken metinler sözlükte **iki ayrı anahtar**
+olarak yaşar (`ui.minutes_ago_one` / `ui.minutes_ago_other`). Paylaşılan
+kodda `Intl.RelativeTimeFormat` **kullanılmaz**.
+
+**Neden:** `formatRelativeTime` bu sınıfı kullanıyordu ve gerekçesi doğruydu —
+tek bir şablon İngilizcede "1 minutes ago" derdi. Ama **Hermes'te
+`Intl.RelativeTimeFormat` yok**. Mobil bildirim ekranı yazılınca uygulama
+`undefined cannot be used as a constructor` ile çöktü; kaynak tam o satırdı.
+
+Hermes'in Intl desteği Faz 18.2'de ölçülmüştü, ama `NumberFormat` ve
+`DateTimeFormat` için — bu üçüncüsü ölçümün dışında kalmış. **Genel kural
+şu:** paylaşılan bir modüle giren her `Intl.X` mobilde ayrıca doğrulanmalı;
+"Intl çalışıyor" diye bir bütün yok.
+
+**Neden polyfill değil:** `@formatjs/intl-relativetimeformat` yerel veriyle
+birlikte gelir ve yalnızca iki dil için taşınacak ciddi bir yük olurdu.
+
+**Neden tek şablon değil:** İngilizce çoğulu bozardı — özgün gerekçe hâlâ
+geçerli.
+
+**Çıktı değişmedi.** Eski Intl çıktısı iki dil için de ölçüldü ve yeni
+metinler onunla birebir aynı; mevcut testler değiştirilmeden geçti. Ayrıca
+İngilizce tekil/çoğul testleri eklendi, çünkü kaybolması en kolay olan şey o.
+
+**Yan fayda:** ADR-020'nin "eksik çeviri = derleme hatası" garantisi artık bu
+metinleri de kapsıyor; `Intl` içindeyken hiçbir dil kontrolü yoktu. Kodlar
+sabit yazılıyor (`RELATIVE_CODES` eşlemesi), üretilmiyor — `ui.${unit}s_ago`
+gibi bir dize o garantiyi devre dışı bırakırdı.
+
+---
+
 ## ADR-043 — Ekran testleri jest-expo ile, `lib/` testleri vitest'te kalır
 **Tarih:** 2026-08-28 · **Durum:** Kabul edildi
 

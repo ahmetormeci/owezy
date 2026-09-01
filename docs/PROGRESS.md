@@ -1137,6 +1137,8 @@ Eksik olan **içiydi**: web'in grup sayfasındaki dokuz bloktan mobil üçünü
 | 4 | Açılış görseli, ekranlardaki başlık tekrarları |
 | 5 | Eşit olmayan bölüşümün düzenlenmesi, kategori seçimi, yükleme hatasının gösterilmesi |
 | 6 | Liste satırındaki tekrar temizlendi (web + mobil), mobile arama ve süzme geldi |
+| 7 | Telefondan gruba katılma: davet bağlantısını yapıştırma |
+| 8 | Bildirimler (uygulama içi liste), ve tek gruplu kullanıcının hesaba giden yolu |
 
 **Hiçbiri API işi değildi.** `/summary` kategori kırılımını, `/balances` üye
 bakiyelerini baştan beri döndürüyordu; mobilin tip tanımları dardı ve veri
@@ -1208,8 +1210,44 @@ sayısı ve toplamı çıkıyor (aynı `where`'den gelen `matches`).
 **Yine API işi yoktu:** uç `q`, `category`, `mine` ve `matches`'i baştan beri
 destekliyordu.
 
-**Kalan:** bildirimler, daveti kabul etme, ödeşme düzenleme, silineni geri
-alma, grup adı düzenleme, uygulama içinden dil seçimi, CSV dışa aktarma.
+**7. adımda çıkanlar.** Davet **kabul etmek** mobilde yoktu ve koddaki
+gerekçe eskimişti: "onaylanmış Apple hesabı bekleniyor" diyordu, hesap
+onaylandı. Ama universal link'in kendisi hâlâ üç şey birden istiyor ve biri
+belirleyici — **Expo Go'da çalışmıyor**, yani simülatörde açıp bakılamıyor.
+Bu fazın yöntemi tam olarak "bakmak" olduğu için görülmeden yazılacak bir
+kurulum yerine bugün doğrulanabilen yol seçildi: bağlantıyı **yapıştırmak**.
+Universal link sonradan geldiğinde ekran değişmiyor, yalnızca alanı dolduruyor.
+
+Bileşen `GroupCreator`'ın tam eşi ve **iki yerde** duruyor; asıl olanı ilk
+açılış ekranı, çünkü davet edilen kişinin girdikten sonra gördüğü ilk şey o.
+Orada olmasaydı, uygulamayı kurmasının sebebi olan işi yapamazdı.
+
+**Uçlar taranınca listeden iki madde düştü.** "Mobilde kalanlar" listesi
+mobil eksiğiyle **ürün eksiğini** karıştırıyormuş: ödeşme düzenleme için
+hiçbir yerde uç yok (web de yalnızca iptal edebiliyor ve mobil bunu zaten
+yapıyor), silineni geri alma ucu var ama web'de de arayüzü yok. İkisi de
+`support.ts`'de zaten ürün sınırı olarak yazılı; yapmak mobili web'e
+yaklaştırmaz, iki tarafa birden yeni özellik eklemek olur.
+
+**8. adımda çıkanlar.** Bildirimler geldi — uygulama içi liste, **push
+değil**; push ayrı bir iş (APNs, izin istemi, App Privacy anketi). Zil yerine
+kart kullanıldı çünkü uygulamada **hiç ikon yok** ve zil tek ikon olurdu.
+
+Bildirimlere yer ararken **daha ciddi bir kusur** ölçüldü: tek grubu olan
+kullanıcı hesap ekranına hiç ulaşamıyordu. `Redirect` yığını değiştiriyor,
+geri düğmesi doğmuyor, grup ekranında da hesaba giden bağlantı yoktu — Faz
+34'te "başlık çubuğundaki geri düğmesi karşılar" denip kaldırılmışlardı. O
+varsayım tek gruplu kullanıcı için hiç doğru değildi ve **hesap silmeyi**
+erişilemez yapıyordu (App Store 5.1.1(v)).
+
+`Intl.RelativeTimeFormat` Hermes'te yok (ADR-044). Faz 18.2'deki Intl ölçümü
+`NumberFormat` ve `DateTimeFormat` içindi; "Intl çalışıyor" diye bir bütün yok.
+
+İki tasarım hatası da ölçümle bulundu: ekran bir kez yükleniyordu (odaklanma
+deseni yanlış kopyalanmıştı), sonra tazeleme okunmamış noktalarını siliyordu.
+
+**Kalan:** grup adı düzenleme, uygulama içinden dil seçimi, CSV dışa aktarma.
+Ertelenmiş: universal link, push bildirim.
 
 ---
 

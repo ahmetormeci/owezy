@@ -152,6 +152,14 @@ export default function GroupScreen() {
   const balances = useApiGet<BalancesResponse>(
     groupId ? `/api/v1/groups/${groupId}/balances` : null,
   );
+  /**
+   * Okunmamis bildirim sayisi. limit=1 BILEREK: uc sayiyi listeyle AYNI
+   * cevapta donduruyor (notifications/route.ts), yani sayac icin ayri bir
+   * uc de ikinci bir istek de gerekmiyor - bir kayit indirmenin bedeliyle
+   * sayiyi aliyoruz.
+   */
+  const unread = useApiGet<{ unreadCount: number }>("/api/v1/notifications?limit=1");
+  const unreadCount = unread.state.kind === "ok" ? unread.state.data.unreadCount : 0;
 
   // Acik ay: ozetin ilk ayi. Harcamalar ANCAK ozet gelince istenebiliyor,
   // cunku hangi ayin acilacagini ozet soyluyor.
@@ -253,6 +261,7 @@ export default function GroupScreen() {
    */
   const firstFocus = useRef(true);
   const reloadSummary = summary.reload;
+  const reloadUnread = unread.reload;
   useFocusEffect(
     useCallback(() => {
       if (firstFocus.current) {
@@ -261,7 +270,9 @@ export default function GroupScreen() {
       }
       setMonths({});
       reloadSummary();
-    }, [reloadSummary]),
+      // Bildirimlerden geri donuldugunde sayac sifirlanmis olmali.
+      reloadUnread();
+    }, [reloadSummary, reloadUnread]),
   );
 
   const toggleMonth = useCallback(
@@ -932,6 +943,49 @@ export default function GroupScreen() {
             </View>
           </Pressable>
         </Link>
+
+        {/* BILDIRIMLER VE HESAP.
+            Ikisi de GRUBA AIT DEGIL, hesaba ait - ama buraya konmalari zorunlu
+            oldu ve sebebi olculdu: tek grubu olan kullanici uygulamayi acinca
+            index.tsx onu Redirect ile dogrudan buraya dusuruyor. Redirect
+            yigini DEGISTIRDIGI icin geri dugmesi hic dogmuyor; bu ekranda da
+            hesaba giden bir yol yoktu. Yani tek gruplu kullanici HESABINI
+            SILEMIYORDU (App Store 5.1.1(v) bunu zorunlu kiliyor), cikis
+            yapamiyor ve gruplar listesine - dolayisiyla davet kabul etmeye -
+            ulasamiyordu.
+
+            Grup kartlarindan sonra, en altta duruyorlar: kapsamlari farkli
+            oldugu icin grubun bloklariyla karismasinlar. */}
+        <View style={s.accountBlock}>
+          <Link href="/notifications" asChild>
+            <Pressable style={s.card}>
+              <View style={s.cardHead}>
+                <Cap>{t("ui.notifications")}</Cap>
+                <View style={s.cardHeadRight}>
+                  {/* Sayi YALNIZCA okunmamis varken. Sifir yazmak, olmayan
+                      bir isi varmis gibi gostermek olurdu. */}
+                  {unreadCount > 0 ? (
+                    <View style={s.badge}>
+                      <Text style={s.badgeText}>
+                        {unreadCount > 9 ? "9+" : String(unreadCount)}
+                      </Text>
+                    </View>
+                  ) : null}
+                  <Text style={s.cardLink}>→</Text>
+                </View>
+              </View>
+            </Pressable>
+          </Link>
+
+          <Link href="/account" asChild>
+            <Pressable style={s.card}>
+              <View style={s.cardHead}>
+                <Cap>{t("ui.account")}</Cap>
+                <Text style={s.cardLink}>→</Text>
+              </View>
+            </Pressable>
+          </Link>
+        </View>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -1107,6 +1161,18 @@ function createStyles(theme: Theme) {
       gap: 10,
     },
     cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    cardHeadRight: { flexDirection: "row", alignItems: "center", gap: 10 },
+    // Hesap kapilari grubun bloklarindan bir nefes ayri: kapsamlari farkli.
+    accountBlock: { marginTop: 16 },
+    badge: {
+      minWidth: 20,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 10,
+      backgroundColor: theme.brand,
+      alignItems: "center",
+    },
+    badgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
     cardBody: { gap: 12 },
     cardLink: { color: theme.brand, fontSize: 13, fontWeight: "500" },
     catRow: { gap: 5 },

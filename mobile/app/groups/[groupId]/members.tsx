@@ -11,10 +11,12 @@ import { Cap } from "../../../components/receipt";
 /**
  * Uyeler ve davet.
  *
- * DAVETI KABUL ETMEK MOBILDE YOK. Link owezy.net/join/<kod> adresine gidiyor
- * ve onu uygulamanin ICINDE acmak universal link kurulumu ister; o da
- * ONAYLANMIS bir Apple Developer hesabi gerektiriyor (bekleniyor). Davet
- * edilen kisi web'den katiliyor, sonra uygulamayi kullaniyor.
+ * DAVETI KABUL ETMEK ARTIK MOBILDE VAR - gruplar ekraninda, baglantiyi
+ * yapistirarak (components/invite-joiner.tsx). Buradaki eski gerekce
+ * "onaylanmis Apple hesabi bekleniyor" diyordu; hesap onaylandi ama
+ * universal link'in kendisi hala uc sey birden istiyor ve biri Expo Go'da
+ * denenemiyor - ayrintisi lib/invite-link.ts'de. Baglanti uygulamada
+ * ACILMIYOR, ama gonderilen kisi onu uygulamaya YAPISTIRABILIYOR.
  *
  * KAPSAM DISI (bilincli): daveti iptal etme, uye cikarma, sahiplik devri.
  */

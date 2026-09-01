@@ -8,6 +8,84 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-01 (3) — Bildirimler, ve tek gruplu kullanıcının kapatılmış yolu
+
+Bildirimler mobile geldi — **uygulama içi liste**, push değil. Uçlar
+(`GET /notifications`, `.../read`, `read-all`) web'deki zili besleyen uçların
+aynısı ve hazırdı. Metin üretimi paylaşılıyor: `describeNotification` ve
+`formatRelativeTime` saf ve `src/lib/notification-text.ts`'de.
+
+**Zil yerine kart.** Web'de zil kalıcı bir çubukta duruyor; mobilde uygulamada
+**hiç ikon yok** — ne bağımlılık ne de arayüzde tek bir örnek. Zil uygulamadaki
+tek ikon olurdu. Yerine uygulamanın kendi dili: grup ekranında Cap etiketli
+kart + sayaç, gruplar ekranında alt satır.
+
+### Tek gruplu kullanıcı hesap ekranına ulaşamıyordu
+
+Bildirimlere yer ararken çıktı ve **ölçüldü**: `index.tsx` tek grubu olanı
+`Redirect` ile doğrudan grubun içine düşürüyor, `Redirect` yığını
+**değiştirdiği** için geri düğmesi hiç doğmuyor, grup ekranında da hesaba giden
+bir bağlantı yoktu (Faz 34'te "geri düğmesi karşılar" varsayımıyla
+kaldırılmışlardı). Sonuç üç katmanlı:
+
+- **Hesabını silemiyordu** — Faz 33 tam olarak App Store 5.1.1(v) için yapılmıştı
+- Çıkış yapamıyordu
+- Gruplar listesine, dolayısıyla **daveti kabul etmeye** ulaşamıyordu
+
+Grup ekranının altına iki kart eklendi: BİLDİRİMLER ve HESAP.
+
+### `Intl.RelativeTimeFormat` Hermes'te yok
+
+Bildirim ekranı `undefined cannot be used as a constructor` ile çöktü; kaynağı
+uygulamanın kendi hata ekranı gösterdi: `notification-text.ts`. Hermes'in Intl
+desteği Faz 18.2'de ölçülmüştü ama `NumberFormat` ve `DateTimeFormat` için.
+
+Çoğul biçimler sözlüğe taşındı (ADR-044). Çıktı **değişmedi** — eski Intl
+çıktısı iki dil için ölçüldü ve yeni metinler birebir aynı. İngilizce
+tekil/çoğul testleri eklendi.
+
+### Ölçümle bulunan iki tasarım hatası
+
+**Ekran bir kez yükleniyordu.** Diğer ekranlardaki "ilk odaklanmayı atla"
+deseni buraya kopyalanmıştı ve yanlıştı: orada veri ayrıca mount'ta çekiliyor,
+burada yükleyen tek şey oydu. Yeni bildirimler eklendikten sonra ekran hâlâ
+"Henüz bildirimin yok" diyordu.
+
+**Sonra noktalar kayboldu.** Odaklanmada tazeleme `read-all`'dan sonra yeniden
+çekiyor ve kayıtlar okunmuş dönüyordu — yani "hangileri yeniydi" bilgisi, onu
+göstermeye çalıştığımız anda siliniyordu. Artık ziyaret başında yeni olanların
+kimlikleri tutuluyor.
+
+---
+
+## 2026-09-01 (2) — Telefondan gruba katılma
+
+Davet **oluşturmak** telefonda vardı, **kabul etmek** yoktu. Koddaki gerekçe
+"universal link kurulumu, onaylanmış Apple hesabı bekleniyor" diyordu; hesap
+onaylandı ama universal link'in kendisi hâlâ üç şey birden istiyor
+(`apple-app-site-association` dosyası, Associated Domains yetkisi, yeni build)
+ve **Expo Go'da çalışmıyor** — yani simülatörde açılıp bakılamıyordu.
+
+Bunun yerine yapıştırma yolu geldi: gruplar ekranında, grup oluşturmanın tam
+eşi bir satır. Girdi hem tam bağlantıyı hem çıplak kodu kabul ediyor
+(`mobile/lib/invite-link.ts`, 9 test). Universal link sonradan geldiğinde bu
+ekran değişmez; derin bağlantı yalnızca alanı doldurur.
+
+**Asıl yer ilk açılış ekranı**: davet edilen kişi giriş yaptıktan sonra tam
+oraya düşüyor. "Henüz bir grubun yok" metni de artık iki yolu birden anlatıyor
+— eskiden yalnızca grup oluşturmayı söylüyordu.
+
+Simülatörde iki yol da görüldü: geçersiz kod "Davet linki geçersiz" veriyor,
+geçerli kod gruba katıp içine giriyor.
+
+**Listeden çıkan iki madde.** Uçlar taranınca "mobilde kalanlar" listesindeki
+iki maddenin mobil eksiği olmadığı çıktı: **ödeşme düzenleme** için hiçbir
+yerde uç yok (web de yalnızca iptal edebiliyor, mobil bunu zaten yapıyor) ve
+**silineni geri alma** ucu var ama web'de de arayüzü yok. İkisi de ürün
+sınırı; ikisi de destek sayfasında zaten öyle yazılı.
+
+---
+
 ## 2026-09-01 — Harcama listesi: tekrar temizlendi, mobile arama geldi
 
 Kullanıcı listenin uzadıkça okunmaz hâle geldiğini söyledi; simülatörde

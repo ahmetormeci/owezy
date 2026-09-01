@@ -114,6 +114,10 @@ function AppStack() {
         name="groups/[groupId]/expenses/[expenseId]"
         options={{ title: t("ui.expenses") }}
       />
+      <Stack.Screen
+        name="notifications"
+        options={{ title: t("ui.notifications") }}
+      />
       <Stack.Screen name="account" options={{ title: t("ui.account") }} />
     </Stack>
   );
