@@ -40,6 +40,13 @@ GONDERIM ZINCIRI - TAMAMI BITTI (2 Eylul):
   4. EKRAN KAYDI    kullanici FIZIKSEL CIHAZDA cekti (iPhone 12, iOS 26.6.1)
   5. App Review'a cevap + Resubmit   yapildi
 
+  APP REVIEW INFORMATION DOLU: demo hesap (appreview@owezy.net) ve Notes
+  alani ikisi de dolduruldu. Notes'ta uygulamanin ne yaptigi, hesap silme
+  yolu, izin istemi olmadigi, kullanilan dis servisler ve bolgesel fark
+  olmadigi yaziyor - Apple bunu "for future submissions" diye istemisti,
+  yani sonraki gonderimlerde ayni sorular tekrar sorulmasin diye. BIR DAHA
+  SORMAYA GEREK YOK.
+
   APPLE FIZIKSEL CIHAZ ISTIYOR, SIMULATOR KAYDI KABUL DEGIL. Ret metninin
   1. maddesi acikca "captured on a physical device" diyor. Bu oturumda
   once simulator kaydi uretildi ve KULLANILAMADI; bir daha gerekirse
