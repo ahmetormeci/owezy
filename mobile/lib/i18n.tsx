@@ -1,6 +1,7 @@
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { translate, type MessageParams } from "@/lib/messages";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/locale";
+import { readStoredLocale, writeStoredLocale } from "./locale-store";
 
 /**
  * Metne erisimin mobildeki kapisi. Web'deki src/lib/i18n.tsx'in AYNISI, ve
@@ -26,18 +27,70 @@ export type Translator = (code: string, params?: MessageParams) => string;
 
 const LocaleContext = createContext<Locale>(DEFAULT_LOCALE);
 
+/**
+ * Dili DEGISTIRMENIN yolu. Ayri bir baglam cunku dili OKUYAN her bilesen
+ * (neredeyse hepsi) degistirenin degismesiyle yeniden cizilmemeli.
+ */
+const SetLocaleContext = createContext<(next: Locale) => void>(() => {});
+
+/**
+ * Dil saglayicisi.
+ *
+ * ONCE SABITTI: cihaz dili prop olarak veriliyordu ve uygulama icinden
+ * degistirmenin yolu yoktu. Simdi state tasiyor ve sirasi soyle:
+ *
+ *   1. Cihaz dili ile basliyor - HIC BEKLEMEDEN bir sey cizilebilsin.
+ *   2. Cihazda saklanmis bir SECIM varsa ona geciyor (locale-store).
+ *   3. Kullanici Hesap ekranindan degistirince hem buraya hem cihaza hem de
+ *      sunucuya yaziliyor (PATCH /me).
+ *
+ * 2. ADIM NEDEN SUNUCUDAN DEGIL: acilista /me'yi beklemek ilk ekrani ag
+ * turu kadar geciktirirdi. Sunucudaki kayit yine yaziliyor ve WEB onu
+ * okuyor (i18n-server.ts: cerez -> User.locale), yani telefondan yapilan
+ * secim web'de de gecerli oluyor.
+ */
 export function LocaleProvider({
-  locale,
+  initialLocale,
   children,
 }: {
-  locale: Locale;
+  initialLocale: Locale;
   children: React.ReactNode;
 }) {
-  return <LocaleContext.Provider value={locale}>{children}</LocaleContext.Provider>;
+  const [locale, setLocale] = useState<Locale>(initialLocale);
+
+  useEffect(() => {
+    let cancelled = false;
+    void readStoredLocale().then((stored) => {
+      // Saklanmis tercih yoksa cihaz dili KALIYOR - bu bir hata degil,
+      // "kullanici henuz secim yapmadi" demek.
+      if (!cancelled && stored) setLocale(stored);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Ekran once degisiyor, cihaza yazma arkada: kullanici dokunuslarinin
+  // diskin hizini beklemesi icin bir sebep yok.
+  const change = useCallback((next: Locale) => {
+    setLocale(next);
+    void writeStoredLocale(next);
+  }, []);
+
+  return (
+    <SetLocaleContext.Provider value={change}>
+      <LocaleContext.Provider value={locale}>{children}</LocaleContext.Provider>
+    </SetLocaleContext.Provider>
+  );
 }
 
 export function useLocale(): Locale {
   return useContext(LocaleContext);
+}
+
+/** Dili degistirir: ekrani, cihazdaki onbellegi. SUNUCUYA yazan cagiran taraf. */
+export function useSetLocale(): (next: Locale) => void {
+  return useContext(SetLocaleContext);
 }
 
 export function useTranslate(): Translator {

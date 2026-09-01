@@ -101,6 +101,10 @@ function AppStack() {
         options={{ title: t("ui.manage_members") }}
       />
       <Stack.Screen
+        name="groups/[groupId]/edit"
+        options={{ title: t("ui.edit_group") }}
+      />
+      <Stack.Screen
         name="groups/[groupId]/settlements"
         options={{ title: t("ui.settlements") }}
       />
@@ -147,7 +151,7 @@ export default function RootLayout() {
       {/* Sozluk web ile ORTAK (src/lib/messages.ts). Iki ayri sozluk zamanla
           ayrisirdi; ADR-020'nin "eksik ceviri = derleme hatasi" garantisi
           boylece mobilde de gecerli. */}
-      <LocaleProvider locale={deviceLocale()}>
+      <LocaleProvider initialLocale={deviceLocale()}>
         <AuthGuard />
       </LocaleProvider>
     </SessionProvider>

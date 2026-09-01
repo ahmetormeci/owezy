@@ -2,10 +2,12 @@ import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SUPPORTED_LOCALES, type Locale } from "@/lib/locale";
 import { useSession } from "../lib/auth";
-import { useTranslate } from "../lib/i18n";
+import { useLocale, useSetLocale, useTranslate } from "../lib/i18n";
 import { useApiClient, useApiGet } from "../lib/use-api";
 import { useTheme, type Theme } from "../lib/theme";
+import { Cap } from "../components/receipt";
 
 /**
  * Hesap ekrani. MOBILDE BOYLE BIR EKRAN YOKTU.
@@ -22,6 +24,15 @@ import { useTheme, type Theme } from "../lib/theme";
  */
 type Me = { user: { displayName: string; email: string } };
 
+/**
+ * Diller KENDI dillerinde yaziliyor, cevrilmiyor.
+ *
+ * "Turkce"yi Ingilizce arayuzde "Turkish" diye gostermek, o secenegi
+ * arayan kisinin -- yani Turkce bilen ama ekrani Ingilizce acilmis kisinin --
+ * onu tanimasini zorlastirirdi. Dil listeleri her yerde boyle yazilir.
+ */
+const LOCALE_LABELS: Record<Locale, string> = { tr: "Türkçe", en: "English" };
+
 export default function AccountScreen() {
   const t = useTranslate();
   const theme = useTheme();
@@ -31,6 +42,38 @@ export default function AccountScreen() {
   const { remove } = useApiClient();
 
   const { state } = useApiGet<Me>("/api/v1/me");
+  const locale = useLocale();
+  const setLocale = useSetLocale();
+  const { patch } = useApiClient();
+  const [localeBusy, setLocaleBusy] = useState<Locale | null>(null);
+
+  /**
+   * Dil secimi.
+   *
+   * EKRAN ONCE DEGISIYOR, sunucu sonra. Dil bir gorunum tercihi; kullaniciyi
+   * ag turu boyunca eski dilde bekletmenin bir karsiligi yok.
+   *
+   * SUNUCUYA YAZMAK YINE DE GEREKLI: web ayni degeri okuyor (i18n-server.ts,
+   * cerez yoksa User.locale), yani telefondan yapilan secim web'de de
+   * geceriyor. Basarisiz olursa ekrandaki secim GERI ALINIYOR - yoksa
+   * kullanici sectigini sanip bir sonraki aciliste eskisini bulurdu.
+   */
+  async function chooseLocale(next: Locale) {
+    if (next === locale || localeBusy) return;
+
+    const previous = locale;
+    setLocale(next);
+    setLocaleBusy(next);
+    setError(null);
+
+    const result = await patch("/api/v1/me", { locale: next });
+    setLocaleBusy(null);
+
+    if (!result.ok) {
+      setLocale(previous);
+      setError(t(result.code));
+    }
+  }
   /** Silme IKI ADIMLI: once uyari, sonra onay. */
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -76,6 +119,33 @@ export default function AccountScreen() {
             <Text style={s.muted}>{state.data.user.email}</Text>
           </View>
         )}
+
+        {/* DIL. Hesabin bir parcasi cunku kayit da hesapta duruyor
+            (User.locale) ve cihazdan cihaza tasiniyor. */}
+        <View style={s.section}>
+          <Cap>{t("ui.language")}</Cap>
+          <View style={s.chips}>
+            {SUPPORTED_LOCALES.map((value) => {
+              const active = locale === value;
+              return (
+                <Pressable
+                  key={value}
+                  style={[s.chip, active && s.chipActive]}
+                  onPress={() => void chooseLocale(value)}
+                  disabled={localeBusy !== null}
+                >
+                  {localeBusy === value ? (
+                    <ActivityIndicator size="small" color={active ? "#fff" : theme.brand} />
+                  ) : (
+                    <Text style={[s.chipText, active && s.chipTextActive]}>
+                      {LOCALE_LABELS[value]}
+                    </Text>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         <Pressable style={s.secondary} onPress={() => void signOut()} disabled={busy}>
           <Text style={s.secondaryText}>{t("ui.sign_out")}</Text>
@@ -130,6 +200,20 @@ function createStyles(theme: Theme) {
     card: { gap: 4 },
     name: { fontSize: 17, fontWeight: "500", color: theme.foreground },
     muted: { fontSize: 14, color: theme.muted },
+    section: { gap: 10, marginTop: 4 },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    chip: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 999,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      minWidth: 92,
+      alignItems: "center",
+    },
+    chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
+    chipText: { color: theme.foreground, fontSize: 14 },
+    chipTextActive: { color: "#fff", fontWeight: "600" },
     secondary: { paddingVertical: 12 },
     secondaryText: { color: theme.muted, fontSize: 15, textAlign: "center" },
     danger: {

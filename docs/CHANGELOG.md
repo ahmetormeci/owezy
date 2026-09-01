@@ -8,6 +8,35 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-01 (4) — Grup adı düzenleme ve uygulama içinden dil seçimi
+
+**Grup adı ve açıklaması** telefondan düzenlenebiliyor. Ayrı ekran, çünkü iki
+alan var ve açıklama çok satırlı. Şema paylaşılıyor (`updateGroupSchema`), yani
+doğrulama kuralı sunucuyla aynı yerden geliyor ve mesaj alanlarında metin değil
+**kod** var — sunucu dil bilmiyor. Kart yalnızca **sahibe** görünüyor; yetki
+kontrolü yine sunucuda, ama yapılamayacak bir formu doldurtmanın anlamı yok.
+
+`GET /groups/:id` `role`'ü baştan beri döndürüyordu; mobil tipi yine dardı.
+
+**Ekran dönüşte tazelenmiyordu.** Simülatörde görüldü: ad "Tatil2026" olarak
+kaydedildi, geri dönüldü, başlık hâlâ "Tatil" diyordu. Odaklanmada yalnızca
+özet ve bildirim sayacı yenileniyordu; aynı açık üyeler ve bakiyeler için de
+vardı. Artık beş sorgunun hepsi yenileniyor — web'deki karşılığı
+`router.refresh()` ve o da hepsini çekiyor. Maliyeti görünmüyor, çünkü
+`useApiGet` tazelenirken eldeki veriyi koruyor.
+
+**Dil seçimi** Hesap ekranına geldi. Sıra: cihaz dili ile başla → cihazda
+saklanmış seçim varsa ona geç → kullanıcı değiştirince ekrana, cihaza ve
+sunucuya yaz. Açılışta `/me` beklenmiyor; beklemek ilk ekranı ağ turu kadar
+geciktirirdi. Sunucudaki kayıt yine yazılıyor ve **web onu okuyor**
+(`i18n-server.ts`: çerez → `User.locale`), yani telefondan yapılan seçim
+web'de de geçerli.
+
+Diller kendi dillerinde yazılıyor ("Türkçe" / "English"): İngilizce açılmış bir
+ekranda Türkçe arayan kişi "Turkish" yazısını daha zor tanır.
+
+---
+
 ## 2026-09-01 (3) — Bildirimler, ve tek gruplu kullanıcının kapatılmış yolu
 
 Bildirimler mobile geldi — **uygulama içi liste**, push değil. Uçlar

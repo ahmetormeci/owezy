@@ -287,6 +287,8 @@ export const MESSAGES_TR = {
   // Tema dugmesinin aksine burada durumu BILIYORUZ - dil sunucuda okunuyor,
   // yani hangi dilde oldugumuz ilk render'da bellidir. O yuzden etiket
   // "dili degistir" degil, ne olacagini soyleyebiliyor.
+  // Mobilde dil bir DUGME degil bir SECIM listesi; basligi gerekiyor.
+  "ui.language": "Dil",
   "ui.switch_to_tr": "Türkçeye geç",
   "ui.switch_to_en": "İngilizceye geç",
 
@@ -812,6 +814,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.theme_toggle": "Switch theme",
   "ui.language_short_tr": "TR",
   "ui.language_short_en": "EN",
+  "ui.language": "Language",
   "ui.switch_to_tr": "Switch to Turkish",
   "ui.switch_to_en": "Switch to English",
 

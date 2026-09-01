@@ -110,8 +110,6 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
               "Davet bağlantısı telefonda kendiliğinden açılmıyor; uygulamadaki " +
                 "\"Gruba katıl\" alanına yapıştırman gerekiyor.",
               "Ödeşme kaydı düzenlenemiyor; yalnızca iptal edilebiliyor.",
-              "Grup adı ve açıklaması yalnızca web'de düzenlenebiliyor.",
-              "Arayüz dili telefonda cihazın dilinden okunuyor, uygulama içinden değiştirilemiyor.",
               "Silinen bir harcamayı geri alma arayüzü yok.",
               "Süzülmüş listeyi CSV olarak indirmek yalnızca web'de var.",
             ],
@@ -231,8 +229,6 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
               "An invite link does not open the app by itself; paste it into the " +
                 "\"Join group\" field instead.",
               "Settlements cannot be edited, only cancelled.",
-              "A group's name and description can only be edited on the web.",
-              "On the phone the interface language follows the device and cannot be changed in the app.",
               "There is no interface for restoring a deleted expense.",
               "Downloading the filtered list as CSV is web-only.",
             ],

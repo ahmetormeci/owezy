@@ -54,6 +54,19 @@ export async function apiPut<T>(
   return send<T>(path, token, "PUT", body);
 }
 
+/**
+ * Oturumlu PATCH. PUT'tan farki KISMI guncelleme: govdede yalnizca degisen
+ * alanlar gidiyor. Grup duzenlemede uc bunu bekliyor (updateGroupSchema
+ * currency'yi disariyor ve alanlar optional).
+ */
+export async function apiPatch<T>(
+  path: string,
+  token: string | null,
+  body: unknown,
+): Promise<ApiResult<T>> {
+  return send<T>(path, token, "PATCH", body);
+}
+
 /** Oturumlu DELETE. Silme YUMUSAK: sunucu kaydi isaretliyor, fiziksel silme yok. */
 export async function apiDelete<T>(path: string, token: string | null): Promise<ApiResult<T>> {
   return send<T>(path, token, "DELETE");
@@ -62,7 +75,7 @@ export async function apiDelete<T>(path: string, token: string | null): Promise<
 async function send<T>(
   path: string,
   token: string | null,
-  method: "GET" | "POST" | "PUT" | "DELETE",
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   body?: unknown,
 ): Promise<ApiResult<T>> {
   let response: Response;

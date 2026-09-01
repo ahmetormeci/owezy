@@ -39,9 +39,6 @@ NEDEN BURADAYIZ:
   (Faz 34). Kullanici 29 Agustos'ta tekrar bakti: "sorun yok gibi duruyor".
 
 SIRADAKI IS - MOBILDE KALANLAR:
-  grup adi duzenleme (PATCH /groups/:id hazir)
-  uygulama icinden dil secimi (su an cihaz dilinden; PATCH /me locale kabul
-    ediyor. Web'de dil bir CEREZ - mobilde karsiligi yok, bu is dusunulmeli.)
   CSV disa aktarma (uc hazir ama telefonda paylasim sayfasi gerekiyor -
     expo-sharing + expo-file-system, YENI BAGIMLILIK)
   universal link (ERTELENDI, asagida)
@@ -76,6 +73,8 @@ UNIVERSAL LINK - NEDEN ERTELENDI:
   Daveti yapistirarak kabul etme (1 Eylul).
   Bildirimler - UYGULAMA ICI LISTE (1 Eylul).
   Tek gruplu kullanicinin hesap ekranina ulasamamasi (1 Eylul, asagida).
+  Grup adi/aciklamasi duzenleme (1 Eylul, yalnizca SAHIBE gorunuyor).
+  Uygulama icinden dil secimi (1 Eylul, Hesap ekraninda).
 
 GELISTIRME VERITABANINDA BIRAKILAN TEST VERISI:
   "Deniz'in evi" grubu ve davetci@ornek.test kullanicisi, davet kabulunu
@@ -135,6 +134,13 @@ AKILDA TUTULACAKLAR:
   DEGISTIRIYOR - geri dugmesi DOGMUYOR. Grup ekranindan bir sey
   kaldirilirken "geri dugmesi karsilar" DENMEZ; o kullanici icin geri
   dugmesi yok. Hesap ve bildirim kartlari bu yuzden orada.
+
+  BIR EKRANDAN DONULDUGUNDE O EKRANIN BUTUN SORGULARI TAZELENMELI. Grup
+  ekraninda bir sure yalnizca ozet yenileniyordu; grup adi degistirilip geri
+  donuldugunde baslik ESKISINI gosteriyordu. Bir ekrandan gidilen her yer
+  oradaki verilerden birini degistirebiliyor ve "hangisi degisti" sorusunun
+  cevabini ekran bilemez. useApiGet tazelerken eldeki veriyi koruyor, yani
+  hepsini yenilemenin gorunur bir maliyeti yok.
 
   DERIN BAGLANTI Redirect'i TAKLIT ETMIYOR: exp://.../--/groups/<id> acinca
   expo-router ust rotayi da yigina koyuyor ve geri dugmesi CIKIYOR. Yigin

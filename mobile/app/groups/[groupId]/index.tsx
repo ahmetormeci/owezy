@@ -63,7 +63,14 @@ type ExpenseItem = {
   participants: { userId: string; shareAmount: number }[];
 };
 type MonthSlice = { month: string; amount: number; count: number };
-type GroupResponse = { group: { id: string; name: string } };
+/**
+ * ROL DE GELIYORDU, mobil yalnizca ISTEMIYORDU: getGroupForUser her zaman
+ * "role" donduruyor (groups.ts). byCategory, balances ve participants'ta
+ * oldugu gibi veri gelip atiliyordu.
+ */
+type GroupResponse = {
+  group: { id: string; name: string; role: "OWNER" | "MEMBER" };
+};
 type CategorySlice = {
   category: keyof typeof EXPENSE_CATEGORY_CODES;
   amount: number;
@@ -260,8 +267,30 @@ export default function GroupScreen() {
    * cekiliyor, ikinci bir istek bosuna olurdu.
    */
   const firstFocus = useRef(true);
+  /**
+   * BES SORGUNUN HEPSI tazeleniyor, yalnizca ozet degil.
+   *
+   * Once ozet ve bildirim sayaci tazeleniyordu ve EKSIKTI - simulatorde
+   * goruldu: grup adi "Tatil2026" olarak kaydedildi, ekrana donuldu, baslik
+   * hala "Tatil" diyordu. Ayni acik uyeler ve bakiyeler icin de vardi: uye
+   * cikarilip geri gelindiginde liste eskisini gosterirdi.
+   *
+   * Bu ekrandan gidilen HER yer buradaki verilerden birini degistirebiliyor
+   * (harcama, odesme, uye, davet, grup adi, bildirim). "Hangisi degisti"
+   * sorusunu ekranin bilmesinin yolu yok; web'de karsiligi router.refresh()
+   * ve o da hepsini yeniden cekiyor.
+   *
+   * MALIYET GORUNMUYOR: useApiGet ayni adres tazelenirken ELDEKI VERIYI
+   * koruyor, yani spinner'a dusen bir ekran olmuyor.
+   *
+   * Bagimliliklar nesneler degil UZERLERINDEKI KARARLI fonksiyonlar: nesneler
+   * her cizimde yeniden uretiliyor ve efekt bosuna yeniden kurulurdu.
+   */
   const reloadSummary = summary.reload;
   const reloadUnread = unread.reload;
+  const reloadGroup = group.reload;
+  const reloadMembers = members.reload;
+  const reloadBalances = balances.reload;
   useFocusEffect(
     useCallback(() => {
       if (firstFocus.current) {
@@ -270,9 +299,11 @@ export default function GroupScreen() {
       }
       setMonths({});
       reloadSummary();
-      // Bildirimlerden geri donuldugunde sayac sifirlanmis olmali.
+      reloadGroup();
+      reloadMembers();
+      reloadBalances();
       reloadUnread();
-    }, [reloadSummary, reloadUnread]),
+    }, [reloadSummary, reloadGroup, reloadMembers, reloadBalances, reloadUnread]),
   );
 
   const toggleMonth = useCallback(
@@ -935,6 +966,24 @@ export default function GroupScreen() {
             "Gruplarim" ve "Cikis yap" BURADAN KALKTI: birincisini baslik
             cubugundaki geri dugmesi karsiliyor, ikincisi Hesap ekraninda.
             Dordu yan yana duran duz metin, gezinme gibi gorunmuyordu. */}
+        {/* GRUBU DUZENLE. Yalnizca SAHIBE gorunuyor - yetki kontrolu sunucuda
+            (groups.ts, owner_only) ama yapilamayacak bir kapiyi gostermek,
+            kullaniciya formu doldurtup sonunda reddetmek demekti.
+
+            FISIN DISINDA, kartlarin arasinda: web'de de ayni kural yazili -
+            "kagidin uzerine buton koymak, basili bir belgeye tiklanabilir
+            bir sey eklemek gibi durur". */}
+        {group.state.data.group.role === "OWNER" ? (
+          <Link href={`/groups/${groupId}/edit`} asChild>
+            <Pressable style={s.card}>
+              <View style={s.cardHead}>
+                <Cap>{t("ui.edit_group")}</Cap>
+                <Text style={s.cardLink}>→</Text>
+              </View>
+            </Pressable>
+          </Link>
+        ) : null}
+
         <Link href={`/groups/${groupId}/settlements`} asChild>
           <Pressable style={s.card}>
             <View style={s.cardHead}>

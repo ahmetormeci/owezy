@@ -1139,6 +1139,7 @@ Eksik olan **içiydi**: web'in grup sayfasındaki dokuz bloktan mobil üçünü
 | 6 | Liste satırındaki tekrar temizlendi (web + mobil), mobile arama ve süzme geldi |
 | 7 | Telefondan gruba katılma: davet bağlantısını yapıştırma |
 | 8 | Bildirimler (uygulama içi liste), ve tek gruplu kullanıcının hesaba giden yolu |
+| 9 | Grup adı düzenleme, uygulama içinden dil seçimi |
 
 **Hiçbiri API işi değildi.** `/summary` kategori kırılımını, `/balances` üye
 bakiyelerini baştan beri döndürüyordu; mobilin tip tanımları dardı ve veri
@@ -1246,8 +1247,19 @@ erişilemez yapıyordu (App Store 5.1.1(v)).
 İki tasarım hatası da ölçümle bulundu: ekran bir kez yükleniyordu (odaklanma
 deseni yanlış kopyalanmıştı), sonra tazeleme okunmamış noktalarını siliyordu.
 
-**Kalan:** grup adı düzenleme, uygulama içinden dil seçimi, CSV dışa aktarma.
-Ertelenmiş: universal link, push bildirim.
+**9. adımda çıkanlar.** Grup adı düzenleme ve dil seçimi geldi; ikisinin de
+ucu hazırdı. Dil için kök yerleşim veriye bağımlı hâle geldi ve sıralama
+önemliydi: cihaz dili → cihazda saklanan seçim → sunucu. Açılışta `/me`
+beklenmiyor çünkü beklemek ilk ekranı ağ turu kadar geciktirirdi; sunucudaki
+kayıt yine yazılıyor ve web onu okuyor.
+
+Yine ölçümle bir kusur: grup adı kaydedilip geri dönülünce **başlık
+eskisini gösteriyordu**. Odaklanmada yalnızca özet ve bildirim sayacı
+yenileniyordu. Bu ekrandan gidilen her yer buradaki verilerden birini
+değiştirebiliyor ve "hangisi değişti" sorusunu ekranın bilmesinin yolu yok —
+artık beşi de yenileniyor, web'de de karşılığı `router.refresh()`.
+
+**Kalan:** CSV dışa aktarma. Ertelenmiş: universal link, push bildirim.
 
 ---
 

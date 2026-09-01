@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiDelete, apiGet, apiPost, apiPut, type ApiResult } from "./api";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut, type ApiResult } from "./api";
 import { useSession } from "./auth";
 import { useTranslate } from "./i18n";
 
@@ -71,13 +71,22 @@ export function useApiClient() {
     [guard],
   );
 
+  const patch = useCallback(
+    async <T,>(path: string, body: unknown): Promise<ApiResult<T>> =>
+      guard(await apiPatch<T>(path, await getTokenRef.current(), body)),
+    [guard],
+  );
+
   const remove = useCallback(
     async <T,>(path: string): Promise<ApiResult<T>> =>
       guard(await apiDelete<T>(path, await getTokenRef.current())),
     [guard],
   );
 
-  return useMemo(() => ({ get, post, put, remove }), [get, post, put, remove]);
+  return useMemo(
+    () => ({ get, post, put, patch, remove }),
+    [get, post, put, patch, remove],
+  );
 }
 
 /** Bir GET'i ekrana baglar. path null ise istek ATILMAZ. */
