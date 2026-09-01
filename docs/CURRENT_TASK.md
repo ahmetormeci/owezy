@@ -23,22 +23,44 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-01
+Updated: 2026-09-02
 
 Current task:
-  MOBIL UYGULAMAYI TAMAMLAMAK. App Store gonderimi BILEREK BEKLETILIYOR -
-  kullanici "iyice tamamlayalim, oyle cekeriz ekran kaydini" dedi.
+  APPLE'IN INCELEMESI BEKLENIYOR. 1.0 (build 9) 2 Eylul'de yeniden
+  gonderildi; yapilacak bir sey YOK, cevap gelene kadar beklenecek.
+
+  KOD ISI BASLATMA. Ret gelirse gerekce yeni bir gorev tanimlar; onay
+  gelirse asagidaki "SIRADAKI IS" listesi acilir. Ikisinden biri olmadan
+  o listeden bir madde secip uygulama (AGENTS.md).
+
+GONDERIM ZINCIRI - TAMAMI BITTI (2 Eylul):
+  1. eas build      build 9, commit b45577a
+  2. push           b45577a origin/main'de
+  3. eas submit     App Store Connect'e yuklendi (submission 1b8bf705)
+  4. EKRAN KAYDI    kullanici FIZIKSEL CIHAZDA cekti (iPhone 12, iOS 26.6.1)
+  5. App Review'a cevap + Resubmit   yapildi
+
+  APPLE FIZIKSEL CIHAZ ISTIYOR, SIMULATOR KAYDI KABUL DEGIL. Ret metninin
+  1. maddesi acikca "captured on a physical device" diyor. Bu oturumda
+  once simulator kaydi uretildi ve KULLANILAMADI; bir daha gerekirse
+  dogrudan TestFlight + gercek cihaz.
+
+  CEVAP VE NOTES METINLERI 4000 KARAKTERLE SINIRLI - IKISI DE. Cevap
+  metni once 4383 karakter yazildi ve sigmadi.
 
 NEDEN BURADAYIZ:
-  1.0 Apple tarafindan reddedildi (Guideline 2.1, "Information Needed" -
-  hata degil, yedi maddelik bilgi talebi). Cevabi hazirlarken hesap silme
-  eksigi cikti ve yapildi (Faz 33).
+  1.0 once Guideline 2.1 ("Information Needed") ile reddedildi - hata
+  degil, yedi maddelik bilgi talebi. Cevabi hazirlarken UYGULAMA ICI HESAP
+  SILME eksigi cikti (Guideline 5.1.1(v) zorunlu kiliyor) ve yapildi
+  (Faz 33).
 
   Sonra kullanici mobil uygulamayi ILK KEZ acti ve "dumduz bir metinler
-  toplulugu" dedi. Gonderim orada durduruldu; arayuz elden geciriliyor
-  (Faz 34). Kullanici 29 Agustos'ta tekrar bakti: "sorun yok gibi duruyor".
+  toplulugu" dedi. Gonderim durduruldu, arayuz elden gecirildi (Faz 34,
+  on adim). O sirada BIR KUSUR DAHA cikti ve gonderimi dogrudan
+  ilgilendiriyordu: tek grubu olan kullanici HESAP EKRANINA HIC
+  ULASAMIYORDU, yani inceleyici silme akisini bulamazdi.
 
-SIRADAKI IS - MOBILDE KALANLAR:
+SIRADAKI IS - ANCAK INCELEME SONUCLANINCA:
   CSV disa aktarma (uc hazir ama telefonda paylasim sayfasi gerekiyor -
     expo-sharing + expo-file-system, YENI BAGIMLILIK)
   universal link (ERTELENDI, asagida)

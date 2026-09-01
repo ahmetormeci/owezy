@@ -1115,7 +1115,7 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
-## Faz 34 — Mobil arayüz, web'in bilgi mimarisine getiriliyor · **SÜRÜYOR**
+## Faz 34 — Mobil arayüz, web'in bilgi mimarisine getiriliyor · **BİTTİ**
 
 Kullanıcı mobil uygulamayı **ilk kez** 29 Ağustos'ta açtı ve "dümdüz bir
 metinler topluluğu, web'le hiç alakası yok" dedi. Haklıydı — ve sebebi şu:
@@ -1267,7 +1267,13 @@ görüldü** — videodaki ilk kare gerisinden başka bir uygulama gibiydi.
 Ekran testleri değişikliği yakaladı ve beklenen dizeler hesaplanarak
 güncellendi (Türkçe büyütme noktalı İ üretiyor).
 
+**Faz kapandı ve 1.0 yeniden gönderildi (2 Eylül).** Build 9, commit
+`b45577a`. Ekran kaydı kullanıcının iPhone 12'sinde çekildi — Apple'ın
+birinci maddesi fiziksel cihaz şart koşuyor ve bu oturumda üretilen
+simülatör kaydı kullanılamadı.
+
 **Kalan:** CSV dışa aktarma. Ertelenmiş: universal link, push bildirim.
+Üçü de inceleme sonuçlanmadan başlatılmayacak.
 
 ---
 

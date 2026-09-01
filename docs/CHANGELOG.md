@@ -8,6 +8,25 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-02 — 1.0 yeniden gönderildi
+
+Build 9 App Store Connect'e yüklendi, Apple'ın yedi maddelik bilgi talebi
+cevaplandı ve sürüm yeniden incelemeye verildi. Gönderim zinciri
+(build → push → submit → ekran kaydı → cevap) tamamlandı.
+
+**Apple fiziksel cihaz istiyor.** Ret metninin birinci maddesi
+"captured on a physical device" diyor. Bu oturumda önce bir simülatör
+kaydı üretildi — Expo Go izi olmayan, kendi başına çalışan bir `preview`
+build'iyle, production arka uca bağlı. Kayıt teknik olarak iyiydi ama
+**maddeyi karşılamıyordu** ve kullanılmadı; kayıt kullanıcının iPhone
+12'sinde (iOS 26.6.1) yeniden çekildi. Simülatör kaydı yine de işe
+yaradı: senaryo olarak kullanıldı.
+
+Cevap ve Notes metinleri yazıldı. İkisi de **4000 karakterle sınırlı**;
+cevap ilk hâlinde 4383 karakterdi ve kısaltıldı.
+
+---
+
 ## 2026-09-01 (5) — Giriş ekranı temaya bağlandı
 
 Ekran uzun süre kendi hex değerlerini taşıyordu (`#fff`, `#111`, `#ddd`,
