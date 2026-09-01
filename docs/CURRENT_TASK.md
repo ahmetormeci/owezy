@@ -209,6 +209,22 @@ AKILDA TUTULACAKLAR:
   o kontrol Linux'ta HIC CALISMIYOR, yani CI'da baska bir kontrol dusuyor
   olabilir. Tam ciktiyi oku.
 
+  BU KONTROL BIZ HICBIR SEY YAPMADAN DA KIRILIYOR - IKI KEZ OLDU (29
+  Agustos 433ff75, 1 Eylul 3ca668a sonrasi). Expo, SDK 57 icin yama
+  surumleri yayimliyor ve "packages match versions required by installed
+  Expo SDK" kontrolu bizim paketlerimiz geride kaldigi anda dusuyor.
+  Belirti yaniltici: CI, koda dokunmayan bir DOKUMAN commit'inde kirmizi
+  oluyor ve suc son commit'te sanilyor. 1 Eylul'de fda5d60 13:50'de gecti,
+  b45577a 22:21'de dustu, arada paketlere dokunan hicbir sey yoktu.
+
+  COZUM TEK KOMUT:  cd mobile && npx expo install --fix
+  Sonra dogrula (tsc, lint, npm test, expo export, expo-doctor) ve
+  mobile/package.json ile mobile/package-lock.json'i commit'le.
+
+  CI KOSUSUNU ELLE OKUMAK: depo GENEL, yani gh olmadan da bakilabiliyor -
+    curl -s "https://api.github.com/repos/ahmetormeci/owezy/actions/runs?per_page=8"
+  ve bir kosunun adimlari icin .../actions/runs/<id>/jobs
+
   FAST REFRESH EKRANI YENIDEN BAGLIYOR ve "ilk odaklanma" sayaclarini
   sifirliyor. Duzenleme yaptiktan sonra "tazelenmedi" gorunumu genelde bu -
   hata teshis etmeden once UYGULAMAYI BASTAN BASLAT.
