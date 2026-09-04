@@ -8,6 +8,46 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-04 (7) — 1.0.1 App Store Connect'e gönderildi
+
+Build **11**, sürüm **1.0.1**, gönderim `8b62ced9`. Apple'ın incelemesi
+bekleniyor.
+
+**Ne taşıyor:**
+
+| | Nasıl doğrulandı |
+|---|---|
+| 2FA çerez düzeltmesi | üretimde köprüyle birlikte çalışıyor |
+| Bildirim zili | ekranda, açık + koyu tema, soğuk açılış |
+| CSV dışa aktarma | paylaşım sayfası, dosya diskten okundu |
+| Silineni geri alma | web E2E + mobil ekranda |
+| Gruptan ayrılma | ekranda, onay + `replace` dahil |
+| `CFBundleLocalizations` | mağaza artık iki dili gösterecek |
+
+**Yol boyunca dört kusur çıktı ve hepsi düzeltildi.** Üçü yalnızca ekrana
+bakarak ya da CI sayesinde göründü, kod okuyarak değil:
+
+- `@expo/vector-icons` **`expo-font`siz** kalmıştı. Expo Go o paketi kendi
+  taşıdığı için simülatörde her şey normaldi ve tsc, lint, testler,
+  `expo export` dördü de temizdi — ama üretim paketinde **çökebilirdi**.
+  CI'daki `expo-doctor` yakaladı; az kalsın "bilinen kararsız kontrol"
+  diye geçilecekti. Zili taşıyan önceki build (59c40b94) bu eksikle
+  alınmıştı ve gönderilmemesi tesadüfen doğru çıktı.
+- Tek harcamasını silen kullanıcı **geri alamıyordu**: sayaç sıfırlanınca
+  "boş grup" dalı çiziliyor ve o dalda süzgeç satırı yok.
+- CSV **yanlış dilde** iniyordu (uygulama İngilizce, dosya Türkçe).
+- Dosya adını "temizleyen" kural boşluğu, tireyi ve `.csv`'deki noktayı
+  siliyordu — modülün varlık sebebi olan "web ile aynı ad" hedefini bozarak.
+
+**Gönderim Expo'nun kesintisine denk geldi** ve ~56 dakika kuyrukta kaldı
+(*Third-Party Services* bozuktu). Bu sefer komut hata dönmedi, kuyrukta
+bekledi ve kendiliğinden tamamlandı.
+
+**Köprü hâlâ üretimde ve öyle kalmalı** — 1.0.1 yaygınlaşmadan kaldırılırsa
+güncellemeyi almamış her telefon yeniden kırılır.
+
+---
+
 ## 2026-09-04 (6) — Silinen harcama geri alınabiliyor (web)
 
 Destek sayfasındaki "silinen bir harcamayı geri alma arayüzü yok" maddesi

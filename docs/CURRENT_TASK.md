@@ -28,8 +28,14 @@ Updated: 2026-09-04
 Current task:
   1.0.1 ICIN SECILEN DORT ISTEN IKISI BITTI.
 
-  HEMEN SONRAKI ADIM: 1.0.1 build + submit. Kod tarafinda is KALMADI ve
-  dortu de ekranda dogrulandi.
+  1.0.1 GONDERILDI (4 Eylul) - build 11, gonderim 8b62ced9. APPLE'IN
+  INCELEMESI BEKLENIYOR. Yapilacak bir sey YOK.
+
+  ONAY GELINCE ILK IS: KOPRUYU KALDIR. Silinecekler asagida "KOPRU GECICI"
+  basliginda. Ama once 1.0.1'in YAYGINLASMASINI bekle - erken kaldirilirsa
+  guncellemeyi almamis her telefon yeniden kirilir.
+
+  RET GELIRSE: gerekce yeni bir gorev tanimlar.
 
   SILINENI GERI ALMA EKRANDA DOGRULANDI (4 Eylul): silinmis satir soluk ve
   ustu cizili, RESTORE calisiyor. Ayrica CIKISSIZ BIR DURUM bulundu ve
