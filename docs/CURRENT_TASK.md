@@ -309,12 +309,24 @@ AKILDA TUTULACAKLAR:
   react-native-web/dist/index". Degisiklikle ilgisi yok - stash'leyip
   olculdu, degisiklik olmadan da ayni sekilde dusuyor.
 
+  expo-doctor'IN "peer dependency" KONTROLU GERCEK COKMELERI YAKALIYOR -
+  tsc, lint, testler VE expo export'un DORDU DE goremedigi seyleri.
+  4 Eylul'de @expo/vector-icons (bildirim zili icin kuruldu) expo-font'suz
+  kaldi ve doctor "Your app may crash outside of Expo Go" dedi. Expo Go
+  o paketi kendi tasidigi icin SIMULATORDE HER SEY NORMAL gorunuyordu;
+  uretim paketinde cokerdi. Zili tasiyan build (59c40b94) bu eksikle
+  alinmisti - gonderilmedigi icin kurtarildi.
+  COZUM: npx expo install expo-font
+  KURAL: yeni bir Expo paketi kurunca expo-doctor'i KOS ve "peer
+  dependency" satirini oku. "Bilinen kararsiz kontrol" diye gecme.
+
   expo-doctor'IN YERELDEKI CIKTISI YANILTICI: tek sikayeti CocoaPods ise
   o kontrol Linux'ta HIC CALISMIYOR, yani CI'da baska bir kontrol dusuyor
   olabilir. Tam ciktiyi oku.
 
-  BU KONTROL BIZ HICBIR SEY YAPMADAN DA KIRILIYOR - IKI KEZ OLDU (29
-  Agustos 433ff75, 1 Eylul 3ca668a sonrasi). Expo, SDK 57 icin yama
+  BU KONTROL BIZ HICBIR SEY YAPMADAN DA KIRILIYOR - UC KEZ OLDU (29
+  Agustos 433ff75, 1 Eylul 3ca668a, 4 Eylul 4fc6100 sonrasi). 4 Eylul'de
+  expo-sharing AYNI GUN kuruldu ve birkac saat icinde geride kaldi. Expo, SDK 57 icin yama
   surumleri yayimliyor ve "packages match versions required by installed
   Expo SDK" kontrolu bizim paketlerimiz geride kaldigi anda dusuyor.
   Belirti yaniltici: CI, koda dokunmayan bir DOKUMAN commit'inde kirmizi
