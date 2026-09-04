@@ -28,23 +28,29 @@ Updated: 2026-09-04
 Current task:
   1.0.1 ICIN SECILEN DORT ISTEN IKISI BITTI.
 
-  HEMEN SONRAKI ADIM: mobilde GRUPTAN AYRILMA akisini simulatorde dogrula
-  (sahip devri dahil), sonra 1.0.1 build + submit.
+  HEMEN SONRAKI ADIM: 1.0.1 build + submit. Kod tarafinda is KALMADI ve
+  dortu de ekranda dogrulandi.
 
   SILINENI GERI ALMA EKRANDA DOGRULANDI (4 Eylul): silinmis satir soluk ve
   ustu cizili, RESTORE calisiyor. Ayrica CIKISSIZ BIR DURUM bulundu ve
   duzeltildi - tek harcamasini silen kullanici geri alamiyordu.
 
   SIMULATORDE KUCUK METIN HEDEFLERI DOKUNUS ALMIYOR. "Delete", "Manage
-  members" gibi tek satirlik metin dugmeleri yanit vermedi; kartlar,
-  satirlar ve hitSlop'u olan zil calisiyor. Dort tur, uc yontem denendi.
-  Sebep BULUNAMADI. Bir dogrulama buna takilirsa kullanicidan tek bir
-  dokunus iste - zaman kaybetme.
+  members" gibi tek satirlik metin dugmeleri yanit vermiyor; kartlar,
+  satirlar ve hitSlop'u olan zil calisiyor. Sebep BULUNAMADI - taze
+  simulatorde ve dusuk yukte de surdu, yani ortam degil.
+
+  COZUM: DOKUNMA, DERIN BAGLANTIYLA GIT.
+    grep -oE "groups/[0-9a-f-]{36}" <dev sunucusu logu>
+    xcrun simctl openurl <udid> "exp://127.0.0.1:8081/--/groups/<id>/members"
+  Ekran dogrudan aciliyor ve ORADAKI dokunuslar calisiyor. 4 Eylul'de
+  gruptan ayrilma boyle dogrulandi. Saatlerce dokunus denemeden ONCE bunu
+  dene.
 
   SECILEN DORT IS (kullanici 4 Eylul'de secti):
     CSV disa aktarma        BITTI  (6f924a8)
     silineni geri alma      BITTI, ikisi de ekranda dogrulandi
-    gruptan ayrilma (mobil) KOD HAZIR, ekranda gorulmedi
+    gruptan ayrilma (mobil) BITTI, ekranda dogrulandi
     universal link          BASLANMADI - development build sart
     push bildirim           BASLANMADI - APNs + App Privacy anketi
 

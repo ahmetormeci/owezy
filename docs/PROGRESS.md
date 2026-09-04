@@ -1123,7 +1123,7 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
-## Faz 40 — Mobilde gruptan ayrılma · **KOD HAZIR, EKRANDA GÖRÜLMEDİ**
+## Faz 40 — Mobilde gruptan ayrılma · **BİTTİ**
 
 Kullanıcı bildirdi: **telefonda gruptan çıkılamıyor.** Ölçüldü — uç
 (`POST .../leave`) ve web arayüzü (`member-actions.tsx`) baştan beri vardı,
@@ -1137,14 +1137,27 @@ istekle karşılaştırmamak için. Ayrılınca `router.replace` ile gruplar
 listesine gidiliyor; `push` olsaydı geri düğmesi artık üyesi olmadığımız bir
 gruba dönerdi.
 
-**EKRANDA GÖRÜLMEDİ.** `Manage members` bağlantısı bu oturumda dokunuşları
-kabul etmedi — `Delete` düğmesiyle aynı desen: küçük metin hedefleri
-yanıtsız, kartlar ve satırlar çalışıyor. `tsc`, lint, 77 + 18 test temiz ama
-bu projede yeşil sinyaller yetmiyor.
+### Ekranda doğrulandı — ve dokunuş sorununun çözümü bulundu
+
+`Manage members` bağlantısı dokunuşları kabul etmiyordu (`Delete` ile aynı
+desen: küçük metin hedefleri yanıtsız, kartlar ve satırlar çalışıyor). Sebep
+bulunamadı — taze simülatör ve düşük yükte de sürdü, yani ortam değil.
+
+**Çözüm dokunmamak: DERİN BAĞLANTI.**
+
+```
+grep -oE "groups/[0-9a-f-]{36}" <dev sunucusu logu>   # grup kimliği
+xcrun simctl openurl <udid> "exp://127.0.0.1:8081/--/groups/<id>/members"
+```
+
+Ekran doğrudan açıldı. Sonrası sorunsuz: `Leave group` basıldı, onay
+penceresi çıktı ("Geçmiş harcamaların grupta kalır…"), onaylandı, gruplar
+listesine gidildi ve **geri düğmesi doğmadı** — `replace` kararı da böylece
+doğrulandı. Devir seçici tek üyeli sahipte hiç çizilmedi; koşullu mantık
+doğru.
 
 ### Kalan
 
-- Ayrılma akışı **ekranda doğrulanacak** (sahip devri dahil)
 - Üye çıkarma ve sahiplik devri mobilde hâlâ yok (web'de var)
 
 ---
