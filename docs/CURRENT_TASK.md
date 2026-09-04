@@ -28,22 +28,33 @@ Updated: 2026-09-04
 Current task:
   1.0.1 ICIN SECILEN DORT ISTEN IKISI BITTI.
 
-  UNIVERSAL LINK - KOD HAZIR, DEVELOPMENT BUILD ILE DOGRULANACAK.
+  UNIVERSAL LINK - ZINCIRIN HER OLCULEBILIR HALKASI DOGRU, SON ADIM
+  SIMULATORDE DOGRULANAMADI.
 
-  HEMEN SONRAKI ADIM: eas build --profile development, sonra ALTI DURUM:
-    1. girisli + gecerli davet   -> gruba giriyor mu
-    2. giris yapilmamis          -> "once giris yap", giristen sonra DONUYOR mu
-    3. zaten uye                 -> anlasilir hata
-    4. suresi dolmus / iptal     -> anlasilir hata
-    5. gecersiz kod              -> DENENDI, calisiyor (simulator, derin baglanti)
-    6. GERCEK universal link     -> Safari yerine uygulama aciliyor mu
+  OLCULDU VE DOGRU:
+    AASA bizde        200, application/json, SIFIR YONLENDIRME
+    AASA Apple CDN'de https://app-site-association.cdn-apple.com/a/v1/owezy.net
+                      -> 200, icerik bizimkiyle BIREBIR AYNI
+    entitlement       ikilide "applinks:owezy.net" var (strings ile bakildi)
+    iOS swcd          domaini taniyor, CDN'den cekiyor, 200 + 903 bayt,
+                      "finished successfully"
+    /join ekrani      gecersiz kod -> cevrilmis hata + cikis yolu
+    GIRIS YAPILMAMIS  AuthGuard atlamiyor, "once giris yap" ciziliyor
 
-  AASA PRODUCTION'DA OLMADAN BUILD ALMAK ANLAMSIZ: Apple'in CDN'i dosyayi
-  uygulama kurulurken cekiyor. Once push, sonra build.
+  DOGRULANAMADI: https adresinin uygulamaya devri. "xcrun simctl openurl
+  https://..." SAFARI'yi aciyor - temiz kurulumdan ve CDN dolduktan sonra
+  da. simctl'in universal link cozumlemesini tetikleyip tetiklemedigi
+  BELIRSIZ; swcutil simulatorde YOK, yani sahiplenmenin onaylanip
+  onaylanmadigi okunamiyor.
 
-  RISK: applinks aktif olunca uygulamasi yuklu HERKESTE davet baglantilari
-  Safari yerine uygulamada acilir. Rota bir durumu kacirirsa BUGUN CALISAN
-  bir akis bozulur.
+  SONRAKI ADIM: GERCEK CIHAZDA dene. eas.json'a device profili gerekiyor
+  (preview simulator: true). Kullanicinin iPhone 12'si var.
+
+  RISK YENIDEN DEGERLENDIRILDI - ONCE SANILDIGINDAN KUCUK: sahiplenme
+  CALISMAZSA baglantilar Safari'de acilir, yani BUGUNKU davranis surer -
+  gerileme degil. Tehlikeli olan "sahiplenme calisir ama uygulama kotu
+  karsilar" hali ve o taraf artik dogrulandi (gecersiz kod + giris
+  yapilmamis).
 
   1.0.1 GONDERILDI (4 Eylul) - build 11, gonderim 8b62ced9. APPLE'IN
   INCELEMESI BEKLENIYOR.
