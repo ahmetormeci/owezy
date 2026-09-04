@@ -53,9 +53,17 @@ function AuthGuard() {
 
   useEffect(() => {
     if (status === "loading") return;
-    // Giris ekraninin KENDISI korumasiz olmali; yoksa kendine yonlendirir.
-    const onSignIn = segments[0] === "sign-in";
-    if (status === "signed-out" && !onSignIn) {
+    /**
+     * Giris ekraninin KENDISI korumasiz olmali; yoksa kendine yonlendirir.
+     *
+     * DAVET EKRANI DA KORUMASIZ ve sebebi web ile ayni: davet baglantisina
+     * dokunan kisinin cogu zaman hesabi YOK - uygulamayi kurmasinin sebebi
+     * zaten o baglanti. Buraya koruma koysaydik universal link ile gelen
+     * kisi giris ekranina atilir ve ELINDEKI DAVET KAYBOLURDU. Ekran kendi
+     * "once giris yap" halini cizip kodu saklamayi ustleniyor.
+     */
+    const publicRoute = segments[0] === "sign-in" || segments[0] === "join";
+    if (status === "signed-out" && !publicRoute) {
       router.replace("/sign-in");
     }
   }, [status, segments, router]);
@@ -136,6 +144,8 @@ function AppStack() {
         options={{ title: t("ui.notifications"), headerRight: () => null }}
       />
       <Stack.Screen name="account" options={{ title: t("ui.account") }} />
+      {/* Universal link ile gelinen ekran. Basligi ekranin kendisi kuruyor. */}
+      <Stack.Screen name="join/[token]" options={{ title: "" }} />
     </Stack>
   );
 }

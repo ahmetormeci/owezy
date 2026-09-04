@@ -533,6 +533,10 @@ export const MESSAGES_TR = {
 
   // --- Davete katilma sayfasi ---
   "ui.join_group": "Gruba katıl",
+  // Universal link ile gelen ama hesabi olmayan kisiye. Davet edilenin
+  // cogu zaman hesabi YOK - uygulamayi kurmasinin sebebi o baglanti.
+  "ui.invite_needs_account":
+    "Bu davete katilmak icin once giris yapman gerekiyor. Hesabin yoksa e-posta adresinle bir tane olusturulur.",
   "ui.invite_link_placeholder": "Davet bağlantısı veya kodu",
   "ui.joining": "Katılınıyor...",
   "ui.joined_group": "Gruba katıldın",
@@ -1031,6 +1035,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
 
   // --- Join page ---
   "ui.join_group": "Join group",
+  "ui.invite_needs_account":
+    "Sign in first to join this invite. If you do not have an account, one is created with your email address.",
   "ui.invite_link_placeholder": "Invite link or code",
   "ui.joining": "Joining...",
   "ui.joined_group": "You joined the group",

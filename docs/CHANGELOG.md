@@ -8,6 +8,53 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-04 (8) — Universal link: davet bağlantısı uygulamada açılıyor
+
+Bugüne kadar `owezy.net/join/<kod>` telefonda **Safari'de** açılıyordu,
+uygulama yüklü olsa bile; kullanıcı bağlantıyı kopyalayıp "Gruba katıl"
+alanına yapıştırmak zorundaydı.
+
+| Parça | Ne |
+|---|---|
+| `.well-known/apple-app-site-association` | `A5WH8JT28C.net.owezy.app`, **yalnızca `/join/*`** |
+| `app/join/[token].tsx` | Girişliyse doğrudan kabul, değilse "önce giriş yap" |
+| `lib/pending-invite.ts` | Giriş yapmamışın davetini SecureStore'da tutar |
+| `_layout.tsx` | `/join` korumasız — giriş ekranı gibi |
+| `index.tsx` | Girişten sonra davete geri döner |
+| `app.json` | `associatedDomains: ["applinks:owezy.net"]` |
+
+**Kapsam dar tutuldu.** Bütün `owezy.net` kapsansaydı gizlilik politikası,
+destek sayfası ve **web uygulamasının kendisi** de uygulamaya yönlenirdi —
+web'i kullanmak isteyen kişi native uygulamaya fırlatılırdı.
+
+**Onay ekranı yok, web'in aksine.** Web'de önce davetin durumu gösterilip
+"Katıl" bekleniyor; burada kullanıcı zaten niyetini belirtti — bağlantıya
+dokundu. Araya bir onay koymak aynı işlemi iki kez yaptırmak olurdu.
+
+**En kritik durum giriş yapılmamış olan.** Davet edilenin çoğu zaman hesabı
+yok; uygulamayı kurmasının sebebi zaten o bağlantı. `AuthGuard` bu rotayı
+bilerek dışarıda bırakıyor — koruma koysaydık kişi giriş ekranına atılır ve
+**elindeki davet kaybolurdu**. Kod `SecureStore`'da tutuluyor (modül
+değişkeni değil: giriş e-posta koduyla yapılıyor ve kullanıcı kodu okumak
+için uygulamadan çıkıyor, iOS arka plandakini bellekten atabiliyor).
+
+Bir belirsizlik ölçülerek çözüldü: Next'in App Router'ı **noktayla başlayan
+dizini** rota olarak görüyor mu? Görüyor — yerelde `200` ve
+`application/json`. `public/` altına uzantısız dosya koymak content type'ı
+kontrol edilemediği için tercih edilmedi.
+
+**Doğrulama yarım ve bilerek öyle bırakılıyor.** Simülatörde geçersiz kodla
+derin bağlantı denendi: hata mesajı ve çıkış yolu çalışıyor. Giriş yapılmamış
+yol, başarılı katılım ve universal link'in kendisi **development build'de**
+denenecek — Expo Go universal link'i desteklemiyor.
+
+**Risk yazılı olsun:** `applinks:owezy.net` aktif olduğu anda, uygulaması
+yüklü olan herkeste davet bağlantıları Safari yerine uygulamada açılır. Rota
+bir durumu kaçırırsa bugün çalışan bir akış bozulur. Bu yüzden production
+build'den önce development build ile altı durum tek tek denenecek.
+
+---
+
 ## 2026-09-04 (7) — 1.0.1 App Store Connect'e gönderildi
 
 Build **11**, sürüm **1.0.1**, gönderim `8b62ced9`. Apple'ın incelemesi

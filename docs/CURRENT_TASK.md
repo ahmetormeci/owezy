@@ -28,8 +28,25 @@ Updated: 2026-09-04
 Current task:
   1.0.1 ICIN SECILEN DORT ISTEN IKISI BITTI.
 
+  UNIVERSAL LINK - KOD HAZIR, DEVELOPMENT BUILD ILE DOGRULANACAK.
+
+  HEMEN SONRAKI ADIM: eas build --profile development, sonra ALTI DURUM:
+    1. girisli + gecerli davet   -> gruba giriyor mu
+    2. giris yapilmamis          -> "once giris yap", giristen sonra DONUYOR mu
+    3. zaten uye                 -> anlasilir hata
+    4. suresi dolmus / iptal     -> anlasilir hata
+    5. gecersiz kod              -> DENENDI, calisiyor (simulator, derin baglanti)
+    6. GERCEK universal link     -> Safari yerine uygulama aciliyor mu
+
+  AASA PRODUCTION'DA OLMADAN BUILD ALMAK ANLAMSIZ: Apple'in CDN'i dosyayi
+  uygulama kurulurken cekiyor. Once push, sonra build.
+
+  RISK: applinks aktif olunca uygulamasi yuklu HERKESTE davet baglantilari
+  Safari yerine uygulamada acilir. Rota bir durumu kacirirsa BUGUN CALISAN
+  bir akis bozulur.
+
   1.0.1 GONDERILDI (4 Eylul) - build 11, gonderim 8b62ced9. APPLE'IN
-  INCELEMESI BEKLENIYOR. Yapilacak bir sey YOK.
+  INCELEMESI BEKLENIYOR.
 
   ONAY GELINCE ILK IS: KOPRUYU KALDIR. Silinecekler asagida "KOPRU GECICI"
   basliginda. Ama once 1.0.1'in YAYGINLASMASINI bekle - erken kaldirilirsa

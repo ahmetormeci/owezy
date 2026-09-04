@@ -1,8 +1,9 @@
 import { Redirect } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../lib/auth";
+import { takeInvite } from "../lib/pending-invite";
 import { useTranslate } from "../lib/i18n";
 import { useApiGet } from "../lib/use-api";
 import { useTheme, type Theme } from "../lib/theme";
@@ -34,6 +35,27 @@ export default function EntryScreen() {
     status === "signed-in" ? "/api/v1/groups" : null,
   );
 
+  /**
+   * GIRISTEN SONRA DAVETE GERI DON.
+   *
+   * Universal link ile gelen kisi giris yapmamissa join ekrani kodu
+   * sakliyor (lib/pending-invite.ts), giris de her yolda router.replace("/")
+   * ile BURAYA donuyor. Burasi o yuzden dogru bekleme noktasi: baska bir
+   * ekrana koysaydik, o ekrandan gecmeyen bir giris yolunda davet
+   * kaybolurdu.
+   *
+   * TEK KULLANIMLIK: takeInvite okuyup siliyor. Silmeseydik kullanici her
+   * aciliste ayni davete geri dondurulurdu - ve o davet coktan kullanilmis
+   * olabilir.
+   */
+  const [pendingInvite, setPendingInvite] = useState<string | null>(null);
+  const checkedInvite = useRef(false);
+  useEffect(() => {
+    if (status !== "signed-in" || checkedInvite.current) return;
+    checkedInvite.current = true;
+    void takeInvite().then(setPendingInvite);
+  }, [status]);
+
   // SIRA ONEMLI, ve burada bir kez YANLISTI: once "yukleniyor mu", sonra
   // "girisli mi" diye bakiliyordu. Cikis yapmis kullanicida path null oluyor,
   // yani useApiGet hicbir zaman istek atmiyor ve state SONSUZA KADAR
@@ -51,6 +73,11 @@ export default function EntryScreen() {
 
   if (status === "signed-out") {
     return <Redirect href="/sign-in" />;
+  }
+
+  // Bekleyen davet GRUPLARDAN ONCE: kullanici uygulamayi bunun icin acti.
+  if (pendingInvite) {
+    return <Redirect href={`/join/${pendingInvite}`} />;
   }
 
   if (state.kind === "loading") {
