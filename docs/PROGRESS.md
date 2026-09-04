@@ -8,16 +8,22 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 28 faz tamamlandı. **Faz 27** (iki adımlı doğrulama) web ve mobilde
-bitti; **Faz 28** planlanmamıştı — App Store hazırlığı sırasında bulunan
-sessiz bir parola kaybını kapattı. Uygulama canlıda ve `main`'e giden her değişiklik CI'dan geçiyor.
+**Özet:** 29 faz tamamlandı. **Faz 35 ile iOS uygulaması App Store'da
+yayında** (1.0, 4 Eylül 2026) — web zaten canlıydı, artık iki istemci de
+kullanıcıya açık. `main`'e giden her değişiklik CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim (Vitest) | 538 | ✅ tümü geçiyor |
+| Birim — kök (Vitest) | 574 | ✅ tümü geçiyor |
+| Birim — mobil (Vitest) | 62 | ✅ tümü geçiyor |
+| Ekran — mobil (jest-expo) | 14 | ✅ tümü geçiyor |
 | E2E (Playwright) | 56 | ✅ tümü geçiyor |
-| `npx tsc --noEmit` | — | ✅ temiz |
-| `npm run lint` | — | ✅ temiz |
+| `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
+| `npm run lint` | — | ✅ temiz (kök + mobil) |
+
+Mobilde **iki koşucu** var ve sınır dizine göre (ADR-042, ADR-043):
+`lib/**` → Vitest, `components/**` ve `test/screens/**` → jest-expo. Mobil
+testler kökten koşmuyor — ağaçta iki ayrı React kopyası var.
 
 ---
 
@@ -1112,6 +1118,70 @@ genişletirse uygulama mağazadan döner ve sebebi hiçbir yerde görünmez.
 Email Routing kuralı var, oraya gelen postalar kullanıcının kendi kutusuna
 yönleniyor. Alan adının MX'i de `route1/2/3.mx.cloudflare.net` — yani
 destek sayfasındaki adres gerçekten çalışıyor.
+
+---
+
+## Faz 35 — App Store yayını · **BİTTİ**
+
+1.0 **4 Eylül 2026'da** yayına girdi. Türkiye ve ABD mağazalarında canlı;
+`net.owezy.app`, trackId `6805650395`, iOS 16.4+, 127 cihaz.
+
+### Yol iki reddin üzerinden geçti — ikisi de işe yaradı
+
+**Guideline 2.1 — Information Needed.** Hata değil, yedi maddelik bilgi
+talebi. Cevabı hazırlarken **uygulama içi hesap silme** eksiği çıktı
+(Guideline 5.1.1(v) zorunlu kılıyor) → Faz 33.
+
+**Sonra kullanıcı mobil uygulamayı ilk kez açtı** ve "dümdüz bir metinler
+topluluğu" dedi. Gönderim durduruldu, arayüz elden geçirildi → Faz 34. O
+sırada gönderimi doğrudan ilgilendiren **bir kusur daha** çıktı: tek grubu
+olan kullanıcı hesap ekranına hiç ulaşamıyordu — yani incelemeci, Apple'ın
+zorunlu tuttuğu silme akışını bulamazdı.
+
+Yani her iki duraklama da kapatılması gereken gerçek eksikleri görünür
+yaptı. İnceleme süreci burada bir engel değil, bir ölçüm aracı olarak
+çalıştı.
+
+### Apple simülatör kaydı kabul etmiyor
+
+Ret metninin birinci maddesi açıkça *"captured on a physical device"*
+diyor. Bu oturumda önce bir simülatör kaydı üretildi — Expo Go izi
+olmayan, kendi başına çalışan bir `preview` build'iyle, production arka uca
+bağlı. Kayıt teknik olarak iyiydi ve **kullanılamadı**; kullanıcının
+iPhone 12'sinde (iOS 26.6.1) yeniden çekildi. Simülatör kaydı yine de işe
+yaradı: senaryo olarak kullanıldı.
+
+Cevap ve Notes metinlerinin ikisi de **4000 karakterle sınırlı** — cevap
+ilk hâlinde 4383 karakterdi ve kısaltıldı.
+
+### İki adlı kimlik mağazada tuttu
+
+| Yerelleştirme | Ad | Alt başlık |
+|---|---|---|
+| Türkçe | **Owezy** | Grup hesabı, kolay ödeşme |
+| İngilizce | **Owezy: Split Expenses** | Group bills, settled fast |
+
+Faz 30'da kilidin **yerelleştirme başına** olduğu ölçülmüştü; doğru çıktı.
+Türkçe açıklama da yerinde.
+
+### Yayından sonra çıkan tek kusur
+
+Mağaza sayfası uygulamayı **yalnızca İngilizce** gösteriyor
+(`languageCodesISO2A: ["EN"]`). Sebebi `app.json`'da
+`CFBundleLocalizations` bulunmaması — Expo paketi tek bir `en.lproj` ile
+çıkıyor. Uygulama tamamen iki dilli; çeviri **JS tarafında**, bundle'da
+değil. Yani işleyiş doğru, yanıltıcı olan yalnızca mağazadaki "Languages"
+satırı. Düzeltmesi yeni build gerektirdiği için 1.0.1 adayı.
+
+### Durum panele girmeden ölçülebiliyor
+
+```
+curl -s "https://itunes.apple.com/lookup?bundleId=net.owezy.app&country=tr&lang=tr_tr"
+```
+
+`trackName`, `version`, `currentVersionReleaseDate` ve
+`languageCodesISO2A` buradan okunuyor — App Store Connect'e girmeye gerek
+kalmadan.
 
 ---
 

@@ -11,70 +11,58 @@ BAYAT MI?
 
 Cikti bossa dosya guncel.
 
-AMA BU KONTROL YALNIZCA KODU KAPSIYOR. "SENDE KALANLAR" maddeleri DIS
-DUNYAYI anlatiyor: DNS, Vercel, Sentry, App Store Connect, Expo, saglayici
-panelleri. Onlari ne git ne de bir test goruyor.
+AMA BU KONTROL YALNIZCA KODU KAPSIYOR. "DIS DUNYA" maddeleri baska yerde:
+DNS, Vercel, Sentry, App Store Connect, Expo, saglayici panelleri. Onlari
+ne git ne de bir test goruyor.
 
 BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     DNS      dig +short TXT _dmarc.owezy.net
     env      grep -oE '^[A-Z0-9_]+' .env.local   (ADLAR; degerleri okuma)
-    canli    curl -sI https://owezy.net/...
-    magaza   itunes.apple.com/search?term=...&entity=software
+    canli    curl -sI https://owezy.net/support
+    magaza   itunes.apple.com/lookup?bundleId=net.owezy.app
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-02
+Updated: 2026-09-04
 
 Current task:
-  APPLE'IN INCELEMESI BEKLENIYOR. 1.0 (build 9) 2 Eylul'de yeniden
-  gonderildi; yapilacak bir sey YOK, cevap gelene kadar beklenecek.
+  YOK. 1.0 App Store'da YAYINDA. Aktif bir gorev tanimli degil.
 
-  KOD ISI BASLATMA. Ret gelirse gerekce yeni bir gorev tanimlar; onay
-  gelirse asagidaki "SIRADAKI IS" listesi acilir. Ikisinden biri olmadan
-  o listeden bir madde secip uygulama (AGENTS.md).
+  Asagidaki "SIRADAKI IS" listesi artik acik ama bir madde SECILMEDI.
+  AGENTS.md gorev verilmeden o listeden bir sey uygulamayi yasakliyor -
+  liste bir plan degil, secenek listesi.
 
-GONDERIM ZINCIRI - TAMAMI BITTI (2 Eylul):
-  1. eas build      build 9, commit b45577a
-  2. push           b45577a origin/main'de
-  3. eas submit     App Store Connect'e yuklendi (submission 1b8bf705)
-  4. EKRAN KAYDI    kullanici FIZIKSEL CIHAZDA cekti (iPhone 12, iOS 26.6.1)
-  5. App Review'a cevap + Resubmit   yapildi
+1.0 CANLIDA - 4 EYLUL 2026 (olculdu, varsayim degil):
+  TR   Owezy                  apps.apple.com/tr/app/owezy/id6805650395
+  US   Owezy: Split Expenses  ayni id, /us/app/owezy-split-expenses/
+  surum 1.0 · 36 MB · iOS 16.4+ · 127 cihaz · Finance · 4+
+  trackId 6805650395 (eas.json'daki ascAppId ile ayni)
 
-  APP REVIEW INFORMATION DOLU: demo hesap (appreview@owezy.net) ve Notes
-  alani ikisi de dolduruldu. Notes'ta uygulamanin ne yaptigi, hesap silme
-  yolu, izin istemi olmadigi, kullanilan dis servisler ve bolgesel fark
-  olmadigi yaziyor - Apple bunu "for future submissions" diye istemisti,
-  yani sonraki gonderimlerde ayni sorular tekrar sorulmasin diye. BIR DAHA
-  SORMAYA GEREK YOK.
+  IKI ADLI KIMLIK TUTTU. Yerellestirme basina ad ayrimi magazada gorunur
+  halde: Turkce arayuzde "Owezy", Ingilizce'de "Owezy: Split Expenses".
+  Turkce aciklama da yerinde.
 
-  APPLE FIZIKSEL CIHAZ ISTIYOR, SIMULATOR KAYDI KABUL DEGIL. Ret metninin
-  1. maddesi acikca "captured on a physical device" diyor. Bu oturumda
-  once simulator kaydi uretildi ve KULLANILAMADI; bir daha gerekirse
-  dogrudan TestFlight + gercek cihaz.
+  OLCMENIN YOLU (App Store Connect'e girmeden):
+    curl -s "https://itunes.apple.com/lookup?bundleId=net.owezy.app&country=tr&lang=tr_tr"
 
-  CEVAP VE NOTES METINLERI 4000 KARAKTERLE SINIRLI - IKISI DE. Cevap
-  metni once 4383 karakter yazildi ve sigmadi.
+MAGAZA "YALNIZCA INGILIZCE" DIYOR - GERCEK AMA KUCUK BIR KUSUR:
+  languageCodesISO2A alani yalnizca EN donuyor. Sebep: app.json'da
+  CFBundleLocalizations YOK ve Expo paketi varsayilan olarak tek bir
+  en.lproj ile cikiyor. Uygulama tamamen iki dilli - ceviri JS tarafinda,
+  bundle'da degil - yani ISLEYIS DOGRU, magaza sayfasindaki "Languages"
+  satiri yaniltici.
 
-NEDEN BURADAYIZ:
-  1.0 once Guideline 2.1 ("Information Needed") ile reddedildi - hata
-  degil, yedi maddelik bilgi talebi. Cevabi hazirlarken UYGULAMA ICI HESAP
-  SILME eksigi cikti (Guideline 5.1.1(v) zorunlu kiliyor) ve yapildi
-  (Faz 33).
+  Duzeltmesi app.json'a bir dizi eklemek ve YENI BUILD almak. 1.0.1
+  adayi; tek basina build almaya degmez, baska bir degisiklikle birlikte
+  gitsin.
 
-  Sonra kullanici mobil uygulamayi ILK KEZ acti ve "dumduz bir metinler
-  toplulugu" dedi. Gonderim durduruldu, arayuz elden gecirildi (Faz 34,
-  on adim). O sirada BIR KUSUR DAHA cikti ve gonderimi dogrudan
-  ilgilendiriyordu: tek grubu olan kullanici HESAP EKRANINA HIC
-  ULASAMIYORDU, yani inceleyici silme akisini bulamazdi.
-
-SIRADAKI IS - ANCAK INCELEME SONUCLANINCA:
-  CSV disa aktarma (uc hazir ama telefonda paylasim sayfasi gerekiyor -
+SIRADAKI IS - ARTIK ACIK, AMA SECILMEDI:
+  CSV disa aktarma (uc hazir; telefonda paylasim sayfasi gerekiyor -
     expo-sharing + expo-file-system, YENI BAGIMLILIK)
-  universal link (ERTELENDI, asagida)
-  PUSH BILDIRIM (ERTELENDI): uygulama ici liste 1 Eylul'de geldi ama push
-    ayri bir is - APNs sertifikasi, expo-notifications, izin istemi, yeni
-    build ve App Privacy anketinde degisiklik. Destek sayfasi bunu ACIKCA
-    yaziyor; oraya dokunmadan push eklenmemeli.
+  universal link (asagida - Expo Go'da denenemiyor, development build sart)
+  PUSH BILDIRIM (APNs sertifikasi, expo-notifications, izin istemi, yeni
+    build ve App Privacy anketinde degisiklik)
+  CFBundleLocalizations (yukarida)
 
   Bu liste destek sayfasinda da yazili (src/content/legal/support.ts,
   "bugunku sinirlar"). ORASI DA GUNCELLENMELI - bir madde bitince.
@@ -95,19 +83,9 @@ UNIVERSAL LINK - NEDEN ERTELENDI:
   Ve belirleyici olan: EXPO GO'DA CALISMIYOR, yani simulatorde acip
   bakilamiyor. Development build sart.
 
-  BITEN: arama / kategori suzme / "yalnizca beni ilgilendirenler" ve liste
-  satirindaki tekrarin temizlenmesi (1 Eylul, commit aa863b9). Kurallar
-  src/lib/expense-list-view.ts'de ve WEB ILE MOBIL ORTAK - o dosyayi
-  degistiren iki tarafi da gozden gecirsin.
-  Daveti yapistirarak kabul etme (1 Eylul).
-  Bildirimler - UYGULAMA ICI LISTE (1 Eylul).
-  Tek gruplu kullanicinin hesap ekranina ulasamamasi (1 Eylul, asagida).
-  Grup adi/aciklamasi duzenleme (1 Eylul, yalnizca SAHIBE gorunuyor).
-  Uygulama icinden dil secimi (1 Eylul, Hesap ekraninda).
-  Giris ekraninin temaya baglanmasi (1 Eylul, koyu temada bozuktu).
-
 PRODUCTION'DAKI DEMO HESAPLAR - DIKKAT:
-  appreview@owezy.net  inceleme hesabi. SILME, PAROLASINI DEGISTIRME.
+  appreview@owezy.net  inceleme hesabi. SILME, PAROLASINI DEGISTIRME -
+                       sonraki gonderimlerde de Apple bunu kullanacak.
   demo@owezy.net       ICINDE VERI VAR (bir grup, harcamalar, ikinci uye).
                        Atilabilir DEGIL; 1 Eylul'de silinmek uzereyken
                        fark edildi. Bir demo hesabi gerekiyorsa YENI bir
@@ -116,48 +94,49 @@ PRODUCTION'DAKI DEMO HESAPLAR - DIKKAT:
                        silindi. Cloudflare yonlendirmeleri duruyor.
 
   YENI BIR ADRES KULLANMADAN ONCE IKI SEY: Cloudflare Email Routing'de
-  ekli mi, ve Resend'in suppressions listesinde DEGIL mi. Ikisi de bu
-  oturumda ayri ayri kosuyu durdurdu - ve arayuz her iki durumda da
-  "Sent to ..." diyor, yani hicbir sey belli olmuyor.
+  ekli mi, ve Resend'in suppressions listesinde DEGIL mi. Ikisi de bir
+  oturumu ayri ayri durdurdu - ve arayuz her iki durumda da "Sent to ..."
+  diyor, yani hicbir sey belli olmuyor.
 
 GELISTIRME VERITABANINDA BIRAKILAN TEST VERISI:
   "Deniz'in evi" grubu ve davetci@ornek.test kullanicisi, davet kabulunu
   denemek icin uretildi. BILEREK BIRAKILDI: gelistirmedeki tek COK UYELI
   grup o, ve "senin payin" ile "kim odedi" ancak orada gercekten degisiyor.
 
-GONDERIM ZINCIRI (mobil tamamlaninca, SIRASI ONEMLI):
-  1. eas build   -> build 7 bu islerin HICBIRINI tasimiyor
-  2. push        -> destek sayfasi artik yeni ozellikleri anlatiyor; o metin
+BIR SONRAKI GONDERIM ICIN - SIRASI ONEMLI:
+  1. eas build
+  2. push        -> destek sayfasi yeni ozellikleri anlatiyorsa, o metin
                     ancak yeni build gonderildikten sonra dogru olur
   3. eas submit
-  4. EKRAN KAYDI - SENDE. Fiziksel cihazda, uygulamayi acarak basla:
-     parolayla giris -> gruba gir -> harcama ekle (bolusme turunu goster) ->
-     odesme -> Hesap -> Hesabimi sil -> onay ekrani -> VAZGEC
-     (Silmeyi tamamlama, demo hesap gider.)
-  5. App Review'a cevap + Resubmit
+  4. gerekirse ekran kaydi - FIZIKSEL CIHAZDA. Apple'in ret metninin 1.
+     maddesi acikca "captured on a physical device" diyor; bu oturumda
+     once simulator kaydi uretildi ve KULLANILAMADI.
+  5. App Store Connect'te surumu yayina alma
 
-  APPLE'A GIDECEK METIN HAZIR ve iki bosluk kullanicidan alindi:
-     cihaz: iPhone 12, iOS 26.6
-     appreview@owezy.net parolasi kullanicida
-  Metnin taslagi bu oturumda uretildi; yeniden yazilmasi gerekirse Apple'in
-  yedi maddesi App Review sayfasindaki mesajda duruyor.
+  APP REVIEW INFORMATION DOLU ve oyle kalmali: demo hesap (appreview@)
+  ve Notes alani. Notes'ta uygulamanin ne yaptigi, hesap silme yolu, izin
+  istemi olmadigi, kullanilan dis servisler ve bolgesel fark olmadigi
+  yaziyor - Apple bunu "for future submissions" diye istemisti.
+
+  CEVAP VE NOTES METINLERI 4000 KARAKTERLE SINIRLI - IKISI DE.
 
 MAGAZA KIMLIGI - COZULDU, DOKUNMA:
-  Turkce     Owezy                  · Grup hesabi, kolay odesme
-  Ingilizce  Owezy: Split Expenses  · Group bills, settled fast
-
   TURKCE AD ALANINA BIR DAHA DOKUNMA. Kilit YERELLESTIRME BASINA cikti.
   Bu hesap bu ismi bir kez KALICI olarak kaybetti (Apple: "If you remove an
   app, you'll lose ownership of the app name"); birakilirsa geri alinabilecegi
-  garanti DEGIL.
+  garanti DEGIL. Simdi magazada duruyor - riske atilmasin.
 
   net.wezy.app SILINEMEZ, silinmeye calisilmasin - build almis bir bundle ID
   ayni organizasyonda bir daha kullanilamiyor (Apple belgeliyor). Zararsiz.
+  CANLI olan bundle net.owezy.app.
 
   TELEFONDAKI AD app.json'daki "name"den geliyor ve "Owezy" olarak kaldi.
 
 BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
+  MAGAZA   1.0 canli, 4 Eylul   (itunes lookup ile)
   DNS      v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r   (dig ile)
+  CANLI    owezy.net/ , /support , /privacy  -> 200   (curl ile)
+           /terms yok ve gerekmiyor - Apple'in standart EULA'si kullaniliyor
   SENTRY   "Prevent Storing of IP Addresses" acik
   POSTA    destek@ VE appreview@owezy.net acik, kullanicinin kutusuna
            yonleniyor (Cloudflare Email Routing)
@@ -232,7 +211,7 @@ AKILDA TUTULACAKLAR:
   SIMULATORDE METIN YAZDIRMAK KARAKTER DUSURUYOR. Kisa parcalar hâlinde yaz
   ve HER ADIMDA ekran goruntusuyle dogrula; dokunuslarin da iskalayabildigini
   unutma (bu oturumda iskalayan dokunuslar olmayan bir hataya teshis
-  konulmasina yol acti).
+  konulmasina yol acti). Uzun metin icin: xcrun simctl pbcopy + yapistir.
 
   BIR ADRES BIR KEZ SERT SEKERSE RESEND ONU KALICI OLARAK SUSTURUR - ve
   arayuz yine "gonderildi" der (sendVerificationOTP hatayi bilerek
@@ -247,6 +226,10 @@ AKILDA TUTULACAKLAR:
   origin dogrulamasini ZORLUYOR. Betikle /api/auth'a istek atarken Origin sart.
 
   DESTEKLENEN PARA BIRIMI YALNIZCA TRY VE USD (money.ts).
+
+  ARTIK GERCEK KULLANICI OLABILIR. 1.0 canli; production veritabaninda
+  yalnizca bizim demo hesaplarimiz oldugu VARSAYILAMAZ. Production'a
+  dokunan her betik once OKUYUP saymali, sonra yazmali.
 
 TESTLER - NE NEREDE:
   KOK      npm test                  574 birim (vitest, src/**)
@@ -301,6 +284,6 @@ MOBILI SIMULATORDE ACMAK:
   gerek yok.
 
 DIGER ADAYLAR: PROGRESS.md'deki liste - PLAN DEGIL, secenek listesi.
-  Fis fotografi + profil fotografi TEK ADAY ve 1.0 YAYINLANDIKTAN SONRA
-  baslamali: CSP'yi, gizlilik politikasini, Info.plist izinlerini ve App
-  Privacy anketini birden degistiriyor.
+  Fis fotografi + profil fotografi TEK ADAY ve ARTIK BASLANABILIR (1.0
+  yayinlandi): CSP'yi, gizlilik politikasini, Info.plist izinlerini ve App
+  Privacy anketini birden degistiriyor - o yuzden gorev olarak verilmeli.

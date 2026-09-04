@@ -8,6 +8,45 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-04 — 1.0 App Store'da yayında
+
+Apple onayladı: *"your app, Owezy: Split Expenses, has been approved for
+distribution."* Uygulama hem Türkiye hem ABD mağazasında canlı.
+
+| | |
+|---|---|
+| Türkçe | **Owezy** — `apps.apple.com/tr/app/owezy/id6805650395` |
+| İngilizce | **Owezy: Split Expenses** — aynı `id`, `/us/app/owezy-split-expenses/` |
+| Sürüm | 1.0 · 36 MB · iOS 16.4+ · 127 cihaz · Finance · 4+ |
+| Bundle | `net.owezy.app` · trackId `6805650395` |
+
+**İki adlı kimlik tuttu.** Faz 30'da alınan karar — Türkçe mağazada
+`Owezy`, İngilizce'de `Owezy: Split Expenses` — mağazada görünür hâlde
+duruyor; Türkçe açıklama da yerinde. Kilidin **yerelleştirme başına**
+olduğu o zaman ölçülmüştü, doğru çıktı.
+
+**Ret zincirinin sonucu.** 1.0 önce Guideline 2.1 ile reddedilmişti — hata
+değil, yedi maddelik bilgi talebi. Cevabı hazırlarken uygulama içi hesap
+silme eksiği çıktı (Guideline 5.1.1(v), Faz 33) ve mobil arayüz baştan
+elden geçirildi (Faz 34). Yani ret, kapatılması gereken iki gerçek eksiği
+görünür yaptı.
+
+**Mağaza "yalnızca İngilizce" diyor — küçük ama gerçek bir kusur.**
+`itunes.apple.com/lookup` dil alanında yalnızca `EN` dönüyor. Sebebi
+`app.json`'da `CFBundleLocalizations` bulunmaması: Expo paketi tek bir
+`en.lproj` ile çıkıyor. Uygulama tamamen iki dilli — çeviri JS tarafında,
+bundle'da değil — yani **işleyiş doğru**, yanıltıcı olan mağaza
+sayfasındaki "Languages" satırı. Düzeltmesi yeni build gerektiriyor; 1.0.1
+adayı olarak `CURRENT_TASK.md`'ye yazıldı.
+
+**Durum App Store Connect'e girmeden ölçülebiliyor:**
+
+```
+curl -s "https://itunes.apple.com/lookup?bundleId=net.owezy.app&country=tr&lang=tr_tr"
+```
+
+---
+
 ## 2026-09-02 — 1.0 yeniden gönderildi
 
 Build 9 App Store Connect'e yüklendi, Apple'ın yedi maddelik bilgi talebi

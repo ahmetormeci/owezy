@@ -7,11 +7,18 @@
 ## Amaç
 
 Grup içindeki ortak harcamaları kaydeden, kimin kime ne kadar borçlu olduğunu
-hesaplayan ve borçların kapatılmasını takip eden bir web uygulaması
-(Splitwise benzeri). Arayüz **Türkçe ve İngilizce**; dil çerezden, o yoksa
-hesaptan okunur (`User.locale`).
+hesaplayan ve borçların kapatılmasını takip eden bir uygulama (Splitwise
+benzeri). **İki istemci, tek arka uç:** web ve iOS, ikisi de aynı
+`/api/v1` uçlarını çağırıyor. Arayüz **Türkçe ve İngilizce**; dil çerezden,
+o yoksa hesaptan okunur (`User.locale`).
 
-**Canlı:** https://owezy.net
+**Canlı:**
+
+| | |
+|---|---|
+| Web | https://owezy.net |
+| iOS | [App Store](https://apps.apple.com/tr/app/owezy/id6805650395) — 1.0, 4 Eylül 2026 |
+| Android | henüz yayınlanmadı |
 
 ## Temel özellikler
 
