@@ -528,7 +528,14 @@ export default function GroupScreen() {
 
   const { currency, myBalance, myShare, myPaid, totalAmount, byMonth, byCategory } =
     summary.state.data;
-  const isEmpty = summary.state.data.expenseCount === 0;
+  /**
+   * BOS FIS. "!showDeleted" SART VE SEBEBI OLCULDU: ozet yalnizca SILINMEMIS
+   * harcamalari sayiyor, yani tek harcamasini silen kullanicida sayac 0
+   * oluyor ve asagidaki bos dal ciziliyor. O dalda suzgec satiri YOK -
+   * dolayisiyla "silinenleri goster" cipine de ulasilamiyor ve kullanici
+   * sildigi kaydi GERI ALAMIYOR. Cikissiz bir durum; simulatorde goruldu.
+   */
+  const isEmpty = summary.state.data.expenseCount === 0 && !showDeleted;
 
   // Cubuk genisligi EN BUYUK kategoriye gore olceklenıyor (web'le ayni).
   // Bolen sifir olamaz: liste bosken blok zaten cizilmiyor ama ifade
@@ -744,7 +751,19 @@ export default function GroupScreen() {
           {isEmpty ? (
             // Bos fis BOS gorunuyor: uydurma ornek satir konmuyor, cunku
             // gercek kayitlarla karisirdi (web'de de ayni karar).
-            <Text style={s.emptyText}>{t("ui.no_expenses")}</Text>
+            <>
+              <Text style={s.emptyText}>{t("ui.no_expenses")}</Text>
+              {/* SILINENLERE ACILAN TEK KAPI. Suzgec satiri bu dalda
+                  cizilmiyor, o yuzden cip buraya ayrica konuyor - yoksa son
+                  harcamasini silen kullanicinin geri donus yolu kalmiyor. */}
+              <Pressable
+                style={s.emptyDeletedLink}
+                onPress={() => setShowDeleted(true)}
+                hitSlop={8}
+              >
+                <Cap color={theme.brand}>{t("ui.show_deleted")}</Cap>
+              </Pressable>
+            </>
           ) : (
             <>
               {/* SUZGEC SATIRI. Kesikli iki cizgi arasinda, cercevesiz -
@@ -1294,6 +1313,7 @@ function createStyles(theme: Theme) {
     cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     // Hesap kapilari grubun bloklarindan bir nefes ayri: kapsamlari farkli.
     accountBlock: { marginTop: 16 },
+    emptyDeletedLink: { marginTop: 10 },
     cardBody: { gap: 12 },
     cardLink: { color: theme.brand, fontSize: 13, fontWeight: "500" },
     catRow: { gap: 5 },

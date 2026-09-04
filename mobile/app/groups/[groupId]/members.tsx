@@ -1,6 +1,6 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslate } from "../../../lib/i18n";
 import { apiBaseUrl } from "../../../lib/api";
@@ -31,6 +31,11 @@ export default function MembersScreen() {
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
   const { post } = useApiClient();
+  const router = useRouter();
+  // Kim oldugumuzu bilmeden "ayril" gosterilemez: sahip miyiz, arkamizda uye
+  // var mi sorulari buna bagli.
+  const me_ = useApiGet<{ user: { id: string } }>("/api/v1/me");
+  const currentUserId = me_.state.kind === "ok" ? me_.state.data.user.id : null;
 
   const members = useApiGet<MembersResponse>(
     groupId ? `/api/v1/groups/${groupId}/members` : null,
@@ -61,6 +66,51 @@ export default function MembersScreen() {
     } finally {
       setBusy(false);
     }
+  }
+
+  /**
+   * GRUPTAN AYRILMA. MOBILDE YOKTU - uc (POST .../leave) ve web arayuzu
+   * (member-actions.tsx) bastan beri vardi. Kullanici bildirdi: telefonda
+   * gruba KATILMAK kolay (davet baglantisini yapistir) ama CIKMAK imkansizdi.
+   *
+   * SAHIP ARKASINDA UYE BIRAKIYORSA DEVRETMEK ZORUNDA - kural sunucuda
+   * (groups.ts: owner_must_transfer) ve her grubun her zaman bir sahibi
+   * olmali. O durumda once devralacak kisi seciliyor.
+   */
+  const [leaving, setLeaving] = useState(false);
+  const [successorId, setSuccessorId] = useState<string | null>(null);
+
+  const loaded = members.state.kind === "ok" ? members.state.data.members : [];
+  const me = loaded.find((member) => member.userId === currentUserId);
+  const others = loaded.filter((member) => member.userId !== currentUserId);
+  const mustTransfer = me?.role === "OWNER" && others.length > 0;
+
+  async function leave() {
+    if (leaving) return;
+    if (mustTransfer && !successorId) {
+      setError(t("group.owner_must_transfer"));
+      return;
+    }
+    setLeaving(true);
+    setError(null);
+    const result = await post(`/api/v1/groups/${groupId}/leave`,
+      mustTransfer ? { newOwnerId: successorId } : {});
+    setLeaving(false);
+
+    if (!result.ok) {
+      setError(t(result.code));
+      return;
+    }
+    // Gruplar listesine DONULMUYOR, DEGISTIRILIYOR: artik uyesi olmadigimiz
+    // bir grubun ekranina geri dugmesiyle donmek 403 verirdi.
+    router.replace("/groups");
+  }
+
+  function confirmLeave() {
+    Alert.alert(t("ui.leave_group_question"), t("ui.leave_group_hint"), [
+      { text: t("ui.cancel"), style: "cancel" },
+      { text: t("ui.leave_group"), style: "destructive", onPress: () => void leave() },
+    ]);
   }
 
   return (
@@ -113,6 +163,51 @@ export default function MembersScreen() {
           {error ? <Text style={s.error}>{error}</Text> : null}
         </View>
 
+        {/* AYRILMA FISIN DISINDA. Web'de de eylemler kagidin uzerinde
+            durmuyor: basili bir belgeye tiklanabilir bir sey eklemek gibi
+            olurdu. Kirmizi cunku GERI ALINAMAZ - tekrar girmek icin yeni bir
+            davet gerekiyor. (ADR-015'in "renk yalnizca bakiye" kurali
+            bakiye SAYILARI icin; yikici eylem uyarisi ayri bir dil ve
+            harcama silme dugmesi de ayni kirmizi.) */}
+        {me ? (
+          <View style={s.leaveBlock}>
+            {mustTransfer ? (
+              <View style={s.transferBlock}>
+                {/* SAHIP CIKARKEN GRUBU SAHIPSIZ BIRAKAMAZ. Kural sunucuda;
+                    burada sorulmasi, kullaniciyi reddedilecek bir istekle
+                    karsilastirmamak icin. */}
+                <Cap>{t("ui.transfer_to_whom")}</Cap>
+                <View style={s.chips}>
+                  {others.map((member) => (
+                    <Pressable
+                      key={member.userId}
+                      style={[s.chip, successorId === member.userId && s.chipActive]}
+                      onPress={() => setSuccessorId(member.userId)}
+                    >
+                      <Text
+                        style={[
+                          s.chipText,
+                          successorId === member.userId && s.chipTextActive,
+                        ]}
+                      >
+                        {member.displayName}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            <Pressable onPress={confirmLeave} disabled={leaving} hitSlop={8}>
+              {leaving ? (
+                <ActivityIndicator color={theme.debt} size="small" />
+              ) : (
+                <Text style={s.leave}>{t("ui.leave_group")}</Text>
+              )}
+            </Pressable>
+          </View>
+        ) : null}
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -142,6 +237,20 @@ function createStyles(theme: Theme) {
     },
     name: { fontSize: 15, color: theme.foreground },
     role: { fontSize: 12, color: theme.muted },
+    leaveBlock: { marginTop: 20, gap: 12, alignItems: "center" },
+    transferBlock: { gap: 8, alignItems: "center" },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center" },
+    chip: {
+      borderWidth: 1,
+      borderColor: theme.lineSoft,
+      borderRadius: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
+    chipText: { fontSize: 13, color: theme.foreground },
+    chipTextActive: { color: "#fff" },
+    leave: { color: theme.debt, fontSize: 15 },
     invite: {
       backgroundColor: theme.brand,
       borderRadius: 4,

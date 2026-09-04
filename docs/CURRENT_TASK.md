@@ -28,15 +28,23 @@ Updated: 2026-09-04
 Current task:
   1.0.1 ICIN SECILEN DORT ISTEN IKISI BITTI.
 
-  HEMEN SONRAKI ADIM: mobilde silinmis satiri ve "geri al"i SIMULATORDE
-  dogrula. Kod hazir ve testler yesil ama EKRANDA GORULMEDI - harcama
-  detayindaki Delete dugmesi bu oturumda dokunuslari kabul etmedi, yani
-  silinmis bir kayit uretilemedi. Once bir harcama sil, sonra filtre
-  panelindeki "Include deleted" cipini ac.
+  HEMEN SONRAKI ADIM: mobilde GRUPTAN AYRILMA akisini simulatorde dogrula
+  (sahip devri dahil), sonra 1.0.1 build + submit.
+
+  SILINENI GERI ALMA EKRANDA DOGRULANDI (4 Eylul): silinmis satir soluk ve
+  ustu cizili, RESTORE calisiyor. Ayrica CIKISSIZ BIR DURUM bulundu ve
+  duzeltildi - tek harcamasini silen kullanici geri alamiyordu.
+
+  SIMULATORDE KUCUK METIN HEDEFLERI DOKUNUS ALMIYOR. "Delete", "Manage
+  members" gibi tek satirlik metin dugmeleri yanit vermedi; kartlar,
+  satirlar ve hitSlop'u olan zil calisiyor. Dort tur, uc yontem denendi.
+  Sebep BULUNAMADI. Bir dogrulama buna takilirsa kullanicidan tek bir
+  dokunus iste - zaman kaybetme.
 
   SECILEN DORT IS (kullanici 4 Eylul'de secti):
     CSV disa aktarma        BITTI  (6f924a8)
-    silineni geri alma      web BITTI (ec395da), mobil kod hazir/dogrulanmadi
+    silineni geri alma      BITTI, ikisi de ekranda dogrulandi
+    gruptan ayrilma (mobil) KOD HAZIR, ekranda gorulmedi
     universal link          BASLANMADI - development build sart
     push bildirim           BASLANMADI - APNs + App Privacy anketi
 

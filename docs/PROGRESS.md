@@ -1123,7 +1123,33 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
-## Faz 39 — Silinen harcamayı geri alma · **SÜRÜYOR** (web bitti)
+## Faz 40 — Mobilde gruptan ayrılma · **KOD HAZIR, EKRANDA GÖRÜLMEDİ**
+
+Kullanıcı bildirdi: **telefonda gruptan çıkılamıyor.** Ölçüldü — uç
+(`POST .../leave`) ve web arayüzü (`member-actions.tsx`) baştan beri vardı,
+mobil üyeler ekranı ise salt okunurdu. Telefonda gruba katılmak kolay (davet
+bağlantısını yapıştır), çıkmak imkânsızdı.
+
+Üyeler ekranının altına, **fişin dışına** ayrılma eylemi geldi. Sahip
+arkasında üye bırakıyorsa önce devralacak kişiyi seçiyor — kural sunucuda
+(`owner_must_transfer`), burada sorulması kullanıcıyı reddedilecek bir
+istekle karşılaştırmamak için. Ayrılınca `router.replace` ile gruplar
+listesine gidiliyor; `push` olsaydı geri düğmesi artık üyesi olmadığımız bir
+gruba dönerdi.
+
+**EKRANDA GÖRÜLMEDİ.** `Manage members` bağlantısı bu oturumda dokunuşları
+kabul etmedi — `Delete` düğmesiyle aynı desen: küçük metin hedefleri
+yanıtsız, kartlar ve satırlar çalışıyor. `tsc`, lint, 77 + 18 test temiz ama
+bu projede yeşil sinyaller yetmiyor.
+
+### Kalan
+
+- Ayrılma akışı **ekranda doğrulanacak** (sahip devri dahil)
+- Üye çıkarma ve sahiplik devri mobilde hâlâ yok (web'de var)
+
+---
+
+## Faz 39 — Silinen harcamayı geri alma · **BİTTİ**
 
 Dokümanda "uç var, arayüz yok" yazıyordu; ölçünce sunucu tarafında **hiçbir
 iş olmadığı** çıktı — `restore` ucu, `?includeDeleted=true` ve `deletedAt`
@@ -1137,24 +1163,26 @@ Geri almada onay yok — yıkıcı değil.
 
 E2E testi üç adımı kilitliyor (görünmüyor → görünüyor → geri geldi). 57 geçti.
 
-### Mobil tarafı — kod hazır, GÖRSEL DOĞRULAMA YARIM
+### Mobil tarafı — BİTTİ ve ekranda doğrulandı
 
 Filtre paneline "Include deleted" çipi geldi, `ReceiptLine` silinmiş satırı
 soluk ve üstü çizili çiziyor (renk yok — ADR-015), rozet satırın başında,
 eylem `Geri al`. Silinmiş satır detaya **gitmiyor**: o ekran düzenleme
 ekranı ve silinmiş kayıt düzenlenemiyor.
 
-**Simülatörde yalnızca ÇİP görüldü.** Silinmiş satırın görünümü ve geri alma
-eylemi ekranda doğrulanamadı: harcama detayındaki `Delete` düğmesi bu
-oturumda dokunuşları kabul etmedi (dört deneme, üç farklı yöntem), yani
-silinmiş bir kayıt üretilemedi.
+**Ekranda uçtan uca görüldü:** silinmiş satır soluk ve üstü çizili, `deleted`
+rozeti başta, `RESTORE` sağda kobalt, toplamlar ₺0.00. `RESTORE`'a
+basılınca kayıt normal görünümüne döndü ve toplamlar geri geldi.
 
-`tsc`, lint, 77 + 18 test ve iOS paketi temiz — ama bu projede yeşil
-sinyaller ürünün iyi olduğunu söylemiyor.
+### Ekrana bakınca çıkan kusur — ÇIKIŞSIZ DURUM
 
-### Kalan
+Tek harcamasını silen kullanıcı onu **geri alamıyordu**. Özet yalnızca
+silinmemiş kayıtları sayıyor, sayaç sıfırlanınca "boş grup" dalı çiziliyor
+ve o dalda süzgeç satırı yok — dolayısıyla "silinenleri göster" çipine
+ulaşılamıyor. Kod okuyarak görünmezdi.
 
-- Mobilde silinmiş satır + geri alma **ekranda doğrulanacak**
+Düzeltme: `isEmpty` artık `!showDeleted` de arıyor, ve boş durumda ayrıca
+bir `INCLUDE DELETED` bağlantısı duruyor.
 
 ---
 
