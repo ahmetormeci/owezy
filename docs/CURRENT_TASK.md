@@ -57,6 +57,19 @@ Current task:
   "Once giris yap" ekrani -> giris -> DOGRUDAN GRUBA dusmeli. O donusu
   simulatorde goremedim (giris e-posta kodu gerektiriyor).
 
+  SIMULATORDE UNIVERSAL LINK CALISMADI - SEBEP AYIRT EDILEMEDI.
+  Denenen ve HEPSI Safari'ye giden yollar:
+    xcrun simctl openurl https://owezy.net/join/...
+    temiz kurulum + CDN dolduktan sonra ayni komut
+    localhost'ta servis edilen bir sayfadan GERCEK BAGLANTI DOKUNUSU
+  Sonuncusu onemliydi: capraz domain, gercek dokunus - yani "simctl yanlis
+  arac" mazeresi zayif. Dokunus aninda swcd HICBIR KARAR yazmiyor.
+
+  BUNA RAGMEN ZINCIRIN HER OLCULEBILIR HALKASI DOGRU (yukarida). Iki
+  ihtimal kaldi ve elimizdeki veri ikisini AYIRMIYOR: simulator sinirı, ya
+  da sahiplenmenin sessizce onaylanmamasi. swcutil simulatorde YOK, yani
+  onay durumu okunamiyor. GERCEK CIHAZ bunu bir dakikada cozer.
+
   ASSOCIATED DOMAINS YETKISI - OGRENILEN DERS:
   app.json'a "associatedDomains" yazmak YETMIYOR. App ID'de yetenegin de
   acik olmasi gerekiyor ve EAS bunu KENDILIGINDEN YAPMIYOR - build
