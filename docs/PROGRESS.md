@@ -1176,6 +1176,31 @@ Testlere production biçimi eklendi (6 yeni, toplam 68 vitest). Asıl koruyan
 onlar: eski grup geliştirme sunucusundan ölçülmüştü ve ayırt edici özellik
 orada yoktu.
 
+### Köprünün ilk hâli çalışmadı — ve aynı tuzaktı
+
+İlk sürüm `new Request(request, { headers })` ile isteği klonluyordu ve
+üretimde `TypeError: Cannot read private member #state` ile patlıyordu: Next
+kendi `NextRequest`'ini veriyor. Mağazadaki uygulama bu kez "Bir şeyler ters
+gitti" diyordu (gövdesi boş 500 eşlenemiyor).
+
+**Sebebi tanıdıktı:** o satır düz Node'da ölçülmüştü, orada çalışıyor. Doğru
+şey, yanlış ortamda — fazın konusu olan hatanın aynı sınıfı. İstek artık
+parçalarından kuruluyor.
+
+### Uçtan uca doğrulama (negatif kontrolüyle)
+
+E2E'ye, mağazadaki 1.0'ın ayrıştırıcısını birebir taklit eden bir test
+eklendi: gerçek parolayla giriş → gerçek `__Secure-` önekli imzalı çerez →
+önek düşürülüyor → geçerli TOTP.
+
+| | Sonuç |
+|---|---|
+| Köprü açık | **200** + `set-auth-token` |
+| Köprü kapalı | **401** |
+
+Test `skip` — öneki `NODE_ENV` tetikliyor, E2E geliştirme modunda koşuyor.
+Çalıştırma talimatı testin başında; köprüyle birlikte silinecek.
+
 ### Kalan
 
 - `app.json`'da `version` 1.0.0 → 1.0.1

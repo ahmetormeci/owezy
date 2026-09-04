@@ -576,6 +576,16 @@ ve imza yine doğrulanıyor — atlanan bir denetim yok. Ödünü de yazılı ol
 çerezden türetmek o garantiyi bu iki uçta gevşetir. Köprü bu yüzden dar
 tutuldu ve **1.0.1 yayılınca kaldırılacak**.
 
+**Köprü isteği parçalarından kurar, nesneden klonlamaz.** İlk uygulama
+`new Request(request, { headers })` yazıyordu ve üretimde `TypeError: Cannot
+read private member #state` ile patladı: Next rotaya kendi `NextRequest`'ini
+veriyor, undici'nin `Request` yapıcısı ise girdiyi gerçek bir `Request` sanıp
+özel alanını okumaya çalışıyor. Aynı satır düz Node'da sorunsuz çalışıyor —
+önce öyle ölçüldü ve yanılttı. **Bu, ADR'nin konusu olan hatanın aynı
+sınıfı:** doğru şey ölçüldü, yanlış ortamda. Kural buradan genişliyor:
+sunucu kodu sunucuda denenir; bir satırın Node'da çalışması, onun Next'in
+rota işleyicisinde çalıştığını göstermez.
+
 ---
 
 ## ADR-044 — Çoğul biçimler sözlükte, `Intl.RelativeTimeFormat` kullanılmaz

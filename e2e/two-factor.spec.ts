@@ -275,6 +275,82 @@ test.describe.serial("iki adimli dogrulama", () => {
     await expect(page.getByRole("heading", { name: "Gruplarım" })).toBeVisible();
   });
 
+  /**
+   * SUNUCU KOPRUSUNUN TEK UCTAN UCA DOGRULAMASI. Kopru silinince BU DA
+   * SILINECEK (bkz. PROGRESS.md, Faz 36).
+   *
+   * NE YAPIYOR: magazadaki mobil 1.0'i birebir taklit ediyor - cerezi metin
+   * aramasiyla cikariyor (yani "__Secure-" onegini DUSURUYOR) ve oyle geri
+   * gonderiyor. Sunucudaki koprunun (src/lib/two-factor-cookie-bridge.ts)
+   * bunu kurtarmasi gerekiyor.
+   *
+   * NEDEN VARSAYILANDA ATLANIYOR: onegi tetikleyen sey NODE_ENV ve E2E
+   * gelistirme modunda kosuyor. Onek olusmadigi icin kopru zaten devre disi
+   * kaliyor; test burada hicbir sey olcmez.
+   *
+   * NASIL KOSULUR - IKI ADIM:
+   *   1. src/lib/better-auth.ts icindeki advanced'a: useSecureCookies: true
+   *   2. asagidaki test.skip -> test
+   * Sonra: npx playwright test e2e/two-factor.spec.ts
+   * IKISINI DE GERI AL. useSecureCookies production'da zaten aciktir;
+   * commit'lenirse gelistirmedeki cerezler de Secure olur.
+   *
+   * OLCULDU (4 Eylul): kopru acikken 200 + set-auth-token, kopru kapaliyken
+   * 401. Yani test gercekten kopruyu olcuyor - gecmesi tesaduf degil.
+   */
+  test.skip("mobil 1.0'in oneksiz cerezi kopru sayesinde kabul ediliyor", async () => {
+    await clearRateLimits();
+
+    // 1) Parolayla giris - ham API, tarayici yok. Mobil de boyle yapiyor.
+    const signIn = await request.newContext({ baseURL: BASE_URL });
+    let setCookie = "";
+    try {
+      const response = await signIn.post("/api/auth/sign-in/email", {
+        data: { email: EMAIL, password: PASSWORD },
+      });
+      expect(response.status()).toBe(200);
+      expect(await response.json()).toMatchObject({ twoFactorRedirect: true });
+
+      setCookie = (await response.headersArray())
+        .filter((h) => h.name.toLowerCase() === "set-cookie")
+        .map((h) => h.value)
+        .join(", ");
+    } finally {
+      await signIn.dispose();
+    }
+
+    // Onek GERCEKTEN olusmus olmali; olusmadiysa test bir sey olcmuyor.
+    expect(setCookie).toContain("__Secure-better-auth.two_factor=");
+
+    // 2) MOBIL 1.0'IN AYRISTIRICISI - birebir kopya. Onek dusuyor.
+    const marker = "better-auth.two_factor=";
+    const start = setCookie.indexOf(marker);
+    const end = setCookie.indexOf(";", start);
+    const mobilinCerezi = setCookie.slice(start, end);
+
+    expect(mobilinCerezi.startsWith("__Secure-")).toBe(false);
+
+    // 3) Ikinci adim - TAZE baglam: Playwright'in cerez kavanozu araya
+    //    girmesin, gonderdigimiz tek sey elimizdeki baslik olsun.
+    const verify = await request.newContext({ baseURL: BASE_URL });
+    try {
+      const response = await verify.post("/api/auth/two-factor/verify-totp", {
+        headers: { Cookie: mobilinCerezi, Origin: BASE_URL },
+        data: { code: await authenticatorCode() },
+      });
+
+      expect(response.status()).toBe(200);
+
+      // Mobil oturumu BU BASLIKTAN aliyor (ADR-029). Yoksa giris tamamlanmaz.
+      const token = (await response.headersArray()).find(
+        (h) => h.name.toLowerCase() === "set-auth-token",
+      );
+      expect(token?.value).toBeTruthy();
+    } finally {
+      await verify.dispose();
+    }
+  });
+
   test("kapatilinca e-posta koduyla giris yeniden calisiyor", async ({ browser }) => {
     const page = await freshSignInPage(browser);
     await page.getByLabel("Doğrulama kodu").fill(await authenticatorCode());

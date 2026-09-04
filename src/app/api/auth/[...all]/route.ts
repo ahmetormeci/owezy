@@ -61,5 +61,24 @@ export async function POST(request: Request) {
 
   const headers = new Headers(request.headers);
   headers.set("cookie", bridged);
-  return handler.POST(new Request(request, { headers }));
+
+  /**
+   * ISTEK PARCALARINDAN KURULUYOR, NESNEDEN KLONLANMIYOR.
+   *
+   * "new Request(request, { headers })" URETIMDE PATLADI:
+   *     TypeError: Cannot read private member #state from an object whose
+   *     class did not declare it
+   * Next rotaya kendi NextRequest'ini veriyor ve undici'nin Request
+   * yapicisi girdiyi gercek bir Request sanip ozel alanini okumaya
+   * calisiyor. Duz Node'da ayni satir SORUNSUZ calisiyor - once oyle
+   * olculdu ve YANILTTI; belirti 500 ve govdesi bos, yani mobil tarafta
+   * "Bir seyler ters gitti" diye gorunuyor.
+   *
+   * Govdeyi metin olarak okumak burada guvenli: bu uclara giden sey
+   * {"code":"123456"} buyuklugunde bir JSON.
+   */
+  const body = await request.text();
+  return handler.POST(
+    new Request(request.url, { method: request.method, headers, body }),
+  );
 }

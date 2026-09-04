@@ -170,6 +170,43 @@ BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
 
 AKILDA TUTULACAKLAR:
 
+  NEXT'IN ISTEGI KLONLANMAZ. "new Request(request, { headers })" URETIMDE
+  PATLADI:
+      TypeError: Cannot read private member #state from an object whose
+      class did not declare it
+  Next rotaya kendi NextRequest'ini veriyor; undici'nin Request yapicisi
+  girdiyi gercek bir Request sanip ozel alanini okumaya calisiyor. Duz
+  Node'da AYNI SATIR SORUNSUZ - once oyle olculdu ve yaniltti. Basligi
+  degistirmek gerekiyorsa istegi PARCALARINDAN kur:
+      new Request(request.url, { method: request.method, headers, body })
+
+  BU HATANIN SINIFI, DUZELTMEYE CALISTIGIMIZ HATANIN AYNISI: dogru sey
+  olculdu, YANLIS ORTAMDA. Bir satirin "Node'da calistigini" gormek, onun
+  Next'in rota isleyicisinde calistigini GOSTERMEZ. Sunucu kodu sunucuda
+  denenmeli - npm run dev + curl yetiyor.
+
+  KOPRUYU UCTAN UCA DOGRULAMA YOLU (kopru durdukca gecerli):
+    1. src/lib/better-auth.ts -> advanced'a: useSecureCookies: true
+    2. e2e/two-factor.spec.ts -> ilgili test.skip'i test yap
+    3. npx playwright test e2e/two-factor.spec.ts
+    4. IKISINI DE GERI AL
+  Olculdu (4 Eylul): kopru acikken 200 + set-auth-token, kapaliyken 401.
+  NEGATIF KONTROL SART - gecen bir test, dusebildigi gosterilmedikce
+  hicbir sey kanitlamaz.
+
+  ARKA PLAN BILDIRIMINDEKI "exit 0" TESTLERIN GECTIGI ANLAMINA GELMEZ.
+  Kabugun cikis kodu SON komuttan gelir. Yani:
+
+      npm run test:e2e > log 2>&1
+      echo "cikis: $?" >> log        <-- kabuk artik 0 doner (echo basarili)
+
+  Playwright 1 donmusken bildirim "completed (exit code 0)" diyor. 4
+  Eylul'de tam olarak bu oldu: kurulum adimi dusmustu ve neredeyse "E2E
+  yesil" diye rapor edilecekti. LOGU OKU - "passed/failed" satirini ve
+  dosyaya yazdirdigin gercek kodu. Bildirime guvenme.
+  (Ayni aile: "| tail" ile boruya sokmak - cikis kodu tail'den gelir.)
+
+
   E2E BU HATA SINIFINI YAPISAL OLARAK YAKALAYAMAZ. Better Auth'un
   "__Secure-" onegini tetikleyen sey NODE_ENV ve E2E gelistirme modunda
   kosuyor - orada onek HIC olusmuyor. Yani https'e bagli her davranis

@@ -8,6 +8,52 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-04 (3) — Köprünün ilk hâli 500 veriyordu
+
+Bir önceki kayıttaki köprü **çalışmadı**. Mağazadaki uygulama artık "Doğrulama
+süresi doldu" yerine "Bir şeyler ters gitti" diyordu — mesajın değişmesi
+doğru okumaydı: ilk hata gitmiş, yerine yenisi gelmişti.
+
+Üretime karşı ölçüldü:
+
+| İstek | Sonuç |
+|---|---|
+| Çerezsiz (köprü devrede değil) | 401, normal |
+| **Öneksiz çerez (köprüyü tetikler)** | **500, gövde boş** |
+| Önekli çerez (web'in gönderdiği) | 401, normal |
+
+Gövdesi boş bir 500'ü mobil eşleyemiyor ve genel cümleye düşüyor. Web hiç
+etkilenmedi.
+
+**Sebep:**
+
+```
+TypeError: Cannot read private member #state from an object whose class
+did not declare it        →  new Request(request, { headers })
+```
+
+Next rotaya kendi `NextRequest`'ini veriyor; undici'nin `Request` yapıcısı
+girdiyi gerçek bir `Request` sanıp özel alanını okumaya çalışıyor. İstek artık
+**parçalarından** kuruluyor (`url`, `method`, `headers`, `body`).
+
+**Bu, düzeltilmeye çalışılan hatanın aynı sınıfıydı:** o satır düz Node'da
+ölçülmüştü ve orada sorunsuz çalışıyor. Doğru şey ölçüldü, yanlış ortamda —
+tıpkı çerez testlerinin geliştirme sunucusundan ölçülmesi gibi. Kural ADR-045'te
+genişletildi: sunucu kodu sunucuda denenir.
+
+**Bu sefer uçtan uca doğrulandı.** E2E altyapısı zaten 2FA kullanıcısı ve TOTP
+üretmeyi biliyor; mağazadaki 1.0'ın ayrıştırıcısını birebir taklit eden bir
+test yazıldı — gerçek imzalı çerez, önek düşürülüyor, geçerli TOTP ile
+**200 + `set-auth-token`**. Ve geçen bir test tek başına bir şey kanıtlamadığı
+için **negatif kontrol** yapıldı: köprü kapatılınca aynı test **401** veriyor.
+
+Test suitede duruyor ama `skip` — öneki `NODE_ENV` tetikliyor ve E2E
+geliştirme modunda koşuyor, yani varsayılan yapılandırmada hiçbir şey ölçmez.
+Nasıl koşulacağı iki adım hâlinde testin başında yazılı; köprüyle birlikte
+silinecek.
+
+---
+
 ## 2026-09-04 (2) — 2FA açık kullanıcılar iOS uygulamasına giremiyordu
 
 Yayından saatler sonra çıktı: 2FA açık bir hesap mobilde ikinci adımda
