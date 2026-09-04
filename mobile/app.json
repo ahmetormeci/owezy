@@ -12,7 +12,10 @@
       "bundleIdentifier": "net.owezy.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "CFBundleLocalizations": ["en", "tr"]
+        "CFBundleLocalizations": [
+          "en",
+          "tr"
+        ]
       }
     },
     "android": {
@@ -43,7 +46,8 @@
             "backgroundColor": "#141518"
           }
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "router": {},

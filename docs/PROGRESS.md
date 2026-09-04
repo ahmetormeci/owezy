@@ -8,7 +8,7 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 30 faz tamamlandı, **Faz 36 sürüyor** (1.0.1 build'i bekliyor). **Faz 35 ile iOS uygulaması
+**Özet:** 31 faz tamamlandı, **Faz 36 sürüyor** (1.0.1 build'i bekliyor). **Faz 35 ile iOS uygulaması
 App Store'da yayında** (1.0, 4 Eylül 2026) — web zaten canlıydı, artık iki
 istemci de kullanıcıya açık. Yayından sonra çıkan 2FA giriş hatasının sunucu
 tarafı kapatıldı; mobil düzeltmesi 1.0.1'e kaldı (Faz 36). `main`'e giden her
@@ -17,7 +17,7 @@ değişiklik CI'dan geçiyor.
 | Test | Sayı | Son durum |
 |---|---|---|
 | Birim — kök (Vitest) | 584 | ✅ tümü geçiyor |
-| Birim — mobil (Vitest) | 68 | ✅ tümü geçiyor |
+| Birim — mobil (Vitest) | 77 | ✅ tümü geçiyor |
 | Ekran — mobil (jest-expo) | 18 | ✅ tümü geçiyor |
 | E2E (Playwright) | 56 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
@@ -1120,6 +1120,41 @@ genişletirse uygulama mağazadan döner ve sebebi hiçbir yerde görünmez.
 Email Routing kuralı var, oraya gelen postalar kullanıcının kendi kutusuna
 yönleniyor. Alan adının MX'i de `route1/2/3.mx.cloudflare.net` — yani
 destek sayfasındaki adres gerçekten çalışıyor.
+
+---
+
+## Faz 38 — CSV dışa aktarma telefonda · **BİTTİ**
+
+Uç ve filtre desteği zaten vardı; eksik olan telefon tarafıydı. Düğme filtre
+satırında ve her zaman görünür — web'deki yerinin aynısı, çünkü dışa aktarma
+ekrandaki filtreyi izliyor ve bu bağ görünür kalmalı.
+
+| Karar | Gerekçe |
+|---|---|
+| Filtre satırında, panelin içinde değil | Panel mobilde kapalı başlıyor; içine konsa filtrelemeyen kullanıcı bulamazdı |
+| Dosya adı sunucudan | İstemcide üretmek web ile ayrışmaya yol açardı |
+| `useApiClient` değil, elle `fetch` | O istemci JSON çözüyor; buradan ham CSV geliyor. Bearer sözleşmesi korunuyor |
+| Önbellek dizini | Paylaşım sayfasına verilen geçici kopya; belgelere yazmak birikirdi |
+
+**Yol boyunca iki kusur bulundu ve düzeltildi:**
+
+Dosya adını "temizleyen" ilk kural boşluğu, tireyi ve `.csv`'deki noktayı da
+siliyordu — modülün varlık sebebi olan "web ile aynı ad" hedefini bozuyordu.
+Yalnızca yol ayıracına daraltıldı.
+
+**Dil**: mobil çerez göndermediği için (ADR-029) sunucu hesabın dilini
+kullanıyordu, oysa arayüz cihazın dilini gösteriyor. Uygulama İngilizceyken
+Türkçe dosya iniyordu. Mobil artık o istekte `Cookie: locale=<dil>`
+gönderiyor; **sunucu değişmedi**. Ayıraç da düzeldi: uç dile göre `;` / `,`
+seçiyor.
+
+Bunun bir öncesi var: uca `locale` parametresi eklemek denendi ve **E2E'yi
+kırdı** (beş koşuda collaboration testleri düştü, değişikliksiz üçünde
+geçti). Mekanizma bulunamadı — diff yalnızca bir API ucuna ekti ve modül
+grafiğine yeni bir şey katmıyordu. Açıklanamayan risk üretime taşınmadı.
+
+Simülatörde uçtan uca doğrulandı — paylaşım sayfası, dosya adı, BOM, içerik.
+9 birim testi (`content-disposition`).
 
 ---
 

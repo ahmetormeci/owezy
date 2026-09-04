@@ -26,6 +26,7 @@ import type { Locale } from "@/lib/locale";
 import { useLocale, useTranslate, type Translator } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
+import { CsvExport } from "../../../components/csv-export";
 import { ExpenseComposer } from "../../../components/expense-composer";
 import {
   Receipt,
@@ -344,6 +345,10 @@ export default function GroupScreen() {
    * bagimlilik olarak DUZ BIR METIN veriyor - efektin deps dizisinde her
    * render'da degisen bir nesne durmuyor.
    */
+  // Disa aktarma hatasi. Bilesenin kendisi tasiyamiyor: hata satirin
+  // ALTINDA gorunmeli, dugme ise satirin ICINDE.
+  const [exportError, setExportError] = useState<string | null>(null);
+
   const filterSuffix = [
     query.trim() ? `q=${encodeURIComponent(query.trim())}` : null,
     category ? `category=${category}` : null,
@@ -681,6 +686,14 @@ export default function GroupScreen() {
                     returnKeyType="search"
                     clearButtonMode="while-editing"
                   />
+                  {/* DISA AKTAR, FILTRE'nin solunda ve HER ZAMAN gorunur -
+                      web'de de satirin sonunda duruyor. Panelin icine
+                      konsaydi, filtre acmayan kullanici bulamazdi. */}
+                  <CsvExport
+                    groupId={groupId}
+                    filterSuffix={filterSuffix}
+                    onError={setExportError}
+                  />
                   <Pressable
                     onPress={() => setFilterOpen((open) => !open)}
                     hitSlop={10}
@@ -696,6 +709,10 @@ export default function GroupScreen() {
                     </Cap>
                   </Pressable>
                 </View>
+
+                {/* Hata, olayin OLDUGU yerin altinda - Alert degil. Kural
+                    expense-composer.tsx'te yazili. */}
+                {exportError ? <Text style={s.error}>{exportError}</Text> : null}
 
                 {filterOpen ? (
                   <View style={s.filterPanel}>

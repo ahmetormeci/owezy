@@ -84,8 +84,6 @@ MAGAZA "YALNIZCA INGILIZCE" DIYOR - GERCEK AMA KUCUK BIR KUSUR:
   gitsin.
 
 SIRADAKI IS - ARTIK ACIK, AMA SECILMEDI:
-  CSV disa aktarma (uc hazir; telefonda paylasim sayfasi gerekiyor -
-    expo-sharing + expo-file-system, YENI BAGIMLILIK)
   universal link (asagida - Expo Go'da denenemiyor, development build sart)
   PUSH BILDIRIM (APNs sertifikasi, expo-notifications, izin istemi, yeni
     build ve App Privacy anketinde degisiklik)
@@ -172,6 +170,25 @@ BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
   EAS      eas.json'da ascAppId yazili (6805650395)
 
 AKILDA TUTULACAKLAR:
+
+  E2E DUSUNCE ONCE MAKINEYI TEMIZLE - METRO VE SIMULATOR DAHIL. 4 Eylul'de
+  E2E kosarken Expo ile simulator acik birakildi; ucu ayni makinede yarisip
+  60 saniyelik test sinirini kaybettirdi. Belirti yaniltici: testler CPU
+  YEMIYOR, BEKLIYOR. Bir kosu 42 dakika surdu.
+
+  KOSUYU ORTASINDAN KESME. pkill ile durdurulan bir kosu E2E veritabanini
+  yarim birakiyor; sonraki kosuda kurulum "kullanici zaten var" (422) diye
+  dusuyor ve sebep kodda aranmaya baslaniyor.
+
+  "The destination stream closed early" TEK BASINA BIR SEY ANLATMIYOR. Gecen
+  bir kosuda da bir tane gorulebiliyor. Belirti olan SAYISI: yediye ciktiysa
+  gercekten bir sey bozuk.
+
+  BIR DEGISIKLIGIN SUCLU OLDUGUNU KOSU SAYARAK KANITLA. 4 Eylul'de bir
+  degisiklik once masum, sonra suclu, sonra yine belirsiz gorundu cunku
+  kirli ve temiz kosular ayni kefeye konmustu. Yalnizca TEMIZ kosular sayilir
+  ve degisiklikli/degisiksiz en az ikiser kez kosulmalidir.
+
 
   EXPO'NUN GELISTIRICI BALONCUGU BASLIGIN SAG USTUNU KAPATIYOR. 4 Eylul'de
   bildirim zili "hic cizilmemis" sanildi; balonu asagi surukleyince zil
@@ -332,7 +349,7 @@ AKILDA TUTULACAKLAR:
 
 TESTLER - NE NEREDE:
   KOK      npm test                  584 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      68 vitest + 18 jest
+  MOBIL    cd mobile && npm test      77 vitest + 18 jest
   E2E      npm run test:e2e           56 test, ~10 dk
 
   MOBILDE IKI KOSUCU VAR ve sinir DIZINE gore (ADR-042, ADR-043):

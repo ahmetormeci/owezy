@@ -8,6 +8,47 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-04 (5) — CSV dışa aktarma telefonda
+
+Destek sayfasındaki "yalnızca web'de var" maddesi kapandı. Uç zaten hazırdı
+ve filtreyi izliyordu; eksik olan telefon tarafıydı.
+
+**Düğme filtre satırında ve her zaman görünür** — web'de de öyle
+(`expense-list.tsx`). Yeri bilinçli: dışa aktarma ekrandaki filtreyi izliyor,
+süzülmüş bir liste dururken bütün grubu indirmek şaşırtırdı. Filtre paneli
+mobilde varsayılan olarak kapalı olduğu için düğme panelin **içine**
+konmadı; konsaydı filtrelemek istemeyen kullanıcı hiç bulamazdı.
+
+**Dosya adı sunucudan okunuyor** (`lib/content-disposition.ts`), istemcide
+üretilmiyor: iki ayrı kural zamanla ayrışırdı. Başlık iki biçim taşıyor,
+gerçek adı yalnızca RFC 5987 (yıldızlı) olan taşıyor.
+
+Yazarken kendi hatam yakalandı: önce dosya adını "temizleyen" geniş bir kural
+yazılmıştı ve boşluğu, tireyi, hatta `.csv`'deki noktayı `_` yapıyordu — tam
+da kaçınılmak istenen ayrışmayı üretecekti (`Deneme_-_2026-09-04_csv`). Kural
+yalnızca yol ayıracına daraltıldı. Testin yakaladığı şey buydu.
+
+**Dil hatası simülatörde çıktı.** Sunucu dili çerezden, yoksa hesaptan
+okuyor; mobil çerez göndermiyor (ADR-029) ve arayüz **cihazın** dilini
+gösteriyor. Sonuç: uygulama İngilizceyken Türkçe başlıklı dosya iniyordu.
+Mobil artık o tek istekte `Cookie: locale=<dil>` gönderiyor — **sunucuda
+hiçbir şey değişmedi**. Ayıraç da düzeldi: uç dile göre `;` / `,` seçiyor.
+
+Bu çözüm ikinci denemeydi ve gerekçesi kayda değer. Önce uca isteğe bağlı bir
+`locale` parametresi eklendi; değişiklik masum görünüyordu, hatta `cookies()`
+çağrısını ikiden bire indiriyordu. Ama o hâliyle **E2E collaboration testleri
+düzenli olarak düştü** — beş koşuda düştü, değişikliksiz üç koşuda geçti.
+Diff satır satır incelendi, modül grafiği kontrol edildi (`i18n-server` zaten
+aynı modülleri içe aktarıyor), bir mekanizma **bulunamadı**. Açıklanamayan bir
+riski üretime taşımak yerine sunucuya hiç dokunmayan yol seçildi: çerez yolu
+zaten var ve web onu kullanıyor. Çerez oturum taşımıyor, yalnızca sunum
+tercihi; ADR-029 delinmiyor.
+
+Simülatörde uçtan uca doğrulandı: paylaşım sayfası, dosya adı
+`Deneme - 2026-09-04.csv`, BOM yerinde, içerik doğru.
+
+---
+
 ## 2026-09-04 (4) — Bildirim zili başlığa taşındı; 1.0.1 hazır
 
 Bildirimler mobilde grup ekranının **en altındaki bir karttaydı**. İşleyişi
