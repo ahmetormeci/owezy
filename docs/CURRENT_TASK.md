@@ -47,8 +47,15 @@ Current task:
   BELIRSIZ; swcutil simulatorde YOK, yani sahiplenmenin onaylanip
   onaylanmadigi okunamiyor.
 
-  SONRAKI ADIM: GERCEK CIHAZDA dene. eas.json'a device profili gerekiyor
-  (preview simulator: true). Kullanicinin iPhone 12'si var.
+  SONRAKI ADIM: 1.0.2 TestFlight'a yuklendi -> KULLANICI iPhone 12'sinde
+  denesin. Davet baglantisina dokununca Safari mi uygulama mi aciliyor?
+
+  TESTFLIGHT NEDEN YETIYOR: eas submit build'i App Store Connect'e YUKLUYOR,
+  incelemeye GONDERMIYOR. Hesap sahibi zaten internal tester, yani Beta App
+  Review de gerekmiyor. Mağaza surumunu beklemeye gerek yok.
+
+  1.0.1 HALA INCELEMEDE ve App Store Connect ayni anda iki surumu incelemeye
+  almiyor. 1.0.2'yi incelemeye gonderme 1.0.1 ciktiktan SONRA.
 
   RISK YENIDEN DEGERLENDIRILDI - ONCE SANILDIGINDAN KUCUK: sahiplenme
   CALISMAZSA baglantilar Safari'de acilir, yani BUGUNKU davranis surer -

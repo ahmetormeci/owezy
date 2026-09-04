@@ -8,6 +8,30 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-04 (9) — 1.0.2: universal link gerçek cihazda denenecek
+
+Sürüm `1.0.2`'ye alındı ve universal link bu sürümle gidiyor.
+
+**Neden simülatörde bitirilmedi:** ölçülebilen her halka doğru (AASA bizde ve
+Apple'ın CDN'inde, entitlement ikilide, iOS `swcd` dosyayı 200 ile çekiyor)
+ama https adresinin uygulamaya devri doğrulanamadı — `simctl openurl` Safari
+açıyor ve `swcutil` simülatörde yok, yani sahiplenmenin onaylanıp
+onaylanmadığı okunamıyor. İki ihtimal (simülatör sınırı / gerçek kusur)
+elimizdeki veriyle ayrılmıyor.
+
+**Risk yeniden değerlendirildi.** Sahiplenme çalışmazsa bağlantılar Safari'de
+açılır — yani bugünkü davranış sürer, **gerileme değil**. Tehlikeli olan
+"sahiplenme çalışır ama uygulama kötü karşılar" hali ve o taraf standalone
+build'de doğrulandı: geçersiz kod çevrilmiş hata veriyor, giriş yapılmamış
+kullanıcı `AuthGuard`'a takılmadan "önce giriş yap" ekranını görüyor.
+
+**TestFlight yolu seçildi.** 1.0.1 hâlâ incelemede ve App Store Connect aynı
+anda iki sürümü incelemeye almıyor — ama `eas submit` build'i yüklüyor,
+incelemeye **göndermiyor**. 1.0.2 TestFlight'a düşüyor, gerçek cihazda
+deneniyor, incelemeye gönderme 1.0.1 çıktıktan sonra yapılıyor.
+
+---
+
 ## 2026-09-04 (8) — Universal link: davet bağlantısı uygulamada açılıyor
 
 Bugüne kadar `owezy.net/join/<kod>` telefonda **Safari'de** açılıyordu,
