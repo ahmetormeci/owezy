@@ -3,7 +3,7 @@
     "name": "Owezy",
     "slug": "owezy",
     "scheme": "owezy",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "net.owezy.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleLocalizations": ["en", "tr"]
       }
     },
     "android": {

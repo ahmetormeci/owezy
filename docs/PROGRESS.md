@@ -8,7 +8,7 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 29 faz tamamlandı, **Faz 36 sürüyor**. **Faz 35 ile iOS uygulaması
+**Özet:** 30 faz tamamlandı, **Faz 36 sürüyor** (1.0.1 build'i bekliyor). **Faz 35 ile iOS uygulaması
 App Store'da yayında** (1.0, 4 Eylül 2026) — web zaten canlıydı, artık iki
 istemci de kullanıcıya açık. Yayından sonra çıkan 2FA giriş hatasının sunucu
 tarafı kapatıldı; mobil düzeltmesi 1.0.1'e kaldı (Faz 36). `main`'e giden her
@@ -18,7 +18,7 @@ değişiklik CI'dan geçiyor.
 |---|---|---|
 | Birim — kök (Vitest) | 584 | ✅ tümü geçiyor |
 | Birim — mobil (Vitest) | 68 | ✅ tümü geçiyor |
-| Ekran — mobil (jest-expo) | 14 | ✅ tümü geçiyor |
+| Ekran — mobil (jest-expo) | 18 | ✅ tümü geçiyor |
 | E2E (Playwright) | 56 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
 | `npm run lint` | — | ✅ temiz (kök + mobil) |
@@ -1123,6 +1123,48 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 37 — Bildirim zili başlıkta · **BİTTİ**
+
+Bildirimler grup ekranının **en altındaki bir karttaydı**; çok harcamalı bir
+grupta uzun bir kaydırmanın arkasında kalıyordu. Web'de zil uygulama
+düzeyindeki başlıkta (`(app)/layout.tsx`), yani her sayfada — mobil de artık
+öyle.
+
+| Karar | Gerekçe |
+|---|---|
+| Gerçek zil ikonu | `@expo/vector-icons` — **uygulamanın ilk ikonu**. Görsel dil tipografikti; başlıktaki yer bir kelimeyi taşımıyor ve zil evrensel olarak tanınıyor. Renk kobalt (ADR-015). |
+| Tüm ekranlarda | `Stack`'in `screenOptions`'ında. Ekran ekran eklemek, bir sonrakinde unutulacak bir şey demekti — AuthGuard'ın çözdüğü sorunun aynısı (ADR-037). |
+| Ekrana gidiyor, açılır pencere değil | Bildirimler ekranı zaten var; dar bir ekranda popover listeyi iki kez çizmek olurdu. |
+| Bildirimler ekranında zil yok | Kullanıcıyı bulunduğu yere götüren bir düğme. |
+
+### Sayaç neden ayrı bir sağlayıcı
+
+Zil bir ekran değil, başlığın parçası — **odaklanacak ekranı yok**, yani
+`useFocusEffect` çalışmıyor. `lib/unread.tsx` onun yerine **adres değişimini**
+dinliyor: kullanıcı nereye giderse gitsin sayı tazeleniyor, bildirimler
+ekranından çıkıldığında kendiliğinden sıfırlanıyor. İlk çalışma atlanıyor
+çünkü `useApiGet` bağlandığında zaten çekiyor.
+
+### Simülatörde çıkan şey
+
+Gruplar ekranının altında da bir "Bildirimler" bağlantısı vardı; zil gelince
+aynı yere iki yol açılmıştı. Kaldırıldı. **Kod okuyarak fark edilmezdi** —
+ekrana bakılınca görüldü.
+
+**Hesap kartı taşınmadı.** Tek gruplu kullanıcının hesabına ulaşmasının tek
+yolu o (Faz 33, App Store 5.1.1(v)).
+
+### Doğrulama
+
+Soğuk açılışta `Redirect` yolu üretildi: tek gruplu kullanıcı doğrudan gruba
+düşüyor, geri düğmesi doğmuyor, **zil başlıkta**. Açık ve koyu temada ayrı
+ayrı bakıldı. 4 birim testi (rozet: 0'da yok, 9'a kadar sayı, sonrası `9+`).
+
+Rozet gerçek bir sayıyla **ekranda görülmedi** — geliştirme hesabında bildirim
+yoktu. Testlerle kapsandı.
+
+---
+
 ## Faz 36 — 2FA girişi mobilde kırıktı · **SÜRÜYOR**
 
 1.0 yayına girdikten saatler sonra çıktı: **2FA açık hesaplar iOS
@@ -1203,8 +1245,7 @@ Test `skip` — öneki `NODE_ENV` tetikliyor, E2E geliştirme modunda koşuyor.
 
 ### Kalan
 
-- `app.json`'da `version` 1.0.0 → 1.0.1
-- 1.0.1 build + submit
+- 1.0.1 build + submit (sürüm `app.json`'da 1.0.1'e alındı)
 - **Köprünün kaldırılması** — 1.0.1 yaygınlaşınca, önce değil
 
 ---

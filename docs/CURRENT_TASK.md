@@ -28,10 +28,13 @@ Updated: 2026-09-04
 Current task:
   2FA CEREZ HATASI - KOPRU CANLIDA, MOBIL DUZELTMESI SIRADA.
 
-  HEMEN SONRAKI ADIM: 1.0.1 build'i. Kod tarafinda yapilacak is KALMADI -
-  hem kopru hem mobil ayristirici hazir. Build oncesi app.json'daki
-  "version" 1.0.0 -> 1.0.1 yapilmali (build numarasini EAS kendisi
-  artiriyor, appVersionSource: remote).
+  HEMEN SONRAKI ADIM: eas build (production, ios) -> eas submit.
+  Kod tarafinda yapilacak is KALMADI. app.json'da version ZATEN 1.0.1.
+
+  1.0.1 UC SEY TASIYOR:
+    2FA cerezi duzeltmesi   mobile/lib/two-factor-cookie.ts
+    dil beyani              CFBundleLocalizations: ["en", "tr"]
+    bildirim zili           baslik cubugunda, tum ekranlarda (Faz 37)
 
   NE OLDU: 2FA acik hesaplar iOS 1.0'a HIC GIREMIYORDU. Better Auth cerez
   adina https'te "__Secure-" onegi ekliyor; mobil 1.0 cerezi metin
@@ -170,6 +173,11 @@ BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
 
 AKILDA TUTULACAKLAR:
 
+  EXPO'NUN GELISTIRICI BALONCUGU BASLIGIN SAG USTUNU KAPATIYOR. 4 Eylul'de
+  bildirim zili "hic cizilmemis" sanildi; balonu asagi surukleyince zil
+  oradaydi. Baslikta bir sey aranirken ONCE balonu kenara cek.
+
+
   NEXT'IN ISTEGI KLONLANMAZ. "new Request(request, { headers })" URETIMDE
   PATLADI:
       TypeError: Cannot read private member #state from an object whose
@@ -291,6 +299,14 @@ AKILDA TUTULACAKLAR:
   sifirliyor. Duzenleme yaptiktan sonra "tazelenmedi" gorunumu genelde bu -
   hata teshis etmeden once UYGULAMAYI BASTAN BASLAT.
 
+  SIMULATORDE METIN ALANLARINA ODAKLANILAMIYOR (4 Eylul, olculdu).
+  Baslik cubugundaki dokunuslar CALISIYOR - zile basildi, gitti - ama React
+  Native'in TextInput'lari odaklanmiyor: klavye acilmiyor, uzun basmada
+  yapistirma menusu de cikmiyor. Dort yontem denendi (duz dokunus, bekleyen
+  dokunus, uzun basma, kucuk hareketli dokunus); hicbiri tutmadi.
+  SONUC: veri girisi gerektiren dogrulamalarda KULLANICIYA yazdir, sonra
+  devral. Zaman kaybetme.
+
   SIMULATORDE METIN YAZDIRMAK KARAKTER DUSURUYOR. Kisa parcalar hâlinde yaz
   ve HER ADIMDA ekran goruntusuyle dogrula; dokunuslarin da iskalayabildigini
   unutma (bu oturumda iskalayan dokunuslar olmayan bir hataya teshis
@@ -316,7 +332,7 @@ AKILDA TUTULACAKLAR:
 
 TESTLER - NE NEREDE:
   KOK      npm test                  584 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      68 vitest + 14 jest
+  MOBIL    cd mobile && npm test      68 vitest + 18 jest
   E2E      npm run test:e2e           56 test, ~10 dk
 
   MOBILDE IKI KOSUCU VAR ve sinir DIZINE gore (ADR-042, ADR-043):

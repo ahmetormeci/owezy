@@ -4,6 +4,8 @@ import { LocaleProvider, useTranslate } from "../lib/i18n";
 import { useTheme } from "../lib/theme";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";
 import { SessionProvider, useSession } from "../lib/auth";
+import { UnreadProvider } from "../lib/unread";
+import { NotificationBell } from "../components/notification-bell";
 
 /**
  * Cihazin dili.
@@ -87,6 +89,15 @@ function AppStack() {
         // adlari basligi tasiriyor.
         headerBackButtonDisplayMode: "minimal",
         contentStyle: { backgroundColor: theme.surface },
+        /**
+         * ZIL HER EKRANDA - web'de de oyle: orada uygulama duzeyindeki
+         * baslikta duruyor ((app)/layout.tsx), yani her sayfada.
+         *
+         * screenOptions'a konmasinin sebebi bu: ekran ekran eklemek, bir
+         * sonraki ekranda unutulacak bir sey demekti - AuthGuard'in
+         * cozdugu sorunun aynisi (ADR-037).
+         */
+        headerRight: () => <NotificationBell />,
       }}
     >
       {/* Yonlendirme ekrani ve giris: baslik cubugu ANLAMSIZ - birinde
@@ -118,9 +129,11 @@ function AppStack() {
         name="groups/[groupId]/expenses/[expenseId]"
         options={{ title: t("ui.expenses") }}
       />
+      {/* Bildirimler ekraninda zil YOK: kullaniciyi zaten bulundugu yere
+          goturen bir dugme. */}
       <Stack.Screen
         name="notifications"
-        options={{ title: t("ui.notifications") }}
+        options={{ title: t("ui.notifications"), headerRight: () => null }}
       />
       <Stack.Screen name="account" options={{ title: t("ui.account") }} />
     </Stack>
@@ -152,7 +165,11 @@ export default function RootLayout() {
           ayrisirdi; ADR-020'nin "eksik ceviri = derleme hatasi" garantisi
           boylece mobilde de gecerli. */}
       <LocaleProvider initialLocale={deviceLocale()}>
-        <AuthGuard />
+        {/* Sayac SAGLAYICIDA cunku zil basliktaki her ekranda ayni; tek bir
+            ekran onu besleyemez. Gerekce lib/unread.tsx'te. */}
+        <UnreadProvider>
+          <AuthGuard />
+        </UnreadProvider>
       </LocaleProvider>
     </SessionProvider>
   );

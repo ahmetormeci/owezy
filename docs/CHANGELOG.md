@@ -8,6 +8,41 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-04 (4) — Bildirim zili başlığa taşındı; 1.0.1 hazır
+
+Bildirimler mobilde grup ekranının **en altındaki bir karttaydı**. İşleyişi
+doğruydu ama çok harcamalı bir grupta uzun bir kaydırmanın arkasında
+kalıyordu: bildirim vardı, görünmüyordu. Web'de zil uygulama düzeyindeki
+başlıkta, yani her sayfada — mobil de artık öyle.
+
+**Bu uygulamanın ilk ikonu.** Görsel dil bugüne kadar tamamen tipografikti
+(`Cap`, `→`, `·`, `▸`); `@expo/vector-icons` ilk ikon bağımlılığı. Bilinçli
+tercih: "bildirim" için evrensel olarak tanınan işaret o, ve başlıktaki yer
+bir kelimeyi taşımaya yetmiyor. Renk kobalt — ADR-015'e göre eylem rengi.
+
+**Sayaç için paylaşılan bir kaynak gerekti** (`lib/unread.tsx`). Zil bir ekran
+değil, başlığın parçası; odaklanacak ekranı olmadığı için `useFocusEffect`
+işe yaramıyor. Onun yerine **adres değişimi** dinleniyor: kullanıcı nereye
+giderse gitsin sayı tazeleniyor, bildirimler ekranından çıkıldığında da
+kendiliğinden sıfırlanıyor.
+
+**Simülatörde bakarken bir hata çıktı:** gruplar ekranının altında da bir
+"Bildirimler" bağlantısı vardı ve zil gelince aynı yere iki yol açılmıştı.
+Kaldırıldı. Kod okuyarak fark edilmezdi.
+
+**Hesap kartı taşınmadı.** Tek gruplu kullanıcının hesabına ulaşmasının tek
+yolu o (App Store 5.1.1(v), Faz 33). Taşınsaydı o kusur geri gelirdi.
+
+**Soğuk açılışta doğrulandı** — asıl önemli durum bu: tek gruplu kullanıcı
+`Redirect` ile doğrudan gruba düşüyor, geri düğmesi doğmuyor, ve zil
+başlıkta duruyor. Açık ve koyu temada ayrı ayrı bakıldı.
+
+**1.0.1 ayrıca iki şey taşıyor:** 2FA çerezi düzeltmesi (bir önceki kayıt) ve
+`CFBundleLocalizations: ["en", "tr"]` — mağaza sayfası artık uygulamayı
+yalnızca İngilizce göstermeyecek.
+
+---
+
 ## 2026-09-04 (3) — Köprünün ilk hâli 500 veriyordu
 
 Bir önceki kayıttaki köprü **çalışmadı**. Mağazadaki uygulama artık "Doğrulama
