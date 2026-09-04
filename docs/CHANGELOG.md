@@ -8,6 +8,40 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-04 (6) — Silinen harcama geri alınabiliyor (web)
+
+Destek sayfasındaki "silinen bir harcamayı geri alma arayüzü yok" maddesi
+web'de kapandı. Sunucu tarafında **hiçbir iş yoktu**: `POST .../restore` ucu
+baştan beri vardı, liste zaten `?includeDeleted=true` kabul ediyordu ve
+`deletedAt` istemciye dönüyordu. Eksik olan ikisini görünür kılan arayüzdü.
+
+**Silinenler listeye katılıyor, ayrı bir "çöp kutusu" ekranına değil.** Bir
+harcama en çok kendi tarih sırasında, bağlamında anlam taşıyor; ayrı ekran
+ise yeni bir uç ve iki istemciye yeni bir gezinme demekti.
+
+| | |
+|---|---|
+| Filtre satırı | "Silinenleri de göster" kutusu |
+| Silinmiş satır | soluk + üstü çizili + `silindi` rozeti |
+| Eylem | `Geri al` — düzenle/sil yerine |
+| Dışa aktarma | ekranı izliyor; silinenler görünüyorsa dosyaya da giriyor |
+
+**Renk yok.** Yeşil/kırmızı bu üründe yalnızca bakiye anlamı taşıyor
+(ADR-015) ve silinmişlik bir bakiye durumu değil. Rozet de gerekli: üstü
+çizili olmak ekran okuyucuya hiçbir şey anlatmıyor.
+
+**Geri almada onay penceresi yok** — silmenin aksine yıkıcı değil. Yanlışlıkla
+basılırsa kayıt geri gelir ve yine silinebilir; her eyleme onay koymak onayın
+kendisini anlamsızlaştırır.
+
+E2E testi üç adımı da kilitliyor: silinen kayıt normalde **görünmüyor**, kutu
+işaretlenince **görünüyor**, geri alınınca kutu kapalıyken de duruyor.
+Ortadaki adım olmasa test "silme çalışıyor mu"yu ölçerdi. 57 geçti.
+
+**Mobil tarafı bekliyor.**
+
+---
+
 ## 2026-09-04 (5) — CSV dışa aktarma telefonda
 
 Destek sayfasındaki "yalnızca web'de var" maddesi kapandı. Uç zaten hazırdı

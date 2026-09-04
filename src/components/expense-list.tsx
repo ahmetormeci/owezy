@@ -44,6 +44,12 @@ export type ExpenseListItem = {
   participants: { userId: string; shareAmount: number }[];
   /** Optimistic locking sayaci (ADR-032). Silme istegiyle birlikte gidiyor. */
   version: number;
+  /**
+   * Silinmis kayitlar listeye YALNIZCA "silinenleri de goster" acikken
+   * geliyor (?includeDeleted=true). Dolu olmasi satirin silinmis oldugunu
+   * soyluyor; uc bu alani bastan beri donduruyordu, gosteren yoktu.
+   */
+  deletedAt?: string | null;
 };
 
 /** Ozetten gelen ay toplamlari. Grubun TAMAMINI kapsar, ekrandakini degil. */
@@ -145,6 +151,59 @@ function DeleteExpenseButton({
   );
 }
 
+/**
+ * Silinmis bir harcamayi geri alir.
+ *
+ * NEDEN ONAY PENCERESI YOK - silme dugmesinin aksine: geri alma YIKICI
+ * DEGIL. Yanlislikla basilirsa kayit geri gelir ve tekrar silinebilir;
+ * silmede ise kaybedilen bir sey var. Her eyleme onay koymak, onayin
+ * kendisini anlamsizlastirir.
+ *
+ * SURUM GONDERILMIYOR (ADR-032'nin istisnasi): uc geri almada surum
+ * beklemiyor, cunku yarisabilecek tek rakip islem yine geri alma ve onu
+ * "zaten silinmemis" kontrolu eliyor. Sayaci yine de artiriyor.
+ */
+function RestoreExpenseButton({
+  groupId,
+  expenseId,
+}: {
+  groupId: string;
+  expenseId: string;
+}) {
+  const router = useRouter();
+  const t = useTranslate();
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  async function handleRestore() {
+    setIsRestoring(true);
+    try {
+      await apiRequest(`/api/v1/groups/${groupId}/expenses/${expenseId}/restore`, {
+        method: "POST",
+      });
+      toast.success(t("ui.expense_restored"));
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("ui.expense_restore_failed"));
+    } finally {
+      setIsRestoring(false);
+    }
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      // Silme dugmesiyle AYNI agirlik: bu bir eylem ama satirin konusu degil.
+      className="h-auto p-0 text-xs font-normal text-muted-foreground hover:bg-transparent hover:text-brand"
+      onClick={() => void handleRestore()}
+      disabled={isRestoring}
+    >
+      {t("ui.restore")}
+    </Button>
+  );
+}
+
+
 export function ExpenseList({
   groupId,
   currency,
@@ -175,7 +234,20 @@ export function ExpenseList({
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<ExpenseCategory | "">("");
   const [mine, setMine] = useState(false);
-  const isFiltered = query.trim() !== "" || category !== "" || mine;
+  /**
+   * SILINENLER DE GORUNSUN MU.
+   *
+   * Silinen harcama fiziksel olarak silinmiyor (soft delete + audit log)
+   * ve geri alma ucu bastan beri var - eksik olan onu GORECEK bir yoldu.
+   * Ayri bir "cop kutusu" ekrani yerine listeye katiliyorlar: silinen bir
+   * kayit en cok kendi tarih sirasinda, baglaminda anlam tasiyor.
+   */
+  const [showDeleted, setShowDeleted] = useState(false);
+
+  // showDeleted de bir FILTRE: gosterilen kumeyi degistiriyor, yani ay
+  // katlamasi kalkmali ve "kac sonuc" satiri yazilmali.
+  const isFiltered =
+    query.trim() !== "" || category !== "" || mine || showDeleted;
 
   // Iki liste AYRI tutuluyor: filtresiz olan sunucudan geliyor, filtreli olan
   // /api/v1'den. Tek state'te birlestirip filtre kalkinca sunucununkine geri
@@ -221,8 +293,11 @@ export function ExpenseList({
     if (query.trim()) params.set("q", query.trim());
     if (category) params.set("category", category);
     if (mine) params.set("mine", "true");
+    // Disa aktarma da bu kumeyi izliyor: ekranda silinenler dururken
+    // inen dosyada olmamalari, yan yana konularak soylenen bir yalan olurdu.
+    if (showDeleted) params.set("includeDeleted", "true");
     return params;
-  }, [query, category, mine]);
+  }, [query, category, mine, showDeleted]);
 
   const buildUrl = useCallback(
     (cursor: string | null) => {
@@ -415,6 +490,18 @@ export function ExpenseList({
         />
         {t("ui.only_mine")}
       </label>
+      {/* "Silinenleri de goster" - ayni satirda, ayni agirlikta. Silinen
+          kayitlar listeye KATILIYOR, ayri bir ekrana degil: bir harcama en
+          cok kendi tarih sirasinda anlam tasiyor. */}
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={showDeleted}
+          onChange={(event) => setShowDeleted(event.target.checked)}
+          className="size-3.5"
+        />
+        {t("ui.show_deleted")}
+      </label>
       {/* Duz bir baglanti, fetch degil: tarayici indirmeyi kendisi yapiyor,
           cerezler gidiyor ve dosya adini Content-Disposition belirliyor.
           Blob'a cevirip indirmek ayni isi daha fazla kodla yapardi. */}
@@ -515,15 +602,24 @@ export function ExpenseList({
     // kurala gore gosteriliyor. (Asil kontrol her zaman sunucuda.)
     const canModify = expense.createdById === currentUserId;
 
+    const isDeleted = Boolean(expense.deletedAt);
+
     return (
       <li key={expense.id} className="flex flex-col gap-1 py-2">
         {/* Fis satiri: aciklama - noktali ayrac - tutar.
             Ayrac bos bir eleman cunku genisligi degisken; goz
             satirdan kaymadan tutara ulassin diye var. */}
         <div className="flex items-baseline text-sm">
-          <span className="min-w-0 truncate">{expense.description}</span>
+          {/* SILINMIS SATIR SOLUK VE USTU CIZILI. Renk kullanilmiyor:
+              yesil/kirmizi bu urunde yalnizca BAKIYE anlami tasiyor
+              (ADR-015). Silinmislik bir bakiye durumu degil. */}
+          <span
+            className={`min-w-0 truncate ${isDeleted ? "text-muted-foreground line-through" : ""}`}
+          >
+            {expense.description}
+          </span>
           <span aria-hidden="true" className="leader" />
-          <span className="money shrink-0">
+          <span className={`money shrink-0 ${isDeleted ? "text-muted-foreground" : ""}`}>
             {formatMoney(expense.amount, currency, locale)}
           </span>
         </div>
@@ -532,6 +628,7 @@ export function ExpenseList({
             uc satira boluneni goz liste degil blok olarak okuyor. */}
         <div className="flex items-baseline gap-3 text-xs text-muted-foreground">
           <span className="min-w-0 truncate">
+            {isDeleted ? `${t("ui.deleted_badge")} · ` : ""}
             {secondary.join(" · ")}
             {showShare ? (
               <>
@@ -546,18 +643,26 @@ export function ExpenseList({
           </span>
           {canModify ? (
             <span className="ml-auto flex shrink-0 items-baseline gap-3">
-              <Link
-                href={`/groups/${groupId}/expenses/${expense.id}/edit`}
-                className="transition-colors hover:text-brand"
-              >
-                {t("ui.edit")}
-              </Link>
-              <DeleteExpenseButton
-                groupId={groupId}
-                expenseId={expense.id}
-                description={expense.description}
-                version={expense.version}
-              />
+              {/* SILINMIS SATIRDA DUZENLEME/SILME YOK: ikisi de anlamsiz ve
+                  sunucu zaten reddediyor. Yerine tek eylem - geri al. */}
+              {isDeleted ? (
+                <RestoreExpenseButton groupId={groupId} expenseId={expense.id} />
+              ) : (
+                <>
+                  <Link
+                    href={`/groups/${groupId}/expenses/${expense.id}/edit`}
+                    className="transition-colors hover:text-brand"
+                  >
+                    {t("ui.edit")}
+                  </Link>
+                  <DeleteExpenseButton
+                    groupId={groupId}
+                    expenseId={expense.id}
+                    description={expense.description}
+                    version={expense.version}
+                  />
+                </>
+              )}
             </span>
           ) : null}
         </div>

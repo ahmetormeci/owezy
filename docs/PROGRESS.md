@@ -19,7 +19,7 @@ değişiklik CI'dan geçiyor.
 | Birim — kök (Vitest) | 584 | ✅ tümü geçiyor |
 | Birim — mobil (Vitest) | 77 | ✅ tümü geçiyor |
 | Ekran — mobil (jest-expo) | 18 | ✅ tümü geçiyor |
-| E2E (Playwright) | 56 | ✅ tümü geçiyor |
+| E2E (Playwright) | 57 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
 | `npm run lint` | — | ✅ temiz (kök + mobil) |
 
@@ -1120,6 +1120,26 @@ genişletirse uygulama mağazadan döner ve sebebi hiçbir yerde görünmez.
 Email Routing kuralı var, oraya gelen postalar kullanıcının kendi kutusuna
 yönleniyor. Alan adının MX'i de `route1/2/3.mx.cloudflare.net` — yani
 destek sayfasındaki adres gerçekten çalışıyor.
+
+---
+
+## Faz 39 — Silinen harcamayı geri alma · **SÜRÜYOR** (web bitti)
+
+Dokümanda "uç var, arayüz yok" yazıyordu; ölçünce sunucu tarafında **hiçbir
+iş olmadığı** çıktı — `restore` ucu, `?includeDeleted=true` ve `deletedAt`
+üçü de hazırdı.
+
+Silinenler **listeye katılıyor**: ayrı bir çöp kutusu ekranı yeni bir uç ve
+iki istemciye yeni gezinme isterdi, oysa silinen kayıt en çok kendi tarih
+sırasında anlam taşıyor. Satır soluk, üstü çizili ve `silindi` rozetli;
+eylem `Geri al`. Renk kullanılmadı (ADR-015: yeşil/kırmızı yalnızca bakiye).
+Geri almada onay yok — yıkıcı değil.
+
+E2E testi üç adımı kilitliyor (görünmüyor → görünüyor → geri geldi). 57 geçti.
+
+### Kalan
+
+- Mobil tarafı: filtre çipi + satır görünümü + geri alma
 
 ---
 

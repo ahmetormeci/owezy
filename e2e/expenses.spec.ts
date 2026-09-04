@@ -83,7 +83,7 @@ test.describe("harcamalar", () => {
     // Onay penceresinin KAPANDIGINI dogruluyoruz: acik kalirsa kullanici
     // islemi basarisiz saniyor ve tekrar deneyince "bulunamadi" aliyor.
     await expect(dialog).toBeHidden();
-    await expect(page.getByText("Silinecek harcama")).toBeHidden();
+    await expect(page.getByText("Geri alinacak harcama")).toBeHidden();
   });
 
   test("harcama duzenlenir ve yeni tutar bakiyeye yansir", async ({ browser }) => {
@@ -341,6 +341,52 @@ test.describe("harcamalar", () => {
     await search.fill("cay");
     await expect(page.getByText("Çay ocagi")).toBeVisible();
     await expect(page.getByText("Isik faturasi")).toBeHidden();
+  });
+
+  /**
+   * SILINEN HARCAMAYI GERI ALMA (Faz 39).
+   *
+   * Uc bastan beri vardi (POST .../restore) ve liste zaten
+   * ?includeDeleted=true kabul ediyordu; eksik olan ikisini GORUNUR kilan
+   * arayuzdu. Destek sayfasi bunu "silinen bir harcamayi geri alma arayuzu
+   * yok" diye yaziyordu.
+   *
+   * IDDIA UC ADIMLI: silinen kayit normalde GORUNMUYOR, kutu isaretlenince
+   * GORUNUYOR, ve geri alininca kutu olmadan da duruyor. Ortadaki adim
+   * olmasa test "silme calisiyor mu"yu olcerdi.
+   */
+  test("silinen harcama gosterilebiliyor ve geri alinabiliyor", async ({ browser }) => {
+    const page = await pageAs(browser, "owner");
+    await createGroupAndOpen(page, uniqueGroupName("geri-al"));
+
+    await page.getByRole("link", { name: "Harcama ekle" }).click();
+    await page.getByLabel("Açıklama").fill("Geri alinacak harcama");
+    await page.getByLabel("Tutar").fill("300");
+    await page.getByRole("button", { name: "Harcamayı kaydet" }).click();
+    await expect(page.getByText("Geri alinacak harcama")).toBeVisible();
+
+    await page.getByRole("button", { name: "Sil", exact: true }).click();
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Sil", exact: true }).click();
+
+    // Silindikten sonra listede YOK. Bu satir olmasa sonraki adim bir sey
+    // kanitlamazdi - kayit zaten gorunuyor olabilirdi.
+    await expect(page.getByText("Silinecek harcama")).toBeHidden();
+
+    await page.getByLabel("Silinenleri de göster").check();
+    await expect(page.getByText("Geri alinacak harcama")).toBeVisible();
+    // Rozet, satirin neden soluk oldugunu SOYLUYOR; yalnizca ustu cizili
+    // olmasi ekran okuyucuya hicbir sey anlatmazdi.
+    await expect(page.getByText("silindi", { exact: false }).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Geri al" }).click();
+    await expect(page.getByText("Harcama geri alındı")).toBeVisible();
+
+    // ASIL IDDIA: kutu KAPATILINCA da duruyor, yani kayit gercekten geri
+    // geldi - yalnizca "silinenleri goster" sayesinde gorunmuyor.
+    await page.getByLabel("Silinenleri de göster").uncheck();
+    await expect(page.getByText("Geri alinacak harcama")).toBeVisible();
   });
 
   // CSV disa aktarma (Faz 13.3b). Iddia dosyanin INDIGI degil, ICERIGI:
