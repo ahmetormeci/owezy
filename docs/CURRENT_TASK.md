@@ -26,170 +26,46 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-04
 
 Current task:
-  1.0.1 ICIN SECILEN DORT ISTEN IKISI BITTI.
+  YOK - AKTIF GOREV TANIMLI DEGIL. Iki surum havada, ikisi de bekliyor.
 
-  UNIVERSAL LINK - ZINCIRIN HER OLCULEBILIR HALKASI DOGRU, SON ADIM
-  SIMULATORDE DOGRULANAMADI.
+  SURUMLER (4 Eylul, olculdu):
+    1.0    MAGAZADA CANLI
+    1.0.1  build 11, APPLE'IN INCELEMESINDE
+           2FA cerez duzeltmesi, bildirim zili, CSV disa aktarma,
+           silineni geri alma, gruptan ayrilma, CFBundleLocalizations
+    1.0.2  build 14, TESTFLIGHT'TA (incelemeye GONDERILMEDI)
+           universal link
 
-  OLCULDU VE DOGRU:
-    AASA bizde        200, application/json, SIFIR YONLENDIRME
-    AASA Apple CDN'de https://app-site-association.cdn-apple.com/a/v1/owezy.net
-                      -> 200, icerik bizimkiyle BIREBIR AYNI
-    entitlement       ikilide "applinks:owezy.net" var (strings ile bakildi)
-    iOS swcd          domaini taniyor, CDN'den cekiyor, 200 + 903 bayt,
-                      "finished successfully"
-    /join ekrani      gecersiz kod -> cevrilmis hata + cikis yolu
-    GIRIS YAPILMAMIS  AuthGuard atlamiyor, "once giris yap" ciziliyor
+  APP STORE CONNECT AYNI ANDA IKI SURUMU INCELEMEYE ALMIYOR. 1.0.2'yi
+  incelemeye gonderme 1.0.1 ciktiktan SONRA.
 
-  DOGRULANAMADI: https adresinin uygulamaya devri. "xcrun simctl openurl
-  https://..." SAFARI'yi aciyor - temiz kurulumdan ve CDN dolduktan sonra
-  da. simctl'in universal link cozumlemesini tetikleyip tetiklemedigi
-  BELIRSIZ; swcutil simulatorde YOK, yani sahiplenmenin onaylanip
-  onaylanmadigi okunamiyor.
+  1.0.1 ONAYLANINCA UC IS TETIKLENIYOR:
+    1. DESTEK SAYFASI GUNCELLENMELI (src/content/legal/support.ts).
+       Su an "CSV yalnizca web'de", "davet baglantisi yapistirilmali",
+       "silineni geri alma arayuzu yok" yaziyor. Bunlar 1.0.1'de duzeldi
+       ama YAYINLANMADI - yani sayfa SU AN DOGRU, yayinlandigi gun yanlis
+       olacak.
+    2. KOPRU KALDIRILABILIR HALE GELIR - ama hemen degil, 1.0.1
+       YAYGINLASINCA. Ayrinti "KOPRU GECICI" basliginda.
+    3. 1.0.2 incelemeye gonderilebilir.
 
-  SONRAKI ADIM: 1.0.2 (build 14) TESTFLIGHT'A YUKLENDI -> KULLANICI iPhone
-  12'sinde denesin. Davet baglantisina BASKA BIR UYGULAMADAN (Notlar,
-  Mesajlar) dokununca Safari mi uygulama mi aciliyor? Safari'nin adres
-  cubuguna YAZMAK gecersiz test: Apple oradan girilen adresleri bilerek
-  uygulamaya devretmiyor.
+  UNIVERSAL LINK - TEK ACIK SORU, KULLANICIDA:
+  Telefonda bir davet baglantisina BASKA BIR UYGULAMADAN (Notlar, Mesajlar)
+  dokununca Safari mi uygulama mi aciliyor? Safari'nin adres cubuguna
+  YAZMAK gecersiz test. Gorev degil, denk gelince. Zincirin her olculebilir
+  halkasi dogru (asagida); ayirt edilemeyen tek sey simulator sinirı mı
+  yoksa sessizce onaylanmayan sahiplenme mi.
 
-  IKINCI TEST DAHA DEGERLI: uygulamadan CIKIS YAP, sonra baglantiya dokun.
-  "Once giris yap" ekrani -> giris -> DOGRUDAN GRUBA dusmeli. O donusu
-  simulatorde goremedim (giris e-posta kodu gerektiriyor).
+  GORSEL EKLEME - TASARIM ENGELI KALKTI (ADR-046, 4 Eylul).
+  "Silme ne demek" sorusu karara baglandi: harcama silinince fis fotografi
+  KALIR (geri alma var), hesap silinince hem profil hem fis fotograflari
+  SILINIR. Kalan maliyetler teknik ve hepsi olculu: CSP, gizlilik
+  politikasi, Info.plist izin metinleri, App Privacy anketi,
+  expo-image-picker, Cloudflare R2.
+  BASLAMADAN ONCE iki surumun yere inmesi onerildi.
 
-  SIMULATORDE UNIVERSAL LINK CALISMADI - SEBEP AYIRT EDILEMEDI.
-  Denenen ve HEPSI Safari'ye giden yollar:
-    xcrun simctl openurl https://owezy.net/join/...
-    temiz kurulum + CDN dolduktan sonra ayni komut
-    localhost'ta servis edilen bir sayfadan GERCEK BAGLANTI DOKUNUSU
-  Sonuncusu onemliydi: capraz domain, gercek dokunus - yani "simctl yanlis
-  arac" mazeresi zayif. Dokunus aninda swcd HICBIR KARAR yazmiyor.
-
-  BUNA RAGMEN ZINCIRIN HER OLCULEBILIR HALKASI DOGRU (yukarida). Iki
-  ihtimal kaldi ve elimizdeki veri ikisini AYIRMIYOR: simulator sinirı, ya
-  da sahiplenmenin sessizce onaylanmamasi. swcutil simulatorde YOK, yani
-  onay durumu okunamiyor. GERCEK CIHAZ bunu bir dakikada cozer.
-
-  ASSOCIATED DOMAINS YETKISI - OGRENILEN DERS:
-  app.json'a "associatedDomains" yazmak YETMIYOR. App ID'de yetenegin de
-  acik olmasi gerekiyor ve EAS bunu KENDILIGINDEN YAPMIYOR - build
-  "Provisioning profile doesn't include the Associated Domains capability"
-  ile dusuyor. --non-interactive de, sozde terminalle etkilesimli de
-  denendi; ikisi de mevcut profili yeniden uretmedi.
-
-  COZUM (kullanici yapiyor, ~1 dk):
-    developer.apple.com/account/resources/identifiers/list
-    -> net.owezy.app -> Associated Domains isaretle -> Save
-  Apple o anda MEVCUT PROFILLERI GECERSIZ isaretliyor ve bir sonraki
-  build'de EAS yenisini uretiyor:
-    "Provisioning profile (id: ...) is no longer valid"
-    "Updated provisioning profile (ZLPAAW529A)"
-  Yani yetkiyi acmak hem gerekli hem YETERLI; ayrica profil silmeye gerek yok.
-
-  TESTFLIGHT NEDEN YETIYOR: eas submit build'i App Store Connect'e YUKLUYOR,
-  incelemeye GONDERMIYOR. Hesap sahibi zaten internal tester, yani Beta App
-  Review de gerekmiyor. Mağaza surumunu beklemeye gerek yok.
-
-  1.0.1 HALA INCELEMEDE ve App Store Connect ayni anda iki surumu incelemeye
-  almiyor. 1.0.2'yi incelemeye gonderme 1.0.1 ciktiktan SONRA.
-
-  RISK YENIDEN DEGERLENDIRILDI - ONCE SANILDIGINDAN KUCUK: sahiplenme
-  CALISMAZSA baglantilar Safari'de acilir, yani BUGUNKU davranis surer -
-  gerileme degil. Tehlikeli olan "sahiplenme calisir ama uygulama kotu
-  karsilar" hali ve o taraf artik dogrulandi (gecersiz kod + giris
-  yapilmamis).
-
-  1.0.1 GONDERILDI (4 Eylul) - build 11, gonderim 8b62ced9. APPLE'IN
-  INCELEMESI BEKLENIYOR.
-
-  ONAY GELINCE ILK IS: KOPRUYU KALDIR. Silinecekler asagida "KOPRU GECICI"
-  basliginda. Ama once 1.0.1'in YAYGINLASMASINI bekle - erken kaldirilirsa
-  guncellemeyi almamis her telefon yeniden kirilir.
-
-  RET GELIRSE: gerekce yeni bir gorev tanimlar.
-
-  SILINENI GERI ALMA EKRANDA DOGRULANDI (4 Eylul): silinmis satir soluk ve
-  ustu cizili, RESTORE calisiyor. Ayrica CIKISSIZ BIR DURUM bulundu ve
-  duzeltildi - tek harcamasini silen kullanici geri alamiyordu.
-
-  SIMULATORDE KUCUK METIN HEDEFLERI DOKUNUS ALMIYOR. "Delete", "Manage
-  members" gibi tek satirlik metin dugmeleri yanit vermiyor; kartlar,
-  satirlar ve hitSlop'u olan zil calisiyor. Sebep BULUNAMADI - taze
-  simulatorde ve dusuk yukte de surdu, yani ortam degil.
-
-  COZUM: DOKUNMA, DERIN BAGLANTIYLA GIT.
-    grep -oE "groups/[0-9a-f-]{36}" <dev sunucusu logu>
-    xcrun simctl openurl <udid> "exp://127.0.0.1:8081/--/groups/<id>/members"
-  Ekran dogrudan aciliyor ve ORADAKI dokunuslar calisiyor. 4 Eylul'de
-  gruptan ayrilma boyle dogrulandi. Saatlerce dokunus denemeden ONCE bunu
-  dene.
-
-  SECILEN DORT IS (kullanici 4 Eylul'de secti):
-    CSV disa aktarma        BITTI  (6f924a8)
-    silineni geri alma      BITTI, ikisi de ekranda dogrulandi
-    gruptan ayrilma (mobil) BITTI, ekranda dogrulandi
-    universal link          BASLANMADI - development build sart
-    push bildirim           BASLANMADI - APNs + App Privacy anketi
-
-  GONDERIM DORDU DE BITINCE. Kullanici "diger islerimizi de yapip app'e
-  guncellemeyi oyle atalim" dedi.
-
-  KOSAN BUILD 59c40b94 ESKIDI: 1.0.1 + zil iceriyor ama CSV ve geri almayi
-  icermiyor. Gonderilmeyecek; yeni build alinacak.
-
-  1.0.1 SIMDIYE KADAR SUNLARI TASIYOR:
-    2FA cerezi duzeltmesi   mobile/lib/two-factor-cookie.ts
-    dil beyani              CFBundleLocalizations: ["en", "tr"]
-    bildirim zili           baslik cubugunda, tum ekranlarda (Faz 37)
-    CSV disa aktarma        filtre satirinda (Faz 38)
-    silineni geri alma      web bitti, mobil dogrulanacak (Faz 39)
-
-  NE OLDU: 2FA acik hesaplar iOS 1.0'a HIC GIREMIYORDU. Better Auth cerez
-  adina https'te "__Secure-" onegi ekliyor; mobil 1.0 cerezi metin
-  aramasiyla buluyor ve arama onekli adin ICINDE de eslesip onegi
-  dusuruyor. Sunucu adi birebir ariyor, bulamiyor, "Dogrulama suresi
-  doldu" cikiyor. Tam anlatim ADR-045'te.
-
-  YAPILDI (4 Eylul):
-    sunucu koprusu   src/lib/two-factor-cookie-bridge.ts + route.ts
-                     CANLIDA (04d8ed5). Magazadaki 1.0 artik calisiyor.
-    mobil ayristirici mobile/lib/two-factor-cookie.ts duzeltildi; kural
-                     artik onegi TANIMIYOR, adin nerede bittigini biliyor.
-                     Testlere production bicimi eklendi (6 yeni).
-
-  KOPRU GECICI VE KALDIRILMALI. 1.0.1 yayilip yayginlasinca:
-      src/lib/two-factor-cookie-bridge.ts        SIL
-      src/lib/two-factor-cookie-bridge.test.ts   SIL
-      src/app/api/auth/[...all]/route.ts         eski haline dondur
-                                                 (yalnizca toNextJsHandler)
-
-  KOPRUYU ERKEN KALDIRMA: kaldirildigi anda GUNCELLEMEYI ALMAMIS her
-  telefon yeniden kirilir. Olcut "1.0.1 gonderildi" degil, "eski surum
-  pratikte kalmadi".
-
-1.0 CANLIDA - 4 EYLUL 2026 (olculdu, varsayim degil):
-  TR   Owezy                  apps.apple.com/tr/app/owezy/id6805650395
-  US   Owezy: Split Expenses  ayni id, /us/app/owezy-split-expenses/
-  surum 1.0 · 36 MB · iOS 16.4+ · 127 cihaz · Finance · 4+
-  trackId 6805650395 (eas.json'daki ascAppId ile ayni)
-
-  IKI ADLI KIMLIK TUTTU. Yerellestirme basina ad ayrimi magazada gorunur
-  halde: Turkce arayuzde "Owezy", Ingilizce'de "Owezy: Split Expenses".
-  Turkce aciklama da yerinde.
-
-  OLCMENIN YOLU (App Store Connect'e girmeden):
-    curl -s "https://itunes.apple.com/lookup?bundleId=net.owezy.app&country=tr&lang=tr_tr"
-
-MAGAZA "YALNIZCA INGILIZCE" DIYOR - GERCEK AMA KUCUK BIR KUSUR:
-  languageCodesISO2A alani yalnizca EN donuyor. Sebep: app.json'da
-  CFBundleLocalizations YOK ve Expo paketi varsayilan olarak tek bir
-  en.lproj ile cikiyor. Uygulama tamamen iki dilli - ceviri JS tarafinda,
-  bundle'da degil - yani ISLEYIS DOGRU, magaza sayfasindaki "Languages"
-  satiri yaniltici.
-
-  Duzeltmesi app.json'a bir dizi eklemek ve YENI BUILD almak. 1.0.1
-  adayi; tek basina build almaya degmez, baska bir degisiklikle birlikte
-  gitsin.
+  PUSH BILDIRIM - secilen dortlunun sonuncusu, BASLANMADI. APNs, izin
+  istemi, sunucuda belirtec saklama, App Privacy anketi degisikligi.
 
 SIRADAKI IS - ARTIK ACIK, AMA SECILMEDI:
   universal link (asagida - Expo Go'da denenemiyor, development build sart)
@@ -267,6 +143,8 @@ MAGAZA KIMLIGI - COZULDU, DOKUNMA:
 
 BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
   MAGAZA   1.0 canli, 4 Eylul   (itunes lookup ile)
+  AASA     owezy.net/.well-known/apple-app-site-association -> 200
+           Apple CDN (app-site-association.cdn-apple.com/a/v1/owezy.net) -> 200
   DNS      v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r   (dig ile)
   CANLI    owezy.net/ , /support , /privacy  -> 200   (curl ile)
            /terms yok ve gerekmiyor - Apple'in standart EULA'si kullaniliyor
