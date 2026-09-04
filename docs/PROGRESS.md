@@ -1137,9 +1137,24 @@ Geri almada onay yok — yıkıcı değil.
 
 E2E testi üç adımı kilitliyor (görünmüyor → görünüyor → geri geldi). 57 geçti.
 
+### Mobil tarafı — kod hazır, GÖRSEL DOĞRULAMA YARIM
+
+Filtre paneline "Include deleted" çipi geldi, `ReceiptLine` silinmiş satırı
+soluk ve üstü çizili çiziyor (renk yok — ADR-015), rozet satırın başında,
+eylem `Geri al`. Silinmiş satır detaya **gitmiyor**: o ekran düzenleme
+ekranı ve silinmiş kayıt düzenlenemiyor.
+
+**Simülatörde yalnızca ÇİP görüldü.** Silinmiş satırın görünümü ve geri alma
+eylemi ekranda doğrulanamadı: harcama detayındaki `Delete` düğmesi bu
+oturumda dokunuşları kabul etmedi (dört deneme, üç farklı yöntem), yani
+silinmiş bir kayıt üretilemedi.
+
+`tsc`, lint, 77 + 18 test ve iOS paketi temiz — ama bu projede yeşil
+sinyaller ürünün iyi olduğunu söylemiyor.
+
 ### Kalan
 
-- Mobil tarafı: filtre çipi + satır görünümü + geri alma
+- Mobilde silinmiş satır + geri alma **ekranda doğrulanacak**
 
 ---
 

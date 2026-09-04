@@ -65,6 +65,8 @@ export function ReceiptLine({
   secondary,
   cap = false,
   onPress,
+  deleted = false,
+  action,
 }: {
   label: string;
   amount: string;
@@ -78,6 +80,14 @@ export function ReceiptLine({
    * Detay ekrani baskasinin satirinda salt okunur aciliyor.
    */
   onPress?: () => void;
+  /**
+   * Silinmis kayit: soluk ve ustu cizili. RENK YOK - yesil/kirmizi bu
+   * uygulamada yalnizca BAKIYE anlami tasiyor (ADR-015) ve silinmislik bir
+   * bakiye durumu degil.
+   */
+  deleted?: boolean;
+  /** Satirin sagina bir eylem (ornegin "geri al"). Ikincil satirda duruyor. */
+  action?: React.ReactNode;
 }) {
   const theme = useTheme();
   const s = styles(theme);
@@ -90,17 +100,25 @@ export function ReceiptLine({
         {cap ? (
           <Cap>{label}</Cap>
         ) : (
-          <Text style={s.label} numberOfLines={1}>
+          <Text
+            style={[s.label, deleted && s.deletedLabel]}
+            numberOfLines={1}
+          >
             {label}
           </Text>
         )}
         <Leader />
-        <Text style={s.amount}>{amount}</Text>
+        <Text style={[s.amount, deleted && s.deletedAmount]}>{amount}</Text>
       </View>
-      {secondary ? (
-        <Text style={s.secondary} numberOfLines={1}>
-          {secondary}
-        </Text>
+      {secondary || action ? (
+        <View style={s.secondaryRow}>
+          {secondary ? (
+            <Text style={s.secondary} numberOfLines={1}>
+              {secondary}
+            </Text>
+          ) : null}
+          {action ? <View style={s.actionSlot}>{action}</View> : null}
+        </View>
       ) : null}
     </Wrapper>
   );
@@ -208,6 +226,11 @@ function styles(theme: Theme) {
     leaderWrap: { flex: 1, overflow: "hidden", marginHorizontal: 8 },
     leaderText: { color: theme.border, fontSize: 12, letterSpacing: 2 },
     secondary: { fontSize: 11, color: theme.muted },
+    secondaryRow: { flexDirection: "row", alignItems: "baseline", gap: 12 },
+    // Eylem satirin SAGINA yasli; ikincil metin uzasa bile yerinde kaliyor.
+    actionSlot: { marginLeft: "auto" },
+    deletedLabel: { color: theme.muted, textDecorationLine: "line-through" },
+    deletedAmount: { color: theme.muted },
 
     perfRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     dashed: { flex: 1, height: 1, borderTopWidth: 1, borderStyle: "dashed", borderColor: theme.border },

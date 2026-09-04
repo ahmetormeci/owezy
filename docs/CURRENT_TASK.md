@@ -26,15 +26,32 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-04
 
 Current task:
-  2FA CEREZ HATASI - KOPRU CANLIDA, MOBIL DUZELTMESI SIRADA.
+  1.0.1 ICIN SECILEN DORT ISTEN IKISI BITTI.
 
-  HEMEN SONRAKI ADIM: eas build (production, ios) -> eas submit.
-  Kod tarafinda yapilacak is KALMADI. app.json'da version ZATEN 1.0.1.
+  HEMEN SONRAKI ADIM: mobilde silinmis satiri ve "geri al"i SIMULATORDE
+  dogrula. Kod hazir ve testler yesil ama EKRANDA GORULMEDI - harcama
+  detayindaki Delete dugmesi bu oturumda dokunuslari kabul etmedi, yani
+  silinmis bir kayit uretilemedi. Once bir harcama sil, sonra filtre
+  panelindeki "Include deleted" cipini ac.
 
-  1.0.1 UC SEY TASIYOR:
+  SECILEN DORT IS (kullanici 4 Eylul'de secti):
+    CSV disa aktarma        BITTI  (6f924a8)
+    silineni geri alma      web BITTI (ec395da), mobil kod hazir/dogrulanmadi
+    universal link          BASLANMADI - development build sart
+    push bildirim           BASLANMADI - APNs + App Privacy anketi
+
+  GONDERIM DORDU DE BITINCE. Kullanici "diger islerimizi de yapip app'e
+  guncellemeyi oyle atalim" dedi.
+
+  KOSAN BUILD 59c40b94 ESKIDI: 1.0.1 + zil iceriyor ama CSV ve geri almayi
+  icermiyor. Gonderilmeyecek; yeni build alinacak.
+
+  1.0.1 SIMDIYE KADAR SUNLARI TASIYOR:
     2FA cerezi duzeltmesi   mobile/lib/two-factor-cookie.ts
     dil beyani              CFBundleLocalizations: ["en", "tr"]
     bildirim zili           baslik cubugunda, tum ekranlarda (Faz 37)
+    CSV disa aktarma        filtre satirinda (Faz 38)
+    silineni geri alma      web bitti, mobil dogrulanacak (Faz 39)
 
   NE OLDU: 2FA acik hesaplar iOS 1.0'a HIC GIREMIYORDU. Better Auth cerez
   adina https'te "__Secure-" onegi ekliyor; mobil 1.0 cerezi metin

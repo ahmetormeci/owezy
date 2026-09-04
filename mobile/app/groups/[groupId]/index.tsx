@@ -62,6 +62,11 @@ type ExpenseItem = {
    * veri gelip atiliyordu - byCategory ve balances'ta oldugu gibi.
    */
   participants: { userId: string; shareAmount: number }[];
+  /**
+   * Silinmis kayitlar listeye YALNIZCA "silinenler" cipi acikken geliyor
+   * (?includeDeleted=true). Uc bu alani bastan beri donduruyordu.
+   */
+  deletedAt?: string | null;
 };
 type MonthSlice = { month: string; amount: number; count: number };
 /**
@@ -145,7 +150,7 @@ export default function GroupScreen() {
   const locale = useLocale();
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
-  const { get } = useApiClient();
+  const { get, post } = useApiClient();
 
   const group = useApiGet<GroupResponse>(groupId ? `/api/v1/groups/${groupId}` : null);
   const summary = useApiGet<SummaryResponse>(
@@ -336,7 +341,18 @@ export default function GroupScreen() {
   /** "Tekrar dene" bunu artiriyor; efektin bagimliligi oldugu icin istek yenileniyor. */
   const [retry, setRetry] = useState(0);
 
-  const isFiltered = query.trim() !== "" || category !== null || mine;
+  /**
+   * Silinenler de gorunsun mu. Silinen harcama fiziksel olarak silinmiyor
+   * (soft delete + audit log); ayri bir "cop kutusu" ekrani yerine listeye
+   * katiliyorlar - bir kayit en cok kendi tarih sirasinda anlam tasiyor.
+   */
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [restoring, setRestoring] = useState<string | null>(null);
+
+  // showDeleted de bir FILTRE: gosterilen kumeyi degistiriyor, yani ay
+  // katlamasi kalkmali ve sonuc sayisi yazilmali.
+  const isFiltered =
+    query.trim() !== "" || category !== null || mine || showDeleted;
 
   /**
    * Suzgeclerin sorgu metni. URLSearchParams KULLANILMIYOR: React Native'de
@@ -349,10 +365,14 @@ export default function GroupScreen() {
   // ALTINDA gorunmeli, dugme ise satirin ICINDE.
   const [exportError, setExportError] = useState<string | null>(null);
 
+
   const filterSuffix = [
     query.trim() ? `q=${encodeURIComponent(query.trim())}` : null,
     category ? `category=${category}` : null,
     mine ? "mine=true" : null,
+    // Disa aktarma da bu kumeyi izliyor: ekranda silinenler dururken inen
+    // dosyada olmamalari, yan yana konularak soylenen bir yalan olurdu.
+    showDeleted ? "includeDeleted=true" : null,
   ]
     .filter((part): part is string => part !== null)
     .join("&");
@@ -425,10 +445,44 @@ export default function GroupScreen() {
     setSearching(false);
   }, [found, searching, get, groupId, filterSuffix, t]);
 
+  /**
+   * Silinmis bir harcamayi geri alir.
+   *
+   * ONAY YOK - silmenin aksine YIKICI DEGIL: yanlislikla basilirsa kayit geri
+   * gelir ve yine silinebilir. Her eyleme onay koymak onayin kendisini
+   * anlamsizlastirir. (Silme ekraninda onay VAR ve orada dogru.)
+   *
+   * SURUM GONDERILMIYOR: uc geri almada surum beklemiyor - yarisabilecek tek
+   * rakip islem yine geri alma ve onu "zaten silinmemis" kontrolu eliyor.
+   *
+   * Basarinin ardindan HEM ozet HEM suzgec sonuclari tazeleniyor: kayit geri
+   * gelince bakiyeler ve ay toplamlari da degisiyor.
+   */
+  async function restore(expenseId: string) {
+    if (restoring) return;
+    setRestoring(expenseId);
+    const result = await post(
+      `/api/v1/groups/${groupId}/expenses/${expenseId}/restore`,
+      {},
+    );
+    setRestoring(null);
+
+    if (!result.ok) {
+      setSearchError(t(result.code));
+      return;
+    }
+
+    setMonths({});
+    summary.reload();
+    balances.reload();
+    setRetry((n) => n + 1);
+  }
+
   const clearFilters = useCallback(() => {
     setQuery("");
     setCategory(null);
     setMine(false);
+    setShowDeleted(false);
     setSearchError(null);
     // found BILEREK birakilmiyor: suzgec kalkinca ekranda ay bazli liste
     // cikiyor, bayat sonuclar hicbir yerde gorunmuyor - ama tekrar
@@ -540,13 +594,40 @@ export default function GroupScreen() {
       );
     }
 
+    const isDeleted = Boolean(expense.deletedAt);
+    if (isDeleted) {
+      // Rozet SATIRIN BASINDA: neden soluk oldugunu soyluyor. Yalnizca ustu
+      // cizili olmak ekran okuyucuya hicbir sey anlatmaz.
+      parts.unshift(t("ui.deleted_badge"));
+    }
+
     return (
       <ReceiptLine
         key={expense.id}
-        onPress={() => router.push(`/groups/${groupId}/expenses/${expense.id}`)}
+        // SILINMIS SATIR DETAYA GITMIYOR: o ekran duzenleme ekrani ve
+        // silinmis bir kayit duzenlenemiyor - sunucu da reddediyor.
+        onPress={
+          isDeleted
+            ? undefined
+            : () => router.push(`/groups/${groupId}/expenses/${expense.id}`)
+        }
         label={expense.description}
         amount={formatMoney(expense.amount, currency, locale)}
         secondary={parts.join(" · ")}
+        deleted={isDeleted}
+        action={
+          isDeleted ? (
+            <Pressable
+              onPress={() => void restore(expense.id)}
+              disabled={restoring === expense.id}
+              hitSlop={8}
+            >
+              <Cap color={theme.brand}>
+                {restoring === expense.id ? t("ui.saving") : t("ui.restore")}
+              </Cap>
+            </Pressable>
+          ) : undefined
+        }
       />
     );
   }
@@ -754,6 +835,16 @@ export default function GroupScreen() {
                       >
                         <Text style={[s.chipText, mine && s.chipTextActive]}>
                           {t("ui.only_mine")}
+                        </Text>
+                      </Pressable>
+                      {/* Silinenler de bir CIP - web'de onay kutusu, burada
+                          cipler zaten acik/kapali anlamini tasiyor. */}
+                      <Pressable
+                        style={[s.chip, showDeleted && s.chipActive]}
+                        onPress={() => setShowDeleted((value) => !value)}
+                      >
+                        <Text style={[s.chipText, showDeleted && s.chipTextActive]}>
+                          {t("ui.show_deleted")}
                         </Text>
                       </Pressable>
                       {isFiltered ? (
