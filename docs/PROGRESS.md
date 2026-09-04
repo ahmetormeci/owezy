@@ -2258,10 +2258,12 @@ Cloudflare'de, ADR-026; çıkış trafiği ücretsiz).
 - **App Store**: kamera/galeri izin metinleri `Info.plist`'e girer, App
   Privacy anketine "Photos or Videos" eklenir, izin isteyen uygulama
   incelemede daha çok soru alır.
-- **Silme anlamı belirsiz.** Değiştirilemez kural finansal kayıtların
-  fiziksel olarak silinmemesi; harcama soft-delete olunca fotoğraf ne
-  olacak? Kalırsa "sildim" diyen kullanıcının fişi duruyor demektir.
-  Profil fotoğrafında aynı soru hesap silmede çıkıyor (ADR-031).
+- **Silme anlamı KARARA BAĞLANDI (ADR-046, 4 Eylül).** Harcama silinince
+  fiş fotoğrafı **kalır** — geri alma var, yoksa geri alınan kayıt sakat
+  dönerdi. Hesap silinince hem profil hem fiş fotoğrafları **silinir**:
+  gizlilik tek cümleyle anlatılabilsin diye ("hesabını silersen yüklediğin
+  her şey gider"). Bakiyeler etkilenmiyor, değiştirilemez kural
+  çiğnenmiyor — giden şey kaydın kendisi değil ekli görsel.
 - **Mobilde yeni bağımlılık** (`expo-image-picker`) ve yeni bir native izin.
 
 **Kod tarafında hazır olan:** `User.avatarUrl` ve `User.hasImage` sütunları

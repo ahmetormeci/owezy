@@ -523,6 +523,60 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-046 — Görsellerde silme: kişisel olan gider, grup kaydı kalır
+**Tarih:** 2026-09-04 · **Durum:** Kabul edildi · **UYGULANMADI**
+
+**Karar:** Fotoğraf özelliği geldiğinde silme anlamı şöyle olacak:
+
+| Olay | Fiş fotoğrafı | Profil fotoğrafı |
+|---|---|---|
+| Harcama silinir (soft) | **kalır** | — |
+| Harcama geri alınır | fotoğrafıyla döner | — |
+| Hesap silinir | **silinir** (depodan da) | **silinir** (depodan da) |
+
+**Neden harcama silinince fotoğraf kalıyor:** silme geri alınabilir (Faz 39).
+Fotoğrafı da silseydik geri alınan kayıt **sakat dönerdi** — "geri aldım ama
+fişi gitmiş". Soft-delete zaten "sonsuza kadar sil" demiyor; audit log
+snapshot'ı da duruyor. Kullanıcı açısından fotoğraf yine görünmüyor, çünkü
+ona ancak harcama üzerinden ulaşılıyor.
+
+**Neden hesap silinince fiş fotoğrafı gidiyor.** Burada projenin iki kuralı
+çarpışıyor: *finansal kayıt silinmez* (fiş, harcamanın kanıtı) ve *kişisel
+veri silinir* (fotoğrafı o kişi yükledi; fişte yüz, adres, kart son hanesi
+olabilir).
+
+Kişisel veri tarafı seçildi. Gerekçe: gizlilik hikâyesinin tek cümleyle
+anlatılabilmesi — **"hesabını silersen yüklediğin her şey gider."** Bunun
+istisnası olsaydı gizlilik politikasında açıklama, App Store incelemesinde
+soru, ve kullanıcıda haklı bir "ama ben silmiştim" hissi doğardı.
+
+**Değiştirilemez kural ÇİĞNENMİYOR.** Harcamanın kendisi duruyor: tutar, kim
+ödedi, kim ne kadar borçlu — hepsi yerinde, **bakiyeler etkilenmiyor**. Giden
+şey yalnızca ekli görsel, yani kaydın kendisi değil destekleyici kanıtı.
+
+**Bedeli açıkça yazılı olsun:** gruptaki diğer üyeler o fişleri kaybeder.
+Bu, hesap silmenin zaten yaptığı şeyle aynı aileden — silinen kullanıcının
+adı da "Silinen kullanıcı" oluyor ve kimse onu geri getiremiyor.
+
+### Uygulama notları (yazılırken bunlara bakılacak)
+
+- **Her fotoğrafın YÜKLEYENİ tutulmalı.** Hesap silme onun fotoğraflarını
+  bulabilmek zorunda; harcamanın sahibi ile fotoğrafı yükleyen aynı kişi
+  olmayabilir.
+- **Depodan silme EN İYİ GAYRET, veritabanı kaydı KESİN.** Sıra: önce
+  referansı sil, sonra nesneyi silmeyi dene. Tersi olsaydı nesne gider,
+  kayıt kalır ve arayüz kırık görsel gösterirdi. Aynı sıra `signOut`'ta da
+  kullanılıyor (Faz 24): cihazdaki belirteç önce, sunucudaki sonra.
+- **Öksüz nesneler için temizlik gerekir.** Depo silmesi başarısız olursa
+  nesne kalır ve onu kimse göremez ama fatura ödenir.
+- **Audit log snapshot'ı anahtarı tutuyor, baytları değil.** Fotoğraf
+  silinince snapshot artık var olmayan bir anahtara işaret eder; bu kabul
+  edilebilir ve okuyan taraf bunu bilmeli.
+- **Gizlilik politikası ve destek sayfası** bu cümleyi taşımalı. Bugün
+  politika "uygulamada dosya yükleme diye bir şey yok" diyor.
+
+---
+
 ## ADR-045 — Çerez adı ortama göre değişir; tahmin edilmez, sunucuya sorulur
 **Tarih:** 2026-09-04 · **Durum:** Kabul edildi
 
