@@ -523,6 +523,61 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-045 — Çerez adı ortama göre değişir; tahmin edilmez, sunucuya sorulur
+**Tarih:** 2026-09-04 · **Durum:** Kabul edildi
+
+**Karar:** Better Auth çerezleri **adlarının tamamıyla** taşınır. Bir çerez
+adı koda sabit yazılmaz ve bir başlık içinde **alt dize araması** ile
+aranmaz; ad ya birebir karşılaştırılır ya da Better Auth'un kendisine
+sorulur (`auth.$context` → `createAuthCookie(...).name`).
+
+**Neden:** Better Auth çerez adlarına https'te `__Secure-` öneki ekliyor
+(`cookies/index.mjs:23`). Karar bizim yapılandırmamızda `NODE_ENV`'e kalıyor,
+çünkü `baseURL` vermiyoruz. Yani aynı çerezin adı:
+
+| Ortam | Ad |
+|---|---|
+| geliştirme, E2E (`NODE_ENV=development`) | `better-auth.two_factor` |
+| production (`NODE_ENV=production`) | `__Secure-better-auth.two_factor` |
+
+Mobil 1.0 çerezi `indexOf("better-auth.two_factor=")` ile arıyordu. Aranan
+dize **önekli adın içinde de geçiyor** — 9. karakterden itibaren. Arama
+"buluyor" ama dokuz karakter geç başlıyor ve önek geride kalıyor. Uygulama
+çerezi var olmayan bir adla geri gönderiyor; sunucu birebir arıyor
+(`better-call/context.mjs:38`, öneksiz ada düşen yedek yol **yok**),
+bulamıyor ve `INVALID_TWO_FACTOR_COOKIE` dönüyor. Kullanıcının gördüğü cümle
+"Doğrulama süresi doldu" — yani hata, kendisini bir zaman aşımı gibi
+gösteriyor.
+
+Sonucu ağırdı: **2FA açık hesaplar iOS uygulamasına hiç giremiyordu.** O
+hesaplar e-posta koduyla da giremiyor (`better-auth.ts`'deki kanca bunu
+bilerek engelliyor), yani parola → 2FA tek yoldu ve o yol kırıktı.
+
+**Bu hata sınıfını testler YAPISAL OLARAK yakalayamaz.** Öneki tetikleyen şey
+`NODE_ENV`; E2E geliştirme modunda koşuyor, dolayısıyla orada önek hiç
+oluşmuyor. Birim testleri de gerçek bir yanıttan ölçülmüştü — ama
+**geliştirme sunucusundan**. Ölçüm uydurma değildi; ayırt edici özelliğin
+(https) bulunmadığı bir ortamda alınmıştı. Bu yüzden kural bir teste değil,
+koda gömülü: ad ya tam eşleşir ya sorulur.
+
+**Ayrıştırma kuralı:** işaretten sola doğru, geçerli çerez-adı karakterleri
+(RFC 6265 token) boyunca genişle. Ayırıcıya dayanmıyor — `Expires=Wed, 09
+Jun ...` içindeki virgül bu yüzden tuzak olamıyor — ve `__Host-` gibi
+gelecekteki bir öneki de kendiliğinden taşır. Yan fayda: silme satırı gerçek
+meydan okumadan önce geldiğinde eski kod `null` dönüyordu, yeni kural
+gerçeğini buluyor.
+
+**Sunucudaki köprü GEÇİCİ.** `expo-updates` kurulu olmadığı için mobil
+düzeltmesi yeni build + App Review demek; mağazadaki 1.0 o süre boyunca kırık
+kalırdı. `/api/auth/two-factor/verify-*` uçlarında, öneksiz gelen çerez
+önekli adla da yazılıyor. **Güvenliği zayıflatmıyor:** değer HMAC ile imzalı
+ve imza yine doğrulanıyor — atlanan bir denetim yok. Ödünü de yazılı olsun:
+`__Secure-` öneki tarayıcılar için bir garanti taşır ve onu öneksiz bir
+çerezden türetmek o garantiyi bu iki uçta gevşetir. Köprü bu yüzden dar
+tutuldu ve **1.0.1 yayılınca kaldırılacak**.
+
+---
+
 ## ADR-044 — Çoğul biçimler sözlükte, `Intl.RelativeTimeFormat` kullanılmaz
 **Tarih:** 2026-09-01 · **Durum:** Kabul edildi
 

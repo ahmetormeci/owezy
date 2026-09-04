@@ -8,13 +8,15 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 29 faz tamamlandı. **Faz 35 ile iOS uygulaması App Store'da
-yayında** (1.0, 4 Eylül 2026) — web zaten canlıydı, artık iki istemci de
-kullanıcıya açık. `main`'e giden her değişiklik CI'dan geçiyor.
+**Özet:** 29 faz tamamlandı, **Faz 36 sürüyor**. **Faz 35 ile iOS uygulaması
+App Store'da yayında** (1.0, 4 Eylül 2026) — web zaten canlıydı, artık iki
+istemci de kullanıcıya açık. Yayından sonra çıkan 2FA giriş hatasının sunucu
+tarafı kapatıldı; mobil düzeltmesi 1.0.1'e kaldı (Faz 36). `main`'e giden her
+değişiklik CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim — kök (Vitest) | 574 | ✅ tümü geçiyor |
+| Birim — kök (Vitest) | 584 | ✅ tümü geçiyor |
 | Birim — mobil (Vitest) | 62 | ✅ tümü geçiyor |
 | Ekran — mobil (jest-expo) | 14 | ✅ tümü geçiyor |
 | E2E (Playwright) | 56 | ✅ tümü geçiyor |
@@ -1121,6 +1123,51 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 36 — 2FA girişi mobilde kırıktı · **SÜRÜYOR**
+
+1.0 yayına girdikten saatler sonra çıktı: **2FA açık hesaplar iOS
+uygulamasına hiç giremiyordu.** İkinci adımda "Doğrulama süresi doldu"
+diyordu — yani hata kendisini bir zaman aşımı gibi gösteriyordu.
+
+### Sebep: çerezin adı ortama göre değişiyor
+
+Better Auth çerez adlarına https'te `__Secure-` öneki ekliyor. Mobil 1.0
+çerezi `indexOf` ile arıyordu ve aranan dize **önekli adın içinde de
+geçiyor**; arama "buluyor" ama dokuz karakter geç başlıyor, önek geride
+kalıyor. Sunucu adı birebir arıyor, bulamıyor. Ayrıntı ve ölçümler ADR-045'te.
+
+Ağırlığı şuradan: 2FA açık hesap e-posta koduyla da giremiyor (kanca bunu
+bilerek engelliyor), yani parola → 2FA **tek yoldu** ve o yol kırıktı.
+
+| | Etkilenme |
+|---|---|
+| Web | yok — çerezi tarayıcı taşıyor, adını ayrıştıran kimse yok |
+| Mobil, 2FA kapalı | yok — oturum `set-auth-token` başlığıyla geliyor |
+| Mobil, 2FA açık | **hiç giriş yapılamıyor** |
+
+### Yapıldı — sunucu köprüsü (4 Eylül, canlıda)
+
+`expo-updates` kurulu değil, yani mobil düzeltmesi yeni build + App Review
+demek; mağazadaki 1.0 o süre boyunca kırık kalırdı. `/api/auth/two-factor/
+verify-*` uçlarında öneksiz gelen çerez önekli adla da yazılıyor. İmza
+doğrulaması yerinde — atlanan bir denetim yok.
+
+Çerez adı **sabit yazılmadı**, `auth.$context` üzerinden Better Auth'a
+soruluyor: adı tahmin etmek zaten bu hataya yol açtı. Yan faydası,
+geliştirmede önek olmadığı için köprünün orada kendiliğinden devre dışı
+kalması — ayrıca bir ortam koşulu yazmak gerekmedi.
+
+10 birim testi eklendi; sonuncusu mağazadaki 1.0'ın ayrıştırıcısını birebir
+taklit edip zinciri kilitliyor. E2E 56/56.
+
+### Kalan
+
+- `mobile/lib/two-factor-cookie.ts` düzeltmesi + önekli fixture'lar
+- 1.0.1 build + submit
+- **Köprünün kaldırılması** — 1.0.1 yaygınlaşınca, önce değil
+
+---
+
 ## Faz 35 — App Store yayını · **BİTTİ**
 
 1.0 **4 Eylül 2026'da** yayına girdi. Türkiye ve ABD mağazalarında canlı;
@@ -2031,6 +2078,13 @@ bugün yalnızca aynı kökenden gelen adresleri geçiriyor, uzak depo seçilirs
 o da CSP ile birlikte değişmeli.
 
 ## Bilinen teknik borç
+
+- **`src/lib/two-factor-cookie-bridge.ts` GEÇİCİ ve silinmeli.** Mağazadaki
+  mobil 1.0'ın 2FA çerezini karşılamak için var (Faz 36, ADR-045). 1.0.1
+  yaygınlaşınca köprü, testi ve `route.ts`'teki sarmalayıcı kaldırılıp dosya
+  eski hâline (yalnızca `toNextJsHandler`) dönmeli. **Erken kaldırılmamalı:**
+  kaldırıldığı anda güncellemeyi almamış her telefon yeniden kırılır. Ölçüt
+  "1.0.1 gönderildi" değil, "eski sürüm pratikte kalmadı".
 
 - **E2E bir kez ACIKLANAMAYAN sekilde yavasladi ve sonra kendiliginden
   duzeldi.** 27 Agustos: ayni test kumesi 10 dk -> 26 dk -> 1.6 saat diye

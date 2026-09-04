@@ -8,6 +8,55 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-04 (2) — 2FA açık kullanıcılar iOS uygulamasına giremiyordu
+
+Yayından saatler sonra çıktı: 2FA açık bir hesap mobilde ikinci adımda
+**"Doğrulama süresi doldu"** alıyor ve giriş yapamıyordu. Hata, kendisini bir
+zaman aşımı gibi gösteriyordu; gerçek sebep çerezin **adıydı**.
+
+Better Auth çerez adlarına https'te `__Secure-` öneki ekliyor. Bizim
+yapılandırmamızda `baseURL` verilmediği için karar `NODE_ENV`'e kalıyor:
+
+| Ortam | Çerezin adı |
+|---|---|
+| geliştirme, E2E | `better-auth.two_factor` |
+| production | `__Secure-better-auth.two_factor` |
+
+Mobil 1.0 çerezi `indexOf("better-auth.two_factor=")` ile arıyordu. Aranan
+dize **önekli adın içinde de geçiyor** — arama "buluyor" ama dokuz karakter
+geç başlıyor ve önek geride kalıyor. Sunucu adı birebir arıyor, öneksiz ada
+düşen yedek yol yok; bulamıyor ve `INVALID_TWO_FACTOR_COOKIE` dönüyor.
+
+**Sonucu ağırdı.** 2FA açık hesaplar e-posta koduyla da giremiyor (bunu
+`better-auth.ts`'deki kanca bilerek engelliyor, yoksa ikinci faktör hiç
+sorulmazdı). Yani parola → 2FA tek yoldu ve o yol kırıktı. Web etkilenmedi:
+çerezi tarayıcı taşıyor, adını ayrıştıran kimse yok.
+
+**Bu sürümde sunucu köprüsü.** `expo-updates` kurulu değil, yani mobil
+düzeltmesi yeni build + App Review demek; mağazadaki 1.0 o süre boyunca kırık
+kalırdı. `/api/auth/two-factor/verify-*` uçlarında öneksiz gelen çerez önekli
+adla da yazılıyor. İmza doğrulaması yerinde — atlanan bir denetim yok. Ödünü
+ve neden geçici olduğu ADR-045'te.
+
+Çerez adı köprüde **sabit yazılmadı**; `auth.$context` üzerinden Better
+Auth'a soruluyor. Adı tahmin etmek zaten bu hataya yol açtı. Yan faydası:
+geliştirmede önek olmadığı için köprü orada kendiliğinden devre dışı kalıyor,
+ayrıca bir ortam koşulu yazmak gerekmedi.
+
+**Testler bu sınıfı yapısal olarak yakalayamaz.** Öneki tetikleyen şey
+`NODE_ENV` ve E2E geliştirme modunda koşuyor — orada önek hiç oluşmuyor.
+Mevcut birim testleri gerçek bir yanıttan ölçülmüştü, ama geliştirme
+sunucusundan; ölçüm uydurma değildi, ayırt edici özelliğin bulunmadığı bir
+ortamda alınmıştı. Kalıcı korumayı bu yüzden bir teste değil kurala bağladık
+(ADR-045): ad ya birebir eşleşir ya kütüphaneye sorulur.
+
+10 birim testi eklendi; sonuncusu mağazadaki 1.0'ın ayrıştırıcısını birebir
+taklit edip zincirin tamamını kilitliyor. E2E 56/56 geçti.
+
+**Mobil düzeltmesi ve köprünün kaldırılması 1.0.1'e kaldı.**
+
+---
+
 ## 2026-09-04 — 1.0 App Store'da yayında
 
 Apple onayladı: *"your app, Owezy: Split Expenses, has been approved for

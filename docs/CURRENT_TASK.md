@@ -26,11 +26,30 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-04
 
 Current task:
-  YOK. 1.0 App Store'da YAYINDA. Aktif bir gorev tanimli degil.
+  2FA CEREZ HATASI - KOPRU CANLIDA, MOBIL DUZELTMESI SIRADA.
 
-  Asagidaki "SIRADAKI IS" listesi artik acik ama bir madde SECILMEDI.
-  AGENTS.md gorev verilmeden o listeden bir sey uygulamayi yasakliyor -
-  liste bir plan degil, secenek listesi.
+  HEMEN SONRAKI ADIM: mobile/lib/two-factor-cookie.ts'deki ayristiriciyi
+  duzelt, testlerine onekli fixture ekle, sonra 1.0.1 build'i.
+
+  NE OLDU: 2FA acik hesaplar iOS 1.0'a HIC GIREMIYORDU. Better Auth cerez
+  adina https'te "__Secure-" onegi ekliyor; mobil 1.0 cerezi metin
+  aramasiyla buluyor ve arama onekli adin ICINDE de eslesip onegi
+  dusuruyor. Sunucu adi birebir ariyor, bulamiyor, "Dogrulama suresi
+  doldu" cikiyor. Tam anlatim ADR-045'te.
+
+  YAPILDI (4 Eylul, canlida): sunucu koprusu -
+  src/lib/two-factor-cookie-bridge.ts + route.ts. Magazadaki 1.0 artik
+  calisiyor.
+
+  KOPRU GECICI VE KALDIRILMALI. 1.0.1 yayilip yayginlasinca:
+      src/lib/two-factor-cookie-bridge.ts        SIL
+      src/lib/two-factor-cookie-bridge.test.ts   SIL
+      src/app/api/auth/[...all]/route.ts         eski haline dondur
+                                                 (yalnizca toNextJsHandler)
+
+  KOPRUYU ERKEN KALDIRMA: kaldirildigi anda GUNCELLEMEYI ALMAMIS her
+  telefon yeniden kirilir. Olcut "1.0.1 gonderildi" degil, "eski surum
+  pratikte kalmadi".
 
 1.0 CANLIDA - 4 EYLUL 2026 (olculdu, varsayim degil):
   TR   Owezy                  apps.apple.com/tr/app/owezy/id6805650395
@@ -145,6 +164,20 @@ BITEN VE OLCULEN ISLER (bir daha "yapilacak" diye yazilmasinlar):
   EAS      eas.json'da ascAppId yazili (6805650395)
 
 AKILDA TUTULACAKLAR:
+
+  E2E BU HATA SINIFINI YAPISAL OLARAK YAKALAYAMAZ. Better Auth'un
+  "__Secure-" onegini tetikleyen sey NODE_ENV ve E2E gelistirme modunda
+  kosuyor - orada onek HIC olusmuyor. Yani https'e bagli her davranis
+  (cerez adlari, Secure bayragi, SameSite etkileri) testlerin disinda
+  kaliyor. Bir sey "cerez" ya da "protokol" ile ilgiliyse yesil E2E
+  DELIL DEGIL.
+
+  BIR OLCUM HANGI ORTAMDA ALINDIGIYLA BIRLIKTE ANLAM TASIYOR.
+  two-factor-cookie.test.ts uydurma degildi; gercek bir sunucu yanitindan
+  olculmustu - ama GELISTIRME sunucusundan, yani ayirt edici ozelligin
+  (https) bulunmadigi yerden. "Olctum" demek yetmiyor, "nerede olctum"
+  da yazilmali.
+
 
   KOYU TEMA AYRICA DENENMELI: xcrun simctl ui <udid> appearance dark
   Giris ekrani aylarca renklerini ELLE tasidi (#fff, #111) ve useTheme()'i
