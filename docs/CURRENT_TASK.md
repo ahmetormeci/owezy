@@ -47,8 +47,31 @@ Current task:
   BELIRSIZ; swcutil simulatorde YOK, yani sahiplenmenin onaylanip
   onaylanmadigi okunamiyor.
 
-  SONRAKI ADIM: 1.0.2 TestFlight'a yuklendi -> KULLANICI iPhone 12'sinde
-  denesin. Davet baglantisina dokununca Safari mi uygulama mi aciliyor?
+  SONRAKI ADIM: 1.0.2 (build 14) TESTFLIGHT'A YUKLENDI -> KULLANICI iPhone
+  12'sinde denesin. Davet baglantisina BASKA BIR UYGULAMADAN (Notlar,
+  Mesajlar) dokununca Safari mi uygulama mi aciliyor? Safari'nin adres
+  cubuguna YAZMAK gecersiz test: Apple oradan girilen adresleri bilerek
+  uygulamaya devretmiyor.
+
+  IKINCI TEST DAHA DEGERLI: uygulamadan CIKIS YAP, sonra baglantiya dokun.
+  "Once giris yap" ekrani -> giris -> DOGRUDAN GRUBA dusmeli. O donusu
+  simulatorde goremedim (giris e-posta kodu gerektiriyor).
+
+  ASSOCIATED DOMAINS YETKISI - OGRENILEN DERS:
+  app.json'a "associatedDomains" yazmak YETMIYOR. App ID'de yetenegin de
+  acik olmasi gerekiyor ve EAS bunu KENDILIGINDEN YAPMIYOR - build
+  "Provisioning profile doesn't include the Associated Domains capability"
+  ile dusuyor. --non-interactive de, sozde terminalle etkilesimli de
+  denendi; ikisi de mevcut profili yeniden uretmedi.
+
+  COZUM (kullanici yapiyor, ~1 dk):
+    developer.apple.com/account/resources/identifiers/list
+    -> net.owezy.app -> Associated Domains isaretle -> Save
+  Apple o anda MEVCUT PROFILLERI GECERSIZ isaretliyor ve bir sonraki
+  build'de EAS yenisini uretiyor:
+    "Provisioning profile (id: ...) is no longer valid"
+    "Updated provisioning profile (ZLPAAW529A)"
+  Yani yetkiyi acmak hem gerekli hem YETERLI; ayrica profil silmeye gerek yok.
 
   TESTFLIGHT NEDEN YETIYOR: eas submit build'i App Store Connect'e YUKLUYOR,
   incelemeye GONDERMIYOR. Hesap sahibi zaten internal tester, yani Beta App
