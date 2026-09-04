@@ -13,6 +13,15 @@ import { readChallengeCookie } from "./two-factor-cookie";
  * Buradaki girdiler UYDURULMADI: sunucudan gelen gercek bir yanitin sekli.
  * Yanit UC Set-Cookie satiri tasiyor ve React Native bunlari TEK bir baslikta
  * ", " ile birlestirip veriyor.
+ *
+ * BU DOSYA BIR KEZ YETMEDI VE SEBEBI ONEMLI. Asagidaki ilk gruptaki adlar
+ * gercek bir yanittan olculdu - ama GELISTIRME sunucusundan. Better Auth
+ * cerez adina yalnizca https'te "__Secure-" onegi ekliyor, yani ayirt edici
+ * ozellik bu ortamda HIC yoktu. Testler yesildi, uretim kirikti: 2FA acik
+ * hesaplar iOS 1.0'a giremedi (ADR-045).
+ *
+ * O YUZDEN IKI GRUP VAR. Ikincisi production'in adini tasiyor ve asil
+ * koruyan o. Bir olcum, HANGI ORTAMDA alindigiyla birlikte anlam tasiyor.
  */
 
 const NAME = "better-auth.two_factor";
@@ -77,5 +86,71 @@ describe("readChallengeCookie", () => {
   it("noktali virgulsuz biten satirda degerin SONUNA kadar gider", () => {
     // Ozniteliksiz Set-Cookie da gecerli. slice'in ikinci sinir durumu.
     expect(readChallengeCookie(`${NAME}=sondeger`)).toBe(`${NAME}=sondeger`);
+  });
+
+  /**
+   * PRODUCTION BICIMI - uretimde kirilan tam olarak burasiydi.
+   *
+   * Adlar tahmin degil: Better Auth'un kendi createCookieGetter'ina bizim
+   * yapilandirmamizla soruldu.
+   */
+  describe("__Secure- onekli (production)", () => {
+    const SECURE = `__Secure-${NAME}`;
+
+    it("ONEGI KORUR - dusurulen tam olarak buydu", () => {
+      const header = `${SECURE}=abc123.imza; Max-Age=600; Path=/; HttpOnly; Secure; SameSite=Lax`;
+
+      // Eski kod burada "better-auth.two_factor=abc123.imza" donerdi: metin
+      // aramasi onekli adin ICINDE eslesiyor ve dokuz karakter gec basliyor.
+      // Sunucu adi birebir ariyor, yani o deger hicbir zaman kabul edilmezdi.
+      expect(readChallengeCookie(header)).toBe(`${SECURE}=abc123.imza`);
+    });
+
+    it("gercek uretim yanitindan meydan okumayi cikarir", () => {
+      const header = [
+        `__Secure-${"better-auth.session_token"}=; Max-Age=0; Path=/; Secure`,
+        `__Secure-${"better-auth.session_data"}=; Max-Age=0; Path=/; Secure`,
+        `${SECURE}=xyz789.imza; Max-Age=600; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      ].join(", ");
+
+      expect(readChallengeCookie(header)).toBe(`${SECURE}=xyz789.imza`);
+    });
+
+    it("SILME satiri ONCE gelirse gercek meydan okumayi bulur", () => {
+      /**
+       * Eski kod ilk gecise bakip null donerdi - yani meydan okuma
+       * elimizdeyken "meydan okuma yok" derdi. Belirtisi yine sessiz:
+       * kullanici kod ekranina duser ve kodu hicbir zaman kabul edilmez.
+       */
+      const header = [
+        `${SECURE}=; Max-Age=0; Path=/; Secure`,
+        `${SECURE}=gercek.imza; Max-Age=600; Path=/; Secure`,
+      ].join(", ");
+
+      expect(readChallengeCookie(header)).toBe(`${SECURE}=gercek.imza`);
+    });
+
+    it("VIRGUL TASIYAN bir oznitelikten sonra gelse de dogru okur", () => {
+      // "Expires=Wed, 09 Jun ..." icinde virgul var, yani ", " guvenilir bir
+      // sinir DEGIL. Kural ayiriciya degil, adin nerede bittigine bakiyor.
+      const header = [
+        "onceki=deger; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Path=/",
+        `${SECURE}=abc.imza; Max-Age=600; Path=/`,
+      ].join(", ");
+
+      expect(readChallengeCookie(header)).toBe(`${SECURE}=abc.imza`);
+    });
+
+    it("BASKA BIR ONEK gelirse de tasir", () => {
+      // Kural onegi TANIMIYOR; adin gecerli karakterleri boyunca sola
+      // genisliyor. "__Host-" bugun kullanilmiyor ama gelirse calisir.
+      const header = `__Host-${NAME}=abc.imza; Max-Age=600; Path=/`;
+
+      expect(readChallengeCookie(header)).toBe(`__Host-${NAME}=abc.imza`);
+    });
+
+    it("onekli SILME satirini meydan okuma sanmaz", () => {
+      expect(readChallengeCookie(`${SECURE}=; Max-Age=0; Path=/; Secure`)).toBeNull();
+    });
   });
 });

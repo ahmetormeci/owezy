@@ -17,7 +17,7 @@ değişiklik CI'dan geçiyor.
 | Test | Sayı | Son durum |
 |---|---|---|
 | Birim — kök (Vitest) | 584 | ✅ tümü geçiyor |
-| Birim — mobil (Vitest) | 62 | ✅ tümü geçiyor |
+| Birim — mobil (Vitest) | 68 | ✅ tümü geçiyor |
 | Ekran — mobil (jest-expo) | 14 | ✅ tümü geçiyor |
 | E2E (Playwright) | 56 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
@@ -1160,9 +1160,25 @@ kalması — ayrıca bir ortam koşulu yazmak gerekmedi.
 10 birim testi eklendi; sonuncusu mağazadaki 1.0'ın ayrıştırıcısını birebir
 taklit edip zinciri kilitliyor. E2E 56/56.
 
+### Yapıldı — mobil ayrıştırıcı (4 Eylül)
+
+Kural artık **öneki tanımıyor, adın nerede bittiğini biliyor**: işaretten
+sola doğru geçerli çerez-adı karakterleri (RFC 6265 token) boyunca
+genişliyor. Ayırıcıya dayanmadığı için `Expires=Wed, 09 Jun ...` içindeki
+virgül tuzak olamıyor, ve `__Host-` gibi gelecekteki bir öneki de
+kendiliğinden taşıyor.
+
+Yan fayda: eski kod yalnızca **ilk** geçişe bakıyordu; silme satırı gerçek
+meydan okumadan önce geldiğinde `null` dönerdi. Yeni kural bütün geçişlere
+bakıyor.
+
+Testlere production biçimi eklendi (6 yeni, toplam 68 vitest). Asıl koruyan
+onlar: eski grup geliştirme sunucusundan ölçülmüştü ve ayırt edici özellik
+orada yoktu.
+
 ### Kalan
 
-- `mobile/lib/two-factor-cookie.ts` düzeltmesi + önekli fixture'lar
+- `app.json`'da `version` 1.0.0 → 1.0.1
 - 1.0.1 build + submit
 - **Köprünün kaldırılması** — 1.0.1 yaygınlaşınca, önce değil
 

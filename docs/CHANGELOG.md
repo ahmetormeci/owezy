@@ -53,7 +53,16 @@ ortamda alınmıştı. Kalıcı korumayı bu yüzden bir teste değil kurala ba�
 10 birim testi eklendi; sonuncusu mağazadaki 1.0'ın ayrıştırıcısını birebir
 taklit edip zincirin tamamını kilitliyor. E2E 56/56 geçti.
 
-**Mobil düzeltmesi ve köprünün kaldırılması 1.0.1'e kaldı.**
+**Mobil ayrıştırıcı da düzeltildi** (aynı gün, ayrı commit). Yeni kural
+öneki *tanımıyor*; işaretten sola doğru geçerli çerez-adı karakterleri
+boyunca genişliyor, yani adın nerede bittiğini biliyor. Ayırıcıya
+dayanmadığı için `Expires=Wed, 09 Jun ...` içindeki virgül tuzak olamıyor.
+Yan fayda: eski kod yalnızca ilk geçişe bakıyordu ve silme satırı önce
+geldiğinde gerçek meydan okumayı kaçırıyordu.
+
+Mobil testlere production biçimi eklendi (6 yeni). **Kalan: 1.0.1 build'i ve
+sonrasında köprünün kaldırılması** — köprü erken kaldırılırsa güncellemeyi
+almamış her telefon yeniden kırılır.
 
 ---
 

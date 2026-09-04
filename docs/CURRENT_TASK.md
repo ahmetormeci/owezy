@@ -28,8 +28,10 @@ Updated: 2026-09-04
 Current task:
   2FA CEREZ HATASI - KOPRU CANLIDA, MOBIL DUZELTMESI SIRADA.
 
-  HEMEN SONRAKI ADIM: mobile/lib/two-factor-cookie.ts'deki ayristiriciyi
-  duzelt, testlerine onekli fixture ekle, sonra 1.0.1 build'i.
+  HEMEN SONRAKI ADIM: 1.0.1 build'i. Kod tarafinda yapilacak is KALMADI -
+  hem kopru hem mobil ayristirici hazir. Build oncesi app.json'daki
+  "version" 1.0.0 -> 1.0.1 yapilmali (build numarasini EAS kendisi
+  artiriyor, appVersionSource: remote).
 
   NE OLDU: 2FA acik hesaplar iOS 1.0'a HIC GIREMIYORDU. Better Auth cerez
   adina https'te "__Secure-" onegi ekliyor; mobil 1.0 cerezi metin
@@ -37,9 +39,12 @@ Current task:
   dusuruyor. Sunucu adi birebir ariyor, bulamiyor, "Dogrulama suresi
   doldu" cikiyor. Tam anlatim ADR-045'te.
 
-  YAPILDI (4 Eylul, canlida): sunucu koprusu -
-  src/lib/two-factor-cookie-bridge.ts + route.ts. Magazadaki 1.0 artik
-  calisiyor.
+  YAPILDI (4 Eylul):
+    sunucu koprusu   src/lib/two-factor-cookie-bridge.ts + route.ts
+                     CANLIDA (04d8ed5). Magazadaki 1.0 artik calisiyor.
+    mobil ayristirici mobile/lib/two-factor-cookie.ts duzeltildi; kural
+                     artik onegi TANIMIYOR, adin nerede bittigini biliyor.
+                     Testlere production bicimi eklendi (6 yeni).
 
   KOPRU GECICI VE KALDIRILMALI. 1.0.1 yayilip yayginlasinca:
       src/lib/two-factor-cookie-bridge.ts        SIL
@@ -211,11 +216,19 @@ AKILDA TUTULACAKLAR:
   test yesilken KULLANILAMAZ haldeydi: ekranlardan geri donulemiyordu.
   Mobilde bir sey degistiginde SIMULATORDE BAKILMALI - kod okuyarak degil.
 
-  MOBILDE DEGISIKLIK YAPTIYSAN "npx expo export" DE KOS. tsc, lint ve
-  testler UCU DE temizken paket kirik olabiliyor: app/ altina konan bir test
-  dosyasi EAS build 6'yi dusurdu (expo-router app/'in TAMAMINI require.context
-  ile uretim paketine aliyor; ".test.tsx" icin istisna YOK). Ekran testleri
-  bu yuzden test/screens/ altinda.
+  MOBILDE DEGISIKLIK YAPTIYSAN PAKETI DE URET:
+      cd mobile && npx expo export --platform ios --clear
+  tsc, lint ve testler UCU DE temizken paket kirik olabiliyor: app/ altina
+  konan bir test dosyasi EAS build 6'yi dusurdu (expo-router app/'in
+  TAMAMINI require.context ile uretim paketine aliyor; ".test.tsx" icin
+  istisna YOK). Ekran testleri bu yuzden test/screens/ altinda.
+
+  "--platform ios" SART, yoksa YANLIS ALARM alirsin. Duz "npx expo export"
+  web'i de paketlemeye calisiyor ve react-native-web KURULU DEGIL - depoda
+  hic bulunmadi (git log -S ile bakildi). Yani o komut bu depoda HIC
+  calismadi ve calismayacak; cikis kodu 1, hata "Unable to resolve module
+  react-native-web/dist/index". Degisiklikle ilgisi yok - stash'leyip
+  olculdu, degisiklik olmadan da ayni sekilde dusuyor.
 
   expo-doctor'IN YERELDEKI CIKTISI YANILTICI: tek sikayeti CocoaPods ise
   o kontrol Linux'ta HIC CALISMIYOR, yani CI'da baska bir kontrol dusuyor
@@ -265,8 +278,8 @@ AKILDA TUTULACAKLAR:
   dokunan her betik once OKUYUP saymali, sonra yazmali.
 
 TESTLER - NE NEREDE:
-  KOK      npm test                  574 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      62 vitest + 14 jest
+  KOK      npm test                  584 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      68 vitest + 14 jest
   E2E      npm run test:e2e           56 test, ~10 dk
 
   MOBILDE IKI KOSUCU VAR ve sinir DIZINE gore (ADR-042, ADR-043):
