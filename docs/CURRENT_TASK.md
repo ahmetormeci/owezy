@@ -23,31 +23,48 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-04
+Updated: 2026-09-07
 
 Current task:
-  YOK - AKTIF GOREV TANIMLI DEGIL. Iki surum havada, ikisi de bekliyor.
+  1.0.2'YI INCELEMEYE GONDER - App Store Connect'te, ELLE. Kod tarafinda
+  is YOK.
 
-  SURUMLER (4 Eylul, olculdu):
+  SURUMLER (7 Eylul, TestFlight ekraninda olculdu):
     1.0    MAGAZADA CANLI
-    1.0.1  build 11, APPLE'IN INCELEMESINDE
+    1.0.1  build 11, TestFlight "Ready to Submit" - INCELEMEDE DEGIL
            2FA cerez duzeltmesi, bildirim zili, CSV disa aktarma,
            silineni geri alma, gruptan ayrilma, CFBundleLocalizations
-    1.0.2  build 14, TESTFLIGHT'TA (incelemeye GONDERILMEDI)
-           universal link
+    1.0.2  build 14, TestFlight "Ready to Submit" - INCELEMEDE DEGIL
+           yukaridakilerin HEPSI + universal link
 
-  APP STORE CONNECT AYNI ANDA IKI SURUMU INCELEMEYE ALMIYOR. 1.0.2'yi
-  incelemeye gonderme 1.0.1 ciktiktan SONRA.
+  UC GUN HICBIR SEY OLMADI CUNKU HICBIR SEY GONDERILMEMISTI.
+  `eas submit` binary'yi App Store Connect'e YUKLUYOR, incelemeye
+  GONDERMIYOR - build TestFlight'a dusuyor ve orada duruyor. App Store
+  surumunu yaratmak, build'i secmek ve "Submit to App Review"a basmak
+  ELLE yapiliyor, hem de Distribution sekmesinde; TestFlight sayfasi
+  inceleme sayfasi DEGIL. 4 Eylul'de buraya "1.0.1 APPLE'IN
+  INCELEMESINDE, yapilacak bir sey YOK" yazilmisti ve YANLISTI.
+  Bir daha `eas submit` ciktisina bakip "incelemeye gonderildi" yazma.
 
-  1.0.1 ONAYLANINCA UC IS TETIKLENIYOR:
+  1.0.1 ATLANIYOR. "Once 1.0.1, sonra 1.0.2" sirasi yalnizca App Store
+  Connect ayni anda iki surumu incelemeye almadigi icin vardi; 1.0.1 hic
+  incelemeye girmedigine gore o kisit bedava kalkiyor. 1.0.2 = 1.0.1'in
+  tamami + universal link, hicbir sey cikarilmadi. Kazanc: bir tam
+  inceleme turu.
+
+  GONDERMEDEN ONCE - DEMO HESABIN GIREBILDIGINI DOGRULA (ADR-035).
+  appreview@owezy.net. Dayandigi alan belgelenmemis ve sessizce
+  bozulabiliyor; sonucu inceleyicinin iceri girememesi olur. Bu surum
+  zaten 2FA cerez yolunu degistiriyor, yani her zamankinden onemli.
+
+  1.0.2 ONAYLANINCA IKI IS TETIKLENIYOR:
     1. DESTEK SAYFASI GUNCELLENMELI (src/content/legal/support.ts).
        Su an "CSV yalnizca web'de", "davet baglantisi yapistirilmali",
-       "silineni geri alma arayuzu yok" yaziyor. Bunlar 1.0.1'de duzeldi
-       ama YAYINLANMADI - yani sayfa SU AN DOGRU, yayinlandigi gun yanlis
+       "silineni geri alma arayuzu yok" yaziyor. Ucu de duzeldi ama
+       YAYINLANMADI - yani sayfa SU AN DOGRU, yayinlandigi gun yanlis
        olacak.
-    2. KOPRU KALDIRILABILIR HALE GELIR - ama hemen degil, 1.0.1
+    2. KOPRU KALDIRILABILIR HALE GELIR - ama hemen degil, surum
        YAYGINLASINCA. Ayrinti "KOPRU GECICI" basliginda.
-    3. 1.0.2 incelemeye gonderilebilir.
 
   UNIVERSAL LINK - TEK ACIK SORU, KULLANICIDA:
   Telefonda bir davet baglantisina BASKA BIR UYGULAMADAN (Notlar, Mesajlar)
@@ -67,14 +84,13 @@ Current task:
   PUSH BILDIRIM - secilen dortlunun sonuncusu, BASLANMADI. APNs, izin
   istemi, sunucuda belirtec saklama, App Privacy anketi degisikligi.
 
-SIRADAKI IS - ARTIK ACIK, AMA SECILMEDI:
-  universal link (asagida - Expo Go'da denenemiyor, development build sart)
+SIRADAKI IS - SECILMEDI:
   PUSH BILDIRIM (APNs sertifikasi, expo-notifications, izin istemi, yeni
     build ve App Privacy anketinde degisiklik)
-  CFBundleLocalizations (yukarida)
+  GORSEL EKLEME (yukarida - tasarim engeli kalkti)
 
-  Bu liste destek sayfasinda da yazili (src/content/legal/support.ts,
-  "bugunku sinirlar"). ORASI DA GUNCELLENMELI - bir madde bitince.
+  Destek sayfasindaki "bugunku sinirlar" listesi (src/content/legal/support.ts)
+  bunlarla ORTAK. Bir madde bitince ORASI DA GUNCELLENMELI.
 
 LISTEDEN DUSEN IKI MADDE - BIR DAHA "mobilde eksik" DIYE YAZILMASINLAR:
   odesme duzenleme    -> HICBIR YERDE UC YOK. Web de yalnizca iptal
@@ -83,14 +99,12 @@ LISTEDEN DUSEN IKI MADDE - BIR DAHA "mobilde eksik" DIYE YAZILMASINLAR:
   Ikisi de urun sinirı, mobil sinirı degil. Yapmak = iki tarafa birden yeni
   ozellik eklemek; AGENTS.md gorev verilmeden bunu yasakliyor.
 
-UNIVERSAL LINK - NEDEN ERTELENDI:
-  Davet baglantisi (owezy.net/join/<kod>) uygulamada acilmiyor; kullanici
-  onu "Gruba katil" alanina YAPISTIRIYOR. Acilmasi icin uc sey gerekiyor:
-    1. owezy.net/.well-known/apple-app-site-association (yeni web ucu)
+UNIVERSAL LINK - YAPILDI (1.0.2, 4 Eylul). Uc parcasi da yerinde:
+    1. owezy.net/.well-known/apple-app-site-association  (7 Eylul: 200)
     2. app.json'da associatedDomains + App ID'de Associated Domains yetkisi
-    3. YENI BUILD
-  Ve belirleyici olan: EXPO GO'DA CALISMIYOR, yani simulatorde acip
-  bakilamiyor. Development build sart.
+    3. build 14
+  Kalan tek soru yukarida ("TEK ACIK SORU"). EXPO GO'DA DENENEMEZ -
+  development ya da production build sart.
 
 PRODUCTION'DAKI DEMO HESAPLAR - DIKKAT:
   appreview@owezy.net  inceleme hesabi. SILME, PAROLASINI DEGISTIRME -
