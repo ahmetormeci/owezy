@@ -52,10 +52,13 @@ Current task:
   tamami + universal link, hicbir sey cikarilmadi. Kazanc: bir tam
   inceleme turu.
 
-  GONDERMEDEN ONCE - DEMO HESABIN GIREBILDIGINI DOGRULA (ADR-035).
-  appreview@owezy.net. Dayandigi alan belgelenmemis ve sessizce
-  bozulabiliyor; sonucu inceleyicinin iceri girememesi olur. Bu surum
-  zaten 2FA cerez yolunu degistiriyor, yani her zamankinden onemli.
+  GONDERMEDEN ONCE - INCELEME HESABI GIREBILIYOR MU (appreview@owezy.net).
+  Ucuz bir kontrol ve basarisizligi DOGRUDAN RET demek (Guideline 2.1).
+  ADR-035'in karari duruyor: parolayla giris var ve varlik sebebi tam da
+  bu. AMA oradaki "her gonderimden once bypass_client_trust'i dogrula"
+  ADIMI OLDU - o alan CLERK'INDI, auth Better Auth'a tasindi. Yerine
+  bakilacak sey sade: hesap PAROLAYLA girebiliyor mu, ikinci adim
+  istemiyor mu. Bu surum zaten 2FA cerez yolunu degistiriyor.
 
   1.0.2 ONAYLANINCA IKI IS TETIKLENIYOR:
     1. DESTEK SAYFASI GUNCELLENMELI (src/content/legal/support.ts).
