@@ -26,39 +26,26 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-07
 
 Current task:
-  1.0.2'YI INCELEMEYE GONDER - App Store Connect'te, ELLE. Kod tarafinda
-  is YOK.
+  YOK - 1.0.2 INCELEMEDE, BEKLENIYOR. Kod tarafinda is YOK.
 
-  SURUMLER (7 Eylul, TestFlight ekraninda olculdu):
+  SURUMLER (7 Eylul):
     1.0    MAGAZADA CANLI
-    1.0.1  build 11, TestFlight "Ready to Submit" - INCELEMEDE DEGIL
-           2FA cerez duzeltmesi, bildirim zili, CSV disa aktarma,
-           silineni geri alma, gruptan ayrilma, CFBundleLocalizations
-    1.0.2  build 14, TestFlight "Ready to Submit" - INCELEMEDE DEGIL
-           yukaridakilerin HEPSI + universal link
+    1.0.1  build 11, TestFlight'ta KULLANILMADAN duruyor. ATLANDI -
+           icerdigi her sey 1.0.2'de var. Bir daha gonderilmeyecek.
+    1.0.2  build 14, 7 Eylul'de INCELEMEYE GONDERILDI (kullanici elle,
+           Distribution sekmesinden). 2FA cerez duzeltmesi, bildirim
+           zili, CSV disa aktarma, silineni geri alma, gruptan ayrilma,
+           CFBundleLocalizations, universal link.
 
-  UC GUN HICBIR SEY OLMADI CUNKU HICBIR SEY GONDERILMEMISTI.
+  BU SEFER GERCEKTEN INCELEMEDE - farki bir insanin "Submit to App
+  Review"a basmis olmasi. DOGRULAMASI: Distribution sekmesinde surumun
+  yaninda "Waiting for Review" / "In Review" yazar; TestFlight'taki
+  "Ready to Submit" bunu GOSTERMEZ.
+
   `eas submit` binary'yi App Store Connect'e YUKLUYOR, incelemeye
-  GONDERMIYOR - build TestFlight'a dusuyor ve orada duruyor. App Store
-  surumunu yaratmak, build'i secmek ve "Submit to App Review"a basmak
-  ELLE yapiliyor, hem de Distribution sekmesinde; TestFlight sayfasi
-  inceleme sayfasi DEGIL. 4 Eylul'de buraya "1.0.1 APPLE'IN
-  INCELEMESINDE, yapilacak bir sey YOK" yazilmisti ve YANLISTI.
-  Bir daha `eas submit` ciktisina bakip "incelemeye gonderildi" yazma.
-
-  1.0.1 ATLANIYOR. "Once 1.0.1, sonra 1.0.2" sirasi yalnizca App Store
-  Connect ayni anda iki surumu incelemeye almadigi icin vardi; 1.0.1 hic
-  incelemeye girmedigine gore o kisit bedava kalkiyor. 1.0.2 = 1.0.1'in
-  tamami + universal link, hicbir sey cikarilmadi. Kazanc: bir tam
-  inceleme turu.
-
-  GONDERMEDEN ONCE - INCELEME HESABI GIREBILIYOR MU (appreview@owezy.net).
-  Ucuz bir kontrol ve basarisizligi DOGRUDAN RET demek (Guideline 2.1).
-  ADR-035'in karari duruyor: parolayla giris var ve varlik sebebi tam da
-  bu. AMA oradaki "her gonderimden once bypass_client_trust'i dogrula"
-  ADIMI OLDU - o alan CLERK'INDI, auth Better Auth'a tasindi. Yerine
-  bakilacak sey sade: hesap PAROLAYLA girebiliyor mu, ikinci adim
-  istemiyor mu. Bu surum zaten 2FA cerez yolunu degistiriyor.
+  GONDERMIYOR. 1.0.1 tam bu yuzden uc gun sessiz kaldi: 4 Eylul'de
+  buraya "APPLE'IN INCELEMESINDE, yapilacak bir sey YOK" yazilmisti,
+  YANLISTI. Bir daha `eas submit` ciktisina bakip "gonderildi" yazma.
 
   1.0.2 ONAYLANINCA IKI IS TETIKLENIYOR:
     1. DESTEK SAYFASI GUNCELLENMELI (src/content/legal/support.ts).
@@ -68,6 +55,9 @@ Current task:
        olacak.
     2. KOPRU KALDIRILABILIR HALE GELIR - ama hemen degil, surum
        YAYGINLASINCA. Ayrinti "KOPRU GECICI" basliginda.
+
+  RET GELIRSE: gerekce yeni bir gorev tanimlar. Once metni oku, sonra
+  neyin eksik oldugunu olç.
 
   UNIVERSAL LINK - TEK ACIK SORU, KULLANICIDA:
   Telefonda bir davet baglantisina BASKA BIR UYGULAMADAN (Notlar, Mesajlar)

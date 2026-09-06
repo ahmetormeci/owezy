@@ -8,6 +8,46 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-07 — 1.0.2 incelemeye gönderildi; 1.0.1 hiç gönderilmemiş
+
+**Üç gün boyunca hiçbir şey olmamasının sebebi bulundu: hiçbir şey
+gönderilmemişti.** `eas submit` binary'yi App Store Connect'e **yüklüyor**,
+incelemeye **göndermiyor** — build TestFlight'a düşüyor ve orada duruyor.
+App Store sürümünü yaratmak, build'i seçmek ve *Submit to App Review*'a
+basmak elle yapılan ayrı bir iş ve **Distribution** sekmesinde.
+
+Kullanıcının TestFlight ekranı bunu doğruladı: 1.0.1 (11) ve 1.0.2 (14)
+ikisi de **"Ready to Submit"**. O satır "incelemede" demek değil, "seçilmeye
+hazır" demek.
+
+**4 Eylül'de `CURRENT_TASK.md`'ye "1.0.1 APPLE'IN İNCELEMESİNDE, yapılacak
+bir şey YOK" yazılmıştı ve yanlıştı.** Başarılı bir `eas submit` çıktısı,
+inceleme kuyruğuna girildiği anlamına gelmiyor. Dosyaya bu ayrım ve
+doğrulaması yazıldı: Distribution sekmesinde "Waiting for Review" / "In
+Review" görünür.
+
+**1.0.1 atlandı.** "Önce 1.0.1, sonra 1.0.2" sırası yalnızca App Store
+Connect aynı anda iki sürümü incelemeye almadığı için vardı; 1.0.1 hiç
+incelemeye girmediğine göre o kısıt bedavaya kalktı. 1.0.2 zaten 1.0.1'in
+tamamını taşıyor, üstüne universal link. Kazanç: bir tam inceleme turu.
+Build 11 TestFlight'ta kullanılmadan kalıyor.
+
+**Sürüm notları iki dilde yazıldı** (Apple her yerelleştirme için ayrı
+istiyor).
+
+**Gönderim öncesi kontrol güncellendi.** ADR-035'teki "her gönderimden önce
+Clerk'in `bypass_client_trust` alanını doğrula" adımı **ölü** — o alan
+Clerk'indi, auth Better Auth'a taşındı ve `src/` içindeki tek Clerk izi
+neyin yerini aldığını anlatan yorumlar. ADR-035'in kararı yerinde: mobilde
+parolayla giriş var, varlık sebebi de inceleyicinin bizim kontrol
+etmediğimiz bir posta kutusuna bağlı kalmaması. Kontrol artık sade —
+`appreview@owezy.net` parolayla girebiliyor mu, ikinci adım istiyor mu.
+
+**AASA hâlâ ayakta** (7 Eylül ölçümü): bizde `200 application/json`,
+Apple'ın CDN'inde `200`.
+
+---
+
 ## 2026-09-04 (9) — 1.0.2: universal link gerçek cihazda denenecek
 
 Sürüm `1.0.2`'ye alındı ve universal link bu sürümle gidiyor.
