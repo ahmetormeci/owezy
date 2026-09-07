@@ -240,7 +240,7 @@ export default function ExpenseScreen() {
           await loadConflict();
           return;
         }
-        setError(t(result.code));
+        setError(t(result.code, result.params));
         return;
       }
       router.back();
@@ -304,7 +304,7 @@ export default function ExpenseScreen() {
           await loadConflict();
           return;
         }
-        setError(t(result.code));
+        setError(t(result.code, result.params));
         return;
       }
       router.back();

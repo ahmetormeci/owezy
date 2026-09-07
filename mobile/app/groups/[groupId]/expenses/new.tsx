@@ -207,7 +207,7 @@ export default function NewExpenseScreen() {
     setBusy(false);
 
     if (!result.ok) {
-      setError(t(result.code));
+      setError(t(result.code, result.params));
       return;
     }
     // Geri donuldugunde fis kendini tazeliyor (useFocusEffect, grup ekrani).

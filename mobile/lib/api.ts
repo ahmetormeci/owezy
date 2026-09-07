@@ -11,6 +11,8 @@
  * "http://localhost:3000" calisiyor. Fiziksel cihazda makinenin LAN adresi
  * gerekiyor - orada "localhost" cihazin kendisi demek.
  */
+import type { MessageParams } from "@/lib/messages";
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export function apiBaseUrl(): string {
@@ -25,7 +27,38 @@ export function apiBaseUrl(): string {
 
 export type ApiResult<T> =
   | { ok: true; data: T }
-  | { ok: false; status: number; code: string };
+  | { ok: false; status: number; code: string; params?: MessageParams };
+
+/**
+ * Sunucunun hata gonderdigi PARAMETRELERI ayiklar.
+ *
+ * NEDEN GEREKLI: bazi kodlar tek basina yeterli degil. "member.has_credit"
+ * cumlesi sozlukte "{amount} kurusluk alacagi var" ve sayIyI sunucu
+ * gonderiyor ({ ok: false, code, params } - src/lib/api.ts). Bu ayiklama
+ * ATLANMISTI ve sonucu 1.0.2'de ekrana dustu: kullanici ham "{amount}"
+ * gordu. Cumle anlamli oldugu icin de kimse "burada bir sayI eksik" demedi.
+ *
+ * SIKI DAVRANIYOR: yalnizca string ve number geciyor. Ic ice nesne ya da
+ * dizi gelirse ATILIYOR - translate() onlari metne cevirseydi kullanici
+ * "[object Object]" gorurdu.
+ */
+function readParams(payload: unknown): MessageParams | undefined {
+  if (!payload || typeof payload !== "object" || !("params" in payload)) {
+    return undefined;
+  }
+  const raw = (payload as { params: unknown }).params;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return undefined;
+  }
+
+  const params: MessageParams = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof value === "string" || typeof value === "number") {
+      params[key] = value;
+    }
+  }
+  return Object.keys(params).length > 0 ? params : undefined;
+}
 
 /**
  * Oturumlu GET. Belirteci CAGIRAN veriyor: bu dosya saf kalsin diye. Belirtec
@@ -118,7 +151,7 @@ async function send<T>(
       payload && typeof payload === "object" && "code" in payload && typeof payload.code === "string"
         ? payload.code
         : "server.unexpected";
-    return { ok: false, status: response.status, code };
+    return { ok: false, status: response.status, code, params: readParams(payload) };
   }
 
   return { ok: true, data: payload as T };

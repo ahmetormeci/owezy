@@ -90,7 +90,7 @@ export function ExpenseComposer({
       });
 
       if (!result.ok) {
-        setError(t(result.code));
+        setError(t(result.code, result.params));
         return;
       }
 

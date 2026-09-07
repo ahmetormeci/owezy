@@ -71,7 +71,7 @@ export default function AccountScreen() {
 
     if (!result.ok) {
       setLocale(previous);
-      setError(t(result.code));
+      setError(t(result.code, result.params));
     }
   }
   /** Silme IKI ADIMLI: once uyari, sonra onay. */
@@ -87,7 +87,7 @@ export default function AccountScreen() {
     setBusy(false);
 
     if (!result.ok) {
-      setError(t(result.code));
+      setError(t(result.code, result.params));
       return;
     }
 

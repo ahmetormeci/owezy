@@ -153,7 +153,7 @@ export default function SettlementsScreen() {
         settledAt: new Date().toISOString().slice(0, 10),
       });
       if (!result.ok) {
-        setError(t(result.code));
+        setError(t(result.code, result.params));
         return;
       }
       router.back();
@@ -184,7 +184,7 @@ export default function SettlementsScreen() {
         {},
       );
       if (!result.ok) {
-        setError(t(result.code));
+        setError(t(result.code, result.params));
         return;
       }
       router.back();

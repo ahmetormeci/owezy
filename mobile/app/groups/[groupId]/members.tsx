@@ -52,7 +52,7 @@ export default function MembersScreen() {
     try {
       const result = await post<InviteResponse>(`/api/v1/groups/${groupId}/invites`, {});
       if (!result.ok) {
-        setError(t(result.code));
+        setError(t(result.code, result.params));
         return;
       }
 
@@ -98,7 +98,7 @@ export default function MembersScreen() {
     setLeaving(false);
 
     if (!result.ok) {
-      setError(t(result.code));
+      setError(t(result.code, result.params));
       return;
     }
     // Gruplar listesine DONULMUYOR, DEGISTIRILIYOR: artik uyesi olmadigimiz

@@ -410,7 +410,7 @@ export default function GroupScreen() {
         });
         setSearchError(null);
       } else {
-        setSearchError(t(result.code));
+        setSearchError(t(result.code, result.params));
       }
       setSearching(false);
     }, 300);
@@ -440,7 +440,7 @@ export default function GroupScreen() {
       }));
       setSearchError(null);
     } else {
-      setSearchError(t(result.code));
+      setSearchError(t(result.code, result.params));
     }
     setSearching(false);
   }, [found, searching, get, groupId, filterSuffix, t]);
@@ -468,7 +468,7 @@ export default function GroupScreen() {
     setRestoring(null);
 
     if (!result.ok) {
-      setSearchError(t(result.code));
+      setSearchError(t(result.code, result.params));
       return;
     }
 

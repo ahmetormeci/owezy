@@ -78,7 +78,7 @@ export default function JoinScreen() {
         // Sunucunun kodu dogrudan cevriliyor: "katilinamadi" demek, sebebi
         // bilinirken sebebi saklamak olurdu (suresi dolmus / iptal edilmis /
         // kullanim hakki bitmis / zaten uye).
-        setError(t(result.code));
+        setError(t(result.code, result.params));
         return;
       }
 

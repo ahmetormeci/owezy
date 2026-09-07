@@ -120,6 +120,48 @@ describe("hata yanitlari sozlesmeye cevriliyor", () => {
 
     expect(result).toEqual({ ok: false, status: 502, code: "server.unexpected" });
   });
+
+  /**
+   * BU TESTIN VARLIK SEBEBI 1.0.2'DE EKRANA DUSEN BIR KUSUR: sunucu
+   * "member.has_credit" kodunu { amount } ile gonderiyordu, istemci params'i
+   * ATIYORDU ve kullanici sozlukteki cumleyi ham yer tutucuyla goruyordu -
+   * "Bu uyenin {amount} kurusluk alacagi var".
+   *
+   * Ustteki testler bunu goremezdi: hepsi params TASIMAYAN yanitlar kuruyor.
+   * Sozlukte de bir bekci var (messages.test.ts) ama o CEVIRIYI koruyor,
+   * yani yer tutucunun iki dilde ayni olmasini - tasinmasini degil.
+   */
+  it("kodla birlikte gelen PARAMETRELERI de tasir", async () => {
+    fetchMock.mockResolvedValue(
+      respond(409, { code: "member.has_credit", params: { amount: 12500 } }),
+    );
+
+    const result = await apiGet("/api/v1/groups/g1/members", "tok");
+
+    expect(result).toEqual({
+      ok: false,
+      status: 409,
+      code: "member.has_credit",
+      params: { amount: 12500 },
+    });
+  });
+
+  it("METIN OLMAYAN parametre degerlerini atar", async () => {
+    // translate() bunlari metne cevirseydi kullanici "[object Object]"
+    // gorurdu. Yer tutucunun bos kalmasi daha az kotu.
+    fetchMock.mockResolvedValue(
+      respond(409, { code: "member.has_debt", params: { amount: 5, extra: { a: 1 } } }),
+    );
+
+    const result = await apiGet("/api/v1/groups/g1/members", "tok");
+
+    expect(result).toEqual({
+      ok: false,
+      status: 409,
+      code: "member.has_debt",
+      params: { amount: 5 },
+    });
+  });
 });
 
 describe("istegin sekli", () => {

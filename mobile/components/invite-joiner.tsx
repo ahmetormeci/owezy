@@ -57,7 +57,7 @@ export function InviteJoiner({ onJoined }: { onJoined: () => void }) {
         // Sunucunun kodu ("invite.expired", "group.already_member", ...)
         // dogrudan cevrilip gosteriliyor: "katilinamadi" demek, SEBEBI
         // bilinirken sebebi saklamak olurdu.
-        setError(t(result.code));
+        setError(t(result.code, result.params));
         return;
       }
 
