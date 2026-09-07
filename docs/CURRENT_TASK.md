@@ -23,48 +23,53 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-07
+Updated: 2026-09-08
 
 Current task:
-  YOK - 1.0.2 INCELEMEDE, BEKLENIYOR. Kod tarafinda is YOK.
+  YOK - AKTIF GOREV TANIMLI DEGIL. 1.0.2 MAGAZADA CANLI (8 Eylul, telefonda
+  guncelleme alinarak dogrulandi).
 
-  SURUMLER (7 Eylul):
-    1.0    MAGAZADA CANLI
-    1.0.1  build 11, TestFlight'ta KULLANILMADAN duruyor. ATLANDI -
-           icerdigi her sey 1.0.2'de var. Bir daha gonderilmeyecek.
-    1.0.2  build 14, 7 Eylul'de INCELEMEYE GONDERILDI (kullanici elle,
-           Distribution sekmesinden). 2FA cerez duzeltmesi, bildirim
-           zili, CSV disa aktarma, silineni geri alma, gruptan ayrilma,
-           CFBundleLocalizations, universal link.
+  SURUMLER:
+    1.0.2  CANLI. 2FA cerez duzeltmesi, bildirim zili, CSV disa aktarma,
+           silineni geri alma, gruptan ayrilma, CFBundleLocalizations,
+           universal link.
+    1.0.1  build 11, TestFlight'ta KULLANILMADAN duruyor. ATLANDI,
+           icerdigi her sey 1.0.2'de. Bir daha gonderilmeyecek.
 
-  BU SEFER GERCEKTEN INCELEMEDE - farki bir insanin "Submit to App
-  Review"a basmis olmasi. DOGRULAMASI: Distribution sekmesinde surumun
-  yaninda "Waiting for Review" / "In Review" yazar; TestFlight'taki
-  "Ready to Submit" bunu GOSTERMEZ.
+  itunes.apple.com/lookup SURUMU GEC GOSTERIYOR. 1.0.2 telefona indikten
+  sonra bile saatlerce "1.0" dondu. Yayin anini olcmez, onbelleginin
+  tazelenmesini olcer - tek basina kanit sayma.
 
-  `eas submit` binary'yi App Store Connect'e YUKLUYOR, incelemeye
-  GONDERMIYOR. 1.0.1 tam bu yuzden uc gun sessiz kaldi: 4 Eylul'de
-  buraya "APPLE'IN INCELEMESINDE, yapilacak bir sey YOK" yazilmisti,
-  YANLISTI. Bir daha `eas submit` ciktisina bakip "gonderildi" yazma.
+  KOPRU ARTIK KALDIRILABILIR HALE GELIYOR - ama hemen degil, 1.0.2
+  YAYGINLASINCA. Ayrinti "KOPRU GECICI" basliginda.
 
-  1.0.2 ONAYLANINCA IKI IS TETIKLENIYOR:
-    1. DESTEK SAYFASI GUNCELLENMELI (src/content/legal/support.ts).
-       Su an "CSV yalnizca web'de", "davet baglantisi yapistirilmali",
-       "silineni geri alma arayuzu yok" yaziyor. Ucu de duzeldi ama
-       YAYINLANMADI - yani sayfa SU AN DOGRU, yayinlandigi gun yanlis
-       olacak.
-    2. KOPRU KALDIRILABILIR HALE GELIR - ama hemen degil, surum
-       YAYGINLASINCA. Ayrinti "KOPRU GECICI" basliginda.
+  BILINEN KUSUR, 1.0.2'DE CANLI VE DUZELTILDI (henuz yayinlanmadi):
+  mobil istemci hata parametrelerini tasimiyordu, kullanici "{amount}
+  kurusluk alacagi var" goruyordu. Kod duzeldi (mobile/lib/api.ts) ama
+  kullaniciya ulasmasi icin YENI BIR SURUM gerekiyor. Tek basina bir
+  surumu hak edip etmedigi KARAR VERILMEDI - ekrandaki tek bir hata
+  cumlesi, akis calisiyor.
 
-  RET GELIRSE: gerekce yeni bir gorev tanimlar. Once metni oku, sonra
-  neyin eksik oldugunu olç.
+  UNIVERSAL LINK - CALISMIYOR, SEBEBI BIZDE DEGIL (8 Eylul, olculdu):
+    ikili      application-identifier = A5WH8JT28C.net.owezy.app   ✓
+    ikili      associated-domains     = applinks:owezy.net          ✓
+    ikili      CFBundleIdentifier     = net.owezy.app               ✓
+    AASA       appIDs                 = A5WH8JT28C.net.owezy.app    ✓
+    AASA       200, application/json, 0 yonlendirme                 ✓
+    Apple CDN  taze kopya, icerik birebir ayni                      ✓
+    paket      https://owezy.net gomulu                             ✓
+    CIHAZ      association'i BILMIYOR                               ✗
+  Son satir kullanicinin telefonunda okundu: baglantiya basili tutunca
+  menude "Owezy'de Ac" CIKMIYOR. Telefon yeniden baslatildi, uygulama iki
+  kez silinip kuruldu, Dusuk Veri Modu kapali, VPN yok. Kalan aciklama
+  iOS'un kesinti sirasindaki basarisiz denemeyi artan araliklarla
+  tekrarlamasi. DAHA FAZLA SIL-KUR ONERME - denendi, ise yaramadi.
+  GERILEME DEGIL: baglantilarin tarayicida acilmasi 1.0'daki davranis.
 
-  UNIVERSAL LINK - TEK ACIK SORU, KULLANICIDA:
-  Telefonda bir davet baglantisina BASKA BIR UYGULAMADAN (Notlar, Mesajlar)
-  dokununca Safari mi uygulama mi aciliyor? Safari'nin adres cubuguna
-  YAZMAK gecersiz test. Gorev degil, denk gelince. Zincirin her olculebilir
-  halkasi dogru (asagida); ayirt edilemeyen tek sey simulator sinirı mı
-  yoksa sessizce onaylanmayan sahiplenme mi.
+  ALAN ADI 8 EYLUL'DE ~2 SAAT ASKIDAYDI - bir daha yasanmasin diye
+  ayrintisi CHANGELOG'da. Ozeti: yeni alan adinin ICANN kayit sahibi
+  e-postasi 15 gun icinde dogrulanmazsa registrar clientHold koyuyor ve
+  SITE, API, E-POSTA ucu birden oluyor. Dogrulandi, askı kalkti.
 
   GORSEL EKLEME - TASARIM ENGELI KALKTI (ADR-046, 4 Eylul).
   "Silme ne demek" sorusu karara baglandi: harcama silinince fis fotografi

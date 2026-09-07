@@ -8,6 +8,127 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-08 — 1.0.2 canlı; alan adı iki saat askıda kaldı
+
+**1.0.2 App Store'da.** Onay maili geldiğinde App Store Connect hâlâ "In
+Review" gösteriyordu; yayın otomatikti ve kısa süre sonra "Ready for
+Distribution" oldu. Doğrulaması telefonda güncellemenin alınmasıyla yapıldı —
+`itunes.apple.com/lookup` **saatlerce `1.0` dönmeye devam etti**. O uç yayın
+anını değil, kendi önbelleğinin tazelenmesini gösteriyor; tek başına kanıt
+değil.
+
+### Alan adı askıya alındı ve site, API, e-posta birlikte öldü
+
+Telefonda "bağlantı yok" uyarısı görüldü — WiFi'da, mobil veride sorunsuz.
+Ölçüm bunun bir WiFi sorunu olmadığını hemen gösterdi: `owezy.net` **hiçbir
+public çözücüden** çözülmüyordu (1.1.1.1, 8.8.8.8, 9.9.9.9 — A, NS, SOA üçü
+de boş).
+
+```
+Creation Date:  2026-08-23T19:36:11Z
+clientHold:     2026-09-07T19:37:47Z     ← tam 15 gün 1 dakika sonra
+Registry Expiry: 2027-08-23              ← süresi DOLMAMIŞ
+```
+
+**Sebep ICANN doğrulaması.** Registrar, kayıt sahibinin e-posta adresini 15
+gün içinde doğrulatmak zorunda; doğrulanmazsa alan adını askıya alıyor.
+`clientHold` alan adını registry'nin DNS bölgesinden **tamamen çıkarıyor** —
+nameserver'lar hâlâ Cloudflare'i gösteriyordu ama kimse onlara sormuyordu.
+
+Etkisi tek bir şeyle sınırlı değildi: web, uygulamanın API'si, ve **MX kaydı
+gittiği için `@owezy.net` e-postası** (`destek@`, `appreview@` dahil).
+Mobil veride çalışmaya devam etmesi operatörün DNS önbelleğindeki eski
+kayıttandı.
+
+Kullanıcı doğrulama mailini bulup tıkladı; askı kalktı, hiçbir yapılandırma
+değişikliği gerekmedi — Cloudflare bölgesi ve Vercel zaten el değmemişti.
+
+**Ders:** yeni bir alan adında bu saat işliyor ve kayıt sahibi e-postası
+değiştirilirse yeniden başlıyor.
+
+### Destek sayfası 1.0.2'ye göre güncellendi
+
+"Silineni geri alma arayüzü yok" ve "CSV yalnızca web'de" maddeleri kalktı,
+iki dilde. **Davet bağlantısı maddesi bilerek kaldı** — universal link 1.0.2
+ile gitti ama cihazda çalıştığı görülmedi ve olmayan bir özelliği vaat etmek,
+eksik anlatmaktan pahalı.
+
+### Mobilde hata parametreleri taşınmıyordu — 1.0.2'de canlı
+
+Bakiyesi olan bir üyeyle gruptan ayrılmaya çalışan kullanıcı şunu gördü:
+**"Bu üyenin {amount} kuruşluk alacağı var"** — sayı yerine yer tutucu.
+
+Sunucu doğru gönderiyor (`src/lib/api.ts`, `{ ok: false, code, params }`),
+sözlük `{amount}` bekliyor, mobil çevirici parametre kabul ediyor. Kopan tek
+halka aradaki istemciydi: `mobile/lib/api.ts` `params`'ı okumuyordu ve 18
+çağrı yeri parametresiz çeviri istiyordu. **Web tarafı doğru yapıyor**, yani
+aynı cümle web'de doğru mobilde yanlıştı.
+
+Mevcut testler bunu göremezdi: hepsi `params` **taşımayan** yanıtlar kuruyor.
+Sözlükteki bekçi (`messages.test.ts`) yer tutucuların iki dilde aynı olmasını
+koruyor — yani **çeviriyi**, taşımayı değil. Boşluk tam ikisinin arasındaydı.
+
+Düzeltme canlıya ulaşmak için yeni bir sürüm bekliyor.
+
+### Gruptan ayrılırken bakiye şartı — karar yerinde
+
+"Borcu olsa da çıkabilsin" diye hatırlanan karar **hesap silme** için alınmış
+(ADR-031), gruptan ayrılma için değil. ADR ikisini açıkça karşılaştırıyor:
+`leaveGroup` bakiye sıfır değilse reddediyor, silme reddetmiyor — sebebi
+arkadaşı hiç ödeşmeyen birinin hesabına mahkûm kalmaması. Başlığın "borç
+engel değil" demesi karıştırmaya müsait; davranış karara uygun.
+
+### E2E'nin iki ayrı kararsızlık kaynağı bulundu ve kapatıldı
+
+Üç tam koşu üst üste birer-ikişer testle düştü ve **hiçbiri aynı test
+değildi** — tam olarak "kararsız test" diye geçiştirilecek desen. İki ayrı
+sebep çıktı:
+
+**TOTP penceresi.** Kod 30 saniyelik pencerelere bağlı; pencerenin sonunda
+üretilirse form gönderilene kadar pencere dönüyor ve sunucu reddediyor.
+Belirti yanıltıcıydı: test "Gruplarım başlığı görünmedi" diyor, sanki giriş
+bozukmuş gibi. Yardımcı artık son 5 saniyede yeni pencereyi bekliyor.
+
+**Beş saniyelik iddia süresi.** Testin bütçesi 60 saniyeydi ama `expect()`
+Playwright'ın 5 saniyelik varsayılanındaydı; tek bir yavaş adım, testin 55
+saniyesi dururken iddiayı düşürüyordu. E2E veritabanı `us-east-1`'de,
+makine İstanbul'da. Sayfanın anlık görüntüsü kanıtı verdi: düğme hâlâ
+`"Katılınıyor..." [disabled]` — istek **yoldaydı**, kaybolmamıştı. İkinci
+düşen test aynı şeyin `"Kaydediliyor..."` hâliydi.
+
+**Bunun bir geçmişi var:** uca `locale` parametresi ekleyen bir değişiklik
+tam da bu collaboration testlerini bozuyor sanılmış, mekanizması
+bulunamamış ve **geri alınmıştı**. Beş saniye daha iyi bir şüpheli.
+
+`retries` 0'da bırakıldı — tekrar denemek kararsızlığı görünmez yapar,
+açıklamaz. Düzeltmelerden sonra tam koşu: **57 geçti, 0 düştü.**
+
+### Universal link cihazda çalışmıyor; zincirin geri kalanı kanıtlandı
+
+Mağaza ikilisi indirilip açıldı (`.ipa` → entitlements):
+
+| Ölçülen | Sonuç |
+|---|---|
+| `application-identifier` | `A5WH8JT28C.net.owezy.app` |
+| `associated-domains` | `applinks:owezy.net` |
+| `CFBundleIdentifier` | `net.owezy.app` |
+| AASA `appIDs` | birebir aynı |
+| AASA | 200, `application/json`, 0 yönlendirme |
+| Apple CDN kopyası | taze, içerik birebir |
+| Paketteki taban adres | `https://owezy.net` |
+| **Cihaz** | **association'ı bilmiyor** |
+
+Son satır telefonda okundu: bağlantıya basılı tutulunca menüde "Owezy'de Aç"
+**çıkmıyor**. Telefon yeniden başlatıldı, uygulama iki kez silinip kuruldu,
+Düşük Veri Modu kapalı, VPN yok. Kalan açıklama iOS'un kesinti sırasındaki
+başarısız denemeyi artan aralıklarla tekrarlaması.
+
+**Gerileme değil:** bağlantıların tarayıcıda açılması 1.0'daki davranışın
+aynısı. Tehlikeli olan senaryo association'ın çalışıp uygulamanın bağlantıyı
+yanlış işlemesiydi; o taraf 4 Eylül'de doğrulanmıştı.
+
+---
+
 ## 2026-09-07 — 1.0.2 incelemeye gönderildi; 1.0.1 hiç gönderilmemiş
 
 **Üç gün boyunca hiçbir şey olmamasının sebebi bulundu: hiçbir şey
