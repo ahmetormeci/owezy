@@ -40,10 +40,36 @@ const PASSWORD = userByKey("owner").password;
 let base32Secret = "";
 let backupCodes: string[] = [];
 
-/** Kimlik dogrulayici uygulamanin urettigi kodun aynisi. */
+const TOTP_PERIOD_SECONDS = 30;
+/** Kod uretildikten sonra formun doldurulup gonderilmesi icin birakilan pay. */
+const TOTP_SAFETY_MARGIN_SECONDS = 5;
+
+/**
+ * Kimlik dogrulayici uygulamanin urettigi kodun aynisi.
+ *
+ * PENCERENIN SONUNDAYSA YENISINI BEKLIYOR. TOTP kodu 30 saniyelik pencerelere
+ * bagli; kod pencerenin son anlarinda uretilirse form doldurulup istek
+ * sunucuya varana kadar pencere DONUYOR ve dogrulama reddediliyor.
+ *
+ * BELIRTISI YANILTICI: test "Gruplarim basligi gorunmedi" diye dusuyor,
+ * sanki giris akisi bozukmus gibi. Gercekten yasandi - iki ardisik TAM
+ * kosuda IKI FARKLI test bu yuzden dustu (satir 245 ve 354) ve ikisi de tek
+ * baslarina kosturulunca gecti. Yani kusur testlerde degil buradaydi, ve
+ * her kosuda baska bir testi vurdugu icin "kararsiz test" gibi gorunuyordu.
+ *
+ * BEKLEME EN KOTU IHTIMALLE 5 SANIYE ve yalnizca kodun gercekten riskli
+ * oldugu anda oluyor.
+ */
 async function authenticatorCode(): Promise<string> {
+  const secondsLeft =
+    TOTP_PERIOD_SECONDS - ((Date.now() / 1000) % TOTP_PERIOD_SECONDS);
+  if (secondsLeft < TOTP_SAFETY_MARGIN_SECONDS) {
+    // +250ms: pencerenin tam sInIrIna dusup ayni yarisi yeniden yasamamak icin.
+    await new Promise((resolve) => setTimeout(resolve, secondsLeft * 1000 + 250));
+  }
+
   const raw = new TextDecoder().decode(base32.decode(base32Secret));
-  return createOTP(raw, { digits: 6, period: 30 }).totp();
+  return createOTP(raw, { digits: 6, period: TOTP_PERIOD_SECONDS }).totp();
 }
 
 /** Verilen sayfada parolayla giris formunu doldurup gonderir. */
