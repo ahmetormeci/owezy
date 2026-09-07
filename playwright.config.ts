@@ -25,6 +25,29 @@ export default defineConfig({
   reporter: "list",
   timeout: 60_000,
 
+  /**
+   * IDDIA BASINA BEKLEME. Playwright'in varsayilani 5 saniye ve BU PROJEDE
+   * DAR KALIYOR: E2E veritabani us-east-1'de, gelistirme makinesi
+   * Istanbul'da. Gruba katilma ve harcama kaydetme birer islem ve iclerinde
+   * birkac sorgu var; her biri Atlantik'i geciyor.
+   *
+   * GERCEKTEN YASANDI (8 Eylul): iki collaboration testi ust uste dustu ve
+   * hata "URL degismedi" diyordu - sanki yonlendirme bozukmus gibi. Oysa
+   * sayfanin anlik goruntusunde dugme hala "Katilinlyor..." ve devre disiydi,
+   * yani istek YOLDAYDI. Ayni sinif ikinci testte "Kaydediliyor..." olarak
+   * cikti. Bunlar islev hatasi degil, olcu hatasiydi.
+   *
+   * ONEMLI: testin kendi butcesi (timeout: 60_000) DEGISMIYOR. Yani
+   * gercekten takilan bir sey hala yakalanIyor; degisen yalnizca tek bir
+   * iddianin ne kadar sabirli oldugu.
+   *
+   * BUNUN BIR GECMISI VAR: uca "locale" parametresi ekleyen bir degisiklik
+   * tam da bu testleri "bozuyor" sanilmis ve GERI ALINMISTI. Mekanizma o
+   * zaman bulunamamisti; buyuk ihtimalle suclu o degisiklik degil, buradaki
+   * 5 saniyeydi.
+   */
+  expect: { timeout: 15_000 },
+
   use: {
     baseURL,
     trace: "retain-on-failure",
