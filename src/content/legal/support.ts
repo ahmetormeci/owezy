@@ -110,8 +110,6 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
               "Davet bağlantısı telefonda kendiliğinden açılmıyor; uygulamadaki " +
                 "\"Gruba katıl\" alanına yapıştırman gerekiyor.",
               "Ödeşme kaydı düzenlenemiyor; yalnızca iptal edilebiliyor.",
-              "Silinen bir harcamayı geri alma arayüzü yok.",
-              "Süzülmüş listeyi CSV olarak indirmek yalnızca web'de var.",
             ],
           },
         ],
@@ -229,8 +227,6 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
               "An invite link does not open the app by itself; paste it into the " +
                 "\"Join group\" field instead.",
               "Settlements cannot be edited, only cancelled.",
-              "There is no interface for restoring a deleted expense.",
-              "Downloading the filtered list as CSV is web-only.",
             ],
           },
         ],
