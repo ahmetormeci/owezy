@@ -7,7 +7,7 @@ import { useSession } from "../lib/auth";
 import { disablePush } from "../lib/push";
 import { useLocale, useSetLocale, useTranslate } from "../lib/i18n";
 import { useApiClient, useApiGet } from "../lib/use-api";
-import { useTheme, type Theme } from "../lib/theme";
+import { useTheme, useThemeChoice, type Theme } from "../lib/theme";
 import { Cap } from "../components/receipt";
 
 /**
@@ -40,6 +40,7 @@ export default function AccountScreen() {
   const s = useMemo(() => createStyles(theme), [theme]);
   const router = useRouter();
   const { signOut, getToken } = useSession();
+  const { choice: themeChoice, setChoice: setThemeChoice } = useThemeChoice();
   const { remove } = useApiClient();
 
   const { state } = useApiGet<Me>("/api/v1/me");
@@ -137,6 +138,36 @@ export default function AccountScreen() {
             <Text style={s.muted}>{state.data.user.email}</Text>
           </View>
         )}
+
+        {/* GORUNUM. DILDEN FARKLI OLARAK SUNUCUYA GITMIYOR: kagidin rengi
+            yalnizca bu cihazda anlamli. Ayni hesabin telefonu koyu,
+            tarayicisi acik olabilir ve bu bir tutarsizlik degil.
+
+            "Sistem" AYRI BIR SECENEK ve gerekli: telefonunu gun batiminda
+            koyuya geciren biri uygulamanin da gecmesini bekler. Yalnizca
+            acik/koyu sunmak o kisiyi elle secime mahkum ederdi.
+
+            BUGUNE KADAR HIC YOKTU ve bu bir karar degildi - DECISIONS.md'de
+            karsiligi yok, yani hic ele alinmamis. Web'de bastan beri var. */}
+        <View style={s.section}>
+          <Cap>{t("ui.appearance")}</Cap>
+          <View style={s.chips}>
+            {(["system", "light", "dark"] as const).map((value) => {
+              const active = themeChoice === value;
+              return (
+                <Pressable
+                  key={value}
+                  style={[s.chip, active && s.chipActive]}
+                  onPress={() => setThemeChoice(value)}
+                >
+                  <Text style={[s.chipText, active && s.chipTextActive]}>
+                    {t(`ui.theme_${value}`)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         {/* DIL. Hesabin bir parcasi cunku kayit da hesapta duruyor
             (User.locale) ve cihazdan cihaza tasiniyor. */}

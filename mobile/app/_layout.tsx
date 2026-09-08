@@ -1,7 +1,7 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { LocaleProvider, useTranslate } from "../lib/i18n";
-import { useTheme } from "../lib/theme";
+import { ThemeProvider, useTheme } from "../lib/theme";
 import * as Notifications from "expo-notifications";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";
 import { syncPushToken } from "../lib/push";
@@ -236,9 +236,11 @@ export default function RootLayout() {
       <LocaleProvider initialLocale={deviceLocale()}>
         {/* Sayac SAGLAYICIDA cunku zil basliktaki her ekranda ayni; tek bir
             ekran onu besleyemez. Gerekce lib/unread.tsx'te. */}
+        <ThemeProvider>
         <UnreadProvider>
           <AuthGuard />
         </UnreadProvider>
+        </ThemeProvider>
       </LocaleProvider>
     </SessionProvider>
   );

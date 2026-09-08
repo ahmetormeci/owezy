@@ -629,6 +629,10 @@ export const MESSAGES_TR = {
   "push.member_joined": "Gruba yeni biri katıldı",
 
   // Bildirimler ekranindaki izin satiri.
+  "ui.appearance": "Görünüm",
+  "ui.theme_system": "Sistem",
+  "ui.theme_light": "Açık",
+  "ui.theme_dark": "Koyu",
   "ui.push_enable": "Bildirimleri telefona getir",
   "ui.push_enabled": "Bu telefona bildirim geliyor",
   "ui.push_denied": "Bildirim izni kapalı. Ayarlar → Owezy → Bildirimler'den açabilirsin.",
@@ -1143,6 +1147,10 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "push.settlement_cancelled": "A settlement was cancelled",
   "push.member_joined": "Someone joined the group",
 
+  "ui.appearance": "Appearance",
+  "ui.theme_system": "System",
+  "ui.theme_light": "Light",
+  "ui.theme_dark": "Dark",
   "ui.push_enable": "Get notifications on this phone",
   "ui.push_enabled": "This phone receives notifications",
   "ui.push_denied": "Notifications are turned off. You can enable them in Settings → Owezy → Notifications.",
