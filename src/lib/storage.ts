@@ -52,12 +52,37 @@ function readConfig(): StorageConfig {
   return { accountId, accessKeyId, secretAccessKey, bucket };
 }
 
+/**
+ * R2_ACCOUNT_ID'yi bir SUNUCU ADINA cevirir.
+ *
+ * NEDEN IKI BICIM DE KABUL EDILIYOR: Cloudflare bu degeri panelde bir ADRES
+ * icinde gosteriyor ("https://<kimlik>.r2.cloudflarestorage.com"), yani
+ * yalnizca kimligi ayiklamak kullanicidan beklenen fazladan bir adim. Ilk
+ * kurulumda tam olarak bu yasandi: deger "https://<kimlik>" olarak
+ * yapistirildi ve istek "https://https://..." adresine gidip
+ * ENOTFOUND (hostname: 'https') ile dustu - sebebi hicbir yerde yazmayan bir
+ * DNS hatasi.
+ *
+ * TAM ADRES YAPISTIRILDIYSA OLDUGU GIBI KULLANILIYOR, kimligi ayiklayip
+ * yeniden kurmuyoruz. Sebebi onemli: R2'nin yargi bolgesine ozel adresleri
+ * var (ornegin "<kimlik>.eu.r2.cloudflarestorage.com"). Kimligi ayiklayip
+ * varsayilan alan adini eklemek, AB kovasi olan birinin isteklerini SESSIZCE
+ * yanlis yere gonderirdi.
+ *
+ * Ayirt etme kurali: sema ve yol atildiktan sonra geriye NOKTA iceren bir sey
+ * kaliyorsa o bir sunucu adi; kalmiyorsa hesap kimligidir.
+ */
+export function storageHost(accountId: string): string {
+  const withoutScheme = accountId.trim().replace(/^https?:\/\//i, "");
+  const host = withoutScheme.split("/")[0];
+  return host.includes(".") ? host : `${host}.r2.cloudflarestorage.com`;
+}
+
 function endpoint(config: StorageConfig, key: string): string {
-  // R2'nin S3 ucu. Anahtar adres parcasi olarak gidiyor; ureten taraf
-  // yalnizca [a-z0-9/-] kullaniyor (lib/receipts.ts), yani kacis gerekmiyor -
-  // yine de encodeURIComponent ile bolum bolum kaciliyor.
+  // Anahtar adres parcasi olarak gidiyor; ureten taraf yalnizca [a-z0-9/-]
+  // kullaniyor (lib/receipts.ts) ama yine de bolum bolum kaciliyor.
   const path = key.split("/").map(encodeURIComponent).join("/");
-  return `https://${config.accountId}.r2.cloudflarestorage.com/${config.bucket}/${path}`;
+  return `https://${storageHost(config.accountId)}/${config.bucket}/${path}`;
 }
 
 function client(config: StorageConfig): AwsClient {
