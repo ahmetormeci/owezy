@@ -8,6 +8,7 @@ import { syncPushToken } from "../lib/push";
 import { SessionProvider, useSession } from "../lib/auth";
 import { UnreadProvider } from "../lib/unread";
 import { NotificationBell } from "../components/notification-bell";
+import { AccountAvatar, HeaderActions } from "../components/header-actions";
 
 /**
  * Cihazin dili.
@@ -159,7 +160,7 @@ function AppStack() {
          * sonraki ekranda unutulacak bir sey demekti - AuthGuard'in
          * cozdugu sorunun aynisi (ADR-037).
          */
-        headerRight: () => <NotificationBell />,
+        headerRight: () => <HeaderActions />,
       }}
     >
       {/* Yonlendirme ekrani ve giris: baslik cubugu ANLAMSIZ - birinde
@@ -192,12 +193,16 @@ function AppStack() {
         options={{ title: t("ui.expenses") }}
       />
       {/* Bildirimler ekraninda zil YOK: kullaniciyi zaten bulundugu yere
-          goturen bir dugme. */}
+          goturen bir dugme. Hesap simgesi KALIYOR - o baska bir yere gidiyor. */}
       <Stack.Screen
         name="notifications"
-        options={{ title: t("ui.notifications"), headerRight: () => null }}
+        options={{ title: t("ui.notifications"), headerRight: () => <AccountAvatar /> }}
       />
-      <Stack.Screen name="account" options={{ title: t("ui.account") }} />
+      {/* Hesap ekraninda hesap simgesi YOK, ayni gerekce. */}
+      <Stack.Screen
+        name="account"
+        options={{ title: t("ui.account"), headerRight: () => <NotificationBell /> }}
+      />
       {/* Universal link ile gelinen ekran. Basligi ekranin kendisi kuruyor. */}
       <Stack.Screen name="join/[token]" options={{ title: "" }} />
     </Stack>

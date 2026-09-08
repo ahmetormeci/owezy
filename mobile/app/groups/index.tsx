@@ -2,8 +2,7 @@ import { Link, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useSession } from "../../lib/auth";
-import { useTranslate, type Translator } from "../../lib/i18n";
+import { useTranslate } from "../../lib/i18n";
 import { useApiGet } from "../../lib/use-api";
 import { useTheme, type Theme } from "../../lib/theme";
 import { GroupCreator } from "../../components/group-creator";
@@ -24,7 +23,6 @@ import { InviteJoiner } from "../../components/invite-joiner";
 type Group = { id: string; name: string; description: string | null; role: "OWNER" | "MEMBER" };
 
 export default function GroupsScreen() {
-  const { signOut } = useSession();
   const t = useTranslate();
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
@@ -81,7 +79,6 @@ export default function GroupsScreen() {
             <InviteJoiner onJoined={reload} />
           </View>
         </View>
-        <Footer styles={s} t={t} onSignOut={signOut} />
       </SafeAreaView>
     );
   }
@@ -116,10 +113,14 @@ export default function GroupsScreen() {
         </View>
       </ScrollView>
 
-      {/* HESAP EKRANINA KAPI. Cikis burada KALIYOR: en sik yapilan islemi
-          bir dokunus derine gommemek icin. Hesap silme icerideki ekranda
-          (App Store Guideline 5.1.1(v) uygulama ici silmeyi zorunlu tutuyor). */}
-      <Footer styles={s} t={t} onSignOut={signOut} />
+      {/* HESAP VE CIKIS ARTIK BURADA DEGIL - baslik cubugundaki kisi
+          simgesinde (components/header-actions.tsx), her ekranda.
+
+          CIKISIN BURADAN KALKMASI BIR KUSURU DA KAPATIYOR: bu dugme
+          signOut()'u DOGRUDAN cagiriyordu, yani cihazin push adresini
+          silmiyordu (temizlik account.tsx'te). O yoldan cikan birinin
+          telefonu, hesabin bildirimlerini almaya devam ederdi. Artik tek
+          cikis yolu var ve o yol adresi siliyor. */}
     </SafeAreaView>
   );
 }
@@ -134,28 +135,6 @@ export default function GroupsScreen() {
  * (components/notification-bell.tsx). Buradaki baglanti onunla AYNI yere
  * gidiyordu; iki yol birakmak, ikisinden birinin zamanla ayrismasi demekti.
  */
-function Footer({
-  styles: s,
-  t,
-  onSignOut,
-}: {
-  styles: ReturnType<typeof createStyles>;
-  t: Translator;
-  onSignOut: () => Promise<void> | void;
-}) {
-  return (
-    <View style={s.footer}>
-      <Link href="/account" asChild>
-        <Pressable style={s.signOut}>
-          <Text style={s.signOutText}>{t("ui.account")}</Text>
-        </Pressable>
-      </Link>
-      <Pressable style={s.signOut} onPress={() => void onSignOut()}>
-        <Text style={s.signOutText}>{t("ui.sign_out")}</Text>
-      </Pressable>
-    </View>
-  );
-}
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({

@@ -654,6 +654,45 @@ export default function GroupScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        {/* EYLEM SATIRI - FISIN USTUNDE, web'deki duzenin aynisi.
+            (src/app/(app)/groups/[groupId]/page.tsx, ayni gerekce orada
+            yazili: "kagidin uzerine buton koymak, basili bir belgeye
+            tiklanabilir bir sey eklemek gibi durur"; ustelik fis OKUNACAK,
+            dugmeler KULLANILACAK - iki ayri is.)
+
+            ONCEDEN UCU DE FISIN ALTINDAYDI ve isleyisleri dogruydu. Sorun
+            mesafeydi: kirk harcamali bir grupta harcama eklemek icin butun
+            listeyi kaydirmak gerekiyordu. Zil ve hesap ayni sebeple baslik
+            cubuguna tasinmisti; bunlar da ayni sebeple yukari alindi.
+
+            SATIR ICI GIRIS TASINMADI: o fisin SONUNDA duruyor cunku bir fise
+            satir eklemek metaforun kendisi (ADR-027). Buradaki dugme tam
+            forma gidiyor - odeyeni, katilimcilari ve bolusme turunu yalnizca
+            orada secebiliyorsun. Ikisi farkli is, web'de de ikisi birden var. */}
+        <View style={s.actions}>
+          <Link href={`/groups/${groupId}/expenses/new`} asChild>
+            <Pressable style={s.actionPrimary}>
+              <Cap tone="onBrand">{t("ui.add_expense")}</Cap>
+            </Pressable>
+          </Link>
+
+          <Link href={`/groups/${groupId}/settlements`} asChild>
+            <Pressable hitSlop={8}>
+              <Cap>{t("ui.settlements")}</Cap>
+            </Pressable>
+          </Link>
+
+          {/* Duzenleme YALNIZCA SAHIBE: uc de oyle davraniyor, olmayacak bir
+              dugme sunup ardindan hata gostermek olurdu. */}
+          {group.state.data.group.role === "OWNER" ? (
+            <Link href={`/groups/${groupId}/edit`} asChild>
+              <Pressable hitSlop={8}>
+                <Cap>{t("ui.edit_group")}</Cap>
+              </Pressable>
+            </Link>
+          ) : null}
+        </View>
+
         <Receipt>
           {/* Fisin "magaza adi" satiri: ortalanmis, tek arali, harf araligi
               acik - web'deki fisle ayni. Onceden sola yasli kalin bir yaziydi
@@ -985,18 +1024,6 @@ export default function GroupScreen() {
           ) : null}
         </Receipt>
 
-        {/* HIZLI EKLEYICI YETMEDIGINDE. Ucu birden - odeyen, katilimcilar,
-            bolusme turu - yalnizca ayri bir ekranda secilebiliyor; fisin
-            altindaki tek satir bilerek dar. */}
-        <Link href={`/groups/${groupId}/expenses/new`} asChild>
-          <Pressable style={s.card}>
-            <View style={s.cardHead}>
-              <Cap>{t("ui.add_expense")}</Cap>
-              <Text style={s.cardLink}>→</Text>
-            </View>
-          </Pressable>
-        </Link>
-
         {/* NEREYE GITTI. Web'de fisin altinda duran kategori kirilimi;
             mobilde HIC YOKTU - oysa veri bastan beri /summary ile geliyordu.
             Web'deki iki kural aynen gecerli: hic harcama yoksa ve TEK
@@ -1082,60 +1109,21 @@ export default function GroupScreen() {
             "Gruplarim" ve "Cikis yap" BURADAN KALKTI: birincisini baslik
             cubugundaki geri dugmesi karsiliyor, ikincisi Hesap ekraninda.
             Dordu yan yana duran duz metin, gezinme gibi gorunmuyordu. */}
-        {/* GRUBU DUZENLE. Yalnizca SAHIBE gorunuyor - yetki kontrolu sunucuda
-            (groups.ts, owner_only) ama yapilamayacak bir kapiyi gostermek,
-            kullaniciya formu doldurtup sonunda reddetmek demekti.
 
-            FISIN DISINDA, kartlarin arasinda: web'de de ayni kural yazili -
-            "kagidin uzerine buton koymak, basili bir belgeye tiklanabilir
-            bir sey eklemek gibi durur". */}
-        {group.state.data.group.role === "OWNER" ? (
-          <Link href={`/groups/${groupId}/edit`} asChild>
-            <Pressable style={s.card}>
-              <View style={s.cardHead}>
-                <Cap>{t("ui.edit_group")}</Cap>
-                <Text style={s.cardLink}>→</Text>
-              </View>
-            </Pressable>
-          </Link>
-        ) : null}
+        {/* HESAP BAGLANTISI ARTIK BURADA DEGIL - baslik cubugundaki kisi
+            simgesine tasindi (components/header-actions.tsx).
 
-        <Link href={`/groups/${groupId}/settlements`} asChild>
-          <Pressable style={s.card}>
-            <View style={s.cardHead}>
-              <Cap>{t("ui.settlements")}</Cap>
-              <Text style={s.cardLink}>→</Text>
-            </View>
-          </Pressable>
-        </Link>
+            BURAYA KONMA SEBEBI OLCULMUS BIR KUSURDU ve o kusur HALA GECERLI:
+            tek grubu olan kullanici uygulamayi acinca index.tsx onu Redirect
+            ile dogrudan buraya dusuruyor; Redirect yigini DEGISTIRDIGI icin
+            geri dugmesi hic dogmuyor. O kullanici hesabina ulasamazsa
+            cikamiyor, silemiyor (App Store 5.1.1(v) zorunlu tutuyor) ve
+            gruplar listesine gidemiyor.
 
-        {/* HESAP. GRUBA AIT DEGIL, hesaba ait - ama buraya konmasi zorunlu
-            oldu ve sebebi olculdu: tek grubu olan kullanici uygulamayi acinca
-            index.tsx onu Redirect ile dogrudan buraya dusuruyor. Redirect
-            yigini DEGISTIRDIGI icin geri dugmesi hic dogmuyor; bu ekranda da
-            hesaba giden bir yol yoktu. Yani tek gruplu kullanici HESABINI
-            SILEMIYORDU (App Store 5.1.1(v) bunu zorunlu kiliyor), cikis
-            yapamiyor ve gruplar listesine - dolayisiyla davet kabul etmeye -
-            ulasamiyordu.
-
-            BILDIRIMLER ARTIK BURADA DEGIL: zil baslik cubuguna tasindi
-            (components/notification-bell.tsx). Isleyisi dogruydu ama cok
-            harcamali bir grupta uzun bir kaydirmanin arkasinda kaliyordu.
-            HESAP TASINMADI - tasinsaydi bu ekranda hesaba giden yol yine
-            kaybolurdu ve yukaridaki kusur geri gelirdi.
-
-            Grup kartlarindan sonra, en altta duruyor: kapsami farkli oldugu
-            icin grubun bloklariyla karismasin. */}
-        <View style={s.accountBlock}>
-          <Link href="/account" asChild>
-            <Pressable style={s.card}>
-              <View style={s.cardHead}>
-                <Cap>{t("ui.account")}</Cap>
-                <Text style={s.cardLink}>→</Text>
-              </View>
-            </Pressable>
-          </Link>
-        </View>
+            KALDIRMAK GUVENLI CUNKU simge screenOptions'ta: BU ekranda da,
+            her ekranda da duruyor - yani eski cozumden fazlasini veriyor.
+            Kaldirmadan once bu kontrol edildi; simgeyi basliktan alan,
+            burayi geri koymak zorunda. */}
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -1285,6 +1273,27 @@ function createStyles(theme: Theme) {
     screen: { flex: 1, backgroundColor: theme.surface },
     flex: { flex: 1 },
     scroll: { padding: 16, paddingBottom: 32 },
+    /**
+     * EYLEM SATIRI. flexWrap SART: Turkce etiketler uzun ("HARCAMA EKLE",
+     * "ODESMELER", "GRUP DUZENLE") ve dar bir telefonda (SE, 320pt) tek
+     * satira sigmiyorlar. Sarmasaydi son etiket ekranin disina tasardi -
+     * yani sahip, duzenleme dugmesini hic goremezdi.
+     */
+    actions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: 14,
+      marginBottom: 14,
+    },
+    // Birincil eylem TEK: harcama eklemek. Digerleri duz baglanti - hepsini
+    // dugme yapmak hicbirini one cikarmamak olurdu.
+    actionPrimary: {
+      backgroundColor: theme.brand,
+      borderRadius: 4,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+    },
     centered: {
       flex: 1,
       alignItems: "center",
