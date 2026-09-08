@@ -100,6 +100,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Davet linkleri ve üyelik kayıtları",
               "Sana gönderilen uygulama içi bildirimler",
               "Harcama düzenleme ve silme geçmişi (denetim kaydı)",
+              "Bir harcamaya fiş fotoğrafı eklersen: fotoğrafın kendisi ve kimin " +
+                "eklediği. Fotoğrafa yalnızca o grubun üyeleri ulaşabilir; herkese " +
+                "açık bir adresi yoktur ve her görüntülemede üyeliğin kontrol edilir.",
             ],
           },
           {
@@ -126,7 +129,6 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
                 "uygulamayı silip yeniden kurduğunda değişir ve başka hiçbir yerde " +
                 "seni tanımaya yaramaz.",
               "Analitik ve reklam verisi. Uygulamada hiçbir analiz veya reklam aracı kurulu değil.",
-              "Yüklediğin dosyalar — uygulamada dosya yükleme diye bir şey yok.",
             ],
           },
         ],
@@ -160,7 +162,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Neon — veritabanı",
               "Resend — giriş kodu e-postalarının gönderimi (e-posta adresin bu hizmete iletilir)",
               "Vercel — uygulamanın barındırılması",
-              "Cloudflare — alan adı yönlendirmesi",
+              "Cloudflare — alan adı yönlendirmesi ve fiş fotoğraflarının saklandığı yer (R2)",
               "Expo — telefona bildirim gönderimi. Bildirimin metni bu hizmetten " +
                 "geçer: yalnızca grubun adı ve ne olduğu (\"bir harcama eklendi\" gibi). " +
                 "Tutarlar ve kişi adları bildirime hiç konmaz.",
@@ -219,7 +221,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             text:
               "Sildiğinde ne olduğunu açıkça yazmak istiyoruz, çünkü beklediğinden farklı " +
               "olabilir. Kişisel bilgilerin — e-posta adresin, adın, profil fotoğrafın — " +
-              "silinir. Ancak girdiğin harcama ve ödeşme kayıtları silinmez; " +
+              "silinir. YÜKLEDİĞİN FİŞ FOTOĞRAFLARI DA SİLİNİR, depodan da. " +
+              "Ancak girdiğin harcama ve ödeşme kayıtları silinmez; " +
               "anonimleştirilmiş bir kullanıcıya bağlı kalmaya devam eder.",
           },
           {
@@ -370,6 +373,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Invite links and membership records",
               "In-app notifications sent to you",
               "A history of expense edits and deletions (audit log)",
+              "If you attach a receipt photo to an expense: the photo itself and who " +
+                "attached it. Only members of that group can reach it; it has no public " +
+                "address, and membership is checked on every view.",
             ],
           },
           {
@@ -396,7 +402,6 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
                 "this app only, changes when you reinstall, and cannot be used to " +
                 "recognise you anywhere else.",
               "Analytics or advertising data. No such tool is installed in the app at all.",
-              "Uploaded files — the app has no file upload.",
             ],
           },
         ],
@@ -430,7 +435,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Neon — database",
               "Resend — delivery of sign-in code emails (your email address is passed to this service)",
               "Vercel — hosting",
-              "Cloudflare — domain routing",
+              "Cloudflare — domain routing, and where receipt photos are stored (R2)",
               "Expo — delivering notifications to your phone. The notification text " +
                 "passes through it: only the group's name and what happened (\"an expense " +
                 "was added\"). Amounts and names are never put in a notification.",
@@ -486,7 +491,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             text:
               "We want to be explicit about what deletion does, because it may not be what " +
               "you expect. Your personal details — email address, name, profile picture — " +
-              "are removed. Your expenses and settlements are not: they stay, attached to " +
+              "are removed. THE RECEIPT PHOTOS YOU UPLOADED ARE DELETED TOO, from storage " +
+              "as well. Your expenses and settlements are not: they stay, attached to " +
               "an anonymised user.",
           },
           {

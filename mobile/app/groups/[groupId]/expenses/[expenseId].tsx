@@ -21,6 +21,7 @@ import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
 import { useTheme, type Theme } from "../../../../lib/theme";
 import { Cap } from "../../../../components/receipt";
+import { ReceiptPhoto } from "../../../../components/receipt-photo";
 
 /**
  * Tek harcama: detay ve - izin varsa - duzenleme.
@@ -50,6 +51,12 @@ type Expense = {
   participants: Participant[];
   /** Optimistic locking sayaci (ADR-032). */
   version: number;
+  /**
+   * Fisin VARLIGI, baytlari degil. Baytlar ayri bir uctan geliyor ve orada
+   * yetki yeniden sorgulaniyor; buraya konsaydi her harcama sorgusu bir
+   * megabayt tasirdi.
+   */
+  receipt: { contentType: string; byteSize: number; createdAt: string } | null;
 };
 
 type ExpenseResponse = { expense: Expense };
@@ -504,6 +511,17 @@ export default function ExpenseScreen() {
               </View>
             ) : null}
           </View>
+
+          {/* FIS FOTOGRAFI. Formun ALTINDA: harcamanin kendisi once okunur,
+              fis onun kaniti. Eklemek/kaldirmak harcamayi DEGISTIRME
+              yetkisiyle ayni (canEdit) - sunucu da oyle davraniyor. */}
+          <ReceiptPhoto
+            groupId={groupId}
+            expenseId={expenseId}
+            present={item.receipt !== null}
+            canEdit={canEdit && !gone}
+            onChanged={() => expense.reload()}
+          />
 
           <Pressable onPress={() => router.back()} style={s.backRow}>
             <Text style={s.back}>{t("ui.cancel")}</Text>

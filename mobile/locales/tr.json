@@ -1,0 +1,4 @@
+{
+  "NSPhotoLibraryUsageDescription": "Owezy, bir harcamaya fiş fotoğrafı ekleyebilmen için fotoğraflarına erişir. Yalnızca senin seçtiğin fotoğraf yüklenir.",
+  "NSCameraUsageDescription": "Owezy, fişi çekip harcamaya ekleyebilmen için kamerayı kullanır. Çektiğin fotoğraf yalnızca o harcamaya eklenir."
+}

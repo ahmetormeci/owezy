@@ -313,7 +313,16 @@ export async function getExpenseForUser(
 
   const expense = await prisma.expense.findUnique({
     where: { id: expenseId },
-    include: { participants: true },
+    include: {
+      participants: true,
+      /**
+       * FISIN VARLIGI, BAYTLARI DEGIL. Istemcinin sormasi gereken sey
+       * "gosterecek bir sey var mi"; baytlar ayri bir uctan, yetki yeniden
+       * kontrol edilerek geliyor (api/.../receipt). Baytlari buraya
+       * koysaydik her harcama sorgusu bir megabayt tasirdi.
+       */
+      receipt: { select: { contentType: true, byteSize: true, createdAt: true } },
+    },
   });
 
   if (!expense || expense.deletedAt || expense.groupId !== groupId) {

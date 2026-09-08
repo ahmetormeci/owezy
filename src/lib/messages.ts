@@ -59,6 +59,18 @@ export const MESSAGES_TR = {
    * HEIC gonderdiginde ne yapacagini bilsin.
    */
   "receipt.unsupported_type": "Yalnızca JPEG ve PNG fotoğraflar eklenebilir",
+  "receipt.permission_denied":
+    "İzin verilmedi. Ayarlar → Owezy'den fotoğraf ya da kamera erişimini açabilirsin.",
+
+  // Arayuz
+  "ui.receipt": "Fiş",
+  "ui.no_receipt": "Bu harcamaya fiş eklenmemiş.",
+  "ui.add_receipt": "Fiş ekle",
+  "ui.replace_receipt": "Değiştir",
+  "ui.remove_receipt": "Fişi kaldır",
+  "ui.remove_receipt_question": "Fiş kaldırılsın mı?",
+  "ui.take_photo": "Fotoğraf çek",
+  "ui.choose_from_library": "Galeriden seç",
   "expense.not_deleted": "Harcama zaten silinmemiş",
   "expense.participants_not_active": "Şu kullanıcılar grubun aktif üyesi değil: {userIds}",
   "expense.version_conflict": "Bu harcama sen düzenlerken başkası tarafından değiştirildi",
@@ -715,6 +727,17 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "receipt.empty": "The file is empty",
   "receipt.too_large": "The photo is too large. It can be at most 4 MB.",
   "receipt.unsupported_type": "Only JPEG and PNG photos can be attached",
+  "receipt.permission_denied":
+    "Permission was not granted. You can allow photo or camera access in Settings → Owezy.",
+
+  "ui.receipt": "Receipt",
+  "ui.no_receipt": "No receipt is attached to this expense.",
+  "ui.add_receipt": "Add a receipt",
+  "ui.replace_receipt": "Replace",
+  "ui.remove_receipt": "Remove receipt",
+  "ui.remove_receipt_question": "Remove the receipt?",
+  "ui.take_photo": "Take a photo",
+  "ui.choose_from_library": "Choose from library",
   "expense.not_deleted": "This expense has not been deleted",
   "expense.participants_not_active":
     "These users are not active members of the group: {userIds}",

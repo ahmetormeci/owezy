@@ -75,6 +75,35 @@ export default async function EditExpensePage({
           version: expense.version,
         }}
       />
+
+      {/* FIS FOTOGRAFI - YALNIZCA GORUNTULEME.
+          Yukleme web'de YOK ve bu bilincli bir kapsam karari: fis, odeme
+          aninda telefonla cekilen bir sey. Web'de eklemek ayrica tarayicida
+          kucultme demekti (Vercel'in govde siniri 4.5MB, telefon fotografi
+          3-8MB) ve bu surumu sisirirdi.
+
+          GORSEL KENDI UCUMUZDAN: depoya herkese acik bir adres verilmedi -
+          fiste isim, adres, kartin son hanesi olabilir ve o adresi eline
+          gecirenin yetkisi bir daha kontrol edilmezdi. Buradaki istek
+          cerezi tasiyor, uc de her seferinde grup uyeligini soruyor.
+          Yan fayda: ayni kaynak oldugu icin CSP'deki "img-src 'self'"
+          oldugu gibi kaliyor. */}
+      {expense.receipt ? (
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground">
+            {t("ui.receipt")}
+          </h2>
+          {/* next/image DEGIL: o bileseni optimize edici, kaynagi kendi
+              sunucusundan CEKIP yeniden boyutluyor ve bunun icin adresi
+              yetkisiz istemesi gerekirdi. Fis yetkiye bagli. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/api/v1/groups/${groupId}/expenses/${expenseId}/receipt`}
+            alt={t("ui.receipt")}
+            className="max-h-[32rem] w-full rounded-xs border border-border bg-surface object-contain"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

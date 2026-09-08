@@ -50,8 +50,18 @@
       ],
       "expo-sharing",
       "expo-font",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Owezy accesses your photos so you can attach a receipt to an expense. Only the photo you pick is uploaded.",
+          "cameraPermission": "Owezy uses the camera so you can photograph a receipt and attach it to an expense. The photo is attached to that expense only."
+        }
+      ]
     ],
+    "locales": {
+      "tr": "./locales/tr.json"
+    },
     "extra": {
       "router": {},
       "eas": {

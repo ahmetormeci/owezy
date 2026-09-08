@@ -1363,8 +1363,14 @@ describe("getExpenseForUser", () => {
 
     expect(expense.id).toBe(EXPENSE_ID);
     expect(expense.participants).toHaveLength(2);
+    /**
+     * FIS: yalnizca VARLIGI cekiliyor, baytlari degil. Buraya bir gun
+     * baytlar eklenirse bu test duser - ve dusmeli: her harcama sorgusu
+     * bir megabayt tasimaya baslardi.
+     */
     expect(mockPrisma.expense.findUnique.mock.calls[0][0].include).toEqual({
       participants: true,
+      receipt: { select: { contentType: true, byteSize: true, createdAt: true } },
     });
   });
 });
