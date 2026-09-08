@@ -46,9 +46,9 @@ Current task:
   BILINEN KUSUR, 1.0.2'DE CANLI VE DUZELTILDI (henuz yayinlanmadi):
   mobil istemci hata parametrelerini tasimiyordu, kullanici "{amount}
   kurusluk alacagi var" goruyordu. Kod duzeldi (mobile/lib/api.ts) ama
-  kullaniciya ulasmasi icin YENI BIR SURUM gerekiyor. Tek basina bir
-  surumu hak edip etmedigi KARAR VERILMEDI - ekrandaki tek bir hata
-  cumlesi, akis calisiyor.
+  kullaniciya ulasmasi icin yeni bir surum gerekiyor. TEK BASINA SURUM
+  ATILMAYACAK (karar, 8 Eylul): ekrandaki tek bir hata cumlesi ve akis
+  calisiyor. Siradaki isle BIRLIKTE gidecek.
 
   UNIVERSAL LINK - CALISMIYOR, SEBEBI BIZDE DEGIL (8 Eylul, olculdu):
     ikili      application-identifier = A5WH8JT28C.net.owezy.app   ✓
