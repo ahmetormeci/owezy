@@ -7,6 +7,7 @@ import { useSession } from "../lib/auth";
 import { useTranslate } from "../lib/i18n";
 import { useTheme, type Theme } from "../lib/theme";
 import { Cap } from "./receipt";
+import { ReceiptViewer } from "./receipt-viewer";
 
 /**
  * Harcamaya ekli fis fotografi.
@@ -50,6 +51,7 @@ export function ReceiptPhoto({
    * ve kullanici "yuklenmedi" sanirdi.
    */
   const [version, setVersion] = useState(0);
+  const [viewing, setViewing] = useState(false);
 
   const endpoint = receiptEndpoint(apiBaseUrl(), groupId, expenseId);
   // ?v: <Image> adrese gore onbellekliyor; adres degismezse yeni fotograf
@@ -183,14 +185,19 @@ export function ReceiptPhoto({
       </View>
 
       {present && token ? (
-        <Image
-          source={{ uri, headers: { Authorization: `Bearer ${token}` } }}
-          style={s.photo}
-          // Fisin TAMAMI gorunmeli: kirpmak, tam da okunmak istenen satiri
-          // kesebilirdi.
-          resizeMode="contain"
-          accessibilityLabel={t("ui.receipt")}
-        />
+        /* DOKUNULUNCA TAM EKRAN. Kutu 260 piksel ve bir market fisinin
+           yazilari orada okunmuyor - kullanici bunu bildirdi. */
+        <Pressable onPress={() => setViewing(true)} accessibilityRole="imagebutton">
+          <Image
+            source={{ uri, headers: { Authorization: `Bearer ${token}` } }}
+            style={s.photo}
+            // Fisin TAMAMI gorunmeli: kirpmak, tam da okunmak istenen satiri
+            // kesebilirdi.
+            resizeMode="contain"
+            accessibilityLabel={t("ui.receipt")}
+          />
+          <Text style={s.tapHint}>{t("ui.tap_to_enlarge")}</Text>
+        </Pressable>
       ) : present ? null : canEdit ? (
         /**
          * BOS DURUM BIR HEDEF, bir cumle degil.
@@ -213,6 +220,13 @@ export function ReceiptPhoto({
       )}
 
       {error ? <Text style={s.error}>{error}</Text> : null}
+
+      <ReceiptViewer
+        visible={viewing}
+        uri={uri}
+        token={token}
+        onClose={() => setViewing(false)}
+      />
     </View>
   );
 }
@@ -245,6 +259,7 @@ function styles(theme: Theme) {
       backgroundColor: theme.surface,
     },
     dropHint: { fontSize: 11, color: theme.muted },
+    tapHint: { fontSize: 11, color: theme.muted, textAlign: "center", paddingTop: 6 },
     error: { fontSize: 13, color: theme.debt },
   });
 }

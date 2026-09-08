@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Link, Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -26,7 +27,10 @@ import type { Locale } from "@/lib/locale";
 import { useLocale, useTranslate, type Translator } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
+import { apiBaseUrl } from "../../../lib/api";
+import { useSession } from "../../../lib/auth";
 import { CsvExport } from "../../../components/csv-export";
+import { ReceiptViewer } from "../../../components/receipt-viewer";
 import { ExpenseComposer } from "../../../components/expense-composer";
 import {
   Receipt,
@@ -67,6 +71,12 @@ type ExpenseItem = {
    * (?includeDeleted=true). Uc bu alani bastan beri donduruyordu.
    */
   deletedAt?: string | null;
+  /**
+   * FISIN VARLIGI. Uc yalnizca bir kimlik donduruyor (expenses.ts) - liste
+   * "fis var mi" sorusunu cevaplamak icin baytlara ihtiyac duymuyor ve
+   * duymamali: kirk harcamalik bir listede kirk fotograf indirmek olurdu.
+   */
+  receipt?: { id: string } | null;
 };
 type MonthSlice = { month: string; amount: number; count: number };
 /**
@@ -346,7 +356,29 @@ export default function GroupScreen() {
    * (soft delete + audit log); ayri bir "cop kutusu" ekrani yerine listeye
    * katiliyorlar - bir kayit en cok kendi tarih sirasinda anlam tasiyor.
    */
+  const { getToken } = useSession();
   const [showDeleted, setShowDeleted] = useState(false);
+
+  /**
+   * FIS ISARETINE dokunulan harcamanin kimligi - null ise katman kapali.
+   * Fotografin kendisi listede TASINMIYOR, yalnizca acildiginda cekiliyor.
+   */
+  const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
+  /**
+   * Belirteci bir kez aliyoruz; goruntuleyici onu Authorization basliginda
+   * tasiyacak - fis adresi yetkisiz calismiyor.
+   */
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const value = await getToken();
+      if (!cancelled) setAuthToken(value);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [getToken]);
   const [restoring, setRestoring] = useState<string | null>(null);
 
   // showDeleted de bir FILTRE: gosterilen kumeyi degistiriyor, yani ay
@@ -622,6 +654,29 @@ export default function GroupScreen() {
         amount={formatMoney(expense.amount, currency, locale)}
         secondary={parts.join(" · ")}
         deleted={isDeleted}
+        /**
+         * FIS ISARETI. Kucuk bir ataç: "bu harcamaya bir sey ekli".
+         *
+         * KENDISI DOKUNULABILIR ve satirdan AYRI bir is yapiyor - satir
+         * harcamayi aciyor, isaret fotografi TAM EKRAN aciyor. Kullanici
+         * ikisini de istedi: listede gormek ve dokununca buyutmek.
+         *
+         * GERCEK KUCUK RESIM DEGIL, simge. Her satira fotograf koymak
+         * listeyi acarken kirk indirme demekti; simge ayni soruyu bir bitle
+         * cevapliyor.
+         */
+        mark={
+          expense.receipt ? (
+            <Pressable
+              hitSlop={12}
+              onPress={() => setViewingReceipt(expense.id)}
+              accessibilityRole="imagebutton"
+              accessibilityLabel={t("ui.receipt")}
+            >
+              <Ionicons name="attach-outline" size={15} color={theme.muted} />
+            </Pressable>
+          ) : undefined
+        }
         action={
           isDeleted ? (
             <Pressable
@@ -1126,6 +1181,19 @@ export default function GroupScreen() {
             burayi geri koymak zorunda. */}
       </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* FIS KATMANI. Ekranin en disinda: ScrollView'in icinde olsaydi
+          kaydirmayla birlikte hareket ederdi. */}
+      <ReceiptViewer
+        visible={viewingReceipt !== null}
+        uri={
+          viewingReceipt
+            ? `${apiBaseUrl()}/api/v1/groups/${groupId}/expenses/${viewingReceipt}/receipt`
+            : ""
+        }
+        token={authToken}
+        onClose={() => setViewingReceipt(null)}
+      />
     </SafeAreaView>
   );
 }

@@ -1094,7 +1094,16 @@ describe("listExpenses", () => {
 
     await listExpenses(CALLER_ID, GROUP_ID);
 
-    expect(mockPrisma.expense.findMany.mock.calls[0][0].include).toEqual({ participants: true });
+    /**
+     * FIS: yalnizca VARLIGI (tek kimlik alani). Buraya bir gun daha fazla
+     * eklenirse bu test duser - ve dusmeli: kirk harcamalik bir listede
+     * satir basina fotograf bilgisi tasimak, kirk fotograf indirmeye giden
+     * yolun ilk adimi olur.
+     */
+    expect(mockPrisma.expense.findMany.mock.calls[0][0].include).toEqual({
+      participants: true,
+      receipt: { select: { id: true } },
+    });
   });
 
   // Filtreleme SUNUCUDA olmali: ekrandaki 20 satiri suzmek, aranan kayit

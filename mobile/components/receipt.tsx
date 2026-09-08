@@ -67,6 +67,7 @@ export function ReceiptLine({
   onPress,
   deleted = false,
   action,
+  mark,
 }: {
   label: string;
   amount: string;
@@ -88,6 +89,16 @@ export function ReceiptLine({
   deleted?: boolean;
   /** Satirin sagina bir eylem (ornegin "geri al"). Ikincil satirda duruyor. */
   action?: React.ReactNode;
+  /**
+   * Etiketin HEMEN YANINDA kucuk bir isaret - bugun yalnizca "bu harcamanin
+   * fisi var" icin kullaniliyor.
+   *
+   * NEDEN ETIKETIN YANI: satirin sonunda tutar var ve orasi fisin en cok
+   * okunan yeri; araya bir simge sokmak sayiyi bulmayi zorlastirirdi.
+   * Aciklamanin yani ise "bu harcama hakkinda ek bir sey var" demenin
+   * dogal yeri.
+   */
+  mark?: React.ReactNode;
 }) {
   const theme = useTheme();
   const s = styles(theme);
@@ -107,6 +118,7 @@ export function ReceiptLine({
             {label}
           </Text>
         )}
+        {mark}
         <Leader />
         <Text style={[s.amount, deleted && s.deletedAmount]}>{amount}</Text>
       </View>

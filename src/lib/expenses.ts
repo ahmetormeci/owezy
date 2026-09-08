@@ -267,7 +267,17 @@ export async function listExpenses(
   const [rows, matches] = await Promise.all([
     prisma.expense.findMany({
       where,
-      include: { participants: true },
+      include: {
+        participants: true,
+        /**
+         * YALNIZCA VARLIGI, tek bir kimlik alani. Listede "fis var mi"
+         * sorusunun cevabi gerekiyor; baytlar degil, hatta icerik bilgisi
+         * bile degil. Bu, satir basina bir bit tasimanin en ucuz yolu -
+         * kirk harcamalik bir listede kirk fotograf indirmek soz konusu
+         * degil.
+         */
+        receipt: { select: { id: true } },
+      },
       // Cursor sayfalamasinin dogru calismasi icin siralama BENZERSIZ olmali.
       // expenseDate tek basina yeterli degil (ayni gune birden fazla harcama
       // dusebilir), bu yuzden createdAt ve id ile kesinlestiriliyor.

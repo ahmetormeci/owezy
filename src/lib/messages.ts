@@ -82,6 +82,8 @@ export const MESSAGES_TR = {
   "ui.take_photo": "Fotoğraf çek",
   "ui.choose_from_library": "Galeriden seç",
   "ui.receipt_hint": "Fotoğrafı çek ya da galerinden seç",
+  "ui.close": "Kapat",
+  "ui.tap_to_enlarge": "Büyütmek için dokun",
   "ui.receipt_will_be_attached": "Harcama kaydedilince eklenecek.",
   /**
    * IKI CUMLE BIRDEN: harcamanin KAYDEDILDIGINI soylemek sart. Yalnizca
@@ -762,6 +764,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.take_photo": "Take a photo",
   "ui.choose_from_library": "Choose from library",
   "ui.receipt_hint": "Take a photo or choose one from your library",
+  "ui.close": "Close",
+  "ui.tap_to_enlarge": "Tap to enlarge",
   "ui.receipt_will_be_attached": "It will be attached once the expense is saved.",
   "ui.expense_saved_receipt_failed": "The expense was saved but the receipt could not be attached.",
   "expense.not_deleted": "This expense has not been deleted",
