@@ -97,6 +97,24 @@ function client(config: StorageConfig): AwsClient {
   });
 }
 
+/**
+ * R2'nin DURUM KODUNU ayri hata kodlarina ayirir.
+ *
+ * NEDEN AYRILIYOR: "depoya ulasilamiyor" iki cok farkli sorunu ayni cumleye
+ * indiriyordu. 401/403 KIMLIK BILGISI yanlis demek - yapilandirmayi duzelten
+ * kisi ne arayacagini bilmeli; gerisi gercekten gecici bir ariza ve
+ * beklemek dogru tepki.
+ *
+ * GERCEKTEN GEREKTI: yerelde ayni kimlik bilgileriyle yukleme calisti ama
+ * uretimde reddedildi, ve elimizdeki tek bilgi "ulasilamiyor"di - hangisinin
+ * yanlis oldugunu soyleyen bir sey yoktu.
+ */
+function storageFailure(status: number): ServiceError {
+  return new ServiceError(
+    status === 401 || status === 403 ? "storage.forbidden" : "storage.unavailable",
+  );
+}
+
 export async function putObject(
   key: string,
   body: ArrayBuffer,
@@ -110,7 +128,7 @@ export async function putObject(
   });
   if (!response.ok) {
     console.error("R2 yazma hatasi", response.status, await response.text());
-    throw new ServiceError("storage.unavailable");
+    throw storageFailure(response.status);
   }
 }
 
@@ -121,7 +139,7 @@ export async function getObject(key: string): Promise<ArrayBuffer | null> {
   if (response.status === 404) return null;
   if (!response.ok) {
     console.error("R2 okuma hatasi", response.status);
-    throw new ServiceError("storage.unavailable");
+    throw storageFailure(response.status);
   }
   return response.arrayBuffer();
 }

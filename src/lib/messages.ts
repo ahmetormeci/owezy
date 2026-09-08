@@ -57,6 +57,7 @@ export const MESSAGES_TR = {
    */
   "storage.not_configured": "Fotoğraf deposu henüz yapılandırılmamış. Bu bizim tarafımızdaki bir eksik.",
   "storage.unavailable": "Fotoğraf deposuna şu an ulaşılamıyor. Birazdan tekrar dene.",
+  "storage.forbidden": "Fotoğraf deposu isteği reddetti. Erişim bilgileri hatalı; bu bizim tarafımızdaki bir eksik.",
   "receipt.not_found": "Bu harcamaya ekli bir fiş yok",
   "receipt.empty": "Dosya boş",
   "receipt.too_large": "Fotoğraf çok büyük. En fazla 4 MB olabilir.",
@@ -740,6 +741,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
 
   "storage.not_configured": "Photo storage is not configured yet. That is something missing on our side.",
   "storage.unavailable": "Photo storage cannot be reached right now. Please try again shortly.",
+  "storage.forbidden": "Photo storage refused the request. The access details are wrong; that is something missing on our side.",
   "receipt.not_found": "This expense has no receipt attached",
   "receipt.empty": "The file is empty",
   "receipt.too_large": "The photo is too large. It can be at most 4 MB.",
