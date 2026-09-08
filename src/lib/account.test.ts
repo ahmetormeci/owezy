@@ -26,12 +26,18 @@ const { mockTx } = vi.hoisted(() => ({
     twoFactor: { deleteMany: vi.fn() },
     notification: { deleteMany: vi.fn() },
     pushToken: { deleteMany: vi.fn() },
+    expenseReceipt: { findMany: vi.fn(), deleteMany: vi.fn() },
     // Bu ikisi BILEREK var ve BILEREK hic cagrilmamali: testler
     // "dokunulmadi" iddiasini ancak taklit mevcutsa dogrulayabilir.
     expense: { deleteMany: vi.fn(), updateMany: vi.fn() },
     settlement: { deleteMany: vi.fn(), updateMany: vi.fn() },
   },
 }));
+
+// Depo modulu R2 yapilandirmasi okuyor; testte ne yapilandirma var ne de ag.
+// Onemli olan CAGRILDI MI ve HANGI ANAHTARLA - baytlar burada konu degil.
+const { mockDeleteObject } = vi.hoisted(() => ({ mockDeleteObject: vi.fn() }));
+vi.mock("@/lib/storage", () => ({ deleteObject: mockDeleteObject }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -44,6 +50,9 @@ const { deleteAccount } = await import("@/lib/account");
 const USER = "11111111-1111-1111-1111-111111111111";
 
 beforeEach(() => {
+  mockTx.expenseReceipt.findMany.mockReset().mockResolvedValue([]);
+  mockTx.expenseReceipt.deleteMany.mockReset();
+  mockDeleteObject.mockReset().mockResolvedValue(true);
   vi.clearAllMocks();
   mockTx.user.findUnique.mockResolvedValue({ id: USER, deletedAt: null });
   mockTx.groupMember.findMany.mockResolvedValue([]);
@@ -115,6 +124,48 @@ describe("kimlik bilgileri", () => {
   it("bildirimleri de siliyor", async () => {
     await deleteAccount(USER);
     expect(mockTx.notification.deleteMany).toHaveBeenCalledWith({ where: { userId: USER } });
+  });
+
+  it("FIS FOTOGRAFLARININ kaydini siliyor ve nesneleri DEPODAN da kaldiriyor", async () => {
+    // ADR-046: hesap silinince fis fotografi GIDER. Burada iki kural
+    // carpisiyor (finansal kayit silinmez / kisisel veri silinir) ve
+    // kisisel veri tarafi secildi - fiste yuz, adres, kartin son hanesi
+    // olabilir.
+    mockTx.expenseReceipt.findMany.mockResolvedValue([
+      { id: "r1", storageKey: "receipts/e1/a.jpg" },
+      { id: "r2", storageKey: "receipts/e2/b.jpg" },
+    ]);
+
+    await deleteAccount(USER);
+
+    expect(mockTx.expenseReceipt.deleteMany).toHaveBeenCalledWith({
+      where: { uploadedById: USER },
+    });
+    expect(mockDeleteObject).toHaveBeenCalledWith("receipts/e1/a.jpg");
+    expect(mockDeleteObject).toHaveBeenCalledWith("receipts/e2/b.jpg");
+  });
+
+  it("YUKLEYENE gore siliyor, harcamanin sahibine gore DEGIL", async () => {
+    // ADR-046'nin acik gereksinimi: harcamayi ekleyen ile fisi yukleyen
+    // ayni kisi olmayabilir. Yanlis alana bakan bir sorgu, silinen
+    // kullanicinin fotograflarini grupta birakirdi.
+    await deleteAccount(USER);
+    expect(mockTx.expenseReceipt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { uploadedById: USER } }),
+    );
+  });
+
+  it("DEPO SILMESI BASARISIZ OLSA DA hesap siliniyor", async () => {
+    // Apple uygulama ici hesap silmeyi zorunlu tutuyor (5.1.1(v)); bir depo
+    // hatasinin o kapiyi kapatmasi kabul edilemez. Oksuz nesne kaliyor -
+    // kimse goremez, faturasi odenir (ADR-046 bunu yaziyor).
+    mockTx.expenseReceipt.findMany.mockResolvedValue([
+      { id: "r1", storageKey: "receipts/e1/a.jpg" },
+    ]);
+    mockDeleteObject.mockRejectedValue(new Error("R2 down"));
+
+    await expect(deleteAccount(USER)).resolves.toBeDefined();
+    expect(mockTx.user.update).toHaveBeenCalled();
   });
 
   it("CIHAZ ADRESLERINI de siliyor", async () => {

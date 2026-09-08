@@ -157,6 +157,7 @@ model User {
   groupInvites  GroupInvite[]  @relation("invitedBy")
   notifications Notification[]
   pushTokens    PushToken[]
+  receipts      ExpenseReceipt[] @relation("receiptUploadedBy")
 
   @@index([email])
 }
@@ -247,6 +248,7 @@ model Expense {
   deletedBy    User?                @relation("deletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
   participants ExpenseParticipant[]
   edits        ExpenseEdit[]
+  receipt      ExpenseReceipt?
 
   // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
   //   CHECK (amount > 0)
@@ -419,6 +421,48 @@ model PushToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/// Harcamaya ekli fis fotografi.
+///
+/// AYRI TABLO, Expense'te SUTUN DEGIL: harcama basina BIR fotograf yeterli
+/// (cok fotograf galeri, tek tek silme ve siralama demek - bilincli olarak
+/// kapsam disi) ama ileride cogaltmak gerekirse @unique kalkar ve VERI
+/// TASINMAZ. Sutun olsaydi o gun bir goc yazmak gerekirdi.
+///
+/// BAYTLAR BURADA DEGIL: veritabani nesne deposu degil. Burada duran sey
+/// anahtar, yani nesnenin depodaki adresi.
+model ExpenseReceipt {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// UNIQUE: harcama basina bir fotograf (yukaridaki gerekce).
+  expenseId String @unique @db.Uuid
+
+  /// YUKLEYEN AYRICA TUTULUYOR ve bu ADR-046'nin acik gereksinimi: hesap
+  /// silinince O KISININ fotograflari bulunabilmeli. Harcamayi ekleyen ile
+  /// fisi yukleyen ayni kisi olmayabilir.
+  uploadedById String @db.Uuid
+
+  /// Nesnenin depodaki adresi. UNIQUE cunku iki kayit ayni nesneyi
+  /// gostermemeli; biri silinince digeri kirik gorsel olurdu.
+  storageKey String @unique
+
+  /// Sunarken Content-Type basligina yaziliyor. ISTEMCIDEN GELMIYOR -
+  /// sunucu baytlara bakip kendi karar veriyor.
+  contentType String
+
+  byteSize  Int
+  createdAt DateTime @default(now())
+
+  /// Restrict - harcama zaten FIZIKSEL olarak silinmiyor (soft delete).
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  /// Restrict: hesap silme YUMUSAK, yani cascade hic tetiklenmezdi. Silme
+  /// ELLE yapiliyor (account.ts) ve once referans, sonra nesne - tersi,
+  /// depoda olmayan bir nesneye isaret eden kayit birakirdi.
+  uploadedBy User @relation("receiptUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  /// Hesap silmede "bu kullanicinin butun fisleri" sorgusu icin.
+  @@index([uploadedById])
 }
 
 // ---------------------------------------------------------------------------

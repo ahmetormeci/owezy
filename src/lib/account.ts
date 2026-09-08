@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { deleteReceiptsUploadedBy } from "@/lib/receipts";
+import { deleteObject } from "@/lib/storage";
 import { NotFoundError } from "@/lib/errors";
 
 /**
@@ -56,7 +58,10 @@ const DELETED_DISPLAY_NAME = "Silinmiş kullanıcı";
  * birakirdi.
  */
 export async function deleteAccount(userId: string) {
-  return prisma.$transaction(async (tx) => {
+  // Transaction'in DISINDA duruyor: commit'ten sonra depoya gidecek.
+  let receiptKeys: string[] = [];
+
+  const result = await prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
       where: { id: userId },
       select: { id: true, deletedAt: true },
@@ -125,6 +130,24 @@ export async function deleteAccount(userId: string) {
     // telefonuna bildirim gitmeye devam ederdi.
     await tx.pushToken.deleteMany({ where: { userId } });
 
+    /**
+     * FIS FOTOGRAFLARI - ADR-046. Burada iki kural carpisiyor: finansal
+     * kayit silinmez (fis, harcamanin kanidi) ve kisisel veri silinir
+     * (fiste yuz, adres, kartin son hanesi olabilir). Kisisel veri tarafi
+     * secildi, cunku gizlilik hikayesi tek cumleyle anlatilabilmeli:
+     * "hesabini silersen yukledigin her sey gider."
+     *
+     * HARCAMANIN KENDISI DURUYOR: tutar, kim odedi, kim ne kadar borclu -
+     * hepsi yerinde, BAKIYELER ETKILENMIYOR. Giden sey kaydin kendisi degil,
+     * destekleyici gorseli.
+     *
+     * ANAHTARLAR DISARI TASINIYOR: depodan silme bir AG ISTEGI ve bu
+     * transaction'in icinde durmamali - islem geri alinirsa nesneler coktan
+     * gitmis olurdu, ustelik baglanti bosuna acik kalirdi. Cagiran,
+     * commit'ten SONRA siliyor.
+     */
+    receiptKeys = await deleteReceiptsUploadedBy(tx, userId);
+
     await tx.user.update({
       where: { id: userId },
       data: {
@@ -142,4 +165,26 @@ export async function deleteAccount(userId: string) {
 
     return { archivedGroups, transferredGroups, leftGroups: memberships.length };
   });
+
+  /**
+   * COMMIT OLDU: kayitlar kesin gitti, simdi nesneler. EN IYI GAYRET -
+   * silinemeyen bir nesne OKSUZ kaliyor (kimse goremez, faturasi odenir)
+   * ama hesap silme BUNUN YUZUNDEN BASARISIZ OLMAMALI. Apple uygulama ici
+   * hesap silmeyi zorunlu tutuyor (5.1.1(v)) ve bir depo hatasinin o kapiyi
+   * kapatmasi kabul edilemez.
+   */
+  await Promise.all(
+    receiptKeys.map((key) =>
+      /**
+       * BURADA DA YAKALANIYOR - deleteObject zaten kendi icinde yakaliyor
+       * olsa bile. Ona guvenmek GORUNMEZ bir bagimlilik olurdu: storage.ts'te
+       * bir gun o try/catch kalkarsa hesap silme sessizce kirilgan hale
+       * gelirdi ve bunu ancak silmeye calisan kullanici fark ederdi.
+       * Bir test bu dali bilerek zorluyor.
+       */
+      deleteObject(key).catch(() => false),
+    ),
+  );
+
+  return result;
 }

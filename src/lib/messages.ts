@@ -48,6 +48,17 @@ export const MESSAGES_TR = {
 
   // --- Harcama ---
   "expense.not_found": "Harcama bulunamadı",
+
+  // --- Fis fotografi ---
+  "receipt.not_found": "Bu harcamaya ekli bir fiş yok",
+  "receipt.empty": "Dosya boş",
+  "receipt.too_large": "Fotoğraf çok büyük. En fazla 4 MB olabilir.",
+  /**
+   * TUR BAYTLARDAN okunuyor, istemcinin sozunden degil - o yuzden bu cumle
+   * "gecersiz tur" degil, KABUL EDILEN turleri sayiyor. Kullanici PDF ya da
+   * HEIC gonderdiginde ne yapacagini bilsin.
+   */
+  "receipt.unsupported_type": "Yalnızca JPEG ve PNG fotoğraflar eklenebilir",
   "expense.not_deleted": "Harcama zaten silinmemiş",
   "expense.participants_not_active": "Şu kullanıcılar grubun aktif üyesi değil: {userIds}",
   "expense.version_conflict": "Bu harcama sen düzenlerken başkası tarafından değiştirildi",
@@ -699,6 +710,11 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
 
   // --- Expense ---
   "expense.not_found": "Expense not found",
+
+  "receipt.not_found": "This expense has no receipt attached",
+  "receipt.empty": "The file is empty",
+  "receipt.too_large": "The photo is too large. It can be at most 4 MB.",
+  "receipt.unsupported_type": "Only JPEG and PNG photos can be attached",
   "expense.not_deleted": "This expense has not been deleted",
   "expense.participants_not_active":
     "These users are not active members of the group: {userIds}",
