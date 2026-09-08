@@ -26,15 +26,25 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-08
 
 Current task:
-  YOK - AKTIF GOREV TANIMLI DEGIL. 1.0.2 MAGAZADA CANLI (8 Eylul, telefonda
-  guncelleme alinarak dogrulandi).
+  1.0.3 build 17 TESTFLIGHT'TA - EKRANDA BAKILMASI BEKLENIYOR.
+  Kod tarafinda is YOK.
 
   SURUMLER:
-    1.0.2  CANLI. 2FA cerez duzeltmesi, bildirim zili, CSV disa aktarma,
-           silineni geri alma, gruptan ayrilma, CFBundleLocalizations,
-           universal link.
-    1.0.1  build 11, TestFlight'ta KULLANILMADAN duruyor. ATLANDI,
-           icerdigi her sey 1.0.2'de. Bir daha gonderilmeyecek.
+    1.0.3  build 17, TestFlight. INCELEMEYE GONDERILMEDI.
+           push bildirim, uye cikarma + davet iptali, {amount} duzeltmesi,
+           grup eylemlerinin fisin USTUNE tasinmasi, basliktaki hesap
+           simgesi, tema secimi (Sistem/Acik/Koyu).
+           build 16 da 1.0.3'tu; 17 onun yerini aldi.
+    1.0.2  MAGAZADA CANLI.
+    1.0.1  build 11, TestFlight'ta KULLANILMADAN duruyor. ATLANDI.
+
+  1.0.3'TE EKRANDA DOGRULANMAMIS OLAN: YERLESIM. Push gercek telefonda
+  dogrulandi ama grup ekranindaki eylem satiri, basliktaki iki simge ve
+  Gorunum secici HENUZ GORULMEDI - duzen goze bakilarak yargilanir.
+  OZELLIKLE: TEK GRUBU OLAN hesapla ac. O hesap dogrudan grubun icine
+  dusuyor ve geri dugmesi hic dogmuyor; hesaba giden tek yol eskiden o
+  ekranin en altindaki karttI ve KALDIRILDI. Basliktaki simge onu
+  karsilamiyorsa kullanici hesabina ulasamaz - kart geri konur.
 
   itunes.apple.com/lookup SURUMU GEC GOSTERIYOR. 1.0.2 telefona indikten
   sonra bile saatlerce "1.0" dondu. Yayin anini olcmez, onbelleginin
