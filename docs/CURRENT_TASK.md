@@ -40,8 +40,18 @@ Current task:
   sonra bile saatlerce "1.0" dondu. Yayin anini olcmez, onbelleginin
   tazelenmesini olcer - tek basina kanit sayma.
 
-  KOPRU ARTIK KALDIRILABILIR HALE GELIYOR - ama hemen degil, 1.0.2
-  YAYGINLASINCA. Ayrinti "KOPRU GECICI" basliginda.
+  KOPRU ARTIK KALDIRILABILIR HALE GELIYOR - ama HEMEN DEGIL, 1.0.2
+  YAYGINLASINCA. Erken kaldirilirsa guncellemeyi almamis her telefonda
+  2FA girisi YENIDEN KIRILIR; "yayinlandi" ile "yaygin" ayni sey degil.
+
+  KALDIRILINCA SILINECEKLER (4 dosya, olculdu 8 Eylul):
+    src/lib/two-factor-cookie-bridge.ts        tamamen
+    src/lib/two-factor-cookie-bridge.test.ts   tamamen
+    src/app/api/auth/[...all]/route.ts         BRIDGED_PATHS + ozel POST;
+                                               geriye duz toNextJsHandler
+    e2e/two-factor.spec.ts:327                 test.skip(...) blogu
+  Mobil taraftaki kalici duzeltme (lib/two-factor-cookie.ts) KALIR -
+  kopru onun eksikligini kapatiyordu, tersi degil.
 
   BILINEN KUSUR, 1.0.2'DE CANLI VE DUZELTILDI (henuz yayinlanmadi):
   mobil istemci hata parametrelerini tasimiyordu, kullanici "{amount}
