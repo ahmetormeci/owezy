@@ -8,6 +8,62 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-08 (4) — Fiş fotoğrafı (ADR-046 uygulandı)
+
+Harcamaya fiş fotoğrafı eklenebiliyor. Yeni tablo (`ExpenseReceipt`), yeni uç,
+Cloudflare R2, ve mobilde kamera + galeri.
+
+**Baytlar iki yönde de kendi ucumuzdan geçiyor.** Depoya herkese açık ya da
+imzalı bir adres vermek daha ucuzdu; ama fiş isim, adres, kartın son hanesi
+taşıyor ve bizden bağımsız çalışan bir adres, taşıyan kişinin hâlâ grupta olup
+olmadığını **soramaz** — üstelik süresiz çalışır. Her okuma o soruyu yeniden
+soruyor. Yan faydası: CSP'ye hiç dokunulmadı, görsel kendi kaynağımızdan
+geliyor ve `img-src 'self'` olduğu gibi kaldı.
+
+**Tür baytlardan okunuyor, istemcinin başlığından değil.** O başlık çağıranın
+yazdığı bir metin; "image/jpeg" deyip HTML gönderen biri kendi alan adımızda
+tarayıcının çalıştıracağı bir belge bırakırdı. Bir test HTML ve PDF gönderip
+ikisinin de **depoya ulaşmadan** reddedildiğini doğruluyor.
+
+**Yetki, harcamayı düzenleme yetkisiyle aynı:** oluşturan kişi. Ödemiş olmak
+yetki vermiyor — `paidById`'nin kendisi düzenlenebilir bir alan ve aksi hâlde
+biri onu kendine çevirip başkasının kaydı üzerinde kalıcı yetki kazanırdı
+(`expenses.ts`'teki gerekçe). Okumak için grubun aktif üyesi olmak yeterli.
+
+**Sıra iki yönde de test edilmiş.** Yazarken önce nesne sonra kayıt: kayıt hiç
+olmayan bir şeyi göstermesin. Silerken önce kayıt sonra nesne: hata öksüz bir
+nesne bıraksın (kimse göremez, faturası ödenir) — kırık görsel değil.
+
+**Bir test gerçek bir kırılganlık buldu.** Hesap silme, `deleteObject`'in kendi
+içinde hata yakalamasına *güveniyordu*: görünmez bir bağımlılık. `storage.ts`
+bir gün değişse Apple'ın zorunlu tuttuğu silme akışı (5.1.1(v)) sessizce
+kırılırdı. `account.ts` artık ayrıca yakalıyor.
+
+**Telefonda küçültme zorunlu, süsleme değil:** Vercel'in gövde sınırı 4.5MB,
+telefon fotoğrafı 3–8MB. Küçültmeseydik yükleme, bizim yazdığımız hata
+cümlesine ulaşamadan platform tarafından kesilirdi. 1600px / JPEG 0.7 ≈ 10 kat
+küçülme, ve HEIC aynı adımda JPEG oluyor.
+
+**İzin istemi seçimden sonra:** galeriden seçen kişiden kamera izni
+istenmiyor. Metinler iki dilde (`app.json` → `locales`), çünkü uygulama iki
+dil beyan ediyor ve Apple belirsiz izin metinlerini reddediyor.
+
+**Web görüntülüyor, yüklemiyor** — bilinçli kapsam kararı. Fiş ödeme anında
+telefonla çekiliyor; web'de eklemek ayrıca tarayıcıda küçültme demekti.
+`next/image` kullanılmadı: optimize edici kaynağı kendisi çekiyor ve bunu
+**yetkisiz** yapması gerekirdi.
+
+**Gizlilik politikasında bir cümle yanlış olacaktı** ve kaldırıldı:
+"uygulamada dosya yükleme diye bir şey yok". Yerine kimin ulaşabildiği,
+herkese açık bir adres olmadığı ve hesap silinince fotoğrafların **depodan da**
+gittiği yazıldı — ADR-046'nın söyleyebilmek için seçtiği cümle.
+
+**`descriptionFold` satırı yine atıldı** — beşinci kez.
+
+Testler: kökte 611, mobilde 86 + 34.
+
+---
+
 ## 2026-09-08 (3) — Push bildirim (ADR-047)
 
 Seçilen dörtlünün sonuncusu. Yeni bir tablo (`PushToken`), yeni bir uç

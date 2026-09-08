@@ -603,7 +603,18 @@ bildirimlere bakıyor.
 ---
 
 ## ADR-046 — Görsellerde silme: kişisel olan gider, grup kaydı kalır
-**Tarih:** 2026-09-04 · **Durum:** Kabul edildi · **UYGULANMADI**
+**Tarih:** 2026-09-04 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-08**
+
+> **Uygulama notu (8 Eylül).** Karardaki dört uygulama notunun dördü de
+> karşılandı ve biri kod okunarak değil, bir **test tarafından** yakalandı:
+> hesap silme, depodan silmenin kendi içinde hata yakalamasına *güveniyordu*.
+> Görünmez bir bağımlılıktı — `storage.ts`'teki `try/catch` bir gün kalksa
+> Apple'ın zorunlu tuttuğu silme akışı sessizce kırılırdı. Artık `account.ts`
+> de ayrıca yakalıyor ve bir test o dalı bilerek zorluyor.
+>
+> Anahtarlar transaction'ın **dışına** taşınıyor; nesneler commit'ten sonra
+> siliniyor. Sebep push bildirimindekiyle aynı: ağ isteği transaction'ın
+> içinde durmamalı, işlem geri alınırsa nesneler çoktan gitmiş olurdu.
 
 **Karar:** Fotoğraf özelliği geldiğinde silme anlamı şöyle olacak:
 
