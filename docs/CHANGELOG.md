@@ -54,6 +54,33 @@ dosyada yine yazılı.
 
 Testler: kökte 596 (11 push + 1 hesap silme), mobilde 79 + 34.
 
+**Gerçek telefonda doğrulandı (1.0.3 build 16, TestFlight).** İzin verildi,
+ikinci bir hesabın eklediği harcama bildirim olarak düştü. Bu, bu projede
+**gönderilmeden önce uçtan uca doğrulanan ilk özellik** — universal link'in
+tersine.
+
+**Build iki kez alındı.** İlki şu hatayla düştü:
+
+```
+Provisioning profile ... doesn't include the Push Notifications capability
+Provisioning profile ... doesn't include the aps-environment entitlement
+```
+
+Aynı sınıf hata 1.0.2'de Associated Domains ile de yaşanmıştı ve çözümü de
+aynı: yetki **Apple portalında** işaretleniyor, bu mevcut profilleri geçersiz
+kılıyor ve EAS bir sonrakinde yenisini üretiyor. EAS bunu kendi başına
+yapmıyor. Kontrol edilebilir: profil kimliği `ZLPAAW529A` → `ZR63Q74VG8`.
+
+**APNs anahtarı ile App ID'deki kutu ayrı şeyler** ve ikisi de gerekiyor:
+anahtar göndermek, kutu almak için. Anahtar kurulmuştu, kutu değildi.
+
+Yetkinin ikiliye girdiği **varsayılmadı, ölçüldü**: indirilen `.ipa` içinde
+`aps-environment => production`.
+
+**`eas build` başarısız build'de de 0 dönüyor** — arka plan bildirimindeki
+"exit code 0" hiçbir şey söylemiyor, çıktı okunmalı. Kabuk seviyesinde aynı
+sınıf hata daha önce de yaşanmıştı.
+
 ---
 
 ## 2026-09-08 (2) — Üye çıkarma ve davet iptali mobile geldi
