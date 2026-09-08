@@ -140,8 +140,21 @@ EAS BUILD BASARISIZ OLDUGUNDA DA 0 DONUYOR. Arka plan bildirimindeki
   "exit code 0" build'in gectigi anlamina GELMEZ; ciktiyi oku. Ayni sinif
   hata daha once kabuk seviyesinde de yasandi (asagida).
 
+FIS FOTOGRAFI - KOD BITTI (8 Eylul, ADR-046 uygulandi). Kalanlar:
+  1. R2 ORTAM DEGISKENLERI - KULLANICIDA. R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
+     R2_SECRET_ACCESS_KEY, R2_BUCKET; hem .env.local hem VERCEL.
+     Eksikse kod ACIK bir hata veriyor, sessizce basarisiz OLMUYOR.
+  2. GERCEK CIHAZDA DOGRULAMA - YAPILMADI. Simulatorde kamera yok; galeri
+     var ama yukleme R2 olmadan denenemez.
+  3. APP PRIVACY ANKETI: "User Content -> Photos or Videos" beyani.
+  4. YENI BUILD SART - iki native modul eklendi (image-picker, manipulator).
+
+  WEB'DE YUKLEME YOK, yalnizca goruntuleme. Bilincli kapsam karari; fis
+  odeme aninda telefonla cekiliyor ve web'de eklemek ayrica TARAYICIDA
+  kucultme demekti. Isteyen olursa ayri bir is.
+
 SIRADAKI IS - SECILMEDI:
-  GORSEL EKLEME (yukarida - tasarim engeli kalkti)
+  (dortlu bitti; yeni aday yok)
 
   Destek sayfasindaki "bugunku sinirlar" listesi (src/content/legal/support.ts)
   bunlarla ORTAK. Bir madde bitince ORASI DA GUNCELLENMELI.
