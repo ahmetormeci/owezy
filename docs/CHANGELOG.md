@@ -8,6 +8,54 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-08 (3) — Push bildirim (ADR-047)
+
+Seçilen dörtlünün sonuncusu. Yeni bir tablo (`PushToken`), yeni bir uç
+(`/api/v1/push-tokens`), yeni bir native modül (`expo-notifications`).
+
+**En zor soru "nereden gönderilir" oldu.** Bildirim satırları harcamayla aynı
+transaction'da yazılıyor — bilinçli, ikisi ya birlikte olur ya hiç. Push o
+pazarlığa katılamaz çünkü **geri alınamaz**: transaction geri alınırsa
+insanlara hiç olmamış bir harcamanın bildirimi gitmiş olur.
+
+Gönderim `after()` ile cevaptan sonraya alındı. Ama `after()` **rota hata
+atsa da çalışıyor**, yani "cevap gitti" tek başına "commit oldu" demek değil.
+Çözüm tahmin etmek değil **sormak** oldu: bildirim satırlarının kimlikleri
+artık bizim tarafımızdan üretiliyor ve gönderim, o satırların gerçekten var
+olup olmadığına bakarak başlıyor. Alıcılar da hayatta kalan satırlardan
+okunuyor. **Altı çağrı yerinin hiçbirine dokunulmadı.**
+
+**Bildirimde tutar ve kişi adı yok** — başlıkta grup adı, gövdede olayın
+türü. Uygulama içindeki cümle ikisini de taşıyor ama o cümle push'a konsaydı
+hem Expo'nun sunucularından geçer hem de kilit ekranında telefonun yanındaki
+herkese görünürdü. Bir test bunu regex ile bekçiliyor. İzin ekranı da
+kullanıcıya söylüyor: bir para uygulamasına izin veren kişinin, kilit
+ekranında ne göründüğünü **önceden** bilmeye hakkı var.
+
+**İzin açılışta istenmiyor.** iOS istemi ömürde bir kez veriyor; reddedilirse
+bir daha sorulamıyor. İstem bildirimler ekranında, kişi zaten bildirimlere
+bakarken.
+
+**Belirteç çıkışta, hesap silinince ve Expo "cihaz yok" dediğinde siliniyor.**
+Hesap silmede şemadaki `Cascade` kurtarmıyor çünkü silme yumuşak; elle
+siliniyor ve bir test bunu koruyor. `token` unique: aynı cihaz başka hesaba
+girerse satır **devrediliyor**, kopyalanmıyor.
+
+**Gizlilik politikası iki dilde güncellendi** ve bir cümlesi artık yanlış
+olacaktı: "Konum bilgisi, rehberin, fotoğraf galerin, **cihaz kimliğin**"
+toplamıyoruz diyordu. Bildirim adresi bir tanımlayıcı — cihazı uygulamalar
+arası tanımıyor ama "hiç toplamıyoruz" demek doğru değildi. Madde ayrıldı:
+reklam kimliği (IDFA) ve uygulamalar arası tanımlayıcı toplanmıyor; bildirim
+adresi ise yukarıda, ne olduğu anlatılarak listeleniyor. Expo da sağlayıcı
+listesine, **ne gönderildiği** ile birlikte eklendi.
+
+**Göçte `descriptionFold` satırı yine atıldı** — dördüncü kez, aynı sebeple,
+dosyada yine yazılı.
+
+Testler: kökte 596 (11 push + 1 hesap silme), mobilde 79 + 34.
+
+---
+
 ## 2026-09-08 (2) — Üye çıkarma ve davet iptali mobile geldi
 
 Her iki ucun da baştan beri var olduğu, yalnızca web'in kullandığı iki işlem.

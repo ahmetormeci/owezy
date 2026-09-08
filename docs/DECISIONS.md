@@ -523,6 +523,85 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-047 — Push bildiriminde tutar ve kişi adı yok; gönderim commit'ten sonra
+**Tarih:** 2026-09-08 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-08**
+
+**Karar üç parçalı.**
+
+### 1. Bildirimin içinde ne var: grubun adı ve olayın türü. Tutar ve kişi adı YOK.
+
+Uygulama içindeki cümle ikisini de taşıyor — "Ali 120,50 TL'lik Market
+harcaması ekledi". Push'a aynısını koymak iki şeyi birden yapardı: o cümleyi
+**Expo'nun sunucularından** geçirmek, ve **kilit ekranında** telefonun
+yanındaki herkese göstermek. Bu bir para uygulaması; kimin kime ne kadar
+borçlu olduğu kilit ekranında durmamalı.
+
+**Olayın türü kalıyor** çünkü hassas değil ve bildirimi işe yarar kılıyor:
+"bir şey oldu" ile "bir harcama eklendi" arasında gerçek bir fark var.
+
+Bu yüzden `push.*` anahtarları `ui.notif_*`'ten **ayrı**. Tek anahtarı
+paylaşsalardı biri diğerini bozmadan değiştirilemezdi. Bir test tutarın
+sızmadığını regex ile bekçiliyor, ve izin ekranı bunu kullanıcıya da
+söylüyor — bir para uygulamasına izin veren kişinin, kilit ekranında ne
+göründüğünü **önceden** bilmeye hakkı var.
+
+**Elenen seçenek — içeriksiz bildirim** ("Owezy'de yeni bir hareket var"):
+en güvenlisi ama kullanıcı hangi grup olduğunu bilmiyor; üç grubu varsa
+üçünü de açmak zorunda. Bildirimin değerinin büyük kısmı gidiyordu.
+
+### 2. Gönderim Expo'nun servisiyle, doğrudan APNs ile değil.
+
+APNs **HTTP/2** istiyor ve Node'un fetch'i (undici) HTTP/2 konuşmuyor.
+Ayrıca her istekte ES256 ile JWT imzalamak ve bağlantıyı havuzlamak
+gerekiyordu — Vercel'in istek başına yaşayan işlevlerinde havuzlanacak bir
+şey yok. Expo'nun ucu düz bir HTTPS POST.
+
+**Bedeli açıkça kabul edildi:** bildirim metni üçüncü bir taraftan geçiyor.
+Kararın birinci parçası bu bedeli küçültüyor — geçen şey grup adı ve olay
+türü, tutar değil. Gizlilik politikasına Expo bir sağlayıcı olarak ve
+**ne gönderildiği** ile birlikte yazıldı.
+
+### 3. Push transaction'ın İÇİNDEN gönderilmiyor; commit VERİTABANINA SORULUYOR.
+
+Bildirim satırları harcamayla aynı transaction'da yazılıyor (bilinçli: ikisi
+ya birlikte olur ya hiç). Push o pazarlığa katılamaz — **geri alınamaz**.
+Transaction sonradan geri alınırsa insanlara hiç olmamış bir harcamanın
+bildirimi gitmiş olurdu; üstelik ağ isteği veritabanı bağlantısını boşuna
+açık tutardı.
+
+Gönderim `after()` ile cevaptan sonraya alınıyor. Ama `after()` **rota hata
+atsa da çalışıyor**, yani "cevap gönderildi" tek başına "commit oldu"
+demek değil.
+
+**Çözüm ölçmek:** bildirim satırlarının kimlikleri artık bizim tarafımızdan
+üretiliyor, ve gönderim o satırların gerçekten var olup olmadığına bakarak
+başlıyor. Yoksa hiçbir şey gönderilmiyor. Alıcılar da hayatta kalan
+satırlardan okunuyor — yani gönderilen, gerçekten yazılmış olanın aynısı.
+
+**Yan faydası:** altı çağrı yerinin (expenses, settlements, groups) hiçbirine
+dokunulmadı.
+
+### Belirtecin yaşam döngüsü — üçü de zorunlu
+
+| Ne zaman | Neden |
+|---|---|
+| Çıkışta silinir | Kalırsa telefon o hesabın bildirimlerini almaya devam eder — başkası giriş yapmış olsa bile |
+| Hesap silinince silinir | Şemadaki `Cascade` kurtarmıyor: silme **yumuşak**, `User` satırı duruyor |
+| Expo "DeviceNotRegistered" derse silinir | Uygulama kaldırılmış; temizlenmezse tablo ölü adreslerle büyür |
+
+Ayrıca `token` **unique**: aynı cihaz başka bir hesaba girerse satır
+**devrediliyor**, kopyalanmıyor. Kopyalansaydı bir cihaz değiştirme, bir veri
+sızıntısına dönerdi.
+
+### İzin açılışta istenmiyor
+
+iOS istemi uygulama ömründe **bir kez** veriyor; reddedilirse bir daha
+sorulamıyor. Daha ne yaptığını görmemiş birine sormak "reddet"i garantiler.
+İstem, bildirimler ekranındaki açık bir düğmenin arkasında — kişi zaten
+bildirimlere bakıyor.
+
+---
+
 ## ADR-046 — Görsellerde silme: kişisel olan gider, grup kaydı kalır
 **Tarih:** 2026-09-04 · **Durum:** Kabul edildi · **UYGULANMADI**
 

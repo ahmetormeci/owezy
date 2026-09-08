@@ -97,9 +97,18 @@ MOBILDE YONETIM EKSIKLERI - BITTI (8 Eylul). Uye cikarma ve davet iptali
   yok, web'de de yok - devir yalnizca AYRILIRKEN var ve o mobilde zaten
   calisiyordu.
 
+PUSH BILDIRIM - KOD BITTI (8 Eylul, ADR-047). Kalanlar KOD DEGIL:
+  1. APNs ANAHTARI - KULLANICIDA. "eas credentials" uretebiliyor ama Apple
+     girisi gerekiyor. Bu yapilmadan gonderim CALISMAZ (Expo "cihaza
+     ulasilamadi" der, sessizce).
+  2. YENI BUILD SART - native modul eklendi, OTA ile gitmez.
+  3. APP PRIVACY ANKETI: "Identifiers" beyani eklenecek.
+  4. DESTEK SAYFASI: "telefona bildirim GONDERILMIYOR" maddesi kalkacak -
+     ama YAYINLANINCA, once degil (sayfa bugun DOGRU).
+  Gizlilik politikasi ZATEN guncellendi (inceleyici ona bakiyor, o yuzden
+  yayindan once).
+
 SIRADAKI IS - SECILMEDI:
-  PUSH BILDIRIM (APNs sertifikasi, expo-notifications, izin istemi, yeni
-    build ve App Privacy anketinde degisiklik)
   GORSEL EKLEME (yukarida - tasarim engeli kalkti)
 
   Destek sayfasindaki "bugunku sinirlar" listesi (src/content/legal/support.ts)

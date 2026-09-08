@@ -82,6 +82,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Açık oturumların. Her oturumla birlikte bağlandığın IP adresi ve " +
                 "tarayıcı/cihaz bilgisi (user agent) saklanır — oturumu yönetmek ve " +
                 "hesabını korumak için. Reklam ya da ölçüm için kullanılmaz.",
+              "Telefona bildirim gelmesini açtıysan: cihazının bildirim adresi. " +
+                "Bu adres cihazında üretilir, kimliğini içermez ve yalnızca " +
+                "bildirim göndermek için kullanılır. Çıkış yaptığında silinir.",
             ],
           },
           {
@@ -116,7 +119,12 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             items: [
               "Ödeme bilgisi: kart numarası, IBAN, banka hesabı — hiçbiri. Uygulama para transferi yapmaz; " +
                 "ödeşme kaydı yalnızca senin girdiğin bir nottur.",
-              "Konum bilgisi, rehberin, fotoğraf galerin, cihaz kimliğin.",
+              "Konum bilgisi, rehberin, fotoğraf galerin.",
+              "Reklam kimliği (IDFA) ya da cihazını uygulamalar arasında tanıyan " +
+                "herhangi bir tanımlayıcı. Bildirimleri açtıysan sakladığımız " +
+                "bildirim adresi bundan farklıdır: yalnızca bu uygulamaya aittir, " +
+                "uygulamayı silip yeniden kurduğunda değişir ve başka hiçbir yerde " +
+                "seni tanımaya yaramaz.",
               "Analitik ve reklam verisi. Uygulamada hiçbir analiz veya reklam aracı kurulu değil.",
               "Yüklediğin dosyalar — uygulamada dosya yükleme diye bir şey yok.",
             ],
@@ -153,6 +161,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Resend — giriş kodu e-postalarının gönderimi (e-posta adresin bu hizmete iletilir)",
               "Vercel — uygulamanın barındırılması",
               "Cloudflare — alan adı yönlendirmesi",
+              "Expo — telefona bildirim gönderimi. Bildirimin metni bu hizmetten " +
+                "geçer: yalnızca grubun adı ve ne olduğu (\"bir harcama eklendi\" gibi). " +
+                "Tutarlar ve kişi adları bildirime hiç konmaz.",
               "Sentry — hata takibi",
             ],
           },
@@ -344,6 +355,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Your open sessions. Each one stores the IP address you connected from " +
                 "and your browser/device string (user agent) — to manage the session " +
                 "and protect your account. Never for advertising or measurement.",
+              "If you turned on notifications on your phone: your device's notification " +
+                "address. It is generated on your device, does not identify you, and is " +
+                "used only to send notifications. It is deleted when you sign out.",
             ],
           },
           { kind: "p", text: "You create the rest by using the app:" },
@@ -375,7 +389,12 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             items: [
               "Payment details: no card numbers, no bank accounts. The app transfers no money; " +
                 "a settlement is only a note that you entered.",
-              "Location, contacts, photo library, device identifiers.",
+              "Location, contacts, photo library.",
+              "An advertising identifier (IDFA), or any identifier that recognises " +
+                "your device across apps. If you turned notifications on, the " +
+                "notification address we store is a different thing: it belongs to " +
+                "this app only, changes when you reinstall, and cannot be used to " +
+                "recognise you anywhere else.",
               "Analytics or advertising data. No such tool is installed in the app at all.",
               "Uploaded files — the app has no file upload.",
             ],
@@ -412,6 +431,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Resend — delivery of sign-in code emails (your email address is passed to this service)",
               "Vercel — hosting",
               "Cloudflare — domain routing",
+              "Expo — delivering notifications to your phone. The notification text " +
+                "passes through it: only the group's name and what happened (\"an expense " +
+                "was added\"). Amounts and names are never put in a notification.",
               "Sentry — error tracking",
             ],
           },
