@@ -100,9 +100,20 @@ export async function apiPatch<T>(
   return send<T>(path, token, "PATCH", body);
 }
 
-/** Oturumlu DELETE. Silme YUMUSAK: sunucu kaydi isaretliyor, fiziksel silme yok. */
-export async function apiDelete<T>(path: string, token: string | null): Promise<ApiResult<T>> {
-  return send<T>(path, token, "DELETE");
+/**
+ * Oturumlu DELETE. Silme YUMUSAK: sunucu kaydi isaretliyor, fiziksel silme yok.
+ *
+ * GOVDE OPSIYONEL ve bir sebebi var: push adresini silerken hangi ADRESIN
+ * silinecegini soylemek gerekiyor ve o adres ADRES CUBUGUNA KONMAMALI -
+ * cihazi tanimlayan bir dize, sunucu gunluklerinde ve ara katmanlarda duracak
+ * bir yer degil.
+ */
+export async function apiDelete<T>(
+  path: string,
+  token: string | null,
+  body?: unknown,
+): Promise<ApiResult<T>> {
+  return send<T>(path, token, "DELETE", body);
 }
 
 async function send<T>(

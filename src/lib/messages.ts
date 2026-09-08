@@ -606,6 +606,41 @@ export const MESSAGES_TR = {
   "ui.notif_settlement_cancelled": "{actor} bir ödeme kaydını iptal etti",
   "ui.notif_member_joined": "{actor} gruba katıldı",
 
+  /**
+   * TELEFONA GIDEN bildirimin metni. Ustteki "ui.notif_*" ile AYNI OLAY,
+   * FARKLI CUMLE - ve fark bilincli.
+   *
+   * Uygulama icindeki cumle KISI ADI ve TUTAR tasiyor ("Ali 120,50 TL'lik
+   * Market harcamasi ekledi"). Push oyle olsaydi ayni bilgi hem Expo'nun
+   * sunucularindan gecer hem de telefon KILITLIYKEN yanindaki herkese
+   * gorunurdu. Bu bir para uygulamasi; kimin kime ne kadar borclu oldugu
+   * kilit ekraninda durmamali.
+   *
+   * OLAYIN TURU kaliyor cunku hassas degil ve bildirimi ise yarar kiliyor -
+   * "bir sey oldu" ile "bir harcama eklendi" arasinda gercek bir fark var.
+   * Grup adi BASLIGA gidiyor (ceviri gerekmiyor, kullanicinin kendi yazdigi
+   * metin).
+   */
+  "push.expense_added": "Yeni bir harcama eklendi",
+  "push.expense_updated": "Bir harcama güncellendi",
+  "push.expense_deleted": "Bir harcama silindi",
+  "push.settlement_recorded": "Bir ödeme kaydedildi",
+  "push.settlement_cancelled": "Bir ödeme kaydı iptal edildi",
+  "push.member_joined": "Gruba yeni biri katıldı",
+
+  // Bildirimler ekranindaki izin satiri.
+  "ui.push_enable": "Bildirimleri telefona getir",
+  "ui.push_enabled": "Bu telefona bildirim geliyor",
+  "ui.push_denied": "Bildirim izni kapalı. Ayarlar → Owezy → Bildirimler'den açabilirsin.",
+  /**
+   * NE GONDERILDIGINI ACIKCA SOYLUYOR. Kullanici bir para uygulamasina
+   * bildirim izni veriyor; kilit ekraninda tutar cikip cikmayacagini bilmeye
+   * hakki var. Ayrica bu bir SOZ: metni degistiren, lib/push.ts'i de
+   * degistirmek zorunda kaldigini burada goruyor.
+   */
+  "ui.push_hint":
+    "Uygulama kapalıyken de grubunda bir hareket olduğunda haberin olur. Tutarlar ve kişi adları bildirimde yazmaz; yalnızca grubun adı ve ne olduğu görünür.",
+
   // --- Harcama kategorileri ---
   "ui.category_food": "Yemek",
   "ui.category_transport": "Ulaşım",
@@ -1100,6 +1135,19 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.notif_settlement_recorded": "{actor} recorded a settlement",
   "ui.notif_settlement_cancelled": "{actor} cancelled a settlement",
   "ui.notif_member_joined": "{actor} joined the group",
+
+  "push.expense_added": "A new expense was added",
+  "push.expense_updated": "An expense was updated",
+  "push.expense_deleted": "An expense was deleted",
+  "push.settlement_recorded": "A settlement was recorded",
+  "push.settlement_cancelled": "A settlement was cancelled",
+  "push.member_joined": "Someone joined the group",
+
+  "ui.push_enable": "Get notifications on this phone",
+  "ui.push_enabled": "This phone receives notifications",
+  "ui.push_denied": "Notifications are turned off. You can enable them in Settings → Owezy → Notifications.",
+  "ui.push_hint":
+    "You will hear about activity in your groups even when the app is closed. Amounts and names are never in the notification; only the group name and what happened.",
 
   // --- Expense categories ---
   "ui.category_food": "Food",

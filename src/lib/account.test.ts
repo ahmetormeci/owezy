@@ -25,6 +25,7 @@ const { mockTx } = vi.hoisted(() => ({
     account: { deleteMany: vi.fn() },
     twoFactor: { deleteMany: vi.fn() },
     notification: { deleteMany: vi.fn() },
+    pushToken: { deleteMany: vi.fn() },
     // Bu ikisi BILEREK var ve BILEREK hic cagrilmamali: testler
     // "dokunulmadi" iddiasini ancak taklit mevcutsa dogrulayabilir.
     expense: { deleteMany: vi.fn(), updateMany: vi.fn() },
@@ -114,6 +115,14 @@ describe("kimlik bilgileri", () => {
   it("bildirimleri de siliyor", async () => {
     await deleteAccount(USER);
     expect(mockTx.notification.deleteMany).toHaveBeenCalledWith({ where: { userId: USER } });
+  });
+
+  it("CIHAZ ADRESLERINI de siliyor", async () => {
+    // Unutulursa silinmis bir hesabin telefonuna bildirim gitmeye DEVAM
+    // eder. Semadaki Cascade bunu kurtarmiyor: silme yumusak (deletedAt),
+    // yani User satiri duruyor ve cascade hic tetiklenmiyor.
+    await deleteAccount(USER);
+    expect(mockTx.pushToken.deleteMany).toHaveBeenCalledWith({ where: { userId: USER } });
   });
 });
 

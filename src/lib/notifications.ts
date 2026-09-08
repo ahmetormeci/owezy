@@ -1,5 +1,7 @@
 import type { NotificationType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { randomUUID } from "node:crypto";
+import { schedulePush, type PendingPush } from "@/lib/push";
 import {
   DEFAULT_NOTIFICATION_PAGE_SIZE,
   MAX_NOTIFICATION_PAGE_SIZE,
@@ -45,12 +47,12 @@ type CreateNotificationsInput = {
 export async function createNotifications(
   tx: Prisma.TransactionClient,
   input: CreateNotificationsInput,
-): Promise<void> {
+): Promise<PendingPush | null> {
   // Kisi kendi yaptigi islem icin bildirim almaz. Ayrica ayni kisi listede
   // birden fazla gecebilir (orn. hem odeyen hem katilimci) - tek bildirim yeter.
   const recipients = [...new Set(input.recipientIds)].filter((id) => id !== input.actorId);
   if (recipients.length === 0) {
-    return;
+    return null;
   }
 
   const actor = await tx.user.findUnique({
@@ -63,13 +65,45 @@ export async function createNotifications(
     actorName: actor?.displayName ?? "Bilinmeyen kullanıcı",
   };
 
+  /**
+   * KIMLIKLER BURADA URETILIYOR, veritabanina biraktirilmiyor. createMany
+   * uretilen kimlikleri DONDURMUYOR ve push'un "bu satirlar gercekten yazildi
+   * mi" diye sorabilmesi icin onlara ihtiyaci var (bkz. PendingPush).
+   */
+  const ids = recipients.map(() => randomUUID());
+
   await tx.notification.createMany({
-    data: recipients.map((userId) => ({
+    data: recipients.map((userId, index) => ({
+      id: ids[index],
       userId,
       type: input.type,
       payload: payload as unknown as Prisma.InputJsonObject,
     })),
   });
+
+  /**
+   * PUSH BURADA GONDERILMIYOR, yalnizca GONDERILECEGI SOYLENIYOR.
+   *
+   * Bu fonksiyon cagiranin transaction'i icinde calisiyor (yukaridaki
+   * gerekce). Push'u buradan atmak iki seyi birden bozardi: transaction
+   * sonradan geri alinirsa insanlara HIC OLMAMIS bir harcamanin bildirimi
+   * gitmis olurdu - ve push geri alinamaz - ustelik ag istegi veritabani
+   * baglantisini bosuna acik tutardi.
+   *
+   * Onun yerine gonderim icin gereken bilgi DONDURULUYOR; cagiran,
+   * transaction commit oldUKTAN sonra schedulePush ile planliyor.
+   */
+  const pending: PendingPush = {
+    notificationIds: ids,
+    type: input.type,
+    groupId: input.payload.groupId,
+    groupName: input.payload.groupName,
+  };
+
+  // Yalnizca PLANLANIYOR: after() cevap gonderildikten sonra calisiyor, yani
+  // bu satir transaction'in icinde olsa da gonderim disinda kaliyor.
+  schedulePush(pending);
+  return pending;
 }
 
 type ListNotificationsOptions = {

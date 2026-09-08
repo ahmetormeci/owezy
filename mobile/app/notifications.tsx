@@ -7,6 +7,7 @@ import type { NotificationType } from "@prisma/client";
 import { useLocale, useTranslate } from "../lib/i18n";
 import { useApiClient } from "../lib/use-api";
 import { useTheme, type Theme } from "../lib/theme";
+import { PushOptIn } from "../components/push-opt-in";
 
 /**
  * Bildirimler. MOBILDE HIC YOKTU; web'de basliktaki zil bu listeyi acıyor.
@@ -174,6 +175,9 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={s.content}>
+        {/* Izin istemi listenin USTUNDE: kullanici buraya bildirimlere
+            bakmaya geldi, yani baglam tam burada. */}
+        <PushOptIn />
         {error ? (
           <Pressable onPress={() => void load(null)}>
             <Text style={s.error}>{error}</Text>

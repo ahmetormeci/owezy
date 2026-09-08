@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SUPPORTED_LOCALES, type Locale } from "@/lib/locale";
 import { useSession } from "../lib/auth";
+import { disablePush } from "../lib/push";
 import { useLocale, useSetLocale, useTranslate } from "../lib/i18n";
 import { useApiClient, useApiGet } from "../lib/use-api";
 import { useTheme, type Theme } from "../lib/theme";
@@ -38,7 +39,7 @@ export default function AccountScreen() {
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
   const router = useRouter();
-  const { signOut } = useSession();
+  const { signOut, getToken } = useSession();
   const { remove } = useApiClient();
 
   const { state } = useApiGet<Me>("/api/v1/me");
@@ -106,6 +107,23 @@ export default function AccountScreen() {
     router.replace("/sign-in");
   }
 
+  /**
+   * CIKIS - ama once CIHAZ ADRESI SILINIYOR.
+   *
+   * Adres sunucuda kalirsa telefon bu hesabin bildirimlerini almaya devam
+   * eder; ayni telefona baska biri giris yapmis olsa bile. Yani bu bir
+   * temizlik degil, bir sizinti kapatma.
+   *
+   * SIRA ONEMLI: silme istegi oturum belirteci gerektiriyor, o yuzden
+   * signOut()'tan ONCE. Basarisiz olursa da cikis yine yapiliyor - kullanici
+   * cikamamis olmaktansa adres kalsin (ve yeni kullanicinin kaydi zaten onu
+   * devralir, bkz. lib/push.ts).
+   */
+  async function leave() {
+    await disablePush(await getToken());
+    await signOut();
+  }
+
   return (
     <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={s.content}>
@@ -147,7 +165,7 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        <Pressable style={s.secondary} onPress={() => void signOut()} disabled={busy}>
+        <Pressable style={s.secondary} onPress={() => void leave()} disabled={busy}>
           <Text style={s.secondaryText}>{t("ui.sign_out")}</Text>
         </Pressable>
 

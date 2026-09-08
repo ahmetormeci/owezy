@@ -156,6 +156,7 @@ model User {
   expenseEdits  ExpenseEdit[]  @relation("changedBy")
   groupInvites  GroupInvite[]  @relation("invitedBy")
   notifications Notification[]
+  pushTokens    PushToken[]
 
   @@index([email])
 }
@@ -378,6 +379,46 @@ model Notification {
   // Listeyi yeniden eskiye siralamak icin. Bu olmasa her listeleme, kullanicinin
   // TUM bildirimlerini okuyup bellekte siralamak zorunda kalirdi.
   @@index([userId, createdAt])
+}
+
+/// Telefonun push adresi.
+///
+/// NEDEN AYRI BIR TABLO, User'da BIR ALAN DEGIL: bir kisinin birden fazla
+/// cihazi olabiliyor ve hepsine gitmesi gerekiyor. Tek alan olsaydi ikinci
+/// cihaz birincisini ezerdi ve kullanici "telefonuma geliyor, tabletime
+/// gelmiyor" derdi.
+///
+/// ICINDE KULLANICI VERISI YOK: yalnizca Expo'nun urettigi adres. Bildirimin
+/// METNI burada saklanmiyor, gonderim aninda kuruluyor.
+model PushToken {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @db.Uuid
+
+  /// Expo'nun urettigi adres: "ExponentPushToken[...]".
+  ///
+  /// UNIQUE ve bu ONEMLI: ayni cihaz baska bir hesaba giris yaparsa Expo AYNI
+  /// adresi veriyor. Unique olmasaydi tek cihaz iki kullanicinin satirinda
+  /// birden durur ve onceki kullanicinin bildirimleri yeni kullaniciya
+  /// giderdi. Kayit sirasinda satir devrediliyor (upsert), kopyalanmiyor.
+  token String @unique
+
+  /// "ios" | "android". Bugun yalnizca ios var (ADR-030) ama gonderim
+  /// hatalarini ayirt etmek icin saklaniyor.
+  platform String
+
+  createdAt DateTime @default(now())
+
+  /// Her acilista tazeleniyor. Expo adresleri sessizce eskiyebiliyor;
+  /// bu alan olmadan "uzun suredir gorunmeyen" cihazlari ayiklamanin yolu yok.
+  lastSeenAt DateTime @default(now())
+
+  /// Cascade - Session gibi, cunku bu bir KAYIT degil, cihaz baglantisi.
+  /// AMA hesap silme YUMUSAK (User.deletedAt), yani bu cascade pratikte
+  /// tetiklenmiyor; account.ts silmeyi ayrica ELLE yapiyor.
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------

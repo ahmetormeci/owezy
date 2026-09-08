@@ -120,6 +120,10 @@ export async function deleteAccount(userId: string) {
 
     // Bildirimler de kisisel: kime ne oldugunu anlatiyorlar.
     await tx.notification.deleteMany({ where: { userId } });
+    // Cihaz adresleri. Semada Cascade var ama silme YUMUSAK (User.deletedAt),
+    // yani cascade tetiklenmiyor - burada elle silinmezse silinmis bir hesabin
+    // telefonuna bildirim gitmeye devam ederdi.
+    await tx.pushToken.deleteMany({ where: { userId } });
 
     await tx.user.update({
       where: { id: userId },

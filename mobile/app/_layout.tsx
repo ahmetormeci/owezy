@@ -2,7 +2,9 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { LocaleProvider, useTranslate } from "../lib/i18n";
 import { useTheme } from "../lib/theme";
+import * as Notifications from "expo-notifications";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";
+import { syncPushToken } from "../lib/push";
 import { SessionProvider, useSession } from "../lib/auth";
 import { UnreadProvider } from "../lib/unread";
 import { NotificationBell } from "../components/notification-bell";
@@ -46,10 +48,62 @@ function deviceLocale() {
  * olmadigini bilmiyoruz. Beklemeseydik girisli kullaniciyi da her aciliste
  * bir an icin giris ekranina atardik.
  */
+/**
+ * FOREGROUND'DA BANNER GOSTERILIYOR.
+ *
+ * Uygulama acikken bildirimin hic gorunmemesi de bir secenekti - zaten
+ * ustte zil var. Ama zilin sayaci yalnizca ekran degistiginde tazeleniyor
+ * (lib/unread.tsx), yani gelen push HICBIR SEY yapmazdi: sessizce hicbir
+ * sey olmuyor, en kotu davranis. Banner en az sasirtan yol.
+ */
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
+/**
+ * PUSH'UN CAPRAZ KESEN ISLERI. ADR-037: boyle isler tek yerde durur,
+ * her ekrana serpilmez.
+ */
+function usePushLifecycle() {
+  const { status, getToken } = useSession();
+  const router = useRouter();
+
+  /**
+   * Giris yapildiginda adresi TAZELER, izin ISTEMEZ. Expo adresleri
+   * degisebiliyor; tazelenmezse bildirimler bir gun sessizce kesilir ve
+   * kimse sebebini bilmez.
+   */
+  useEffect(() => {
+    if (status !== "signed-in") return;
+    void (async () => {
+      await syncPushToken(await getToken());
+    })();
+  }, [status, getToken]);
+
+  /** Bildirime dokununca ilgili grup aciliyor. */
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const groupId = response.notification.request.content.data?.groupId;
+      // Gelen veri DISARIDAN: tipi dogrulanmadan rotaya konmaz.
+      if (typeof groupId === "string" && groupId.length > 0) {
+        router.push(`/groups/${groupId}` as "/groups/[groupId]");
+      }
+    });
+    return () => subscription.remove();
+  }, [router]);
+}
+
 function AuthGuard() {
   const { status } = useSession();
   const segments = useSegments();
   const router = useRouter();
+
+  usePushLifecycle();
 
   useEffect(() => {
     if (status === "loading") return;
