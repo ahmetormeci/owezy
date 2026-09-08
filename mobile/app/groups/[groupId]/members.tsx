@@ -2,7 +2,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTranslate } from "../../../lib/i18n";
+import { formatDate } from "@/lib/dates";
+import { useLocale, useTranslate } from "../../../lib/i18n";
 import { apiBaseUrl } from "../../../lib/api";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
@@ -18,19 +19,42 @@ import { Cap } from "../../../components/receipt";
  * denenemiyor - ayrintisi lib/invite-link.ts'de. Baglanti uygulamada
  * ACILMIYOR, ama gonderilen kisi onu uygulamaya YAPISTIRABILIYOR.
  *
- * KAPSAM DISI (bilincli): daveti iptal etme, uye cikarma, sahiplik devri.
+ * KAPSAM DISI (bilincli): SAHIPLIK DEVRI ayri bir islem olarak. Web'de de
+ * yok ve bir ucu da yok - devir yalnizca AYRILIRKEN yapiliyor (asagida) ve o
+ * kadari mobilde zaten var. Ayri bir "devret" eklemek uc + web + mobil
+ * demekti, yani gorev verilmeden yapilmayacak bir sey.
+ *
+ * UYE CIKARMA VE DAVET IPTALI ARTIK BURADA. Ikisinin de ucu bastan beri
+ * vardi ve yalnizca web kullaniyordu.
  */
 type MembersResponse = {
   members: { userId: string; displayName: string; role: "OWNER" | "MEMBER" }[];
 };
 type InviteResponse = { invite: { token: string } };
+/**
+ * Listede TOKEN YOK ve olamaz: sunucu davetin sirrini hicbir cevapta
+ * dondurmuyor (groups.ts, "tokenHash BILEREK select edilmiyor"), yalnizca
+ * sifrelenmis ozetini sakliyor. Yani bu liste "baglantiyi tekrar al" degil,
+ * "iptal et" listesi - ekrandaki "bir kez gosterilir" uyarisi bunu zaten
+ * soyluyor.
+ */
+type InvitesResponse = {
+  invites: {
+    id: string;
+    invitedById: string;
+    expiresAt: string;
+    maxUses: number;
+    useCount: number;
+  }[];
+};
 
 export default function MembersScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const t = useTranslate();
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
-  const { post } = useApiClient();
+  const { post, remove } = useApiClient();
+  const locale = useLocale();
   const router = useRouter();
   // Kim oldugumuzu bilmeden "ayril" gosterilemez: sahip miyiz, arkamizda uye
   // var mi sorulari buna bagli.
@@ -39,6 +63,9 @@ export default function MembersScreen() {
 
   const members = useApiGet<MembersResponse>(
     groupId ? `/api/v1/groups/${groupId}/members` : null,
+  );
+  const invites = useApiGet<InvitesResponse>(
+    groupId ? `/api/v1/groups/${groupId}/invites` : null,
   );
 
   const [busy, setBusy] = useState(false);
@@ -60,6 +87,9 @@ export default function MembersScreen() {
       // sifrelenmis ozeti duruyor. Ekranda tutup paylasima veriyoruz.
       const url = `${apiBaseUrl()}/join/${result.data.invite.token}`;
       setLink(url);
+      // Yeni davet asagidaki listede de gorunmeli; yoksa kullanici az once
+      // urettigi seyi iptal edemezdi.
+      invites.reload();
       await Share.share({ message: url });
     } catch (caught) {
       setError(String(caught));
@@ -113,6 +143,89 @@ export default function MembersScreen() {
     ]);
   }
 
+  /**
+   * UYE CIKARMA. Uc bastan beri vardi (DELETE .../members/:userId) ve
+   * yalnizca web kullaniyordu.
+   *
+   * DUGME YALNIZCA SAHIBE VE YALNIZCA BASKASININ SATIRINDA ciziliyor.
+   * Sunucu ikisini de reddediyor (member.remove_owner_only,
+   * member.owner_cannot_remove_self); burada da sormamak, olmayacak bir seyi
+   * sunup ardindan hata gostermemek icin. Sahip kendi cikisini "Gruptan
+   * ayril" ile yapiyor - orada sahiplik devri de var.
+   *
+   * BAKIYE ENGELINI SUNUCU KOYUYOR (assertBalanceIsSettled): acik bakiyesi
+   * olan bir uye cikarilamiyor, cunku cikinca borcu kimin olacagi belirsiz
+   * kalirdi. Cevap kodla birlikte TUTARI da tasiyor ve artik ekranda tutar
+   * GORUNUYOR - o parametrelerin dusmesi 1.0.2'de bir kusurdu.
+   */
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  async function removeMember(userId: string) {
+    if (removingId) return;
+    setRemovingId(userId);
+    setError(null);
+    const result = await remove(`/api/v1/groups/${groupId}/members/${userId}`);
+    setRemovingId(null);
+
+    if (!result.ok) {
+      setError(t(result.code, result.params));
+      return;
+    }
+    members.reload();
+  }
+
+  function confirmRemove(userId: string, displayName: string) {
+    Alert.alert(
+      t("ui.remove_member_question", { name: displayName }),
+      t("ui.remove_member_hint"),
+      [
+        { text: t("ui.cancel"), style: "cancel" },
+        {
+          text: t("ui.remove_member"),
+          style: "destructive",
+          onPress: () => void removeMember(userId),
+        },
+      ],
+    );
+  }
+
+  /**
+   * DAVET IPTALI. Sunucu kurali: daveti OLUSTURAN kisi ya da GRUP SAHIBI
+   * (groups.ts, "sizan bir linkten herkes etkilenir"). Ayni kural burada da
+   * aynalaniyor - listeyi her uye goruyor ama iptal dugmesi yalnizca
+   * iptal edebilecek kiside ciziliyor.
+   */
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const activeInvites = invites.state.kind === "ok" ? invites.state.data.invites : [];
+
+  async function revokeInvite(inviteId: string) {
+    if (revokingId) return;
+    setRevokingId(inviteId);
+    setError(null);
+    const result = await post(
+      `/api/v1/groups/${groupId}/invites/${inviteId}/revoke`,
+      {},
+    );
+    setRevokingId(null);
+
+    if (!result.ok) {
+      setError(t(result.code, result.params));
+      return;
+    }
+    invites.reload();
+  }
+
+  function confirmRevoke(inviteId: string) {
+    Alert.alert(t("ui.invite_revoke"), t("ui.invite_revoke_hint"), [
+      { text: t("ui.cancel"), style: "cancel" },
+      {
+        text: t("ui.invite_revoke"),
+        style: "destructive",
+        onPress: () => void revokeInvite(inviteId),
+      },
+    ]);
+  }
+
   return (
     <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={s.scroll}>
@@ -126,9 +239,27 @@ export default function MembersScreen() {
               {members.state.data.members.map((member) => (
                 <View key={member.userId} style={s.row}>
                   <Text style={s.name}>{member.displayName}</Text>
-                  <Text style={s.role}>
-                    {member.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
-                  </Text>
+                  <View style={s.rowActions}>
+                    <Text style={s.role}>
+                      {member.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
+                    </Text>
+                    {me?.role === "OWNER" && member.userId !== currentUserId ? (
+                      removingId === member.userId ? (
+                        <ActivityIndicator size="small" color={theme.debt} />
+                      ) : (
+                        /* hitSlop GENIS: bu projede kucuk metin hedefleri
+                           dokunma almiyor (simulatorde defalarca goruldu) ve
+                           yikici bir eylemin yanlislikla degil, GUCLUKLE
+                           tetiklenmesi zaten dogru olan. */
+                        <Pressable
+                          hitSlop={12}
+                          onPress={() => confirmRemove(member.userId, member.displayName)}
+                        >
+                          <Text style={s.remove}>{t("ui.remove_member")}</Text>
+                        </Pressable>
+                      )
+                    ) : null}
+                  </View>
                 </View>
               ))}
             </View>
@@ -157,6 +288,41 @@ export default function MembersScreen() {
               <Pressable onPress={() => void Share.share({ message: link })}>
                 <Text style={s.shareAgain}>{t("ui.share_link")}</Text>
               </Pressable>
+            </View>
+          ) : null}
+
+          {/* AKTIF DAVETLER. Liste bossa bolum HIC cizilmiyor - bos bir
+              baslik, olmayan bir sey icin yer kaplamak olurdu.
+              Baglantinin kendisi burada YOK ve olamaz (bkz. InvitesResponse). */}
+          {activeInvites.length > 0 ? (
+            <View style={s.inviteList}>
+              <Cap>{t("ui.active_invites")}</Cap>
+              {activeInvites.map((invite) => (
+                <View key={invite.id} style={s.inviteRow}>
+                  <View style={s.inviteFacts}>
+                    <Text style={s.inviteUses}>
+                      {t("ui.invite_uses_count", {
+                        used: invite.useCount,
+                        max: invite.maxUses,
+                      })}
+                    </Text>
+                    <Text style={s.inviteDate}>
+                      {t("ui.invite_valid_until", {
+                        date: formatDate(new Date(invite.expiresAt), locale),
+                      })}
+                    </Text>
+                  </View>
+                  {invite.invitedById === currentUserId || me?.role === "OWNER" ? (
+                    revokingId === invite.id ? (
+                      <ActivityIndicator size="small" color={theme.debt} />
+                    ) : (
+                      <Pressable hitSlop={12} onPress={() => confirmRevoke(invite.id)}>
+                        <Text style={s.remove}>{t("ui.invite_revoke")}</Text>
+                      </Pressable>
+                    )
+                  ) : null}
+                </View>
+              ))}
             </View>
           ) : null}
 
@@ -237,6 +403,27 @@ function createStyles(theme: Theme) {
     },
     name: { fontSize: 15, color: theme.foreground },
     role: { fontSize: 12, color: theme.muted },
+    rowActions: { flexDirection: "row", alignItems: "center", gap: 14 },
+    // Yikici eylemlerin rengi. ADR-015'in "renk yalnizca bakiye tasir"
+    // kurali bakiye SAYILARI icin; uyari ayri bir dil ve harcama silme de
+    // ayni kirmiziyi kullaniyor.
+    remove: { fontSize: 12, color: theme.debt },
+    inviteList: {
+      gap: 10,
+      borderTopWidth: 1,
+      borderStyle: "dashed",
+      borderColor: theme.border,
+      paddingTop: 14,
+    },
+    inviteRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+    },
+    inviteFacts: { gap: 2, flexShrink: 1 },
+    inviteUses: { fontSize: 13, color: theme.foreground },
+    inviteDate: { fontSize: 11, color: theme.muted },
     leaveBlock: { marginTop: 20, gap: 12, alignItems: "center" },
     transferBlock: { gap: 8, alignItems: "center" },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center" },

@@ -518,6 +518,11 @@ export const MESSAGES_TR = {
   "ui.invite_revoke": "İptal et",
   "ui.invite_revoked": "Davet iptal edildi",
   "ui.invite_revoke_failed": "Davet iptal edilemedi",
+  // Mobildeki onay penceresinin ikinci satiri. Iptalin GERI
+  // ALINAMADIGINI soyluyor - link bir daha calismiyor ve sunucuda
+  // yalnizca ozeti durdugu icin ayni link yeniden uretilemiyor.
+  "ui.invite_revoke_hint":
+    "Bu bağlantı bir daha çalışmaz ve geri getirilemez. Yerine yeni bir davet oluşturabilirsin.",
   "ui.invite_exhausted": "Tükendi",
   "ui.invite_uses_count": "{used}/{max} kullanıldı",
   "ui.invite_valid_until": "{date} tarihine kadar",
@@ -1020,6 +1025,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.invite_revoke": "Revoke",
   "ui.invite_revoked": "Invite revoked",
   "ui.invite_revoke_failed": "The invite could not be revoked",
+  "ui.invite_revoke_hint":
+    "This link stops working and cannot be brought back. You can create a new invite instead.",
   "ui.invite_exhausted": "Used up",
   "ui.invite_uses_count": "{used}/{max} used",
   "ui.invite_valid_until": "Valid until {date}",
