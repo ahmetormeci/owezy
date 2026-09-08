@@ -20,103 +20,57 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     env      grep -oE '^[A-Z0-9_]+' .env.local   (ADLAR; degerleri okuma)
     canli    curl -sI https://owezy.net/support
     magaza   itunes.apple.com/lookup?bundleId=net.owezy.app
+    CI       curl -s "https://api.github.com/repos/ahmetormeci/owezy/actions/runs?per_page=3"
+             (gh CLI YOK; depo herkese acik, yetki gerekmiyor)
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
 Updated: 2026-09-08
 
 Current task:
-  1.0.3 build 17 TESTFLIGHT'TA - EKRANDA BAKILMASI BEKLENIYOR.
-  Kod tarafinda is YOK.
+  YOK - 1.0.3 (build 20) APPLE'IN INCELEMESINDE. Kod tarafinda is YOK.
 
   SURUMLER:
-    1.0.3  build 17, TestFlight. INCELEMEYE GONDERILMEDI.
+    1.0.3  build 20, INCELEMEDE (kullanici elle gonderdi, 8 Eylul).
            push bildirim, uye cikarma + davet iptali, {amount} duzeltmesi,
-           grup eylemlerinin fisin USTUNE tasinmasi, basliktaki hesap
-           simgesi, tema secimi (Sistem/Acik/Koyu).
-           build 16 da 1.0.3'tu; 17 onun yerini aldi.
-    1.0.2  MAGAZADA CANLI.
+           grup eylemleri fisin USTUNDE, basliktaki hesap simgesi, tema
+           secimi, FIS FOTOGRAFI.
+           build 16-19 da 1.0.3'tu; 20 hepsinin yerini aldi ve fis YALNIZCA
+           20'de calisiyor.
+    1.0.2  MAGAZADA CANLI (8 Eylul, telefonda guncelleme alinarak dogrulandi).
     1.0.1  build 11, TestFlight'ta KULLANILMADAN duruyor. ATLANDI.
 
-  1.0.3'TE EKRANDA DOGRULANMAMIS OLAN: YERLESIM. Push gercek telefonda
-  dogrulandi ama grup ekranindaki eylem satiri, basliktaki iki simge ve
-  Gorunum secici HENUZ GORULMEDI - duzen goze bakilarak yargilanir.
+  1.0.3 ONAYLANINCA IKI IS TETIKLENIYOR:
+    1. DESTEK SAYFASI (src/content/legal/support.ts) - "bildirimler telefona
+       GONDERILMIYOR" maddesi kalkacak. Su an DOGRU, yayinlandigi gun yanlis
+       olacak. Bu tuzak bu projede iki kez yasandi.
+    2. KOPRU KALDIRILABILIR HALE GELIR - ama surum YAYGINLASINCA.
+       Silinecekler "KOPRU" basliginda.
+
+  RET GELIRSE: gerekce yeni bir gorev tanimlar. Once metni oku, sonra olç.
+
+  MAGAZA SORGUSU HALA "1.0" DIYOR (8 Eylul olcumu, hem TR hem US) - oysa
+  1.0.2 canli ve telefona indi. itunes.apple.com/lookup yayin anini degil
+  kendi onbelleginin tazelenmesini gosteriyor; asamali yayin (phased release)
+  de olabilir. TEK BASINA KANIT SAYMA.
+
+EKRANDA HENUZ GORULMEYENLER - 1.0.3'un icinde ve HICBIRI bakilmadi:
+  yerlesim (eylemler fisin ustunde), basliktaki hesap simgesi, tema secimi,
+  fis akisi, listedeki fis ataci, tam ekran goruntuleyici.
+  Push GERCEK TELEFONDA dogrulandi; bu alti sey dogrulanmadi.
   OZELLIKLE: TEK GRUBU OLAN hesapla ac. O hesap dogrudan grubun icine
-  dusuyor ve geri dugmesi hic dogmuyor; hesaba giden tek yol eskiden o
-  ekranin en altindaki karttI ve KALDIRILDI. Basliktaki simge onu
-  karsilamiyorsa kullanici hesabina ulasamaz - kart geri konur.
-
-  itunes.apple.com/lookup SURUMU GEC GOSTERIYOR. 1.0.2 telefona indikten
-  sonra bile saatlerce "1.0" dondu. Yayin anini olcmez, onbelleginin
-  tazelenmesini olcer - tek basina kanit sayma.
-
-  KOPRU ARTIK KALDIRILABILIR HALE GELIYOR - ama HEMEN DEGIL, 1.0.2
-  YAYGINLASINCA. Erken kaldirilirsa guncellemeyi almamis her telefonda
-  2FA girisi YENIDEN KIRILIR; "yayinlandi" ile "yaygin" ayni sey degil.
-
-  KALDIRILINCA SILINECEKLER (4 dosya, olculdu 8 Eylul):
-    src/lib/two-factor-cookie-bridge.ts        tamamen
-    src/lib/two-factor-cookie-bridge.test.ts   tamamen
-    src/app/api/auth/[...all]/route.ts         BRIDGED_PATHS + ozel POST;
-                                               geriye duz toNextJsHandler
-    e2e/two-factor.spec.ts:327                 test.skip(...) blogu
-  Mobil taraftaki kalici duzeltme (lib/two-factor-cookie.ts) KALIR -
-  kopru onun eksikligini kapatiyordu, tersi degil.
-
-  BILINEN KUSUR, 1.0.2'DE CANLI VE DUZELTILDI (henuz yayinlanmadi):
-  mobil istemci hata parametrelerini tasimiyordu, kullanici "{amount}
-  kurusluk alacagi var" goruyordu. Kod duzeldi (mobile/lib/api.ts) ama
-  kullaniciya ulasmasi icin yeni bir surum gerekiyor. TEK BASINA SURUM
-  ATILMAYACAK (karar, 8 Eylul): ekrandaki tek bir hata cumlesi ve akis
-  calisiyor. Siradaki isle BIRLIKTE gidecek.
-
-  UNIVERSAL LINK - CALISMIYOR, SEBEBI BIZDE DEGIL (8 Eylul, olculdu):
-    ikili      application-identifier = A5WH8JT28C.net.owezy.app   ✓
-    ikili      associated-domains     = applinks:owezy.net          ✓
-    ikili      CFBundleIdentifier     = net.owezy.app               ✓
-    AASA       appIDs                 = A5WH8JT28C.net.owezy.app    ✓
-    AASA       200, application/json, 0 yonlendirme                 ✓
-    Apple CDN  taze kopya, icerik birebir ayni                      ✓
-    paket      https://owezy.net gomulu                             ✓
-    CIHAZ      association'i BILMIYOR                               ✗
-  Son satir kullanicinin telefonunda okundu: baglantiya basili tutunca
-  menude "Owezy'de Ac" CIKMIYOR. Telefon yeniden baslatildi, uygulama iki
-  kez silinip kuruldu, Dusuk Veri Modu kapali, VPN yok. Kalan aciklama
-  iOS'un kesinti sirasindaki basarisiz denemeyi artan araliklarla
-  tekrarlamasi. DAHA FAZLA SIL-KUR ONERME - denendi, ise yaramadi.
-  GERILEME DEGIL: baglantilarin tarayicida acilmasi 1.0'daki davranis.
-
-  ALAN ADI 8 EYLUL'DE ~2 SAAT ASKIDAYDI - bir daha yasanmasin diye
-  ayrintisi CHANGELOG'da. Ozeti: yeni alan adinin ICANN kayit sahibi
-  e-postasi 15 gun icinde dogrulanmazsa registrar clientHold koyuyor ve
-  SITE, API, E-POSTA ucu birden oluyor. Dogrulandi, askı kalkti.
-
-  GORSEL EKLEME - TASARIM ENGELI KALKTI (ADR-046, 4 Eylul).
-  "Silme ne demek" sorusu karara baglandi: harcama silinince fis fotografi
-  KALIR (geri alma var), hesap silinince hem profil hem fis fotograflari
-  SILINIR. Kalan maliyetler teknik ve hepsi olculu: CSP, gizlilik
-  politikasi, Info.plist izin metinleri, App Privacy anketi,
-  expo-image-picker, Cloudflare R2.
-  BASLAMADAN ONCE iki surumun yere inmesi onerildi.
-
-  PUSH BILDIRIM - secilen dortlunun sonuncusu, BASLANMADI. APNs, izin
-  istemi, sunucuda belirtec saklama, App Privacy anketi degisikligi.
+  dusuyor, geri dugmesi hic dogmuyor ve hesaba giden tek yol o ekranin
+  altindaki karttI - KALDIRILDI. Basliktaki simge onu karsilamiyorsa
+  kullanici hesabina ulasamaz.
 
 MOBILDE YONETIM EKSIKLERI - BITTI (8 Eylul). Uye cikarma ve davet iptali
   eklendi, 10 ekran testiyle. Sahiplik devri KAPSAM DISI kaldi: ayri bir uc
   yok, web'de de yok - devir yalnizca AYRILIRKEN var ve o mobilde zaten
   calisiyordu.
 
-PUSH BILDIRIM - KOD BITTI, BUILD ALINDI (8 Eylul, ADR-047).
-  1.0.3 build 16, TestFlight'a yuklendi. Kalanlar:
-  1. GERCEK TELEFONDA DOGRULANDI (8 Eylul): izin verildi, ikinci hesabin
-     ekledigi harcama telefonda bildirim olarak dustu. Zincirin HER halkasi
-     olculdu - anahtar, yetki (ikilide aps-environment), gonderim, teslim.
-  2. APP PRIVACY ANKETI: "Identifiers" beyani eklenecek.
-  3. DESTEK SAYFASI: "telefona bildirim GONDERILMIYOR" maddesi kalkacak -
-     ama YAYINLANINCA, once degil (sayfa bugun DOGRU).
-  Gizlilik politikasi ZATEN guncellendi (inceleyici ona bakiyor, o yuzden
-  yayindan once). APNs anahtari kuruldu (Portal ID 47KL3BM87C).
+PUSH BILDIRIM - BITTI VE GERCEK TELEFONDA DOGRULANDI (8 Eylul, ADR-047).
+  APNs anahtari kurulu (Portal ID 47KL3BM87C). App Privacy'ye "Identifiers ->
+  Device ID" satiri girildi.
 
   DOGRULAMA YOLU (bir daha gerekirse):
     TestFlight'tan kur -> Bildirimler ekraninda izin ver -> IKINCI BIR
@@ -140,21 +94,46 @@ EAS BUILD BASARISIZ OLDUGUNDA DA 0 DONUYOR. Arka plan bildirimindeki
   "exit code 0" build'in gectigi anlamina GELMEZ; ciktiyi oku. Ayni sinif
   hata daha once kabuk seviyesinde de yasandi (asagida).
 
-FIS FOTOGRAFI - KOD BITTI (8 Eylul, ADR-046 uygulandi). Kalanlar:
-  1. R2 ORTAM DEGISKENLERI - KULLANICIDA. R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
-     R2_SECRET_ACCESS_KEY, R2_BUCKET; hem .env.local hem VERCEL.
-     Eksikse kod ACIK bir hata veriyor, sessizce basarisiz OLMUYOR.
-  2. GERCEK CIHAZDA DOGRULAMA - YAPILMADI. Simulatorde kamera yok; galeri
-     var ama yukleme R2 olmadan denenemez.
-  3. APP PRIVACY ANKETI: "User Content -> Photos or Videos" beyani.
-  4. YENI BUILD SART - iki native modul eklendi (image-picker, manipulator).
+FIS FOTOGRAFI - BITTI VE GERCEK CIHAZDA YUKLENDI (8 Eylul, ADR-046).
+  R2 kurulu (kova owezy-receipts, degiskenler .env.local + Vercel).
+  App Privacy'ye "User Content -> Photos or Videos" satiri girildi.
+
+  R2'YE YAZARKEN CONTENT-LENGTH ELLE VERILIYOR ve bu ZORUNLU. Node'un
+  undici'si ArrayBuffer govdesi icin basligi kendisi koyuyor; VERCEL'IN
+  CALISMA ZAMANI parcali aktarim kullanip HIC koymuyor ve R2 411
+  MissingContentLength donuyor. Uc dagitim turu buna gitti - cunku ayni
+  istek YERELDE 200 donuyordu. DERS: dogru seyi YANLIS ORTAMDA olcmek, hic
+  olcmemekten kotu; insani emin yapiyor.
+
+  DEPO HATALARI KENDI KODLARINI TASIYOR (ServiceError): not_configured,
+  forbidden, bucket_not_found, bad_request. Oncesinde hepsi "beklenmeyen bir
+  hata"ydi ve yapilandirma eksigiyle yazilim hatasi ayirt edilemiyordu.
 
   WEB'DE YUKLEME YOK, yalnizca goruntuleme. Bilincli kapsam karari; fis
   odeme aninda telefonla cekiliyor ve web'de eklemek ayrica TARAYICIDA
   kucultme demekti. Isteyen olursa ayri bir is.
 
+  GERCEK KUCUK RESIM YOK - listede yalnizca bir atac. Kirk harcamalik bir
+  liste kirk fotograf indirmek olurdu. Istenirse yukleme aninda ikinci bir
+  kucuk kopya uretilip saklanir (sema degisikligi + eski fisler icin yedek
+  yol).
+
+  PINCH-ZOOM YOK: react-native-gesture-handler eklemek gerekirdi.
+
+CI'A BAKILIYOR MU? - 8 EYLUL'DE DORT COMMIT BOYUNCA BAKILMADI.
+  Yerel testlerin gecmesi CI'in gectigi anlamina GELMIYOR. expo-doctor
+  kurulu surumleri SDK'nin CANLI gereksinimiyle karsilastiriyor; Expo yeni
+  yama yayinlayinca CI, MOBILE HIC DOKUNMAYAN bir commit'te duser.
+  Duzeltmesi: cd mobile && npx expo install --fix
+  Durum sorgusu (gh yok, depo herkese acik):
+    curl -s "https://api.github.com/repos/ahmetormeci/owezy/actions/runs?per_page=3"
+
+EAS BUILD KOTASI - UCRETSIZ PLANDA AYDA 15 iOS BUILD.
+  8 Eylul: 12 kullanildi, besi tek oturumda. BUILD ALMADAN ONCE SOR;
+  degisiklikleri biriktirip tek build almak dogrusu.
+
 SIRADAKI IS - SECILMEDI:
-  (dortlu bitti; yeni aday yok)
+  (secilen dortlu + fis bitti; yeni aday yok)
 
   Destek sayfasindaki "bugunku sinirlar" listesi (src/content/legal/support.ts)
   bunlarla ORTAK. Bir madde bitince ORASI DA GUNCELLENMELI.

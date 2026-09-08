@@ -8,6 +8,38 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-08 (6) — CI dört commit boyunca kırmızıydı ve bakılmadı
+
+Kullanıcı e-postaları getirene kadar fark edilmedi: `6c0d2e9`, `dc34ddd`,
+`5fe7939`, `5f3add8` — dördü de düştü, dördünde de push atılıp devam edildi.
+
+**Sebep hiçbirinde değildi.** `expo-doctor` kurulu sürümleri SDK'nın canlı
+gereksinimiyle karşılaştırıyor; Expo `57.0.21` ve `expo-router 57.0.20`
+yayınladı ve bunu ilk fark eden koşu, **mobil koda hiç dokunmayan** bir
+commit oldu. Yani gereksinim değişti, kod değil. Bu projede üçüncü kez
+(`2e9c52c`, `6cb2429`).
+
+`npx expo install --fix` ile düzeldi; CI yeşile döndü.
+
+**Asıl mesele bu değil.** Mesele, yerel testler geçtiği için CI'a hiç
+bakılmaması. CI'ın varlık sebebi zaten yerelin göremediği şey ve bu sefer tam
+onu buldu — canlı bir kayıt defterine bakan, bizim hiçbir testimizin
+göremeyeceği bir kontrol.
+
+CI'ın kendisi reprodüksiyonla doğrulandı: sıfırdan `npm ci` dahil bütün
+adımlar yerelde koşturuldu, `expo-doctor` dışında hepsi geçti.
+
+### EAS build kotası %80'e dayandı
+
+Ücretsiz planda aylık **15 iOS build** var; **12'si kullanıldı** ve beşi bu
+oturumda alındı (16–20). Her düzeltme için ayrı build alındı; fiş turunda üç
+tanesi arka arkaya gitti.
+
+Doğrusu değişiklikleri biriktirip tek build almaktı. Bundan sonra build
+almadan önce sorulacak.
+
+---
+
 ## 2026-09-08 (5) — Fiş fotoğrafı gerçekten çalıştı; yol boyunca dört kusur
 
 Fiş özelliği yazıldıktan sonra **gerçek cihazda hiçbiri çalışmadı** ve dördü
