@@ -1,9 +1,7 @@
-import { File } from "expo-file-system";
-import * as ImageManipulator from "expo-image-manipulator";
-import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { apiBaseUrl } from "../lib/api";
+import { pickReceipt, receiptEndpoint, uploadReceipt } from "../lib/receipt-file";
 import { useSession } from "../lib/auth";
 import { useTranslate } from "../lib/i18n";
 import { useTheme, type Theme } from "../lib/theme";
@@ -22,9 +20,6 @@ import { Cap } from "./receipt";
  * yukleme, bizim anlasilir hata cumlemize bile ulasamadan platform
  * tarafindan kesilirdi.
  */
-
-/** Uzun kenar. Bir fisi okumaya fazlasiyla yetiyor, dosyayi ~10 kat kucultuyor. */
-const MAX_EDGE = 1600;
 
 export function ReceiptPhoto({
   groupId,
@@ -55,7 +50,10 @@ export function ReceiptPhoto({
    */
   const [version, setVersion] = useState(0);
 
-  const uri = `${apiBaseUrl()}/api/v1/groups/${groupId}/expenses/${expenseId}/receipt?v=${version}`;
+  const endpoint = receiptEndpoint(apiBaseUrl(), groupId, expenseId);
+  // ?v: <Image> adrese gore onbellekliyor; adres degismezse yeni fotograf
+  // yerine eskisi cizilir ve kullanici "yuklenmedi" sanir.
+  const uri = `${endpoint}?v=${version}`;
 
   /**
    * Belirteci bir kez aliyoruz; <Image> onu baslikta tasiyacak. Gorsel
@@ -76,79 +74,25 @@ export function ReceiptPhoto({
     };
   }, [getToken]);
 
-  const upload = useCallback(
+  const send = useCallback(
     async (localUri: string) => {
       setBusy(true);
       setError(null);
       try {
-        // Kucultme ve JPEG'e cevirme tek adimda. HEIC de burada JPEG oluyor -
-        // sunucu yalnizca JPEG ve PNG kabul ediyor.
-        const context = ImageManipulator.ImageManipulator.manipulate(localUri);
-        context.resize({ width: MAX_EDGE });
-        const image = await context.renderAsync();
-        const shrunk = await image.saveAsync({
-          compress: 0.7,
-          format: ImageManipulator.SaveFormat.JPEG,
-        });
-
-        /**
-         * DOSYAYI expo-file-system YUKLUYOR, fetch DEGIL.
-         *
-         * Ilk yazim baytlari JS'e okuyup fetch govdesine koyuyordu ve iki
-         * ayri sorun cikardi. Birincisi bir hataydi: File Blob arayuzunu
-         * uyguluyor, yani bytes() de PROMISE donuyor ve await unutulmustu -
-         * govdeye bir Promise gitti, fetch patladi, yakalama da onu
-         * "internet yok" diye gosterdi. Ikincisi daha derin: React Native'in
-         * fetch'i ArrayBuffer govdesini guvenilir bicimde tasimiyor.
-         *
-         * upload() bu isi NATIVE tarafta yapiyor - dosya diskten dogrudan
-         * istegin govdesine akiyor, JS'te hic bayt tutulmuyor. Varsayilan
-         * BINARY_CONTENT sunucunun bekledigi sey: govde ham dosya.
-         */
-        const authToken = await getToken();
-        const result = await new File(shrunk.uri).upload(uri, {
-          httpMethod: "PUT",
-          mimeType: "image/jpeg",
-          headers: {
-            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-            "Content-Type": "image/jpeg",
-          },
-        });
-
-        if (result.status < 200 || result.status >= 300) {
-          // Sunucu kodunu cevirmeye calisiyoruz; govde JSON degilse genel
-          // cumleye dusuyoruz.
-          let code = "server.unexpected";
-          try {
-            const payload: unknown = JSON.parse(result.body);
-            if (
-              payload && typeof payload === "object" && "code" in payload &&
-              typeof payload.code === "string"
-            ) {
-              code = payload.code;
-            }
-          } catch {
-            // Govde JSON degil - kod yok, genel cumle kaliyor.
-          }
-          setError(t(code));
+        const result = await uploadReceipt(localUri, endpoint, await getToken());
+        if (!result.ok) {
+          setError(t(result.code));
           return;
         }
-
         setVersion((current) => current + 1);
         onChanged();
       } catch (caught) {
         /**
-         * HER HATAYI "internet yok" SAYMIYORUZ.
-         *
-         * Onceden oyleydi ve bir kusuru tam olarak gizledi: await unutulmus
-         * bir cagri yuzunden fetch patliyordu ve ekranda "internet yok"
-         * yaziyordu - yani sebep, gosterilen seyin tam tersiydi. RN'de ag
-         * hatasi TypeError olarak geliyor; gerisi bizim hatamiz ve oyle
-         * soylenmeli.
-         *
-         * Ham hata ayrica GUNLUGE yaziliyor: kullaniciya "TypeError: ..."
-         * gostermek bir sey anlatmaz ama gelistirici onu gormeden sebebi
-         * bulamaz.
+         * HER HATAYI "internet yok" SAYMIYORUZ. Onceden oyleydi ve bir
+         * kusuru tam olarak gizledi: govdeye yanlislikla bir Promise giden
+         * cagri patliyordu ve ekranda "internet yok" yaziyordu - yani sebep,
+         * gosterilenin tam tersiydi. RN'de ag hatasi TypeError olarak
+         * geliyor; gerisi bizim hatamiz ve oyle soylenmeli.
          */
         console.error("Fiş yüklenemedi", caught);
         setError(t(caught instanceof TypeError ? "server.offline" : "server.unexpected"));
@@ -156,38 +100,20 @@ export function ReceiptPhoto({
         setBusy(false);
       }
     },
-    [getToken, onChanged, t, uri],
+    [endpoint, getToken, onChanged, t],
   );
 
   const pick = useCallback(
     async (source: "camera" | "library") => {
-      /**
-       * IZIN ISTEMI SECIMDEN SONRA. Once "kamera mi galeri mi" soruluyor,
-       * sonra yalnizca SECILEN icin izin isteniyor - galeriyi kullanacak
-       * kisiden kamera izni istemek, vermeyecegi bir sey sormak olurdu.
-       */
-      const permission =
-        source === "camera"
-          ? await ImagePicker.requestCameraPermissionsAsync()
-          : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        setError(t("receipt.permission_denied"));
+      const picked = await pickReceipt(source);
+      if (picked.kind === "cancelled") return;
+      if (picked.kind === "error") {
+        setError(t(picked.code));
         return;
       }
-
-      const result =
-        source === "camera"
-          ? await ImagePicker.launchCameraAsync({ quality: 1 })
-          : await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ["images"],
-              quality: 1,
-            });
-
-      // Vazgecildi: hata degil, sessizce donuyoruz.
-      if (result.canceled || !result.assets[0]) return;
-      await upload(result.assets[0].uri);
+      await send(picked.uri);
     },
-    [t, upload],
+    [send, t],
   );
 
   function choose() {

@@ -2,6 +2,8 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,6 +21,9 @@ import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
 import { useTheme, type Theme } from "../../../../lib/theme";
 import { Cap } from "../../../../components/receipt";
+import { apiBaseUrl } from "../../../../lib/api";
+import { useSession } from "../../../../lib/auth";
+import { pickReceipt, receiptEndpoint, uploadReceipt } from "../../../../lib/receipt-file";
 
 /**
  * Harcama ekleme ekrani. MOBILDE BOYLE BIR EKRAN YOKTU.
@@ -92,8 +97,67 @@ export default function NewExpenseScreen() {
    */
   const [category, setCategory] = useState<keyof typeof EXPENSE_CATEGORY_CODES | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
+  const { getToken } = useSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * SECILEN AMA HENUZ YUKLENMEMIS fis. Harcama kaydedilene kadar
+   * baglanacagi bir kimlik yok, o yuzden cihazda bekliyor.
+   */
+  const [receiptUri, setReceiptUri] = useState<string | null>(null);
+  /**
+   * HARCAMA KAYDEDILDI AMA FIS YUKLENEMEDI durumu.
+   *
+   * Kimligi tutuyoruz cunku "Kaydet" dugmesine tekrar basmak IKINCI BIR
+   * HARCAMA yaratmamali - kullanicinin gozunde islem tamamlanmadi ama
+   * sunucuda harcama duruyor. Bu deger doluysa dugme yalnizca FISI tekrar
+   * deniyor.
+   */
+  const [savedExpenseId, setSavedExpenseId] = useState<string | null>(null);
+
+  async function chooseReceipt(source: "camera" | "library") {
+    const picked = await pickReceipt(source);
+    if (picked.kind === "cancelled") return;
+    if (picked.kind === "error") {
+      setError(t(picked.code));
+      return;
+    }
+    setError(null);
+    setReceiptUri(picked.uri);
+  }
+
+  /**
+   * Fisi yukler. Basarisizsa harcamanin kimligini SAKLIYOR ki dugme ayni
+   * harcamayi yeniden yaratmasin, yalnizca fisi tekrar denesin.
+   */
+  async function sendReceipt(expenseId: string): Promise<boolean> {
+    if (!receiptUri) return true;
+    setBusy(true);
+    const upload = await uploadReceipt(
+      receiptUri,
+      receiptEndpoint(apiBaseUrl(), groupId, expenseId),
+      await getToken(),
+    );
+    setBusy(false);
+
+    if (!upload.ok) {
+      setSavedExpenseId(expenseId);
+      // Iki cumle birlikte: harcamanin KAYDEDILDIGINI soylemek sart, yoksa
+      // kullanici hicbir seyin olmadigini sanip bastan girer.
+      setError(`${t("ui.expense_saved_receipt_failed")} ${t(upload.code)}`);
+      return false;
+    }
+    return true;
+  }
+
+  function askReceiptSource() {
+    Alert.alert(t("ui.add_receipt"), undefined, [
+      { text: t("ui.take_photo"), onPress: () => void chooseReceipt("camera") },
+      { text: t("ui.choose_from_library"), onPress: () => void chooseReceipt("library") },
+      { text: t("ui.cancel"), style: "cancel" },
+    ]);
+  }
 
   const memberList = members.state.kind === "ok" ? members.state.data.members : [];
   const currency = group.state.kind === "ok" ? group.state.data.group.currency : "TRY";
@@ -194,8 +258,14 @@ export default function NewExpenseScreen() {
           : { shares: shares.map((row) => ({ userId: row.userId, basisPoints: row.value })) };
     }
 
+    // Harcama zaten kaydedildi, yalnizca fis kalmisti: tekrar YARATMIYORUZ.
+    if (savedExpenseId) {
+      if (await sendReceipt(savedExpenseId)) router.back();
+      return;
+    }
+
     setBusy(true);
-    const result = await post(`/api/v1/groups/${groupId}/expenses`, {
+    const result = await post<{ expense: { id: string } }>(`/api/v1/groups/${groupId}/expenses`, {
       description: description.trim(),
       amount,
       paidById: payer,
@@ -210,6 +280,22 @@ export default function NewExpenseScreen() {
       setError(t(result.code, result.params));
       return;
     }
+
+    /**
+     * FIS HARCAMADAN SONRA YUKLENIYOR ve baska turlusu mumkun degil:
+     * fotograf bir harcamaya baglaniyor ve harcama bu satira kadar YOKTU -
+     * baglanacak kimlik yeni dogdu.
+     *
+     * KISMI BASARISIZLIK MUMKUN ve kullanicidan SAKLANMIYOR: harcama
+     * kaydedildi ama fis yuklenemedi olabilir. O durumda ekranda kaliyoruz
+     * ve ne olduğunu soyluyoruz - "kaydedildi" deyip geri donmek, kullaniciyi
+     * fisin de gittigi sanisiyla birakirdi. Veri kaybi yok: harcamayi acip
+     * fisi tekrar ekleyebiliyor.
+     */
+    if (receiptUri && !(await sendReceipt(result.data.expense.id))) {
+      return;
+    }
+
     // Geri donuldugunde fis kendini tazeliyor (useFocusEffect, grup ekrani).
     router.back();
   }
@@ -446,6 +532,29 @@ export default function NewExpenseScreen() {
           </>
           )}
 
+          {/* FIS - YALNIZCA IKINCI ADIMDA. Ilk adim tutar ve aciklama; oraya
+              koymak, kullanicinin daha ne girdigini bilmeden fotograf
+              secmesini istemek olurdu.
+
+              FOTOGRAF SIMDI YUKLENMIYOR, cihazda BEKLIYOR: baglanacagi
+              harcama henuz yok. Kayit basarili olunca gonderiliyor. */}
+          {step === 2 ? (
+            <View style={s.receiptRow}>
+              {receiptUri ? (
+                <Image source={{ uri: receiptUri }} style={s.receiptThumb} />
+              ) : null}
+              <View style={s.receiptText}>
+                <Cap>{t("ui.receipt")}</Cap>
+                <Text style={s.receiptHint}>
+                  {receiptUri ? t("ui.receipt_will_be_attached") : t("ui.no_receipt")}
+                </Text>
+              </View>
+              <Pressable hitSlop={10} onPress={askReceiptSource} disabled={busy}>
+                <Cap>{receiptUri ? t("ui.replace_receipt") : t("ui.add_receipt")}</Cap>
+              </Pressable>
+            </View>
+          ) : null}
+
           {error ? <Text style={s.error}>{error}</Text> : null}
 
           {step === 1 ? (
@@ -531,6 +640,20 @@ function createStyles(theme: Theme) {
       marginTop: 4,
     },
     primaryText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    receiptRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      borderTopWidth: 1,
+      borderStyle: "dashed",
+      borderColor: theme.border,
+      paddingTop: 14,
+    },
+    // Kucuk onizleme: secilenin DOGRU fotograf oldugunu gormek icin yeterli,
+    // formu itmeyecek kadar kucuk.
+    receiptThumb: { width: 44, height: 44, borderRadius: 3, backgroundColor: theme.surface },
+    receiptText: { flex: 1, gap: 2 },
+    receiptHint: { fontSize: 12, color: theme.muted },
     error: { color: theme.debt, fontSize: 14 },
     guess: { color: theme.muted, fontSize: 12, marginTop: 2 },
     stepHint: { color: theme.muted, fontSize: 12, letterSpacing: 1, marginBottom: 2 },

@@ -71,6 +71,13 @@ export const MESSAGES_TR = {
   "ui.remove_receipt_question": "Fiş kaldırılsın mı?",
   "ui.take_photo": "Fotoğraf çek",
   "ui.choose_from_library": "Galeriden seç",
+  "ui.receipt_will_be_attached": "Harcama kaydedilince eklenecek.",
+  /**
+   * IKI CUMLE BIRDEN: harcamanin KAYDEDILDIGINI soylemek sart. Yalnizca
+   * "fis eklenemedi" deseydik kullanici hicbir seyin olmadigini sanip
+   * harcamayi bastan girerdi - ve ikinci bir kayit olustururdu.
+   */
+  "ui.expense_saved_receipt_failed": "Harcama kaydedildi ama fiş eklenemedi.",
   "expense.not_deleted": "Harcama zaten silinmemiş",
   "expense.participants_not_active": "Şu kullanıcılar grubun aktif üyesi değil: {userIds}",
   "expense.version_conflict": "Bu harcama sen düzenlerken başkası tarafından değiştirildi",
@@ -738,6 +745,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.remove_receipt_question": "Remove the receipt?",
   "ui.take_photo": "Take a photo",
   "ui.choose_from_library": "Choose from library",
+  "ui.receipt_will_be_attached": "It will be attached once the expense is saved.",
+  "ui.expense_saved_receipt_failed": "The expense was saved but the receipt could not be attached.",
   "expense.not_deleted": "This expense has not been deleted",
   "expense.participants_not_active":
     "These users are not active members of the group: {userIds}",
