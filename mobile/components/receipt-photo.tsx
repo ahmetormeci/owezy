@@ -91,33 +91,67 @@ export function ReceiptPhoto({
           format: ImageManipulator.SaveFormat.JPEG,
         });
 
-        const bytes = new File(shrunk.uri).bytes();
+        /**
+         * DOSYAYI expo-file-system YUKLUYOR, fetch DEGIL.
+         *
+         * Ilk yazim baytlari JS'e okuyup fetch govdesine koyuyordu ve iki
+         * ayri sorun cikardi. Birincisi bir hataydi: File Blob arayuzunu
+         * uyguluyor, yani bytes() de PROMISE donuyor ve await unutulmustu -
+         * govdeye bir Promise gitti, fetch patladi, yakalama da onu
+         * "internet yok" diye gosterdi. Ikincisi daha derin: React Native'in
+         * fetch'i ArrayBuffer govdesini guvenilir bicimde tasimiyor.
+         *
+         * upload() bu isi NATIVE tarafta yapiyor - dosya diskten dogrudan
+         * istegin govdesine akiyor, JS'te hic bayt tutulmuyor. Varsayilan
+         * BINARY_CONTENT sunucunun bekledigi sey: govde ham dosya.
+         */
         const authToken = await getToken();
-
-        const response = await fetch(uri, {
-          method: "PUT",
+        const result = await new File(shrunk.uri).upload(uri, {
+          httpMethod: "PUT",
+          mimeType: "image/jpeg",
           headers: {
             ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
             "Content-Type": "image/jpeg",
           },
-          body: bytes as unknown as BodyInit,
         });
 
-        if (!response.ok) {
-          const payload: unknown = await response.json().catch(() => null);
-          const code =
-            payload && typeof payload === "object" && "code" in payload &&
-            typeof payload.code === "string"
-              ? payload.code
-              : "server.unexpected";
+        if (result.status < 200 || result.status >= 300) {
+          // Sunucu kodunu cevirmeye calisiyoruz; govde JSON degilse genel
+          // cumleye dusuyoruz.
+          let code = "server.unexpected";
+          try {
+            const payload: unknown = JSON.parse(result.body);
+            if (
+              payload && typeof payload === "object" && "code" in payload &&
+              typeof payload.code === "string"
+            ) {
+              code = payload.code;
+            }
+          } catch {
+            // Govde JSON degil - kod yok, genel cumle kaliyor.
+          }
           setError(t(code));
           return;
         }
 
         setVersion((current) => current + 1);
         onChanged();
-      } catch {
-        setError(t("server.offline"));
+      } catch (caught) {
+        /**
+         * HER HATAYI "internet yok" SAYMIYORUZ.
+         *
+         * Onceden oyleydi ve bir kusuru tam olarak gizledi: await unutulmus
+         * bir cagri yuzunden fetch patliyordu ve ekranda "internet yok"
+         * yaziyordu - yani sebep, gosterilen seyin tam tersiydi. RN'de ag
+         * hatasi TypeError olarak geliyor; gerisi bizim hatamiz ve oyle
+         * soylenmeli.
+         *
+         * Ham hata ayrica GUNLUGE yaziliyor: kullaniciya "TypeError: ..."
+         * gostermek bir sey anlatmaz ama gelistirici onu gormeden sebebi
+         * bulamaz.
+         */
+        console.error("Fiş yüklenemedi", caught);
+        setError(t(caught instanceof TypeError ? "server.offline" : "server.unexpected"));
       } finally {
         setBusy(false);
       }
