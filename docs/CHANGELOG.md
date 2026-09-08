@@ -8,6 +8,91 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-08 (5) — Fiş fotoğrafı gerçekten çalıştı; yol boyunca dört kusur
+
+Fiş özelliği yazıldıktan sonra **gerçek cihazda hiçbiri çalışmadı** ve dördü
+de ayrı sebeplerdendi. Hepsi kayda değer, çünkü üçü aynı aileden: yanlış
+belirti gösteren hatalar.
+
+### 1. `bytes()` bir Promise döndürüyordu
+
+`File`, `Blob` arayüzünü uyguluyor — yani `bytes()` de Promise. `await`
+unutulmuştu ve gövdeye bir Promise gitti. `fetch` patladı, yakala-hepsini
+dalı da onu **"internet yok"** diye gösterdi: sebep, ekranda yazanın tam
+tersiydi.
+
+Daha derini: **React Native'in `fetch`'i `ArrayBuffer` gövdesini güvenilir
+taşımıyor.** Yükleme artık `expo-file-system` ile native tarafta yapılıyor;
+dosya diskten doğrudan isteğin gövdesine akıyor.
+
+Maskeleme de kalktı: yalnızca gerçek ağ hatası (RN'de `TypeError`) "internet
+yok" diyor, gerisi ne olduğunu söylüyor ve ham hata günlüğe yazılıyor.
+
+### 2. Her depo sorunu "beklenmeyen bir hata"ydı
+
+`handleApiError` `AppError` olmayan her şeyi genel 500'e çeviriyordu, yani
+**yapılandırma eksiğiyle gerçek bir yazılım hatası ayırt edilemiyordu.**
+Yeni bir `ServiceError` sınıfı ve dört ayrı kod eklendi: `not_configured`,
+`forbidden`, `bucket_not_found`, `bad_request`. Dördü de "bu bizim
+tarafımızdaki bir eksik" diyor, çünkü öyle.
+
+### 3. Asıl sebep: `411 MissingContentLength`
+
+R2, gövdeli isteklerde `Content-Length` şart koşuyor. Node'un `undici`'si
+`ArrayBuffer` gövdesi için bu başlığı kendiliğinden koyuyor; **Vercel'in
+sunucusuz çalışma zamanı parçalı aktarım kullanıp hiç koymuyor.**
+
+**Ve burada üç dağıtım turu kaybedildi.** Aynı istek şekli — 300KB'lik aynı
+`ArrayBuffer`, aynı imzalama, aynı adres — yerelde gerçek kovaya karşı
+denendi ve **200 döndü**. Bundan "kodda sorun yok, yapılandırmada" sonucu
+çıkarıldı ve arama orada durdu.
+
+> **Ders:** doğru şeyi YANLIŞ ORTAMDA ölçmek, hiç ölçmemekten kötü — çünkü
+> insanı emin yapıyor. Aynı sınıf hata bu projede daha önce de yaşandı
+> (`new Request(request, ...)` düz Node'da çalışıp Next'in rotasında
+> patlamıştı).
+
+Cevabı Vercel'in çalışma zamanı günlüğü verdi. Günlüklere baştan bakmak,
+üç tur tahminden ucuzdu.
+
+### 4. Yeni harcamada fiş yoktu
+
+Fişi fotoğraflamanın doğal anı harcamayı girerken; o ekranda hiç yol yoktu.
+Fotoğraf artık önce seçilip **cihazda bekliyor**, kayıt başarılı olunca
+gönderiliyor — öncesi mümkün değil, bağlanacağı kimlik kayıtla doğuyor.
+
+Bu **kısmi başarısızlığı** mümkün kılıyor ve ekran ikisini birden söylüyor:
+*"Harcama kaydedildi ama fiş eklenemedi."* Yalnızca ikinci yarısını söylemek
+hiçbir şey olmadığını sandırır ve kullanıcı harcamayı baştan girerdi.
+
+Asıl tehlike buydu: **çift kayıt bakiyeleri bozar.** Harcama bir kez
+yaratıldıktan sonra "Kaydet" yalnızca fişi yeniden deniyor. Beş test bunu
+koruyor; korumayı bilerek kaldırınca ikisi düşüyor.
+
+### Arayüz: iki geri bildirim
+
+**"Fiş ekle" düz metindi** ve kullanıcı bildirdi: *"çok pasif kalmış, yeni
+kullanıcı fark etmez."* Haklıydı — düz metin tıklanabilir görünmüyor. Boş
+durum artık kesikli çerçeveli, kamera simgeli, **tamamı dokunulabilir** bir
+blok.
+
+**Listede fişin varlığı görünmüyordu ve fotoğraf büyümüyordu.** Açıklamanın
+yanına küçük bir ataç kondu; satır harcamayı, ataç fotoğrafı **tam ekran**
+açıyor. Gerçek küçük resim değil: kırk harcamalık bir liste kırk fotoğraf
+indirmek olurdu ve listenin sorusu tek bir bit. Uç da yalnızca bir kimlik
+döndürüyor, ve sorgu şeklini sabitleyen test bunu yazıyor.
+
+Tam ekran koyu zeminli, çünkü fiş beyaz kağıt. Pinch-zoom yok — native bir
+jest bağımlılığı ve yeni bir build isterdi.
+
+### Bir de dikkat
+
+`vercel link` çalıştırıldığında **`.env.local` dosyasına** bir
+`VERCEL_OIDC_TOKEN` satırı eklendi. O dosya kullanıcıya ait ve komutun bunu
+yapacağı önceden söylenmedi. Dosya `.gitignore`'da, depoya sızmadı.
+
+---
+
 ## 2026-09-08 (4) — Fiş fotoğrafı (ADR-046 uygulandı)
 
 Harcamaya fiş fotoğrafı eklenebiliyor. Yeni tablo (`ExpenseReceipt`), yeni uç,
