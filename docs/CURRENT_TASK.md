@@ -92,6 +92,11 @@ Current task:
   PUSH BILDIRIM - secilen dortlunun sonuncusu, BASLANMADI. APNs, izin
   istemi, sunucuda belirtec saklama, App Privacy anketi degisikligi.
 
+MOBILDE YONETIM EKSIKLERI - BITTI (8 Eylul). Uye cikarma ve davet iptali
+  eklendi, 10 ekran testiyle. Sahiplik devri KAPSAM DISI kaldi: ayri bir uc
+  yok, web'de de yok - devir yalnizca AYRILIRKEN var ve o mobilde zaten
+  calisiyordu.
+
 SIRADAKI IS - SECILMEDI:
   PUSH BILDIRIM (APNs sertifikasi, expo-notifications, izin istemi, yeni
     build ve App Privacy anketinde degisiklik)

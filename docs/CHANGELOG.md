@@ -8,6 +8,47 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-09-08 (2) — Üye çıkarma ve davet iptali mobile geldi
+
+Her iki ucun da baştan beri var olduğu, yalnızca web'in kullandığı iki işlem.
+Ekranın kendi başlığı bunu "kapsam dışı (bilinçli)" diye yazıyordu.
+
+**İzin sunucuda, arayüz onu aynalıyor.** Çıkarmayı yalnızca sahip yapabiliyor
+ve kendini çıkaramıyor; iptali daveti oluşturan ya da grup sahibi yapabiliyor.
+Düğmeler yalnızca başarılı olacakları yerde çiziliyor — reddedilecek bir
+eylemi sunup ardından hata göstermek, hiç sunmamaktan kötü.
+
+Davet iptalindeki yetki, harcamalardaki "yalnızca oluşturan" kuralından
+**bilinçli bir sapma** ve gerekçesi `groups.ts`'te yazılı: sızan bir davet
+linki sahibine ait bir kayıt değil, grubun tamamını ilgilendiren bir güvenlik
+nesnesi.
+
+**Liste bağlantıyı gösteremez ve göstermeyecek.** Sunucu davetin yalnızca
+şifrelenmiş özetini saklıyor — ekranın "bu link bir kez gösterilir" uyarısının
+sebebi de bu. Liste "yeniden kopyala" değil, "iptal et" listesi.
+
+Bakiyesi olan bir üye çıkarılamıyor ve **tutar artık ekrana ulaşıyor** — bu,
+aynı gün düzeltilen yer tutucu kusurunun kardeşi.
+
+**On ekran testi yazıldı.** Bu mantık sessizce bozuluyor: yanlış tarafa düşen
+bir koşul derlenir, testler geçer, ve sonucu ya olmayan bir yetkiyi göstermek
+ya da olanı saklamaktır. İki koşul da bilerek bozulunca **altı test düştü**;
+doğru hâlinde onu da geçiyor.
+
+Yazarken bir tuzak çıktı ve teste not edildi: `<Cap>` metni
+`toLocaleUpperCase(locale)` ile çeviriyor ve **Türkçede `i` → `İ`** oluyor.
+"Aktif davetler" diye aramak hiçbir şey bulmuyor ve testi "bölüm çizilmemiş"
+gibi gösteriyor.
+
+**Sahiplik devri kapsam dışı kaldı** ve başlık artık sebebini yazıyor: ayrı
+bir uç yok, web'de de arayüz yok. Devir yalnızca *ayrılırken* var ve o kadarı
+telefonda zaten çalışıyordu. Ayrı bir devir eklemek uç + web + mobil demekti.
+
+Sözlüğe tek anahtar eklendi (`ui.invite_revoke_hint`, iki dilde); geri kalan
+metinlerin hepsi web için zaten yazılmıştı.
+
+---
+
 ## 2026-09-08 — 1.0.2 canlı; alan adı iki saat askıda kaldı
 
 **1.0.2 App Store'da.** Onay maili geldiğinde App Store Connect hâlâ "In
