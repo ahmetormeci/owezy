@@ -42,6 +42,25 @@ export class ConflictError extends AppError {
   }
 }
 
+/**
+ * Sunucu tarafinda bir sey EKSIK ya da ULASILAMIYOR - istemcinin yaptigi bir
+ * sey degil.
+ *
+ * NEDEN AYRI BIR SINIF: bunlar olmadan her depo sorunu handleApiError'in
+ * genel dalina dusuyordu ve ekranda "beklenmeyen bir hata" yaziyordu -
+ * yapilandirma eksigiyle gercek bir yazilim hatasi ayirt edilemiyordu.
+ * Gercekten yasandi: R2 kurulduktan sonra fis yuklenemedi ve elimizdeki tek
+ * bilgi "beklenmeyen"di; sebebi bulmak icin sunucu gunlugune bakmak
+ * gerekiyordu.
+ *
+ * 503: gecici olabilecegini soyleyen dogru durum kodu.
+ */
+export class ServiceError extends AppError {
+  constructor(code: MessageCode, params?: MessageParams) {
+    super(code, 503, params);
+  }
+}
+
 export class ValidationError extends AppError {
   constructor(code: MessageCode, params?: MessageParams) {
     super(code, 400, params);

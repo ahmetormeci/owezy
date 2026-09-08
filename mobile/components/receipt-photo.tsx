@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { apiBaseUrl } from "../lib/api";
@@ -169,16 +170,14 @@ export function ReceiptPhoto({
         <Cap>{t("ui.receipt")}</Cap>
         {busy ? (
           <ActivityIndicator size="small" color={theme.brand} />
-        ) : canEdit ? (
+        ) : present && canEdit ? (
           <View style={s.actions}>
             <Pressable hitSlop={10} onPress={choose}>
-              <Cap>{present ? t("ui.replace_receipt") : t("ui.add_receipt")}</Cap>
+              <Cap>{t("ui.replace_receipt")}</Cap>
             </Pressable>
-            {present ? (
-              <Pressable hitSlop={10} onPress={confirmRemove}>
-                <Text style={s.remove}>{t("ui.remove_receipt")}</Text>
-              </Pressable>
-            ) : null}
+            <Pressable hitSlop={10} onPress={confirmRemove}>
+              <Text style={s.remove}>{t("ui.remove_receipt")}</Text>
+            </Pressable>
           </View>
         ) : null}
       </View>
@@ -192,9 +191,26 @@ export function ReceiptPhoto({
           resizeMode="contain"
           accessibilityLabel={t("ui.receipt")}
         />
-      ) : !present ? (
+      ) : present ? null : canEdit ? (
+        /**
+         * BOS DURUM BIR HEDEF, bir cumle degil.
+         *
+         * Onceden burada "fis eklenmemis" yaziyor ve eylem saga sikismis duz
+         * bir metindi; kullanici bildirdi: "cok pasif kalmis, yeni kullanici
+         * fark etmez". Hakliydi - duz metin tiklanabilir GORUNMUYOR.
+         *
+         * Kesikli cerceve bir sey KONULACAK yer anlatiyor (fisin kendi dili
+         * de kesikli), kamera simgesi ne konulacagini soyluyor, ve butun blok
+         * dokunulabilir - kucuk bir metne nisan almak gerekmiyor.
+         */
+        <Pressable style={s.dropZone} onPress={choose} disabled={busy}>
+          <Ionicons name="camera-outline" size={22} color={theme.brand} />
+          <Cap>{t("ui.add_receipt")}</Cap>
+          <Text style={s.dropHint}>{t("ui.receipt_hint")}</Text>
+        </Pressable>
+      ) : (
         <Text style={s.empty}>{t("ui.no_receipt")}</Text>
-      ) : null}
+      )}
 
       {error ? <Text style={s.error}>{error}</Text> : null}
     </View>
@@ -217,6 +233,18 @@ function styles(theme: Theme) {
     // ziplamasin.
     photo: { width: "100%", height: 260, backgroundColor: theme.surface, borderRadius: 3 },
     empty: { fontSize: 13, color: theme.muted },
+    dropZone: {
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingVertical: 22,
+      borderWidth: 1,
+      borderStyle: "dashed",
+      borderColor: theme.border,
+      borderRadius: 4,
+      backgroundColor: theme.surface,
+    },
+    dropHint: { fontSize: 11, color: theme.muted },
     error: { fontSize: 13, color: theme.debt },
   });
 }

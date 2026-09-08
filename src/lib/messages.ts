@@ -50,6 +50,13 @@ export const MESSAGES_TR = {
   "expense.not_found": "Harcama bulunamadı",
 
   // --- Fis fotografi ---
+  /**
+   * DEPO HATALARI KULLANICININ HATASI DEGIL ve cumleler bunu soyluyor.
+   * Onceden ikisi de "beklenmeyen bir hata" oluyordu; yapilandirma eksigiyle
+   * gercek bir arizayi ayirt etmenin yolu yoktu.
+   */
+  "storage.not_configured": "Fotoğraf deposu henüz yapılandırılmamış. Bu bizim tarafımızdaki bir eksik.",
+  "storage.unavailable": "Fotoğraf deposuna şu an ulaşılamıyor. Birazdan tekrar dene.",
   "receipt.not_found": "Bu harcamaya ekli bir fiş yok",
   "receipt.empty": "Dosya boş",
   "receipt.too_large": "Fotoğraf çok büyük. En fazla 4 MB olabilir.",
@@ -71,6 +78,7 @@ export const MESSAGES_TR = {
   "ui.remove_receipt_question": "Fiş kaldırılsın mı?",
   "ui.take_photo": "Fotoğraf çek",
   "ui.choose_from_library": "Galeriden seç",
+  "ui.receipt_hint": "Fotoğrafı çek ya da galerinden seç",
   "ui.receipt_will_be_attached": "Harcama kaydedilince eklenecek.",
   /**
    * IKI CUMLE BIRDEN: harcamanin KAYDEDILDIGINI soylemek sart. Yalnizca
@@ -730,6 +738,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   // --- Expense ---
   "expense.not_found": "Expense not found",
 
+  "storage.not_configured": "Photo storage is not configured yet. That is something missing on our side.",
+  "storage.unavailable": "Photo storage cannot be reached right now. Please try again shortly.",
   "receipt.not_found": "This expense has no receipt attached",
   "receipt.empty": "The file is empty",
   "receipt.too_large": "The photo is too large. It can be at most 4 MB.",
@@ -745,6 +755,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.remove_receipt_question": "Remove the receipt?",
   "ui.take_photo": "Take a photo",
   "ui.choose_from_library": "Choose from library",
+  "ui.receipt_hint": "Take a photo or choose one from your library",
   "ui.receipt_will_be_attached": "It will be attached once the expense is saved.",
   "ui.expense_saved_receipt_failed": "The expense was saved but the receipt could not be attached.",
   "expense.not_deleted": "This expense has not been deleted",

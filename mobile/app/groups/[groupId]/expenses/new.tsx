@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -539,20 +540,27 @@ export default function NewExpenseScreen() {
               FOTOGRAF SIMDI YUKLENMIYOR, cihazda BEKLIYOR: baglanacagi
               harcama henuz yok. Kayit basarili olunca gonderiliyor. */}
           {step === 2 ? (
-            <View style={s.receiptRow}>
-              {receiptUri ? (
+            receiptUri ? (
+              <View style={s.receiptRow}>
                 <Image source={{ uri: receiptUri }} style={s.receiptThumb} />
-              ) : null}
-              <View style={s.receiptText}>
-                <Cap>{t("ui.receipt")}</Cap>
-                <Text style={s.receiptHint}>
-                  {receiptUri ? t("ui.receipt_will_be_attached") : t("ui.no_receipt")}
-                </Text>
+                <View style={s.receiptText}>
+                  <Cap>{t("ui.receipt")}</Cap>
+                  <Text style={s.receiptHint}>{t("ui.receipt_will_be_attached")}</Text>
+                </View>
+                <Pressable hitSlop={10} onPress={askReceiptSource} disabled={busy}>
+                  <Cap>{t("ui.replace_receipt")}</Cap>
+                </Pressable>
               </View>
-              <Pressable hitSlop={10} onPress={askReceiptSource} disabled={busy}>
-                <Cap>{receiptUri ? t("ui.replace_receipt") : t("ui.add_receipt")}</Cap>
+            ) : (
+              /* BOS DURUM BIR HEDEF, bir cumle degil - duz metin
+                 tiklanabilir gorunmuyor ve kullanici bunu bildirdi.
+                 Ayrintisi components/receipt-photo.tsx'te. */
+              <Pressable style={s.receiptDrop} onPress={askReceiptSource} disabled={busy}>
+                <Ionicons name="camera-outline" size={22} color={theme.brand} />
+                <Cap>{t("ui.add_receipt")}</Cap>
+                <Text style={s.receiptHint}>{t("ui.receipt_hint")}</Text>
               </Pressable>
-            </View>
+            )
           ) : null}
 
           {error ? <Text style={s.error}>{error}</Text> : null}
@@ -654,6 +662,17 @@ function createStyles(theme: Theme) {
     receiptThumb: { width: 44, height: 44, borderRadius: 3, backgroundColor: theme.surface },
     receiptText: { flex: 1, gap: 2 },
     receiptHint: { fontSize: 12, color: theme.muted },
+    receiptDrop: {
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingVertical: 22,
+      borderWidth: 1,
+      borderStyle: "dashed",
+      borderColor: theme.border,
+      borderRadius: 4,
+      backgroundColor: theme.surface,
+    },
     error: { color: theme.debt, fontSize: 14 },
     guess: { color: theme.muted, fontSize: 12, marginTop: 2 },
     stepHint: { color: theme.muted, fontSize: 12, letterSpacing: 1, marginBottom: 2 },

@@ -1,4 +1,5 @@
 import { AwsClient } from "aws4fetch";
+import { ServiceError } from "@/lib/errors";
 
 /**
  * Nesne deposu (Cloudflare R2).
@@ -44,10 +45,11 @@ function readConfig(): StorageConfig {
      * eksik oldugunu asla ogrenemezdi. Hata cagirana kadar cikiyor ve orada
      * kullaniciya cevrilmis bir cumleye donuyor.
      */
-    throw new Error(
-      "R2 yapilandirmasi eksik: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, " +
-        "R2_SECRET_ACCESS_KEY ve R2_BUCKET tanimli olmali.",
+    console.error(
+      "R2 yapilandirmasi eksik. Tanimli olmasi gerekenler: R2_ACCOUNT_ID, " +
+        "R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.",
     );
+    throw new ServiceError("storage.not_configured");
   }
   return { accountId, accessKeyId, secretAccessKey, bucket };
 }
@@ -107,7 +109,8 @@ export async function putObject(
     headers: { "Content-Type": contentType },
   });
   if (!response.ok) {
-    throw new Error(`Nesne yazilamadi (${response.status})`);
+    console.error("R2 yazma hatasi", response.status, await response.text());
+    throw new ServiceError("storage.unavailable");
   }
 }
 
@@ -117,7 +120,8 @@ export async function getObject(key: string): Promise<ArrayBuffer | null> {
   const response = await client(config).fetch(endpoint(config, key));
   if (response.status === 404) return null;
   if (!response.ok) {
-    throw new Error(`Nesne okunamadi (${response.status})`);
+    console.error("R2 okuma hatasi", response.status);
+    throw new ServiceError("storage.unavailable");
   }
   return response.arrayBuffer();
 }
