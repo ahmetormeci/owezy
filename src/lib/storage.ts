@@ -130,7 +130,25 @@ export async function putObject(
   const response = await client(config).fetch(endpoint(config, key), {
     method: "PUT",
     body,
-    headers: { "Content-Type": contentType },
+    headers: {
+      "Content-Type": contentType,
+      /**
+       * CONTENT-LENGTH ELLE VERILIYOR ve bu ZORUNLU.
+       *
+       * R2 govdeli isteklerde bu basligi sart kosuyor; yoksa 411
+       * MissingContentLength donuyor. Basligi normalde calisma zamani
+       * koyuyor - AMA HER ZAMAN DEGIL: Node'un undici'si ArrayBuffer
+       * govdesi icin koyuyor, Vercel'in sunucusuz calisma zamani parcali
+       * aktarim kullanip HIC koymuyor.
+       *
+       * GERCEKTEN YASANDI VE YANILTTI: ayni kod yerelde calisti, uretimde
+       * dustu. Yerelde 300KB'lik ayni ArrayBuffer ile PUT 200 donuyordu,
+       * yani "kodda sorun yok, yapilandirmada" diye uc tur harcandi.
+       * DERS: dogru seyi YANLIS ORTAMDA olcmek, hic olcmemekten kotu -
+       * cunku insani emin yapiyor.
+       */
+      "Content-Length": String(body.byteLength),
+    },
   });
   if (!response.ok) {
     console.error("R2 yazma hatasi", response.status, await response.text());
