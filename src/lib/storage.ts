@@ -110,9 +110,15 @@ function client(config: StorageConfig): AwsClient {
  * yanlis oldugunu soyleyen bir sey yoktu.
  */
 function storageFailure(status: number): ServiceError {
-  return new ServiceError(
-    status === 401 || status === 403 ? "storage.forbidden" : "storage.unavailable",
-  );
+  // 401/403: kimlik bilgisi yanlis.
+  if (status === 401 || status === 403) return new ServiceError("storage.forbidden");
+  // 404: kova YOK. R2 var olmayan bir kovaya yazmayi NoSuchBucket ile
+  // reddediyor - yani R2_BUCKET yanlis, kimlik bilgileri degil.
+  if (status === 404) return new ServiceError("storage.bucket_not_found");
+  // 400: istek bicimi bozuk. Pratikte adresin yanlis kurulmus olmasi -
+  // ornegin hesap kimliginde beklenmeyen bir karakter.
+  if (status === 400) return new ServiceError("storage.bad_request");
+  return new ServiceError("storage.unavailable");
 }
 
 export async function putObject(
