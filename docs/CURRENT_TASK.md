@@ -97,16 +97,37 @@ MOBILDE YONETIM EKSIKLERI - BITTI (8 Eylul). Uye cikarma ve davet iptali
   yok, web'de de yok - devir yalnizca AYRILIRKEN var ve o mobilde zaten
   calisiyordu.
 
-PUSH BILDIRIM - KOD BITTI (8 Eylul, ADR-047). Kalanlar KOD DEGIL:
-  1. APNs ANAHTARI - KULLANICIDA. "eas credentials" uretebiliyor ama Apple
-     girisi gerekiyor. Bu yapilmadan gonderim CALISMAZ (Expo "cihaza
-     ulasilamadi" der, sessizce).
-  2. YENI BUILD SART - native modul eklendi, OTA ile gitmez.
-  3. APP PRIVACY ANKETI: "Identifiers" beyani eklenecek.
-  4. DESTEK SAYFASI: "telefona bildirim GONDERILMIYOR" maddesi kalkacak -
+PUSH BILDIRIM - KOD BITTI, BUILD ALINDI (8 Eylul, ADR-047).
+  1.0.3 build 16, TestFlight'a yuklendi. Kalanlar:
+  1. GERCEK TELEFONDA DOGRULAMA - YAPILMADI. Bkz. asagidaki plan.
+  2. APP PRIVACY ANKETI: "Identifiers" beyani eklenecek.
+  3. DESTEK SAYFASI: "telefona bildirim GONDERILMIYOR" maddesi kalkacak -
      ama YAYINLANINCA, once degil (sayfa bugun DOGRU).
   Gizlilik politikasi ZATEN guncellendi (inceleyici ona bakiyor, o yuzden
-  yayindan once).
+  yayindan once). APNs anahtari kuruldu (Portal ID 47KL3BM87C).
+
+  DOGRULAMA PLANI (ekrana bakmadan "calisiyor" DENMEYECEK):
+    TestFlight'tan kur -> Bildirimler ekraninda izin ver -> IKINCI BIR
+    HESAPLA ortak gruba harcama ekle -> telefonda "<grup adi> / Yeni bir
+    harcama eklendi" dusmeli. TUTAR VE ISIM GORUNMEMELI - gorunuyorsa kusur.
+    Bildirime dokununca o grubun ekrani acilmali.
+
+YENI YETKI EKLERKEN APPLE PORTALI - IKI KEZ AYNI SEKILDE DUSTUK:
+  Yeni bir iOS yetkisi (Associated Domains, Push Notifications) eklendiginde
+  build su hatayla DUSUYOR:
+      Provisioning profile ... doesn't include the X capability
+  SEBEP: mevcut profil o yetkiyi tasimiyor ve EAS onu kendi basina
+  YENILEMIYOR - ne --non-interactive ne de etkileşimli kosu duzeltti.
+  COZUM: developer.apple.com/account/resources/identifiers/list -> App ID ->
+  yetkiyi ISARETLE -> Save. Bu mevcut profilleri gecersiz kiliyor ve EAS
+  bir sonraki build'de yenisini uretiyor (profil ID'si degisiyor - kontrol
+  edilebilir: ZLPAAW529A -> ZR63Q74VG8).
+  YETKI ILE ANAHTAR AYRI SEYLER: APNs anahtari GONDERMEK icin, App ID'deki
+  kutu ALMAK icin. Ikisi de gerekiyor.
+
+EAS BUILD BASARISIZ OLDUGUNDA DA 0 DONUYOR. Arka plan bildirimindeki
+  "exit code 0" build'in gectigi anlamina GELMEZ; ciktiyi oku. Ayni sinif
+  hata daha once kabuk seviyesinde de yasandi (asagida).
 
 SIRADAKI IS - SECILMEDI:
   GORSEL EKLEME (yukarida - tasarim engeli kalkti)
