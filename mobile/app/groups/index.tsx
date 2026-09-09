@@ -1,3 +1,4 @@
+import { fonts } from "../../lib/fonts";
 import { Link, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -146,7 +147,7 @@ function createStyles(theme: Theme) {
       gap: 12,
       backgroundColor: theme.paper,
     },
-    title: { fontSize: 17, fontWeight: "600", color: theme.foreground, paddingTop: 8 },
+    title: { fontSize: 17, fontFamily: fonts.semibold, color: theme.foreground, paddingTop: 8 },
     list: { flex: 1, marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border },
     // Her grup bir KART degil bir SATIR (ADR-021).
     row: {
@@ -159,19 +160,19 @@ function createStyles(theme: Theme) {
       borderBottomColor: theme.lineSoft,
     },
     rowText: { flexShrink: 1 },
-    rowName: { fontSize: 16, fontWeight: "500", color: theme.foreground },
-    rowDescription: { marginTop: 2, fontSize: 12, color: theme.muted },
-    rowRole: { fontSize: 12, color: theme.muted },
+    rowName: { fontSize: 16, fontFamily: fonts.medium, color: theme.foreground },
+    rowDescription: { marginTop: 2, fontFamily: fonts.body, fontSize: 12, color: theme.muted },
+    rowRole: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
     creator: { paddingTop: 18, gap: 18 },
     firstRun: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
-    wordmark: { fontSize: 34, fontWeight: "600", color: theme.brand },
+    wordmark: { fontSize: 34, fontFamily: fonts.semibold, color: theme.brand },
     firstRunText: { textAlign: "center", color: theme.muted, maxWidth: 300, lineHeight: 22 },
     firstRunForm: { alignSelf: "stretch", marginTop: 12, gap: 18 },
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
-    buttonText: { color: "#fff", fontSize: 15 },
+    buttonText: { color: "#fff", fontFamily: fonts.body, fontSize: 15 },
     footer: { flexDirection: "row", justifyContent: "center", gap: 20 },
     signOut: { paddingVertical: 16 },
-    signOutText: { color: theme.muted, fontSize: 14 },
+    signOutText: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },
   });
 }

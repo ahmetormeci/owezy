@@ -1,3 +1,4 @@
+import { fonts } from "../../../lib/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1369,12 +1370,14 @@ function createStyles(theme: Theme) {
       gap: 12,
       backgroundColor: theme.background,
     },
-    groupName: { fontSize: 24, fontWeight: "600", color: theme.foreground },
-    // Fisin "magaza adi": ortalanmis, harf araligi acik, tek arali.
+    groupName: { fontSize: 24, fontFamily: fonts.heading, color: theme.foreground },
+    // Fisin "magaza adi". MONO'DAN SERIFE gecti: tasarimda grup adi
+    // Instrument Serif. Harf araligi da 2'den 0'a indi - mono'da aralik
+    // yaziyi "basili" gosteriyordu, serifte ayni aralik yalnizca dagitiyor.
     receiptTitle: {
-      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-      fontSize: 15,
-      letterSpacing: 2,
+      fontFamily: fonts.heading,
+      fontSize: 20,
+      letterSpacing: 0,
       textAlign: "center",
       color: theme.foreground,
       marginBottom: 4,
@@ -1392,16 +1395,16 @@ function createStyles(theme: Theme) {
     accountBlock: { marginTop: 16 },
     emptyDeletedLink: { marginTop: 10 },
     cardBody: { gap: 12 },
-    cardLink: { color: theme.brand, fontSize: 13, fontWeight: "500" },
+    cardLink: { color: theme.brand, fontSize: 13, fontFamily: fonts.medium },
     catRow: { gap: 5 },
     catHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },
-    catName: { flex: 1, color: theme.foreground, fontSize: 14 },
-    catAmount: { color: theme.muted, fontSize: 12 },
+    catName: { flex: 1, color: theme.foreground, fontFamily: fonts.body, fontSize: 14 },
+    catAmount: { color: theme.muted, fontFamily: fonts.body, fontSize: 12 },
     catTrack: { height: 5, borderRadius: 3, backgroundColor: theme.surface, overflow: "hidden" },
     catFill: { height: "100%", borderRadius: 3, backgroundColor: theme.brand },
     memberRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },
-    memberName: { flex: 1, color: theme.foreground, fontSize: 15 },
-    memberAmount: { fontSize: 15, fontWeight: "500" },
+    memberName: { flex: 1, color: theme.foreground, fontFamily: fonts.body, fontSize: 15 },
+    memberAmount: { fontSize: 15, fontFamily: fonts.medium },
     stamp: {
       alignSelf: "flex-end",
       borderWidth: 1.5,
@@ -1412,8 +1415,8 @@ function createStyles(theme: Theme) {
     },
     balanceBlock: { gap: 2, borderTopWidth: 1, borderStyle: "dashed", borderColor: theme.border, paddingTop: 16 },
     balanceRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" },
-    balanceAmount: { fontSize: 26, fontWeight: "500", fontVariant: ["tabular-nums"] },
-    balanceLabel: { fontSize: 12, color: theme.muted, textAlign: "right" },
+    balanceAmount: { fontSize: 26, fontFamily: fonts.medium, fontVariant: ["tabular-nums"] },
+    balanceLabel: { fontFamily: fonts.body, fontSize: 12, color: theme.muted, textAlign: "right" },
     emptyText: { color: theme.muted, lineHeight: 22 },
     planBlock: {
       gap: 10,
@@ -1423,11 +1426,11 @@ function createStyles(theme: Theme) {
       paddingTop: 16,
     },
     planGroup: { gap: 4 },
-    planTitle: { fontSize: 12, color: theme.muted },
+    planTitle: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
     planRow: { flexDirection: "row", alignItems: "baseline", gap: 8, paddingVertical: 3 },
-    planName: { flex: 1, fontSize: 14, color: theme.foreground },
-    planAmount: { fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
-    otherRow: { fontSize: 13, color: theme.muted, paddingVertical: 2 },
+    planName: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
+    planAmount: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
+    otherRow: { fontFamily: fonts.body, fontSize: 13, color: theme.muted, paddingVertical: 2 },
     monthBlock: { gap: 4 },
     // Suzgec satiri: kutusuz, kesikli iki cizgi arasinda - fisin uzerine
     // yazilmis gibi. Kenarliklar kalkinca denetim kagida ait gorunuyor.
@@ -1443,7 +1446,7 @@ function createStyles(theme: Theme) {
     },
     // padding: 0 SART - iOS'ta TextInput'un kendi ic dolgusu satiri
     // kalinlastirip kesikli cizgilerden koparıyor.
-    filterInput: { flex: 1, fontSize: 15, color: theme.foreground, padding: 0 },
+    filterInput: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: theme.foreground, padding: 0 },
     filterPanel: { gap: 10, paddingTop: 12 },
     chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
     chip: {
@@ -1455,20 +1458,20 @@ function createStyles(theme: Theme) {
       maxWidth: "100%",
     },
     chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
-    chipText: { color: theme.foreground, fontSize: 14 },
-    chipTextActive: { color: "#fff", fontWeight: "600" },
+    chipText: { color: theme.foreground, fontFamily: fonts.body, fontSize: 14 },
+    chipTextActive: { color: "#fff", fontFamily: fonts.semibold },
     clearButton: { paddingHorizontal: 6, paddingVertical: 7 },
     foundBlock: { gap: 12 },
-    matchLine: { fontSize: 12, color: theme.muted },
+    matchLine: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
     monthLoading: { paddingVertical: 12 },
-    loadMore: { color: theme.brand, fontSize: 13, paddingVertical: 8 },
+    loadMore: { color: theme.brand, fontFamily: fonts.body, fontSize: 13, paddingVertical: 8 },
     totals: { gap: 4 },
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
-    buttonText: { color: "#fff", fontSize: 15 },
+    buttonText: { color: "#fff", fontFamily: fonts.body, fontSize: 15 },
     // flexWrap SART: alt bilgide dort giris var ve tek satira sigmiyor.
     // Sarmadan once sonuncusu ("cikis yap") ekranin disinda kaliyordu.
     footer: { flexDirection: "row", flexWrap: "wrap", rowGap: 12, columnGap: 24, paddingTop: 24 },
-    footerText: { color: theme.muted, fontSize: 14 },
+    footerText: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },
   });
 }

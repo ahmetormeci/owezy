@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { guessCategory } from "@/lib/expense-category-guess";
@@ -164,10 +165,11 @@ function styles(theme: Theme) {
       borderBottomColor: theme.foreground,
       paddingBottom: 6,
     },
-    plus: { color: theme.muted, fontSize: 15, marginRight: 8 },
-    description: { flex: 1, fontSize: 14, color: theme.foreground, padding: 0 },
+    plus: { color: theme.muted, fontFamily: fonts.body, fontSize: 15, marginRight: 8 },
+    description: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: theme.foreground, padding: 0 },
     amount: {
       width: 96,
+      fontFamily: fonts.body,
       fontSize: 14,
       color: theme.foreground,
       textAlign: "right",
@@ -175,13 +177,13 @@ function styles(theme: Theme) {
       padding: 0,
     },
     hintRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-    hint: { flex: 1, fontSize: 11, color: theme.muted },
+    hint: { flex: 1, fontFamily: fonts.body, fontSize: 11, color: theme.muted },
     button: {
       backgroundColor: theme.brand,
       borderRadius: 4,
       paddingHorizontal: 12,
       paddingVertical: 7,
     },
-    error: { fontSize: 12, color: theme.debt },
+    error: { fontFamily: fonts.body, fontSize: 12, color: theme.debt },
   });
 }

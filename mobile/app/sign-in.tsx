@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -367,13 +368,14 @@ function createStyles(theme: Theme) {
     // Kelime isareti kobalt ve 34 punto: gruplar ekranindaki ilk acilis
     // basligiyla AYNI (groups/index.tsx, wordmark). Ayni kelimenin iki
     // ekranda iki turlu gorunmesi icin sebep yok.
-    title: { fontSize: 34, fontWeight: "600", color: theme.brand, marginBottom: 24 },
-    muted: { fontSize: 14, color: theme.muted },
+    title: { fontSize: 34, fontFamily: fonts.semibold, color: theme.brand, marginBottom: 24 },
+    muted: { fontFamily: fonts.body, fontSize: 14, color: theme.muted },
     input: {
       borderWidth: 1,
       borderColor: theme.border,
       borderRadius: 8,
       padding: 14,
+      fontFamily: fonts.body,
       fontSize: 16,
       color: theme.foreground,
     },
@@ -384,11 +386,11 @@ function createStyles(theme: Theme) {
       borderRadius: 8,
       alignItems: "center",
     },
-    buttonText: { color: "#fff", fontSize: 16 },
+    buttonText: { color: "#fff", fontFamily: fonts.body, fontSize: 16 },
     link: { color: theme.muted, paddingVertical: 12, textAlign: "center" },
     // Hata rengi theme.debt: bu ekranlarda yerlesik olan bu (on ekranda
     // boyle). ADR-015 kirmizinin ANLAM tasidigi yerleri koruyor; buradaki
     // kullanim bir bakiye degil, ama projede tek bir hata rengi var.
-    error: { color: theme.debt, fontSize: 14 },
+    error: { color: theme.debt, fontFamily: fonts.body, fontSize: 14 },
   });
 }

@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -246,13 +247,13 @@ function createStyles(theme: Theme) {
     rowHead: { flexDirection: "row", alignItems: "center", gap: 8 },
     dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: theme.brand },
     dotRead: { backgroundColor: "transparent" },
-    title: { flex: 1, fontSize: 15, color: theme.foreground },
+    title: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: theme.foreground },
     // Ayrintı ve ust bilgi noktanin GENISLIGI KADAR iceriden basliyor,
     // boylece satirin butun metni tek sutunda hizali duruyor.
-    detail: { fontSize: 13, color: theme.muted, marginLeft: 15 },
-    meta: { fontSize: 11, color: theme.muted, marginLeft: 15 },
+    detail: { fontFamily: fonts.body, fontSize: 13, color: theme.muted, marginLeft: 15 },
+    meta: { fontFamily: fonts.body, fontSize: 11, color: theme.muted, marginLeft: 15 },
     empty: { color: theme.muted, lineHeight: 22 },
-    error: { color: theme.debt, fontSize: 14 },
-    link: { color: theme.brand, fontSize: 14, paddingVertical: 12 },
+    error: { color: theme.debt, fontFamily: fonts.body, fontSize: 14 },
+    link: { color: theme.brand, fontFamily: fonts.body, fontSize: 14, paddingVertical: 12 },
   });
 }

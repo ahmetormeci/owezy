@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { useLocale } from "../lib/i18n";
@@ -233,11 +234,11 @@ function styles(theme: Theme) {
     },
     lineBlock: { gap: 2, paddingVertical: 4 },
     line: { flexDirection: "row", alignItems: "baseline" },
-    label: { fontSize: 14, color: theme.foreground, flexShrink: 1 },
-    amount: { fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
+    label: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground, flexShrink: 1 },
+    amount: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
     leaderWrap: { flex: 1, overflow: "hidden", marginHorizontal: 8 },
-    leaderText: { color: theme.border, fontSize: 12, letterSpacing: 2 },
-    secondary: { fontSize: 11, color: theme.muted },
+    leaderText: { color: theme.border, fontFamily: fonts.body, fontSize: 12, letterSpacing: 2 },
+    secondary: { fontFamily: fonts.body, fontSize: 11, color: theme.muted },
     secondaryRow: { flexDirection: "row", alignItems: "baseline", gap: 12 },
     // Eylem satirin SAGINA yasli; ikincil metin uzasa bile yerinde kaliyor.
     actionSlot: { marginLeft: "auto" },
@@ -246,8 +247,18 @@ function styles(theme: Theme) {
 
     perfRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     dashed: { flex: 1, height: 1, borderTopWidth: 1, borderStyle: "dashed", borderColor: theme.border },
-    cap: { fontFamily: "Menlo", fontSize: 11, letterSpacing: 1.6, color: theme.muted },
-    capOnBrand: { color: "#fff" },
+    // MONO DEGIL GROTESK + BAKIR. Web'deki .cap ile ayni degisiklik ve ayni
+    // gerekce (globals.css): ayrimi artik yazi tipi degil aralik ve renk
+    // tasiyor.
+    cap: {
+      fontFamily: fonts.medium,
+      fontSize: 11,
+      letterSpacing: 1.6,
+      color: theme.copperText,
+    },
+    // Koyu petrol kartin UZERINDE. Beyaz degil bakir: kart iki temada da
+    // koyu, o yuzden bu renk temaya gore degismiyor.
+    capOnBrand: { color: theme.copperOnCard },
 
     doubleRule: { gap: 2 },
     rule: { height: 1, backgroundColor: theme.border },

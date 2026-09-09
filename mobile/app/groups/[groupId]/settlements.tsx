@@ -1,3 +1,4 @@
+import { fonts } from "../../../lib/fonts";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -355,7 +356,7 @@ function createStyles(theme: Theme) {
       padding: 20,
       gap: 10,
     },
-    hint: { fontSize: 12, color: theme.muted, lineHeight: 18 },
+    hint: { fontFamily: fonts.body, fontSize: 12, color: theme.muted, lineHeight: 18 },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     chip: {
       borderWidth: 1,
@@ -365,12 +366,13 @@ function createStyles(theme: Theme) {
       paddingVertical: 7,
     },
     chipActive: { borderColor: theme.brand, backgroundColor: theme.brand },
-    chipText: { fontSize: 14, color: theme.foreground },
+    chipText: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
     chipTextActive: { color: "#fff" },
     input: {
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
       paddingVertical: 8,
+      fontFamily: fonts.body,
       fontSize: 16,
       color: theme.foreground,
     },
@@ -392,13 +394,13 @@ function createStyles(theme: Theme) {
       borderBottomColor: theme.lineSoft,
     },
     rowText: { flexShrink: 1 },
-    rowNames: { fontSize: 14, color: theme.foreground },
-    rowMeta: { marginTop: 2, fontSize: 11, color: theme.muted },
-    rowAmount: { fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
+    rowNames: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
+    rowMeta: { marginTop: 2, fontFamily: fonts.body, fontSize: 11, color: theme.muted },
+    rowAmount: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
     cancelled: { textDecorationLine: "line-through", color: theme.muted },
-    loadMore: { color: theme.brand, fontSize: 13, paddingVertical: 8 },
-    error: { fontSize: 13, color: theme.debt },
+    loadMore: { color: theme.brand, fontFamily: fonts.body, fontSize: 13, paddingVertical: 8 },
+    error: { fontFamily: fonts.body, fontSize: 13, color: theme.debt },
     backRow: { paddingVertical: 4 },
-    back: { color: theme.muted, fontSize: 14 },
+    back: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },
   });
 }

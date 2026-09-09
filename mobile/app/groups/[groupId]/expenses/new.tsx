@@ -1,3 +1,4 @@
+import { fonts } from "../../../../lib/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
@@ -600,6 +601,7 @@ function createStyles(theme: Theme) {
       borderBottomWidth: 1,
       borderColor: theme.border,
       color: theme.foreground,
+      fontFamily: fonts.body,
       fontSize: 16,
       paddingVertical: 8,
     },
@@ -613,8 +615,8 @@ function createStyles(theme: Theme) {
       maxWidth: "100%",
     },
     chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
-    chipText: { color: theme.foreground, fontSize: 14 },
-    chipTextActive: { color: "#fff", fontWeight: "600" },
+    chipText: { color: theme.foreground, fontFamily: fonts.body, fontSize: 14 },
+    chipTextActive: { color: "#fff", fontFamily: fonts.semibold },
     rows: { gap: 10, marginTop: 4 },
     checkRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     box: {
@@ -627,8 +629,8 @@ function createStyles(theme: Theme) {
       justifyContent: "center",
     },
     boxOn: { backgroundColor: theme.brand, borderColor: theme.brand },
-    tick: { color: "#fff", fontSize: 14, fontWeight: "700" },
-    rowName: { flex: 1, color: theme.foreground, fontSize: 15 },
+    tick: { color: "#fff", fontSize: 14, fontFamily: fonts.semibold },
+    rowName: { flex: 1, color: theme.foreground, fontFamily: fonts.body, fontSize: 15 },
     shareRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     shareInput: {
       width: 110,
@@ -636,10 +638,11 @@ function createStyles(theme: Theme) {
       borderBottomWidth: 1,
       borderColor: theme.border,
       color: theme.foreground,
+      fontFamily: fonts.body,
       fontSize: 16,
       paddingVertical: 6,
     },
-    remainder: { textAlign: "right", color: theme.muted, fontSize: 13, marginTop: 2 },
+    remainder: { textAlign: "right", color: theme.muted, fontFamily: fonts.body, fontSize: 13, marginTop: 2 },
     primary: {
       backgroundColor: theme.brand,
       borderRadius: 8,
@@ -647,7 +650,7 @@ function createStyles(theme: Theme) {
       alignItems: "center",
       marginTop: 4,
     },
-    primaryText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    primaryText: { color: "#fff", fontSize: 16, fontFamily: fonts.semibold },
     receiptRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -661,7 +664,7 @@ function createStyles(theme: Theme) {
     // formu itmeyecek kadar kucuk.
     receiptThumb: { width: 44, height: 44, borderRadius: 3, backgroundColor: theme.surface },
     receiptText: { flex: 1, gap: 2 },
-    receiptHint: { fontSize: 12, color: theme.muted },
+    receiptHint: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
     receiptDrop: {
       alignItems: "center",
       justifyContent: "center",
@@ -673,12 +676,12 @@ function createStyles(theme: Theme) {
       borderRadius: 4,
       backgroundColor: theme.surface,
     },
-    error: { color: theme.debt, fontSize: 14 },
-    guess: { color: theme.muted, fontSize: 12, marginTop: 2 },
-    stepHint: { color: theme.muted, fontSize: 12, letterSpacing: 1, marginBottom: 2 },
-    headerBack: { color: theme.brand, fontSize: 30, lineHeight: 32, paddingHorizontal: 4 },
+    error: { color: theme.debt, fontFamily: fonts.body, fontSize: 14 },
+    guess: { color: theme.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
+    stepHint: { color: theme.muted, fontFamily: fonts.body, fontSize: 12, letterSpacing: 1, marginBottom: 2 },
+    headerBack: { color: theme.brand, fontFamily: fonts.body, fontSize: 30, lineHeight: 32, paddingHorizontal: 4 },
     recap: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },
-    recapName: { flex: 1, color: theme.foreground, fontSize: 16, fontWeight: "500" },
-    recapAmount: { color: theme.foreground, fontSize: 17, fontWeight: "600" },
+    recapName: { flex: 1, color: theme.foreground, fontSize: 16, fontFamily: fonts.medium },
+    recapAmount: { color: theme.foreground, fontSize: 17, fontFamily: fonts.semibold },
   });
 }

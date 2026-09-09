@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { Redirect } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
@@ -121,6 +122,6 @@ function createStyles(theme: Theme) {
     },
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
-    buttonText: { color: "#fff", fontSize: 15 },
+    buttonText: { color: "#fff", fontFamily: fonts.body, fontSize: 15 },
   });
 }

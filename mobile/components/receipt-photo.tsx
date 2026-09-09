@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
@@ -242,11 +243,11 @@ function styles(theme: Theme) {
     },
     head: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     actions: { flexDirection: "row", alignItems: "center", gap: 14 },
-    remove: { fontSize: 12, color: theme.debt },
+    remove: { fontFamily: fonts.body, fontSize: 12, color: theme.debt },
     // Sabit yukseklik: fis dikey ya da yatay olabiliyor, ikisinde de satir
     // ziplamasin.
     photo: { width: "100%", height: 260, backgroundColor: theme.surface, borderRadius: 3 },
-    empty: { fontSize: 13, color: theme.muted },
+    empty: { fontFamily: fonts.body, fontSize: 13, color: theme.muted },
     dropZone: {
       alignItems: "center",
       justifyContent: "center",
@@ -258,8 +259,8 @@ function styles(theme: Theme) {
       borderRadius: 4,
       backgroundColor: theme.surface,
     },
-    dropHint: { fontSize: 11, color: theme.muted },
-    tapHint: { fontSize: 11, color: theme.muted, textAlign: "center", paddingTop: 6 },
-    error: { fontSize: 13, color: theme.debt },
+    dropHint: { fontFamily: fonts.body, fontSize: 11, color: theme.muted },
+    tapHint: { fontFamily: fonts.body, fontSize: 11, color: theme.muted, textAlign: "center", paddingTop: 6 },
+    error: { fontFamily: fonts.body, fontSize: 13, color: theme.debt },
   });
 }

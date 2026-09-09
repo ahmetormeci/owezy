@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -74,6 +75,6 @@ function styles(theme: Theme) {
       alignItems: "center",
       justifyContent: "center",
     },
-    badgeText: { color: "#fff", fontSize: 10, fontWeight: "600" },
+    badgeText: { color: "#fff", fontSize: 10, fontFamily: fonts.semibold },
   });
 }

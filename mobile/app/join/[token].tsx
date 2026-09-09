@@ -1,3 +1,4 @@
+import { fonts } from "../../lib/fonts";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
@@ -139,8 +140,8 @@ function createStyles(theme: Theme) {
       padding: 24,
       backgroundColor: theme.paper,
     },
-    hint: { color: theme.muted, fontSize: 15, lineHeight: 22, textAlign: "center" },
-    error: { color: theme.debt, fontSize: 15, textAlign: "center" },
+    hint: { color: theme.muted, fontFamily: fonts.body, fontSize: 15, lineHeight: 22, textAlign: "center" },
+    error: { color: theme.debt, fontFamily: fonts.body, fontSize: 15, textAlign: "center" },
     button: {
       backgroundColor: theme.brand,
       borderRadius: 8,

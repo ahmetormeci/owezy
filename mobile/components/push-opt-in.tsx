@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSession } from "../lib/auth";
@@ -98,7 +99,7 @@ function styles(theme: Theme) {
       borderColor: theme.border,
       marginBottom: 16,
     },
-    hint: { fontSize: 13, color: theme.muted, lineHeight: 19 },
+    hint: { fontFamily: fonts.body, fontSize: 13, color: theme.muted, lineHeight: 19 },
     button: {
       backgroundColor: theme.brand,
       borderRadius: 4,

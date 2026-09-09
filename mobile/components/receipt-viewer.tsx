@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -80,5 +81,5 @@ const s = StyleSheet.create({
   close: { alignSelf: "flex-end", padding: 16 },
   photo: { flex: 1, width: "100%" },
   dismissArea: { paddingVertical: 18, alignItems: "center" },
-  hint: { color: "#9a9da2", fontSize: 13 },
+  hint: { color: "#9a9da2", fontFamily: fonts.body, fontSize: 13 },
 });

@@ -1,3 +1,4 @@
+import { fonts } from "../../../lib/fonts";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
@@ -401,13 +402,13 @@ function createStyles(theme: Theme) {
       borderBottomWidth: 1,
       borderBottomColor: theme.lineSoft,
     },
-    name: { fontSize: 15, color: theme.foreground },
-    role: { fontSize: 12, color: theme.muted },
+    name: { fontFamily: fonts.body, fontSize: 15, color: theme.foreground },
+    role: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
     rowActions: { flexDirection: "row", alignItems: "center", gap: 14 },
     // Yikici eylemlerin rengi. ADR-015'in "renk yalnizca bakiye tasir"
     // kurali bakiye SAYILARI icin; uyari ayri bir dil ve harcama silme de
     // ayni kirmiziyi kullaniyor.
-    remove: { fontSize: 12, color: theme.debt },
+    remove: { fontFamily: fonts.body, fontSize: 12, color: theme.debt },
     inviteList: {
       gap: 10,
       borderTopWidth: 1,
@@ -422,8 +423,8 @@ function createStyles(theme: Theme) {
       gap: 12,
     },
     inviteFacts: { gap: 2, flexShrink: 1 },
-    inviteUses: { fontSize: 13, color: theme.foreground },
-    inviteDate: { fontSize: 11, color: theme.muted },
+    inviteUses: { fontFamily: fonts.body, fontSize: 13, color: theme.foreground },
+    inviteDate: { fontFamily: fonts.body, fontSize: 11, color: theme.muted },
     leaveBlock: { marginTop: 20, gap: 12, alignItems: "center" },
     transferBlock: { gap: 8, alignItems: "center" },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center" },
@@ -435,9 +436,9 @@ function createStyles(theme: Theme) {
       paddingVertical: 6,
     },
     chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
-    chipText: { fontSize: 13, color: theme.foreground },
+    chipText: { fontFamily: fonts.body, fontSize: 13, color: theme.foreground },
     chipTextActive: { color: "#fff" },
-    leave: { color: theme.debt, fontSize: 15 },
+    leave: { color: theme.debt, fontFamily: fonts.body, fontSize: 15 },
     invite: {
       backgroundColor: theme.brand,
       borderRadius: 4,
@@ -451,10 +452,12 @@ function createStyles(theme: Theme) {
       borderColor: theme.border,
       paddingTop: 14,
     },
-    link: { fontSize: 12, color: theme.foreground, fontFamily: "Menlo" },
-    warning: { fontSize: 11, color: theme.muted, lineHeight: 16 },
-    shareAgain: { fontSize: 13, color: theme.brand, paddingTop: 4 },
-    error: { fontSize: 13, color: theme.debt },
-    back: { color: theme.muted, fontSize: 14 },
+    // Davet baglantisi TEKNIK gosterim: mono kaliyor (web'de --font-mono
+    // de ayni sebeple duruyor).
+    link: { fontSize: 12, color: theme.foreground, fontFamily: fonts.mono },
+    warning: { fontFamily: fonts.body, fontSize: 11, color: theme.muted, lineHeight: 16 },
+    shareAgain: { fontFamily: fonts.body, fontSize: 13, color: theme.brand, paddingTop: 4 },
+    error: { fontFamily: fonts.body, fontSize: 13, color: theme.debt },
+    back: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },
   });
 }

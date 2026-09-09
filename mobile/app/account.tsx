@@ -1,3 +1,4 @@
+import { fonts } from "../lib/fonts";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -245,10 +246,10 @@ function createStyles(theme: Theme) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: theme.paper },
     content: { padding: 20, gap: 20 },
-    title: { fontSize: 26, fontWeight: "600", color: theme.foreground },
+    title: { fontSize: 26, fontFamily: fonts.semibold, color: theme.foreground },
     card: { gap: 4 },
-    name: { fontSize: 17, fontWeight: "500", color: theme.foreground },
-    muted: { fontSize: 14, color: theme.muted },
+    name: { fontSize: 17, fontFamily: fonts.medium, color: theme.foreground },
+    muted: { fontFamily: fonts.body, fontSize: 14, color: theme.muted },
     section: { gap: 10, marginTop: 4 },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     chip: {
@@ -261,10 +262,10 @@ function createStyles(theme: Theme) {
       alignItems: "center",
     },
     chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
-    chipText: { color: theme.foreground, fontSize: 14 },
-    chipTextActive: { color: "#fff", fontWeight: "600" },
+    chipText: { color: theme.foreground, fontFamily: fonts.body, fontSize: 14 },
+    chipTextActive: { color: "#fff", fontFamily: fonts.semibold },
     secondary: { paddingVertical: 12 },
-    secondaryText: { color: theme.muted, fontSize: 15, textAlign: "center" },
+    secondaryText: { color: theme.muted, fontFamily: fonts.body, fontSize: 15, textAlign: "center" },
     danger: {
       gap: 12,
       padding: 16,
@@ -273,15 +274,15 @@ function createStyles(theme: Theme) {
       borderColor: theme.destructive,
       marginTop: 12,
     },
-    dangerTitle: { fontSize: 16, fontWeight: "600", color: theme.foreground },
-    dangerText: { fontSize: 13, lineHeight: 19, color: theme.muted },
+    dangerTitle: { fontSize: 16, fontFamily: fonts.semibold, color: theme.foreground },
+    dangerText: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: theme.muted },
     destructive: {
       backgroundColor: theme.destructive,
       paddingVertical: 14,
       borderRadius: 8,
       alignItems: "center",
     },
-    destructiveText: { color: "#fff", fontSize: 15, fontWeight: "600" },
+    destructiveText: { color: "#fff", fontSize: 15, fontFamily: fonts.semibold },
     destructiveOutline: {
       borderWidth: 1,
       borderColor: theme.destructive,
@@ -289,7 +290,7 @@ function createStyles(theme: Theme) {
       borderRadius: 8,
       alignItems: "center",
     },
-    destructiveOutlineText: { color: theme.destructive, fontSize: 15, fontWeight: "600" },
-    error: { color: theme.destructive, fontSize: 14 },
+    destructiveOutlineText: { color: theme.destructive, fontSize: 15, fontFamily: fonts.semibold },
+    error: { color: theme.destructive, fontFamily: fonts.body, fontSize: 14 },
   });
 }

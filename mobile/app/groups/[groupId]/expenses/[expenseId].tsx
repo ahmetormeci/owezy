@@ -1,3 +1,4 @@
+import { fonts } from "../../../../lib/fonts";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -569,13 +570,14 @@ function createStyles(theme: Theme) {
       padding: 20,
       gap: 10,
     },
-    title: { fontSize: 20, fontWeight: "600", color: theme.foreground },
-    bigAmount: { fontSize: 28, color: theme.foreground, fontVariant: ["tabular-nums"] },
+    title: { fontSize: 20, fontFamily: fonts.semibold, color: theme.foreground },
+    bigAmount: { fontFamily: fonts.body, fontSize: 28, color: theme.foreground, fontVariant: ["tabular-nums"] },
     inputLocked: { opacity: 0.5 },
     input: {
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
       paddingVertical: 8,
+      fontFamily: fonts.body,
       fontSize: 16,
       color: theme.foreground,
     },
@@ -588,13 +590,13 @@ function createStyles(theme: Theme) {
       paddingVertical: 7,
     },
     payerActive: { borderColor: theme.brand, backgroundColor: theme.brand },
-    payerText: { fontSize: 14, color: theme.foreground },
+    payerText: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
     payerTextActive: { color: "#fff" },
     facts: { gap: 6, borderTopWidth: 1, borderStyle: "dashed", borderColor: theme.border, paddingTop: 14 },
     factRow: { flexDirection: "row", justifyContent: "space-between", gap: 16 },
-    factLabel: { fontSize: 13, color: theme.muted },
-    factValue: { fontSize: 13, color: theme.foreground },
-    note: { fontSize: 12, color: theme.muted, lineHeight: 18 },
+    factLabel: { fontFamily: fonts.body, fontSize: 13, color: theme.muted },
+    factValue: { fontFamily: fonts.body, fontSize: 13, color: theme.foreground },
+    note: { fontFamily: fonts.body, fontSize: 12, color: theme.muted, lineHeight: 18 },
     // facts ile birebir ayni: kesikli ust cizgi + bosluk. Cerceve DEGIL -
     // RN'de borderStyle "dashed" ile borderRadius birlikte iOS'ta duz cizgi
     // olarak ciziliyor; fisin dilinde zaten yatay ayirici kullaniliyor.
@@ -605,7 +607,7 @@ function createStyles(theme: Theme) {
       borderColor: theme.border,
       paddingTop: 14,
     },
-    error: { fontSize: 13, color: theme.debt },
+    error: { fontFamily: fonts.body, fontSize: 13, color: theme.debt },
     actions: { flexDirection: "row", alignItems: "center", gap: 20, paddingTop: 6 },
     save: {
       backgroundColor: theme.brand,
@@ -613,8 +615,8 @@ function createStyles(theme: Theme) {
       paddingHorizontal: 16,
       paddingVertical: 9,
     },
-    delete: { color: theme.debt, fontSize: 14 },
+    delete: { color: theme.debt, fontFamily: fonts.body, fontSize: 14 },
     backRow: { paddingVertical: 16 },
-    back: { color: theme.muted, fontSize: 14 },
+    back: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },
   });
 }

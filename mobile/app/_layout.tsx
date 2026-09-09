@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { LocaleProvider, useTranslate } from "../lib/i18n";
 import { ThemeProvider, useTheme } from "../lib/theme";
 import * as Notifications from "expo-notifications";
+import * as SplashScreen from "expo-splash-screen";
+import { fonts, useAppFonts } from "../lib/fonts";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";
 import { syncPushToken } from "../lib/push";
 import { SessionProvider, useSession } from "../lib/auth";
@@ -57,6 +59,23 @@ function deviceLocale() {
  * (lib/unread.tsx), yani gelen push HICBIR SEY yapmazdi: sessizce hicbir
  * sey olmuyor, en kotu davranis. Banner en az sasirtan yol.
  */
+/**
+ * ACILIS GORSELI YAZI TIPLERINI BEKLIYOR.
+ *
+ * Bu cagri OLMADAN ne oluyordu: gorsel kendiliginden kayboluyor, ekran
+ * sistem fontuyla bir kare ciziliyor ve fontlar gelince butun metin
+ * yerinden zipliyordu. Yanlis yazi tipiyle bir kare, bos bir kareden
+ * daha cok goze carpiyor.
+ *
+ * AGAC YINE DE CIZILIYOR - null donmuyoruz. Kok yerlesim navigator yerine
+ * baska bir sey donerse gezinme baglami hic kurulmuyor (asagida AppStack'in
+ * yorumunda ayni gerekce yaziyor). Gorsel yalnizca UZERINDE duruyor.
+ *
+ * catch(): cagri iki kez yapilirsa ya da gorsel zaten gizlendiyse
+ * reddediliyor. Acilisi bir soz reddi yuzunden dusurmenin anlami yok.
+ */
+void SplashScreen.preventAutoHideAsync().catch(() => {});
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -147,7 +166,9 @@ function AppStack() {
       screenOptions={{
         headerStyle: { backgroundColor: theme.paper },
         headerTintColor: theme.brand,
-        headerTitleStyle: { color: theme.foreground, fontSize: 17, fontWeight: "600" },
+        // fontWeight DEGIL fontFamily: agirlik ayri bir aile olarak
+        // yukleniyor (lib/fonts.ts).
+        headerTitleStyle: { color: theme.foreground, fontSize: 17, fontFamily: fonts.semibold },
         // Geri dugmesinde ONCEKI ekranin adi yerine yalnizca ok: uzun grup
         // adlari basligi tasiriyor.
         headerBackButtonDisplayMode: "minimal",
@@ -210,6 +231,19 @@ function AppStack() {
 }
 
 export default function RootLayout() {
+  /**
+   * KANCALAR ENV KONTROLUNDEN ONCE. Asagidaki kontrol firlatiyor ve
+   * kancalari onun ARDINA koymak, react-hooks kuralinin uyardigi sey:
+   * kancalarin kosullu calisma ihtimali. Firlatan durumda bilesen zaten
+   * hic cizilmiyor, yani sira degisiminin bir bedeli yok.
+   */
+  const fontsReady = useAppFonts();
+
+  useEffect(() => {
+    if (!fontsReady) return;
+    void SplashScreen.hideAsync().catch(() => {});
+  }, [fontsReady]);
+
   /**
    * ADRES ACILISTA KONTROL EDILIYOR, ilk istekte degil.
    *

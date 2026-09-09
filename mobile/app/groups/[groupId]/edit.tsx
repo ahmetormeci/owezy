@@ -1,3 +1,4 @@
+import { fonts } from "../../../lib/fonts";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -197,17 +198,18 @@ function createStyles(theme: Theme) {
       padding: 24,
       backgroundColor: theme.paper,
     },
-    hint: { fontSize: 13, lineHeight: 19, color: theme.muted },
+    hint: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: theme.muted },
     field: { gap: 6 },
     input: {
       borderBottomWidth: 1,
       borderBottomColor: theme.foreground,
+      fontFamily: fonts.body,
       fontSize: 16,
       color: theme.foreground,
       paddingVertical: 8,
     },
     multiline: { minHeight: 72, textAlignVertical: "top" },
-    error: { color: theme.debt, fontSize: 14, textAlign: "center" },
+    error: { color: theme.debt, fontFamily: fonts.body, fontSize: 14, textAlign: "center" },
     button: {
       backgroundColor: theme.brand,
       borderRadius: 8,
@@ -215,6 +217,6 @@ function createStyles(theme: Theme) {
       alignItems: "center",
       marginTop: 4,
     },
-    buttonText: { color: "#fff", fontSize: 15, fontWeight: "600" },
+    buttonText: { color: "#fff", fontSize: 15, fontFamily: fonts.semibold },
   });
 }
