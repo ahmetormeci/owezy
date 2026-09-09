@@ -60,11 +60,17 @@ beforeEach(() => {
   mockUpload.mockResolvedValue({ ok: true });
 });
 
-/** Ilk adimi doldurup ikinci adima gecer. */
-async function fillFirstStep() {
+/**
+ * Kaydetmek icin gereken en az alan.
+ *
+ * ONCEDEN BIR "next" ADIMI DA VARDI: ekran iki adimliydi ve bolusme ikinci
+ * adimdaydi. Adim kaldirildi (kagit & petrol yonu) - bagimlilik hala duruyor
+ * ama onu adim SINIRI degil alanlarin SIRASI sagliyor: tutar formun ilk
+ * alani.
+ */
+async function fillForm() {
   await fireEvent.changeText(screen.getByTestId("description"), "Market");
   await fireEvent.changeText(screen.getByTestId("amount"), "120,50");
-  await fireEvent.press(screen.getByTestId("next"));
 }
 
 /**
@@ -76,7 +82,9 @@ async function fillFirstStep() {
  */
 async function attachReceipt() {
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
-  await fireEvent.press(screen.getByText("FİŞ EKLE"));
+  // Bos durum artik BUYUK HARF DEGIL: kesikli karenin yanindaki duz
+  // etiket ("Fiş ekle"). Eskiden <Cap> ile buyuk harfe ceviriliyordu.
+  await fireEvent.press(screen.getByText("Fiş ekle"));
   const buttons = jest.mocked(Alert.alert).mock.calls[0][2];
   buttons?.[1]?.onPress?.();
   await waitFor(() => expect(screen.getByText(/Harcama kaydedilince eklenecek/)).toBeTruthy());
@@ -84,7 +92,7 @@ async function attachReceipt() {
 
 it("fis SECILMEDIYSE yalnizca harcama gonderiliyor", async () => {
   await render(<NewExpenseScreen />);
-  await fillFirstStep();
+  await fillForm();
   await fireEvent.press(screen.getByTestId("save"));
 
   await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(1));
@@ -94,7 +102,7 @@ it("fis SECILMEDIYSE yalnizca harcama gonderiliyor", async () => {
 
 it("fis secildiyse harcamadan SONRA ve DOGRU kimlikle yukleniyor", async () => {
   await render(<NewExpenseScreen />);
-  await fillFirstStep();
+  await fillForm();
   await attachReceipt();
 
   await fireEvent.press(screen.getByTestId("save"));
@@ -111,7 +119,7 @@ describe("KISMI BASARISIZLIK - harcama kaydedildi, fis yuklenemedi", () => {
 
   it("EKRANDA KALIYOR ve harcamanin kaydedildigini SOYLUYOR", async () => {
     await render(<NewExpenseScreen />);
-    await fillFirstStep();
+    await fillForm();
     await attachReceipt();
     await fireEvent.press(screen.getByTestId("save"));
 
@@ -127,7 +135,7 @@ describe("KISMI BASARISIZLIK - harcama kaydedildi, fis yuklenemedi", () => {
     // ASIL TEST BU. Cift kayit bakiyeleri bozar - bu projedeki en agir hata
     // sinifi.
     await render(<NewExpenseScreen />);
-    await fillFirstStep();
+    await fillForm();
     await attachReceipt();
 
     await fireEvent.press(screen.getByTestId("save"));
@@ -140,7 +148,7 @@ describe("KISMI BASARISIZLIK - harcama kaydedildi, fis yuklenemedi", () => {
 
   it("ikinci denemede fis GECERSE geri donuluyor", async () => {
     await render(<NewExpenseScreen />);
-    await fillFirstStep();
+    await fillForm();
     await attachReceipt();
     await fireEvent.press(screen.getByTestId("save"));
     await waitFor(() => expect(mockPost).toHaveBeenCalled());

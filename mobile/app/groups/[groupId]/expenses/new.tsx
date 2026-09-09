@@ -1,5 +1,4 @@
 import { fonts } from "../../../../lib/fonts";
-import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -16,8 +15,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { EXPENSE_CATEGORY_CODES, EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
+import {
+  EXPENSE_CATEGORY_CODES,
+  EXPENSE_CATEGORY_OPTIONS,
+  EXPENSE_SPLIT_TYPE_CODES,
+} from "@/lib/expense-labels";
 import { guessCategory } from "@/lib/expense-category-guess";
+import { splitEqually } from "@/lib/split";
+import { Field, SelectField } from "../../../../components/field";
 import { formatMoney, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
@@ -98,7 +103,6 @@ export default function NewExpenseScreen() {
    * hizli ekleyicideki gibi.
    */
   const [category, setCategory] = useState<keyof typeof EXPENSE_CATEGORY_CODES | null>(null);
-  const [step, setStep] = useState<1 | 2>(1);
   const { getToken } = useSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,20 +199,29 @@ export default function NewExpenseScreen() {
   const target = splitType === "EXACT" ? (amount ?? 0) : 10_000;
   const remainder = target - shareTotal;
 
-  /** Adim 1 -> 2. Ilk adimin dogrulamasi BURADA, kaydetmede degil: hatayi
-      iki ekran sonra gostermek, kullaniciyi geri yollamak demek. */
-  function goToSplit() {
-    setError(null);
-    if (description.trim() === "") {
-      setError(t("ui.description_required"));
-      return;
-    }
-    if (amount === null || amount <= 0) {
-      setError(t(amountText.trim() === "" ? "ui.amount_required" : "ui.amount_unreadable"));
-      return;
-    }
-    setStep(2);
-  }
+  /**
+   * ESIT BOLUSUMDE HER SATIRIN PAYI. Onceden yalnizca onay kutusu vardi,
+   * yani kullanici kimin ne odeyecegini KAYDETTIKTEN SONRA goruyordu.
+   *
+   * Hesap sunucununkiyle AYNI FONKSIYONDAN geciyor (src/lib/split.ts), yani
+   * ekranda gorunen kurus ile kaydedilen kurus ayrisamaz - kusuratin kime
+   * yazildigi dahil. Ayni dosyayi iki istemci de kullaniyor.
+   */
+  const equalShares = useMemo(() => {
+    if (splitType !== "EQUAL" || amount === null || amount <= 0) return null;
+    if (participants.length === 0) return null;
+    const rows = splitEqually({
+      amount,
+      participantUserIds: participants.map((member) => member.userId),
+    });
+    return Object.fromEntries(rows.map((row) => [row.userId, row.amount]));
+  }, [splitType, amount, participants]);
+
+  /** Kusuratin kime yazildigi GORUNUR olmali - tasarimin kendi ifadesi. */
+  const roundingGoesTo = equalShares
+    ? (participants.find((m) => equalShares[m.userId] === Math.max(...Object.values(equalShares)))
+        ?.userId ?? null)
+    : null;
 
   async function submit() {
     if (busy) return;
@@ -216,12 +229,10 @@ export default function NewExpenseScreen() {
 
     if (description.trim() === "") {
       setError(t("ui.description_required"));
-      setStep(1);
       return;
     }
     if (amount === null || amount <= 0) {
       setError(t(amountText.trim() === "" ? "ui.amount_required" : "ui.amount_unreadable"));
-      setStep(1);
       return;
     }
     if (!payer) {
@@ -328,139 +339,136 @@ export default function NewExpenseScreen() {
   }
 
   return (
-    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
-      <Stack.Screen
-        options={{
-          title: t("ui.add_expense"),
-          /**
-           * ADIM 2'DE GERI DUGMESI ADIM 1'E DONUYOR, ekrandan cikmiyor.
-           * Varsayilan davranis birakilsaydi kullanici tutari duzeltmek
-           * isteyip her seyi kaybederdi - ve bir yigin ekraninda "geri"nin
-           * ekrandan cikmasi beklenen sey, o yuzden sessizce sasirtirdi.
-           */
-          headerLeft:
-            step === 2
-              ? () => (
-                  <Pressable onPress={() => setStep(1)} hitSlop={12}>
-                    <Text style={s.headerBack}>‹</Text>
-                  </Pressable>
-                )
-              : undefined,
-        }}
-      />
+    // edges'te "bottom" YOK: alt payi fis satiri kendi tasiyor.
+    <SafeAreaView style={s.screen} edges={["left", "right"]}>
+      {/*
+        KENDI BASLIK CUBUGUMUZ. Yerlesik baslik kapali cunku tasarim uc sey
+        istiyor: solda "Vazgec", ortada serif baslik, sagda "Kaydet".
+        Yerlesik cubuk kaydetmeyi sagda tasiyamiyor ve basligi serif
+        yapamiyor.
+
+        KAYDET BURADA, SAYFANIN DIBINDE DEGIL: form uzun ve kaydetmek icin
+        sonuna kadar kaydirmak gerekiyordu. Ustte duruyor, hep gorunur.
+      */}
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={s.headerBar}>
+        <Pressable onPress={() => router.back()} hitSlop={10} disabled={busy}>
+          <Text style={s.headerCancel}>{t("ui.cancel")}</Text>
+        </Pressable>
+        <Text style={s.headerTitle}>{t("ui.add_expense")}</Text>
+        <Pressable testID="save" onPress={() => void submit()} hitSlop={10} disabled={busy}>
+          {busy ? (
+            <ActivityIndicator size="small" color={theme.brand} />
+          ) : (
+            <Text style={s.headerSave}>{t("ui.save")}</Text>
+          )}
+        </Pressable>
+      </View>
+
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-          {/* Adim gostergesi: kac adim oldugunu bilmek, ikinci adimda
-              "daha ne kadar var" sorusunu ortadan kaldiriyor. */}
-          <Text style={s.stepHint}>{step === 1 ? "1 / 2" : "2 / 2"}</Text>
+          {/*
+            TUTAR EN USTTE VE EN BUYUK - ve bu sira KEYFI DEGIL.
 
-          {step === 1 ? (
-          <View style={s.card}>
-            <Cap>{t("ui.description")}</Cap>
-            <TextInput
-              testID="description"
-              style={s.input}
-              value={description}
-              onChangeText={setDescription}
-              placeholder={t("ui.description_placeholder")}
-              placeholderTextColor={theme.muted}
-              editable={!busy}
-            />
-
-            <Cap>{t("ui.amount")}</Cap>
-            <TextInput
-              testID="amount"
-              style={s.input}
-              value={amountText}
-              onChangeText={setAmountText}
-              keyboardType="decimal-pad"
-              placeholder={t("ui.amount_placeholder")}
-              placeholderTextColor={theme.muted}
-              editable={!busy}
-            />
-
-            {/* KATEGORI. Secilmezse sunucu aciklamadan tahmin ediyor ve
-                tahmin asagida yaziyor - yani kullanici hicbir sey yapmadan
-                da dogru kategoriye dusuyor, ama katilmiyorsa duzeltebiliyor. */}
-            <Cap>{t("ui.category")}</Cap>
-            <View style={s.chips}>
-              {EXPENSE_CATEGORY_OPTIONS.map(([value, code]) => {
-                const active = category === value;
-                return (
-                  <Pressable
-                    key={value}
-                    style={[s.chip, active && s.chipActive]}
-                    onPress={() => setCategory(active ? null : value)}
-                    disabled={busy}
-                  >
-                    <Text style={[s.chipText, active && s.chipTextActive]}>{t(code)}</Text>
-                  </Pressable>
-                );
-              })}
+            Ekran bir zamanlar IKI ADIMDI ve gerekcesi soyleydi: bolusme
+            arayuzu TUTARA BAGIMLI, "tam tutar" kipinde kalan hesabi tutar
+            girilmeden hicbir sey anlatmiyor. O bagimlilik hala gecerli -
+            ama onu saglayan sey adim SINIRI degil SIRA. Tutar formun ilk
+            alani oldugu surece, bolusme bolumune gelindiginde tutar zaten
+            girilmis oluyor. Adim bu yuzden kaldirildi.
+          */}
+          <View style={s.amountBlock}>
+            <Text style={s.fieldLabel}>{t("ui.amount").toLocaleUpperCase(locale)}</Text>
+            <View style={s.amountRow}>
+              <TextInput
+                testID="amount"
+                style={s.amountInput}
+                value={amountText}
+                onChangeText={setAmountText}
+                keyboardType="decimal-pad"
+                placeholder={t("ui.amount_placeholder")}
+                placeholderTextColor={theme.inputLine}
+                editable={!busy}
+              />
+              <Text style={s.amountCurrency}>{currency}</Text>
             </View>
-            {category === null && guessed ? (
-              <Text style={s.guess}>
-                {t("ui.category_guessed", { category: t(EXPENSE_CATEGORY_CODES[guessed]) })}
-              </Text>
-            ) : null}
-          </View>
-          ) : (
-          <>
-          {/* NE BOLUSTURULUYOR: adim 2'de tutar tekrar yaziyor, cunku pay
-              dagitan kisi neyi dagittigini gormeden yapamaz. */}
-          <View style={s.card}>
-            <View style={s.recap}>
-              <Text style={s.recapName} numberOfLines={1}>{description.trim()}</Text>
-              <Text style={s.recapAmount}>{formatMoney(amount ?? 0, currency, locale)}</Text>
-            </View>
+            {/* Para birimi degistirilemez - degistirilemez kural (ADR-008).
+                Ekranda yazmasi, olmayan bir denetimi aramayi onluyor. */}
+            <Text style={s.amountNote}>{t("ui.currency_from_group")}</Text>
           </View>
 
-          {/* ODEYEN. Hizli ekleyicide degistirilemiyordu; baskasinin odedigi
-              her harcama mobilde girilemez demekti. */}
-          <View style={s.card}>
-            <Cap>{t("ui.payer")}</Cap>
-            <View style={s.chips}>
-              {memberList.map((member) => {
-                const active = member.userId === payer;
-                return (
-                  <Pressable
-                    key={member.userId}
-                    style={[s.chip, active && s.chipActive]}
-                    onPress={() => setPaidById(member.userId)}
-                    disabled={busy}
-                  >
-                    <Text style={[s.chipText, active && s.chipTextActive]} numberOfLines={1}>
-                      {member.displayName}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+          <View style={s.fields}>
+            <Field label={t("ui.description")}>
+              <TextInput
+                testID="description"
+                style={s.fieldInput}
+                value={description}
+                onChangeText={setDescription}
+                placeholder={t("ui.description_placeholder")}
+                placeholderTextColor={theme.muted}
+                editable={!busy}
+              />
+            </Field>
+
+            {/* ODEYEN VE KATEGORI YAN YANA: ikisi de tek kelimelik kararlar,
+                tam genislik hak etmiyorlar. */}
+            <View style={s.fieldRow}>
+              <SelectField
+                label={t("ui.payer")}
+                style={s.half}
+                value={
+                  memberList.find((member) => member.userId === payer)?.displayName ?? "—"
+                }
+                options={memberList.map((member) => ({
+                  key: member.userId,
+                  label: member.displayName,
+                }))}
+                onChange={setPaidById}
+                disabled={busy}
+              />
+              {/*
+                KATEGORI SECILMEZSE SUNUCU TAHMIN EDIYOR (ADR-028) ve etiketin
+                yaninda "tahmin" yaziyor. Tahmin BIR SECIM DEGIL: alan bos
+                kaliyor, gonderilmiyor, karari sunucu veriyor. Ekranda gorunen
+                ile kaydedilen ayrismasin diye ikisi ayni saf fonksiyondan
+                geciyor.
+              */}
+              <SelectField
+                label={t("ui.category")}
+                style={s.half}
+                hint={category === null && guessed ? t("ui.guess_hint") : undefined}
+                value={t(
+                  EXPENSE_CATEGORY_CODES[category ?? guessed ?? "OTHER"],
+                )}
+                options={EXPENSE_CATEGORY_OPTIONS.map(([value, code]) => ({
+                  key: value,
+                  label: t(code),
+                }))}
+                onChange={setCategory}
+                disabled={busy}
+              />
             </View>
           </View>
 
-          <View style={s.card}>
-            <Cap>{t("ui.how_to_split")}</Cap>
-            <View style={s.chips}>
+          <View style={s.splitBlock}>
+            <Text style={s.fieldLabel}>{t("ui.how_to_split").toLocaleUpperCase(locale)}</Text>
+            {/* UC ESIT SEGMENT, cip yigini degil: secenek sayisi sabit uc ve
+                birbirini disliyorlar - segment tam olarak bunu anlatiyor. */}
+            <View style={s.segments}>
               {(["EQUAL", "EXACT", "PERCENTAGE"] as const).map((type) => {
                 const active = splitType === type;
                 return (
                   <Pressable
                     key={type}
-                    style={[s.chip, active && s.chipActive]}
+                    style={[s.segment, active && s.segmentOn]}
                     onPress={() => setSplitType(type)}
                     disabled={busy}
                   >
-                    <Text style={[s.chipText, active && s.chipTextActive]}>
-                      {t(
-                        type === "EQUAL"
-                          ? "ui.split_equal"
-                          : type === "EXACT"
-                            ? "ui.split_exact"
-                            : "ui.split_percentage",
-                      )}
+                    <Text style={[s.segmentText, active && s.segmentTextOn]}>
+                      {t(EXPENSE_SPLIT_TYPE_CODES[type])}
                     </Text>
                   </Pressable>
                 );
@@ -468,14 +476,14 @@ export default function NewExpenseScreen() {
             </View>
 
             {splitType === "EQUAL" ? (
-              <View style={s.rows}>
-                <Cap>{t("ui.participants")}</Cap>
+              <View>
                 {memberList.map((member) => {
                   const on = touchedSelection ? !!selected[member.userId] : true;
+                  const share = on ? equalShares?.[member.userId] : undefined;
                   return (
                     <Pressable
                       key={member.userId}
-                      style={s.checkRow}
+                      style={s.splitRow}
                       onPress={() =>
                         setSelected((current) => {
                           // Ilk dokunusta "herkes" varsayimindan gercek bir
@@ -492,20 +500,33 @@ export default function NewExpenseScreen() {
                       <View style={[s.box, on && s.boxOn]}>
                         {on ? <Text style={s.tick}>✓</Text> : null}
                       </View>
-                      <Text style={s.rowName} numberOfLines={1}>
+                      <Text
+                        style={[s.splitName, !on && s.splitNameOff]}
+                        numberOfLines={1}
+                      >
                         {member.displayName}
+                      </Text>
+                      <View style={s.leader} />
+                      {/* PAY SATIRDA GORUNUYOR. Onceden yalnizca kutu vardi:
+                          kullanici kimin ne odeyecegini ancak kaydettikten
+                          sonra ogreniyordu. */}
+                      <Text style={[s.splitAmount, !on && s.splitNameOff]}>
+                        {share === undefined
+                          ? "—"
+                          : formatMoney(share, currency, locale)}
                       </Text>
                     </Pressable>
                   );
                 })}
               </View>
             ) : (
-              <View style={s.rows}>
+              <View>
                 {memberList.map((member) => (
-                  <View key={member.userId} style={s.shareRow}>
-                    <Text style={s.rowName} numberOfLines={1}>
+                  <View key={member.userId} style={s.splitRow}>
+                    <Text style={s.splitName} numberOfLines={1}>
                       {member.displayName}
                     </Text>
+                    <View style={s.leader} />
                     <TextInput
                       style={s.shareInput}
                       value={shareText[member.userId] ?? ""}
@@ -514,14 +535,14 @@ export default function NewExpenseScreen() {
                       }
                       keyboardType="decimal-pad"
                       placeholder={splitType === "EXACT" ? "0,00" : "0"}
-                      placeholderTextColor={theme.muted}
+                      placeholderTextColor={theme.inputLine}
                       editable={!busy}
                     />
                   </View>
                 ))}
-                {/* KALAN, canli. Web'de de var: kullanici tutari dagitirken
-                    ne kadarinin acikta oldugunu gormeli, kaydete basip
-                    hatayla karsilasmamali. */}
+                {/* KALAN, canli: kullanici tutari dagitirken ne kadarinin
+                    acikta oldugunu gormeli, kaydete basip hatayla
+                    karsilasmamali. */}
                 <Text style={[s.remainder, remainder !== 0 && { color: theme.debt }]}>
                   {splitType === "EXACT"
                     ? formatMoney(remainder, currency, locale)
@@ -529,59 +550,48 @@ export default function NewExpenseScreen() {
                 </Text>
               </View>
             )}
+
+            {/* CIFT CIZGI VE TOPLAM - fisin kapanisi. Kusuratin kime
+                yazildigi burada YAZIYOR: "eşit" bolusumde kurus tam
+                bolunmuyor ve kimin bir kurus fazla odedigi gorunmeli. */}
+            <View style={s.totalRow}>
+              <Text style={s.totalLabel}>
+                {roundingGoesTo === currentUserId
+                  ? t("ui.total_rounding_yours")
+                  : t("ui.summary_total").toLocaleUpperCase(locale)}
+              </Text>
+              <Text style={s.totalAmount}>
+                {formatMoney(amount ?? 0, currency, locale)}
+              </Text>
+            </View>
           </View>
-
-          </>
-          )}
-
-          {/* FIS - YALNIZCA IKINCI ADIMDA. Ilk adim tutar ve aciklama; oraya
-              koymak, kullanicinin daha ne girdigini bilmeden fotograf
-              secmesini istemek olurdu.
-
-              FOTOGRAF SIMDI YUKLENMIYOR, cihazda BEKLIYOR: baglanacagi
-              harcama henuz yok. Kayit basarili olunca gonderiliyor. */}
-          {step === 2 ? (
-            receiptUri ? (
-              <View style={s.receiptRow}>
-                <Image source={{ uri: receiptUri }} style={s.receiptThumb} />
-                <View style={s.receiptText}>
-                  <Cap>{t("ui.receipt")}</Cap>
-                  <Text style={s.receiptHint}>{t("ui.receipt_will_be_attached")}</Text>
-                </View>
-                <Pressable hitSlop={10} onPress={askReceiptSource} disabled={busy}>
-                  <Cap>{t("ui.replace_receipt")}</Cap>
-                </Pressable>
-              </View>
-            ) : (
-              /* BOS DURUM BIR HEDEF, bir cumle degil - duz metin
-                 tiklanabilir gorunmuyor ve kullanici bunu bildirdi.
-                 Ayrintisi components/receipt-photo.tsx'te. */
-              <Pressable style={s.receiptDrop} onPress={askReceiptSource} disabled={busy}>
-                <Ionicons name="camera-outline" size={22} color={theme.brand} />
-                <Cap>{t("ui.add_receipt")}</Cap>
-                <Text style={s.receiptHint}>{t("ui.receipt_hint")}</Text>
-              </Pressable>
-            )
-          ) : null}
 
           {error ? <Text style={s.error}>{error}</Text> : null}
 
-          {step === 1 ? (
-            <Pressable testID="next" style={s.primary} onPress={goToSplit} disabled={busy}>
-              <Text style={s.primaryText}>{t("ui.next")}</Text>
-            </Pressable>
+          {/*
+            FIS EN ALTTA. Fotograf SIMDI YUKLENMIYOR, cihazda BEKLIYOR:
+            baglanacagi harcama henuz yok. Kayit basarili olunca gonderiliyor.
+          */}
+          {receiptUri ? (
+            <View style={s.receiptRow}>
+              <Image source={{ uri: receiptUri }} style={s.receiptThumb} />
+              <View style={s.receiptText}>
+                <Text style={s.receiptLabel}>{t("ui.receipt")}</Text>
+                <Text style={s.receiptHint}>{t("ui.receipt_will_be_attached")}</Text>
+              </View>
+              <Pressable hitSlop={10} onPress={askReceiptSource} disabled={busy}>
+                <Cap>{t("ui.replace_receipt")}</Cap>
+              </Pressable>
+            </View>
           ) : (
-            <Pressable
-              testID="save"
-              style={s.primary}
-              onPress={() => void submit()}
-              disabled={busy}
-            >
-              {busy ? (
-                <ActivityIndicator color={theme.onBrand} />
-              ) : (
-                <Text style={s.primaryText}>{t("ui.save_expense")}</Text>
-              )}
+            /* BOS DURUM BIR HEDEF, bir cumle degil - duz metin tiklanabilir
+               gorunmuyor ve kullanici bunu bildirdi. Kesikli kare + bakir
+               arti, tasarimin kendi ifadesi. */
+            <Pressable style={s.receiptRow} onPress={askReceiptSource} disabled={busy}>
+              <View style={s.receiptSlot}>
+                <Text style={s.receiptPlus}>+</Text>
+              </View>
+              <Text style={s.receiptHint}>{t("ui.add_receipt")}</Text>
             </Pressable>
           )}
         </ScrollView>
@@ -594,94 +604,197 @@ function createStyles(theme: Theme) {
   return StyleSheet.create({
     flex: { flex: 1 },
     screen: { flex: 1, backgroundColor: theme.background },
-    centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: theme.background },
-    scroll: { padding: 16, gap: 12, paddingBottom: 40 },
-    card: { backgroundColor: theme.paper, borderRadius: 10, padding: 16, gap: 10 },
-    input: {
-      borderBottomWidth: 1,
-      borderColor: theme.border,
-      color: theme.foreground,
-      fontFamily: fonts.body,
-      fontSize: 16,
-      paddingVertical: 8,
-    },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    chip: {
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 999,
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-      maxWidth: "100%",
-    },
-    chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
-    chipText: { color: theme.foreground, fontFamily: fonts.body, fontSize: 14 },
-    chipTextActive: { color: theme.onBrand, fontFamily: fonts.semibold },
-    rows: { gap: 10, marginTop: 4 },
-    checkRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-    box: {
-      width: 22,
-      height: 22,
-      borderRadius: 5,
-      borderWidth: 1.5,
-      borderColor: theme.border,
+    centered: {
+      flex: 1,
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor: theme.background,
+    },
+    scroll: { paddingBottom: 40 },
+
+    /**
+     * BASLIK CUBUGU. Uc parca: vazgec / baslik / kaydet. Yerlesik cubuk
+     * kapali (headerShown: false) cunku kaydetmeyi saga koyamiyor.
+     * paddingTop 60: durum cubugu payi - SafeAreaView'in "top" kenari bu
+     * ekranda kullanilmiyor, cunku cubuk kendi zeminini tasiyor.
+     */
+    headerBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingTop: 60,
+      paddingBottom: 12,
+      gap: 12,
+    },
+    headerCancel: { fontFamily: fonts.body, fontSize: 15, color: theme.muted },
+    headerTitle: { fontFamily: fonts.heading, fontSize: 20, color: theme.foreground },
+    headerSave: { fontFamily: fonts.semibold, fontSize: 15, color: theme.brand },
+
+    /**
+     * TUTAR BLOGU. Ekranin en buyuk seyi ve altinda BAKIR cizgi: bolum
+     * basliyor demenin isareti (grup ekranindaki bakir cizgilerle ayni dil).
+     */
+    amountBlock: {
+      paddingHorizontal: 20,
+      paddingTop: 22,
+      paddingBottom: 18,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.copper,
+      gap: 6,
+    },
+    fieldLabel: {
+      fontFamily: fonts.medium,
+      fontSize: 10,
+      letterSpacing: 2,
+      color: theme.copperText,
+    },
+    amountRow: { flexDirection: "row", alignItems: "baseline", gap: 6 },
+    // 44 punto, negatif harf araligi: buyuk rakamlar aralıksiz dagiliyor.
+    amountInput: {
+      flexShrink: 1,
+      minWidth: 120,
+      fontFamily: fonts.semibold,
+      fontSize: 44,
+      letterSpacing: -1.8,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+      padding: 0,
+    },
+    amountCurrency: { fontFamily: fonts.body, fontSize: 18, color: theme.copperText },
+    amountNote: { fontFamily: fonts.body, fontSize: 11.5, color: theme.muted },
+
+    fields: { paddingHorizontal: 20, paddingTop: 18, gap: 16 },
+    fieldInput: { fontFamily: fonts.body, fontSize: 16, color: theme.foreground, padding: 0 },
+    fieldRow: { flexDirection: "row", gap: 16 },
+    half: { flex: 1 },
+
+    splitBlock: { paddingHorizontal: 20, paddingTop: 22, gap: 12 },
+    segments: { flexDirection: "row", gap: 8 },
+    segment: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 10,
+      borderRadius: 3,
+      borderWidth: 1,
+      borderColor: theme.inputLine,
+    },
+    segmentOn: { backgroundColor: theme.brand, borderColor: theme.brand },
+    segmentText: { fontFamily: fonts.body, fontSize: 13.5, color: theme.foreground },
+    segmentTextOn: { fontFamily: fonts.semibold, color: theme.onBrand },
+
+    splitRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      gap: 10,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.lineSoft,
+    },
+    splitName: { fontFamily: fonts.body, fontSize: 14.5, color: theme.foreground, flexShrink: 1 },
+    // Cikarilmis uye: ADI da payi da soluk. Kutu tek basina yeterince
+    // yuksek sesle konusmuyor.
+    splitNameOff: { color: theme.muted },
+    // Noktali ayrac - fisin okuma yardimi, ayni sey grup ekraninda da var.
+    leader: {
+      flex: 1,
+      borderBottomWidth: 1,
+      borderStyle: "dotted",
+      borderColor: theme.inputLine,
+      transform: [{ translateY: -4 }],
+    },
+    splitAmount: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+    },
+    shareInput: {
+      minWidth: 90,
+      textAlign: "right",
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+      padding: 0,
+    },
+    box: {
+      width: 20,
+      height: 20,
+      borderRadius: 3,
+      borderWidth: 1,
+      borderColor: theme.inputLine,
+      alignItems: "center",
+      justifyContent: "center",
+      transform: [{ translateY: 4 }],
     },
     boxOn: { backgroundColor: theme.brand, borderColor: theme.brand },
-    tick: { color: theme.onBrand, fontSize: 14, fontFamily: fonts.semibold },
-    rowName: { flex: 1, color: theme.foreground, fontFamily: fonts.body, fontSize: 15 },
-    shareRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-    shareInput: {
-      width: 110,
+    tick: { color: theme.onBrand, fontSize: 13, fontFamily: fonts.semibold },
+    remainder: {
       textAlign: "right",
-      borderBottomWidth: 1,
-      borderColor: theme.border,
-      color: theme.foreground,
       fontFamily: fonts.body,
-      fontSize: 16,
-      paddingVertical: 6,
+      fontSize: 12,
+      color: theme.muted,
+      paddingTop: 8,
+      fontVariant: ["tabular-nums"],
     },
-    remainder: { textAlign: "right", color: theme.muted, fontFamily: fonts.body, fontSize: 13, marginTop: 2 },
-    primary: {
-      backgroundColor: theme.brand,
-      borderRadius: 8,
-      paddingVertical: 15,
-      alignItems: "center",
+
+    /** Fisin kapanisi: cift cizgi. ADR-021'in fis dili. */
+    totalRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      justifyContent: "space-between",
+      gap: 12,
+      borderTopWidth: 3,
+      borderTopColor: theme.foreground,
+      borderStyle: "solid",
+      paddingTop: 10,
       marginTop: 4,
     },
-    primaryText: { color: theme.onBrand, fontSize: 16, fontFamily: fonts.semibold },
+    totalLabel: {
+      fontFamily: fonts.medium,
+      fontSize: 10,
+      letterSpacing: 2,
+      color: theme.copperText,
+      flexShrink: 1,
+    },
+    totalAmount: {
+      fontFamily: fonts.semibold,
+      fontSize: 18,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+    },
+
     receiptRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
-      borderTopWidth: 1,
-      borderStyle: "dashed",
-      borderColor: theme.border,
-      paddingTop: 14,
+      paddingHorizontal: 20,
+      paddingTop: 18,
     },
-    // Kucuk onizleme: secilenin DOGRU fotograf oldugunu gormek icin yeterli,
-    // formu itmeyecek kadar kucuk.
-    receiptThumb: { width: 44, height: 44, borderRadius: 3, backgroundColor: theme.surface },
-    receiptText: { flex: 1, gap: 2 },
-    receiptHint: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
-    receiptDrop: {
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 6,
-      paddingVertical: 22,
+    // Kesikli kare + bakir arti: bos durum bir HEDEF, bir cumle degil.
+    receiptSlot: {
+      width: 46,
+      height: 46,
+      borderRadius: 3,
       borderWidth: 1,
       borderStyle: "dashed",
-      borderColor: theme.border,
-      borderRadius: 4,
-      backgroundColor: theme.surface,
+      borderColor: theme.inputLine,
+      alignItems: "center",
+      justifyContent: "center",
     },
-    error: { color: theme.debt, fontFamily: fonts.body, fontSize: 14 },
-    guess: { color: theme.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
-    stepHint: { color: theme.muted, fontFamily: fonts.body, fontSize: 12, letterSpacing: 1, marginBottom: 2 },
-    headerBack: { color: theme.brand, fontFamily: fonts.body, fontSize: 30, lineHeight: 32, paddingHorizontal: 4 },
-    recap: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },
-    recapName: { flex: 1, color: theme.foreground, fontSize: 16, fontFamily: fonts.medium },
-    recapAmount: { color: theme.foreground, fontSize: 17, fontFamily: fonts.semibold },
+    receiptPlus: { fontFamily: fonts.body, fontSize: 18, color: theme.copperText },
+    receiptThumb: { width: 46, height: 46, borderRadius: 3, backgroundColor: theme.surface },
+    receiptText: { flex: 1, gap: 2 },
+    receiptLabel: { fontFamily: fonts.medium, fontSize: 12, color: theme.foreground },
+    receiptHint: { fontFamily: fonts.body, fontSize: 12.5, color: theme.muted },
+
+    error: {
+      color: theme.debt,
+      fontFamily: fonts.body,
+      fontSize: 14,
+      paddingHorizontal: 20,
+      paddingTop: 14,
+    },
   });
 }

@@ -488,6 +488,14 @@ export const MESSAGES_TR = {
   // ("Kaydedilen ödemeler") ve baslik olarak dogru; alt cubuktaki dugmede
   // ise cubugun yarisini kapliyor ve bir eylem gibi okunmuyor.
   "ui.settle_action": "Ödeş",
+  // Para birimi degistirilemez (ADR-008). Ekranda yazmasi, olmayan bir
+  // denetimi aramayi onluyor.
+  "ui.currency_from_group": "Para birimi grubun kaydından geliyor",
+  // Kategori alaninin etiketinin yaninda: secim degil, sunucunun tahmini.
+  "ui.guess_hint": "tahmin",
+  // Esit bolusumde kurus tam bolunmuyor; kimin bir kurus fazla odedigi
+  // gorunmeli. Toplam satirinin etiketi bunu soyluyor.
+  "ui.total_rounding_yours": "TOPLAM · KÜSURAT SANA",
   "ui.member_count_one": "{count} üye",
   "ui.member_count_other": "{count} üye",
   "ui.settle_count_one": "{count} ödeme",
@@ -1076,6 +1084,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.date": "Date",
   "ui.how_to_split": "How should it be split?",
   "ui.settle_action": "Settle up",
+  "ui.currency_from_group": "The currency comes from the group's record",
+  "ui.guess_hint": "guess",
+  "ui.total_rounding_yours": "TOTAL · ROUNDING TO YOU",
   "ui.member_count_one": "{count} member",
   "ui.member_count_other": "{count} members",
   "ui.settle_count_one": "{count} payment",
