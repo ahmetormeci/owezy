@@ -9,6 +9,45 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 ---
 
 
+
+## 2026-09-09 (2) — Kağıt & petrol: palet, yazı tipleri ve ADR-048
+
+Kullanıcının Claude Design'da hazırladığı yeni görsel yön uygulanmaya
+başlandı. Handoff'un kendi sırasındaki **1. ve 2. adım bitti**: web
+tokenları, mobil tema tablosu ve iki istemcinin yazı tipleri. Ekranların
+yerleşimine dokunulmadı — şu an uygulamanın rengi ve yazı tipi yeni,
+düzeni eski.
+
+**Renkler kopyalanmadı, hesaplandı.** Handoff hex veriyor, kod tabanı
+oklch tutuyor. sRGB → OKLab dönüşümü yazılıp her renk geçirildi; mobil
+tablo baştan beri aynı ilkeyle kuruluydu (*"göz kararıyla seçilmedi"*).
+
+**Handoff'un kontrast iddiaları sınandı ve hepsi doğru çıktı** (bakır metin
+5.29:1, kart üzerindeki rakam 6.38:1). Ama **türetilen koyu temada bir kusur
+bulundu**: açılmış petrol üzerinde beyaz metin **3.89:1** — AA'yı geçmiyor.
+Koyu temada birincil düğmenin metni koyu yapıldı (4.78:1); açık temada
+beyaz kaldı (7.82:1). `onBrand` / `--primary-foreground` token'ının varlık
+sebebi bu tek ölçüm.
+
+**Bakır tek token olamadı.** `#b5813a` kağıt üzerinde 3.21:1 — çizgi olarak
+doğru, metin olarak okunmaz. `--copper` (çizgi) ve `--copper-text` (metin,
+5.29:1) diye ayrıldı.
+
+**Tutarlar mono olmaktan çıktı.** ADR-021 onları mono yapmıştı ki açıklama
+metniyle aynı sesle konuşmasınlar; o işi artık tabular rakam yapıyor ve
+tutar arayüzün kendi ailesinde kalıyor. `--font-mono` silinmedi — davet
+bağlantısı gibi teknik gösterimlerde duruyor.
+
+**Mobilde `fontWeight` kullanımı bitti.** React Native ayrı yüklenmiş yüzler
+arasında ağırlıkla geçiş yapmıyor: iOS yapay kalınlaştırıyor, Android çoğu
+zaman hiçbir şey yapmıyor. Ağırlık artık aile adında (`lib/fonts.ts`), ve
+açılış görseli yazı tipleri gelene kadar ekranda tutuluyor — yoksa ilk kare
+sistem fontuyla çizilip her satır yerinden zıplıyordu.
+
+**ADR-048 yazıldı**; ADR-015 kısmen geçersiz, ADR-021'in 2. ve 6. kuralı
+değişti. İkisinin başlığına da uyarı konuldu ki eski kuralı uygulayan
+olmasın.
+
 ## 2026-09-09 — 1.0.3 reddedildi: inceleme hesabı alanında kullanıcı adı yazıyordu
 
 Apple, build 20'yi **Guideline 2.1 — Information Needed** ile geri çevirdi:

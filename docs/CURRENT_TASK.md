@@ -28,48 +28,61 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-09
 
 Current task:
-  1.0.3 (build 20) REDDEDILDI - Guideline 2.1, "demo hesabiyla giris
-  yapamadik". KOD SORUNU DEGIL: APP STORE CONNECT'TEKI ALAN YANLIS.
-  YENI BUILD GEREKMIYOR.
+  KAGIT & PETROL TASARIM YONUNUN UYGULANMASI (ADR-048).
 
-  SEBEP OLCULDU (9 Eylul):
-    App Store Connect "User name" alaninda demouser yaziyor. Bu
-    uygulamada KULLANICI ADI DIYE BIR SEY YOK; giris e-posta ile.
-      curl -X POST https://owezy.net/api/auth/sign-in/email \
-           -H 'Content-Type: application/json' \
-           -d '{"email":"demouser","password":"<sahte>"}'
-      -> 400 {"message":"Invalid email","code":"INVALID_EMAIL"}
-    Sunucu hesaba BAKMADAN reddediyor, yani hangi parola yazilirsa
-    yazilsin inceleyici giremezdi. Inceleme hesabi appreview@owezy.net -
-    bu dosyada zaten yaziyordu, alana yanlis deger girilmis.
+  KAYNAK: kullanicinin Claude Design'daki projesi.
+    proje  2f16cec7-532e-466b-8493-4cc5a7792d07  "Owezy mobil ve web tasarimi"
+    dosya  design_handoff_owezy_kagit_petrol/Owezy Urun Tasarimi.dc.html
+    UYGULANACAK BOLUM id="5a". 2a/3a/3b/4a REDDEDILMIS alternatifler.
+    Yanindaki README.md spec'in kendisi - her token, her olcu orada.
+    OKUMA YOLU: DesignSync (list_files / get_file). /design-login yapildi.
+    Kullanici ayni paketi zip olarak da verdi; ikisi BIREBIR AYNI.
 
-  IKINCI TUZAK - NOTES'A YAZILMAZSA AYNI YERE YINE DUSERIZ:
-    Giris ekraninda VARSAYILAN yol e-posta kodu. Parola alani
-    "Sign in with a password" baglantisinin ARKASINDA (ADR-035 bilerek
-    boyle yapti). Inceleyici dogru adresi girip "Send code"a basarsa kod
-    okuyamadigi bir kutuya gider ve yine giremez.
+  HANDOFF'UN KENDI SIRASI - NEREDE KALINDI:
+    1. web tokenlari (globals.css)          BITTI  9e44613
+    2. mobil tema (theme.tsx)               BITTI  9e44613
+       + mobil fontlar (lib/fonts.ts)       BITTI  cf94a4e
+    3. mobil GRUP EKRANI                    SIRADA
+    4. mobil harcama ekleme
+    5. web tanitim sayfasi (YENI - bugun page.tsx girisliyi urune atiyor)
+    6. koyu tema gozden gecirme + magaza ekran goruntuleri
 
-  YAPILACAKLAR - HEPSI APP STORE CONNECT'TE:
-    1. App Review Information -> Sign-In Information -> User name:
-       demouser  ->  appreview@owezy.net
-    2. Notes'a giris adimlarini yaz (dort adim, "Send code'a basmayin")
-    3. Resolution Center'dan cevap yaz, ayni build 20 ile yeniden gonder
+  BU YONDE OLCULEN IKI SEY - TEKRAR ETME, KAYITLI:
+    a. Handoff'un butun kontrast iddialari DOGRU cikti.
+    b. AMA TURETILEN KOYU TEMADA KUSUR VARDI: acilmis petrol uzerinde
+       beyaz metin 3.89:1, AA'yi gecmiyor. Birincil dugmenin metni koyu
+       yapildi (4.78:1). onBrand token'i bu yuzden var.
 
-  ONCE DOGRULANACAK - UCU DE KULLANICININ ISI, KODDAN OLCULEMEZ:
-    a. appreview@owezy.net PAROLAYLA girebiliyor mu? Gizli pencerede
-       owezy.net. BU KONTROL CHANGELOG'DA 4 EYLUL'DE TANIMLI VE BU
-       GONDERIMDEN ONCE KOSULMADI - retin asil sebebi bu atlanan adim.
-    b. Hesapta 2FA KAPALI mi? Acikssa parola sonrasi TOTP soruluyor ve
-       inceleyicinin kimlik dogrulayicisi yok.
-    c. Hesabin icinde VERI var mi? Bos hesap Apple'in istedigi "full
-       features and functionality"yi karsilamaz.
+  EKRANLARDA HENUZ YAPILMADI: 3-6 arasi hicbir sey. Yani su an
+  uygulamanin RENGI ve YAZI TIPI yeni, YERLESIMI eski.
 
-  NOTES'TAKI "IZIN ISTEMI YOK" MADDESI ARTIK YANLIS. 1.0.3 uc izin
-  istiyor: bildirim, fotograf kutuphanesi, kamera. Notes yeniden
-  yazilirken duzeltilmeli - yanlis beyan tek basina ret sebebi.
+  DIKKAT - SABIT EYLEM CUBUGU 56c7a14'U GERI ALIYOR:
+    3 gun once grup eylemleri fisin USTUNE tasindi (build 20'de, incelemede,
+    ve HIC EKRANDA GORULMEDI). Tasarim onlari alta SABITLIYOR. Handoff bunu
+    "bilincli bir degisiklik" diye yaziyor - yani kasitli, ama hic bakilmamis
+    bir seyin uzerine yaziliyor.
+
+  MOBIL SIMULATORDE HENUZ HIC BAKILMADI. Yeni renk ve font gercek ekranda
+  gorulmedi; testler ve tarayici (web) disinda kanit yok.
+  EAS KOTASI 12/15 - build ALMADAN once sor.
+
+1.0.3 (build 20) - INCELEMEYE YENIDEN GONDERILDI (9 Eylul):
+  Once Guideline 2.1 ile reddedildi: App Store Connect'teki "User name"
+  alaninda demouser yaziyordu, oysa bu uygulamada kullanici adi YOK -
+  giris e-posta ile. Sunucu hesaba bakmadan 400 INVALID_EMAIL donuyordu,
+  yani hangi parola yazilirsa yazilsin inceleyici giremezdi.
+  Alan appreview@owezy.net yapildi, Notes'a dort adimli giris yolu
+  yazildi ("Send code'a basmayin"), ayni build 20 yeniden gonderildi.
+  Kullanici gizli pencerede DOGRULADI: parolayla giriyor, 2FA kapali.
+  Su an "Waiting for Review".
+
+  BU RET ATLANMIS BIR KONTROLDEN CIKTI. CHANGELOG 4 Eylul'de tanimliyor:
+  "gonderimden once appreview@ parolayla girebiliyor mu, ikinci adim
+  istiyor mu". Kosulmadi. HER GONDERIMDEN ONCE KOSULACAK.
 
   SURUMLER:
-    1.0.3  build 20, REDDEDILDI (9 Eylul, Guideline 2.1).
+    1.0.3  build 20, INCELEMEDE (9 Eylul, bir kez reddedilip yeniden
+           gonderildi - ayrinti yukarida).
            push bildirim, uye cikarma + davet iptali, {amount} duzeltmesi,
            grup eylemleri fisin USTUNDE, basliktaki hesap simgesi, tema
            secimi, FIS FOTOGRAFI.

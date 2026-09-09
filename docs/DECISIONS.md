@@ -330,7 +330,14 @@ bu, hiç çevirmemekten kötüydü. Cümle eşlemesinde bir metin ya tamamen
 ---
 
 ## ADR-015 — Kimlik rengi kobalt; yeşil ve kırmızı yalnızca anlam taşır
-**Tarih:** 2026-08-11 · **Durum:** Kabul edildi
+**Tarih:** 2026-08-11 · **Durum:** **KISMEN GEÇERSİZ — bkz. ADR-048 (2026-09-09)**
+
+> Kimlik rengi artık kobalt değil **petrol yeşili**, ve alacak rengiyle aynı
+> aileden. Aşağıdaki "kimlik rengi yeşil olamaz" gerekçesi ADR-048'de
+> tartışıldı ve bilerek terk edildi.
+>
+> **Yürürlükte kalan iki kural:** `--destructive` borç renginden ayrıdır, ve
+> renk tek başına bilgi taşımaz (işaretler asıl taşıyıcıdır).
 
 **Karar:** Marka/kimlik rengi **kobalt mavi**. Yeşil ve kırmızı yalnızca
 bakiye anlamı için ayrılmıştır (yeşil = sana borçlular, kırmızı = sen
@@ -520,6 +527,82 @@ sayfası 500 verirdi.
 11.4d'de `User.locale` geldiğinde durum değişir: o **gerçekten** bir kayıt
 olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 "çıkış yapmış kullanıcı" yolu olarak kalır; okuma sırası çerez → hesap → `tr`.
+
+---
+
+## ADR-048 — Kağıt & petrol yönü: kimlik ile alacak aynı aileden, tutarlar mono değil
+**Tarih:** 2026-09-09 · **Durum:** Kabul edildi · **ADR-015'i ve ADR-021'in 2. ve 6. kuralını DEĞİŞTİRİR**
+
+**Karar:** Görsel yön kobalt/gri-mavi sistemden **sıcak kağıt + petrol yeşili
++ bakır** sistemine taşındı. Üç somut değişiklik:
+
+1. **Kimlik rengi petrol yeşili ve alacak rengiyle aynı aileden.**
+2. **Bakır, çizgi ve etiket için üçüncü bir aile** — ama iki tokende.
+3. **Tutarlar mono değil**, grotesk + tabular rakam.
+
+Kaynak, kullanıcının Claude Design'da hazırladığı `Owezy Urun Tasarimi.dc.html`
+dosyasının `5a` turu ve yanındaki handoff dokümanı.
+
+**ADR-015 neden değişti.** Eski gerekçe sağlamdı: renk bu üründe bilgi
+taşıyor, kimlik rengi de yeşil olursa kullanıcı yeşil bir düğmeyi "alacak"
+sanabilir — o yüzden kobalt üçüncü bir aile açıyordu. Yeni yönde ayrımı
+**renk değil bağlam** taşıyor: tutarlar tabular rakamla ve işaretle (`+`/`−`)
+yazılıyor, düğmeler dolgu ve ölçüyle ayrılıyor. Karşılığında kazanılan şey,
+sayfada anlam taşıyan renk sayısının üçten ikiye inmesi.
+
+**Bu bir bedel, ve bedeli açık yazıyoruz:** petrol dolgulu bir düğme ile
+pozitif bir bakiye artık aynı aileden. Bunun tek başına yeterli olduğunu
+iddia etmiyoruz — ADR-015'in "renk tek başına bilgi taşımaz" kuralı
+**yürürlükte kalıyor** ve artık daha da gerekli.
+
+**ADR-015'in geçerliliğini koruyan yarısı:** `--destructive` borç renginden
+**ayrı** kaldı ve değeri hiç değişmedi (`oklch(0.577 0.245 27.325)`). Silme
+düğmesi ile "borçlusun" aynı renkte olamaz.
+
+**Bakır neden iki token — ve bu bir estetik tercih değil, ölçüm sonucu.**
+Handoff tek bir bakır veriyor gibi okunuyor ama kontrastı ölçünce ikiye
+ayrılmak zorunda kaldı:
+
+| Token | Değer | Kağıt üzerinde | Kullanım |
+|---|---|---|---|
+| `--copper` | `#b5813a` | **3.21:1** | yalnızca çizgi ve kenarlık |
+| `--copper-text` | `#8a5f26` | **5.29:1** | küçük etiketler |
+
+Tek tokende birleştirmek, etiketlerin AA'yı geçmemesi demekti.
+
+**ADR-021'in 6. kuralı (sayılar mono) kaldırıldı.** Gerekçesi —"rakamlar
+gövde metniyle aynı sesle konuşmasın"— hâlâ doğru, ama o işi artık **tabular
+rakam** yapıyor: Familjen Grotesk'in `tnum` yüzü de eşit genişlikte, yani
+virgüller aynı sütunda duruyor. Kazanılan şey, tutarın arayüzün geri
+kalanıyla aynı ailede kalması. Mono denendi ve bırakıldı; `--font-mono`
+silinmedi, davet bağlantısı gibi teknik gösterimlerde duruyor.
+
+**ADR-021'in geri kalanı yürürlükte:** yoğunluk, saç teli çizgiler, kutu
+yerine çizgi, düşük doygunluk, az hareket. Köşe yarıçapı 8 px → **3 px**
+(aynı kuralın bir adım ilerisi). Başlıklar ilk kez ayrı bir aile aldı
+(Instrument Serif); ADR-021 döneminde `--font-heading` `--font-sans`'i
+işaret ediyordu, yani başlık diye bir ses yoktu.
+
+**Koyu tema tasarımda çizilmedi.** Handoff yalnızca bir türetme kuralı
+veriyor. Değerler o kurala göre üretildi ve kontrastları ölçüldü — bu
+sırada **bir kusur bulundu ve düzeltildi:** açılmış petrol (`#3f8f76`)
+üzerinde beyaz metin **3.89:1**, yani AA'yı geçmiyor. Koyu temada birincil
+düğmenin metni bu yüzden koyu (**4.78:1**), açık temada beyaz (**7.82:1**).
+`onBrand` / `--primary-foreground` token'ının varlık sebebi budur.
+
+**Renkler hesaplanarak çevrildi, göz kararıyla değil.** Handoff hex veriyor,
+kod tabanı oklch tutuyor; sRGB → OKLab dönüşümü yazılıp her renk geçirildi.
+Aynı ilke mobil tablo için baştan beri geçerliydi (`mobile/lib/theme.tsx`).
+
+**React Native'de ağırlık aile adında.** `fontWeight`, ayrı ayrı yüklenmiş
+yüzler arasında geçiş yapmıyor: iOS yapay kalınlaştırıyor, Android çoğu
+zaman hiçbir şey yapmıyor. Ekranlarda `fontWeight` kullanılmıyor;
+`lib/fonts.ts` aile adlarını veriyor.
+
+**Alternatifler:** kobaltı korumak (yeni yönün tamamı kobalt üzerine
+kurulmadığı için tutarsız bir melez olurdu); bakırı tek token yapmak
+(etiketler okunmazdı); mono'yu korumak (yeni ailede iki yazı tipi bir arada
+gereksiz kalıyordu).
 
 ---
 
@@ -1962,7 +2045,13 @@ formu açıp kaydete bastığında bir kuruş yer değiştirebilirdi.
 ---
 
 ## ADR-021 — Görsel dil kısıtlama üzerine kurulur; renk yalnızca durum taşır
-**Tarih:** 2026-08-12 · **Durum:** Kabul edildi
+**Tarih:** 2026-08-12 · **Durum:** Kabul edildi · **2. ve 6. kural ADR-048 ile değişti**
+
+> **2. kural (kobalt üç yerde):** kobalt yok, yerine petrol.
+> **6. kural (sayılar mono):** tutarlar mono değil, grotesk + tabular rakam.
+> **Köşe yarıçapı** 8 px değil 3 px.
+> Kuralların geri kalanı — yoğunluk, saç teli çizgiler, kutu yerine çizgi,
+> düşük doygunluk, az hareket — aynen yürürlükte.
 
 **Karar:** Arayüzün karakteri renkten değil **yoğunluk, saç teli çizgiler ve
 kesin tipografiden** gelir. Somut kurallar:
