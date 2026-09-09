@@ -363,31 +363,44 @@ export default function SignInScreen() {
  */
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.paper },
+    screen: { flex: 1, backgroundColor: theme.background },
     form: { flex: 1, padding: 24, gap: 8, justifyContent: "center" },
-    // Kelime isareti kobalt ve 34 punto: gruplar ekranindaki ilk acilis
-    // basligiyla AYNI (groups/index.tsx, wordmark). Ayni kelimenin iki
-    // ekranda iki turlu gorunmesi icin sebep yok.
-    title: { fontSize: 34, fontFamily: fonts.semibold, color: theme.brand, marginBottom: 24 },
+    // Kelime isareti SERIF, petrol ve 40 punto: gruplar ekranindaki ilk
+    // acilis basligiyla AYNI (groups/index.tsx, wordmark) ve web'in baslik
+    // cubuguyla da ayni. Ayni kelimenin uc yerde uc turlu gorunmesi icin
+    // sebep yok.
+    title: { fontSize: 40, fontFamily: fonts.heading, color: theme.brand, marginBottom: 24 },
     muted: { fontFamily: fonts.body, fontSize: 14, color: theme.muted },
+    // KUTU DEGIL ALT CIZGI - ADR-021'in "kutu yerine cizgi" kurali form
+    // denetimlerine de uygulandi (kagit & petrol yonu). Uygulamanin butun
+    // alanlari boyle; giris ekrani ILK ekran ve gerisinden farkli
+    // gorunmemeli.
     input: {
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 8,
-      padding: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.inputLine,
+      paddingVertical: 10,
       fontFamily: fonts.body,
       fontSize: 16,
       color: theme.foreground,
     },
+    // Birincil dugme: uygulamanin her yerindekiyle ayni olcu (50) ve
+    // yaricap (3).
     button: {
-      marginTop: 8,
-      padding: 16,
+      marginTop: 12,
+      height: 50,
       backgroundColor: theme.brand,
-      borderRadius: 8,
+      borderRadius: 3,
       alignItems: "center",
+      justifyContent: "center",
     },
-    buttonText: { color: theme.onBrand, fontFamily: fonts.body, fontSize: 16 },
-    link: { color: theme.muted, paddingVertical: 12, textAlign: "center" },
+    buttonText: { color: theme.onBrand, fontFamily: fonts.semibold, fontSize: 15.5 },
+    link: {
+      color: theme.muted,
+      fontFamily: fonts.body,
+      fontSize: 14,
+      paddingVertical: 14,
+      textAlign: "center",
+    },
     // Hata rengi theme.debt: bu ekranlarda yerlesik olan bu (on ekranda
     // boyle). ADR-015 kirmizinin ANLAM tasidigi yerleri koruyor; buradaki
     // kullanim bir bakiye degil, ama projede tek bir hata rengi var.

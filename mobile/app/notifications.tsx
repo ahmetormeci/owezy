@@ -236,7 +236,8 @@ export default function NotificationsScreen() {
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.paper },
+    // Zemin sicak kagit; paper onun UZERINDEKI fis yapragi.
+    screen: { flex: 1, backgroundColor: theme.background },
     content: { padding: 20, gap: 4 },
     row: {
       gap: 3,
@@ -252,7 +253,7 @@ function createStyles(theme: Theme) {
     // boylece satirin butun metni tek sutunda hizali duruyor.
     detail: { fontFamily: fonts.body, fontSize: 13, color: theme.muted, marginLeft: 15 },
     meta: { fontFamily: fonts.body, fontSize: 11, color: theme.muted, marginLeft: 15 },
-    empty: { color: theme.muted, lineHeight: 22 },
+    empty: { fontFamily: fonts.body, fontSize: 14, color: theme.muted, lineHeight: 22 },
     error: { color: theme.debt, fontFamily: fonts.body, fontSize: 14 },
     link: { color: theme.brand, fontFamily: fonts.body, fontSize: 14, paddingVertical: 12 },
   });

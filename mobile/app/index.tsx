@@ -118,7 +118,7 @@ function createStyles(theme: Theme) {
       alignItems: "center",
       justifyContent: "center",
       gap: 12,
-      backgroundColor: theme.paper,
+      backgroundColor: theme.background,
     },
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },

@@ -187,7 +187,7 @@ export default function EditGroupScreen() {
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.paper },
+    screen: { flex: 1, backgroundColor: theme.background },
     flex: { flex: 1 },
     content: { padding: 20, gap: 20 },
     centered: {
@@ -196,7 +196,7 @@ function createStyles(theme: Theme) {
       justifyContent: "center",
       gap: 12,
       padding: 24,
-      backgroundColor: theme.paper,
+      backgroundColor: theme.background,
     },
     hint: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: theme.muted },
     field: { gap: 6 },

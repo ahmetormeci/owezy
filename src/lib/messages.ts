@@ -367,6 +367,10 @@ export const MESSAGES_TR = {
 
   // --- Gruplar ---
   "ui.my_groups": "Gruplarım",
+  // Gruplar listesinin altindaki bolum: yeni grup kurmak ya da davetle
+  // katilmak. Ikisi ESIT AGIRLIKTA, o yuzden tek bir baslik ikisini birden
+  // topluyor.
+  "ui.add_a_group": "Grup ekle",
   "ui.back_to_groups": "← Gruplarım",
   "ui.new_group": "Yeni grup",
   "ui.new_group_title": "Yeni grup oluştur",
@@ -1029,6 +1033,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
 
   // --- Groups ---
   "ui.my_groups": "My groups",
+  "ui.add_a_group": "Add a group",
   "ui.back_to_groups": "← My groups",
   "ui.new_group": "New group",
   "ui.new_group_title": "Create a new group",

@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslate } from "../../lib/i18n";
 import { useApiGet } from "../../lib/use-api";
 import { useTheme, type Theme } from "../../lib/theme";
+import { SectionRule } from "../../components/receipt";
 import { GroupCreator } from "../../components/group-creator";
 import { InviteJoiner } from "../../components/invite-joiner";
 
@@ -108,9 +109,14 @@ export default function GroupsScreen() {
           </Link>
         ))}
 
+        {/* Listenin ALTINDA ve bakir bir cizgiyle ayrilmis: bunlar liste
+            satiri degil, listeye satir EKLEYEN seyler. */}
         <View style={s.creator}>
-          <GroupCreator onCreated={reload} />
-          <InviteJoiner onJoined={reload} />
+          <SectionRule label={t("ui.add_a_group")} />
+          <View style={s.creatorForms}>
+            <GroupCreator onCreated={reload} />
+            <InviteJoiner onJoined={reload} />
+          </View>
         </View>
       </ScrollView>
 
@@ -139,16 +145,16 @@ export default function GroupsScreen() {
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.paper, paddingHorizontal: 24 },
+    screen: { flex: 1, backgroundColor: theme.background, paddingHorizontal: 20 },
     centered: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
       gap: 12,
-      backgroundColor: theme.paper,
+      backgroundColor: theme.background,
     },
     title: { fontSize: 17, fontFamily: fonts.semibold, color: theme.foreground, paddingTop: 8 },
-    list: { flex: 1, marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border },
+    list: { flex: 1, marginTop: 8 },
     // Her grup bir KART degil bir SATIR (ADR-021).
     row: {
       flexDirection: "row",
@@ -163,9 +169,11 @@ function createStyles(theme: Theme) {
     rowName: { fontSize: 16, fontFamily: fonts.medium, color: theme.foreground },
     rowDescription: { marginTop: 2, fontFamily: fonts.body, fontSize: 12, color: theme.muted },
     rowRole: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
-    creator: { paddingTop: 18, gap: 18 },
+    creator: { paddingTop: 28, paddingBottom: 24 },
+    creatorForms: { paddingTop: 18, gap: 18 },
     firstRun: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
-    wordmark: { fontSize: 34, fontFamily: fonts.semibold, color: theme.brand },
+    // Kelime isareti SERIF - giris ekraninda ve web basliginda da oyle.
+    wordmark: { fontSize: 40, fontFamily: fonts.heading, color: theme.brand },
     firstRunText: { textAlign: "center", color: theme.muted, maxWidth: 300, lineHeight: 22 },
     firstRunForm: { alignSelf: "stretch", marginTop: 12, gap: 18 },
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },

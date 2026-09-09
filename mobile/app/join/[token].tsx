@@ -138,7 +138,7 @@ function createStyles(theme: Theme) {
       justifyContent: "center",
       gap: 16,
       padding: 24,
-      backgroundColor: theme.paper,
+      backgroundColor: theme.background,
     },
     hint: { color: theme.muted, fontFamily: fonts.body, fontSize: 15, lineHeight: 22, textAlign: "center" },
     error: { color: theme.debt, fontFamily: fonts.body, fontSize: 15, textAlign: "center" },

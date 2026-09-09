@@ -1153,8 +1153,8 @@ export default function GroupScreen() {
             kategori varsa blok cizilmiyor. Tek cubuk her zaman tam boy olur
             ve "%100" yazar - hicbir sey anlatmaz. */}
         {byCategory.length > 1 ? (
-          <View style={s.card}>
-            <Cap>{t("ui.summary_by_category")}</Cap>
+          <View style={s.categoryBlock}>
+            <SectionRule label={t("ui.summary_by_category")} />
             <View style={s.cardBody}>
               {byCategory.map((slice) => (
                 <View key={slice.category} style={s.catRow}>
@@ -1568,16 +1568,11 @@ function createStyles(theme: Theme) {
       gap: 12,
       backgroundColor: theme.background,
     },
-    // Cerceveli damga. Zemin YOK: mureklep izlenimi cerceveden geliyor.
-    card: {
-      backgroundColor: theme.paper,
-      borderRadius: 10,
-      padding: 16,
-      marginTop: 12,
-      gap: 10,
-    },
+    // KART DEGIL BOLUM. Bu ekrandaki son kutuydu; ADR-021 "kutu yerine
+    // cizgi" diyor ve bolum artik bakir bir cizgiyle basliyor.
+    categoryBlock: { marginTop: 24 },
     emptyDeletedLink: { marginTop: 10 },
-    cardBody: { gap: 12 },
+    cardBody: { gap: 12, paddingTop: 14 },
     cardLink: { color: theme.brand, fontSize: 13, fontFamily: fonts.medium },
     catRow: { gap: 5 },
     catHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },
