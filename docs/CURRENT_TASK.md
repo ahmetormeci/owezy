@@ -43,8 +43,8 @@ Current task:
     2. mobil tema (theme.tsx)               BITTI  9e44613
        + mobil fontlar (lib/fonts.ts)       BITTI  cf94a4e
     3. mobil GRUP EKRANI                    BITTI  ba8a515 + 67af879
-    4. mobil harcama ekleme                 SIRADA
-    5. web tanitim sayfasi (YENI - bugun page.tsx girisliyi urune atiyor)
+    4. mobil harcama ekleme                 BITTI  8ab8f58 + 766d87c
+    5. web tanitim sayfasi                  SIRADA (YENI - bugun page.tsx girisliyi urune atiyor)
     6. koyu tema gozden gecirme + magaza ekran goruntuleri
 
   BU YONDE OLCULEN IKI SEY - TEKRAR ETME, KAYITLI:
@@ -53,9 +53,27 @@ Current task:
        beyaz metin 3.89:1, AA'yi gecmiyor. Birincil dugmenin metni koyu
        yapildi (4.78:1). onBrand token'i bu yuzden var.
 
-  EKRANLARDA YAPILAN: yalnizca GRUP EKRANI. Digerlerinin (harcama ekleme,
-  harcama detayi, odesmeler, uyeler, hesap, gruplar listesi) rengi ve yazi
-  tipi yeni, YERLESIMI eski.
+  EKRANLARDA YAPILAN: GRUP EKRANI ve HARCAMA EKLEME. Digerlerinin (harcama
+  detayi, odesmeler, uyeler, hesap, gruplar listesi) rengi ve yazi tipi
+  yeni, YERLESIMI eski.
+
+  HARCAMA EKLEME - IKI ADIMLI SIHIRBAZ KALDIRILDI:
+    Gerekcesi gercekti (bolusme arayuzu TUTARA bagimli) ama onu saglayan
+    sey adim SINIRI degil alanlarin SIRASI - tasarim tutari ilk alan
+    yapiyor. Sinir kalkti, sira kaldi. Testteki "next" adimi da kalkti.
+    Odeyen ve kategori CIP degil ACILIR SECIM artik (components/field.tsx,
+    React Native'in kendi Modal'i - yeni bagimlilik yok).
+    Esit bolusumde her satir PAYINI gosteriyor; hesap sunucuyla AYNI
+    fonksiyondan (src/lib/split.ts), yani ekrandaki kurus kaydedilenle
+    ayrisamiyor - kusuratin kime yazildigi dahil.
+
+  TASARIMDA OLAN AMA YAPILMAYAN IKI ALAN:
+    "Gruba not"  -> Expense'te NOT SUTUNU YOK (yalnizca Settlement'ta var).
+                    Sema + migration + API + web demek: ozellik, restyle
+                    degil. YAPILMADI.
+    "Tarih"      -> sunucu kabul ediyor (web'de var) ama mobilde tarih
+                    secici hic olmadi ve yeni bir bagimlilik ister.
+                    Sunucu bugunu varsaymaya devam ediyor. YAPILMADI.
 
   SIMULATORDE GORULDU (9 Eylul, iPhone 17 Pro, acik VE koyu tema):
   baslik blogu, koyu bakiye karti, bakir bolum cizgileri, cipli harcama

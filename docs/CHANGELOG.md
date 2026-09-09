@@ -11,6 +11,40 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (4) — Harcama ekleme: tek ekran, kutusuz alanlar
+
+Handoff'un 4. adımı. **İki adımlı sihirbaz kaldırıldı.** Gerekçesi gerçekti —
+bölüşme arayüzü tutara bağımlı, "tam tutar" kipinde kalan hesabı tutar
+girilmeden hiçbir şey anlatmıyor — ama o bağımlılığı sağlayan şey adım
+**sınırı** değil alanların **sırası**, ve tasarım tutarı ilk alan yapıyor.
+Sınır kalktı, sıra kaldı.
+
+Alanlar kutularını bıraktı: bakır etiket + tek alt çizgi. ADR-021 "kutu
+yerine çizgi" derken form denetimlerine hiç uygulanmamıştı.
+
+**Ödeyen ve kategori artık açılır seçim.** Yedi kategori aynı anda ekranda
+dururken form "ne gireceğim" yerine "kaç seçenek var" gibi okunuyordu.
+Seçici React Native'in kendi `Modal`'i — yeni bağımlılık yok.
+
+**Eşit bölüşümde her satır payını gösteriyor**, hesap sunucuyla aynı
+`splitEqually`'den geçiyor. Yani ekrandaki kuruş kaydedilenden ayrışamaz,
+küsuratın kime yazıldığı dahil — toplam satırı bunu adıyla söylüyor.
+
+**Tasarımda olup yapılmayan iki alan.** "Gruba not"un `Expense`'te sütunu
+yok (yalnızca `Settlement`'ta var), yani şema + migration + API + web
+demek: özellik, restyle değil. "Tarih" sunucuda kabul ediliyor ve web'de
+var ama mobilde hiç olmadı ve bir seçici bağımlılığı ister.
+
+**Simülatörde dört kusur çıktı, testler hiçbirini göremezdi:** React Native
+`borderStyle: "double"` desteklemiyor (çift çizgi tek kalın çizgi oluyordu),
+segmentler form etiketlerini taşıyordu ve genişliğin üçte birini aşıyordu,
+bölüşüm başlığı tek kelimelik etiketlerin arasında bir soruydu, ve para
+birimi rakamdan yüz punto uzakta duruyordu.
+
+**Negatif kontrol:** `submit()` devre dışı bırakıldığında ekran testlerinin
+beşi de düştü — yani kaydetme yolunu gerçekten sınıyorlar.
+
 ## 2026-09-09 (3) — Grup ekranı kağıt & petrol yönüne geçti
 
 Handoff'un 3. adımı. Başlık kendi bloğu oldu (serif ad, bakır para birimi,
