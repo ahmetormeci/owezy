@@ -47,8 +47,24 @@ describe("kullanilan kodlar sozlukte var mi", () => {
   //
   // Bu tam olarak yasandi: t("ui.use_suggested_amount") yazildi, sozlukte
   // yoktu, tsc sustu. E2E'nin bakligi bir metindi - orada patlayacakti.
+  /**
+   * MOBIL DE TARANIYOR ve bu bir genisletme degil, BIR BOSLUGUN KAPATILMASI.
+   *
+   * Test uzun sure yalnizca src/ altina bakiyordu. Oysa iki istemci AYNI
+   * sozlugu paylasiyor (mobile/lib/i18n.tsx onu src'den aliyor) ve mobil
+   * tarafta yazilan bir kod hicbir sey tarafindan denetlenmiyordu: tsc
+   * susuyor (translate string aliyor), bu test de dosyayi hic acmiyordu.
+   *
+   * Gercekten yasandi: uye ekraninda t("ui.invite") yazildi, sozlukte yoktu,
+   * butun kume yesil kaldi. Ekranda "ui.invite" yazacakti.
+   */
   it("kaynak kodda gecen her ui.* kodu sozlukte tanimli", () => {
-    const root = path.join(process.cwd(), "src");
+    const roots = [
+      path.join(process.cwd(), "src"),
+      path.join(process.cwd(), "mobile", "app"),
+      path.join(process.cwd(), "mobile", "components"),
+      path.join(process.cwd(), "mobile", "lib"),
+    ];
     const missing: string[] = [];
 
     const walk = (dir: string) => {
@@ -66,14 +82,18 @@ describe("kullanilan kodlar sozlukte var mi", () => {
           for (const match of source.matchAll(/"(ui\.[a-z0-9_]+)"/g)) {
             const code = match[1];
             if (!(code in MESSAGES_TR)) {
-              missing.push(`${code}  (${path.relative(root, full)})`);
+              missing.push(`${code}  (${path.relative(process.cwd(), full)})`);
             }
           }
         }
       }
     };
 
-    walk(root);
+    for (const root of roots) {
+      // mobile/ dizinlerinden biri yoksa (ornegin kirpilmis bir checkout)
+      // test patlamak yerine o koku atliyor.
+      if (fs.existsSync(root)) walk(root);
+    }
     expect(missing, `sozlukte olmayan kodlar:\n${missing.join("\n")}`).toEqual([]);
   });
 });
