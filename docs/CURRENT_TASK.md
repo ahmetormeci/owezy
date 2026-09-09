@@ -53,8 +53,9 @@ Current task:
   ekranlara TASINMASI. Handoff uc yuzey ciziyordu; digerleri renk ve yazi
   tipini aldi ama YERLESIM dili eski kaldi.
     harcama detayi      BITTI  9f9e7f6  (+ receipt-photo bileseni)
-    odesmeler           SIRADA
-    uyeler / hesap / gruplar listesi / bildirimler / giris
+    odesmeler           BITTI  (bkz. son commit)
+    uyeler              SIRADA
+    hesap / gruplar listesi / bildirimler / giris
     web urun sayfalari  ((app)/groups/...) - handoff yalnizca karsilama
                         sayfasini kapsiyordu
 

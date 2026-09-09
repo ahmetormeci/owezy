@@ -15,6 +15,23 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (8) — Ödeşme ekranı da aynı aileye girdi
+
+Başlık çubuğu, tutar bloğu, alt çizgili alanlar. Yön iki segmente dönüştü —
+birbirini dışlayan iki seçenek; çip satırı "istediğin kadar seç" gibi
+okunuyordu. Karşı taraf diğer ekranlardaki açılır seçimle aynı. Geçmiş bakır
+çizginin altında, fişin noktalı ayraçlarıyla.
+
+**Açılır seçim, çip satırının kazara dürüst olduğu bir şeyi ortaya çıkardı:**
+tek üyeli bir grupta ödeşecek kimse yok. Boş bir çip satırının boş olduğu
+belliydi; boş bir seçim ise çalışır bir denetim gibi görünüp dokununca boş
+liste açıyor. Alan artık bunu cümleyle söylüyor.
+
+**Bir "kusur" düzeltilmedi çünkü kusur değildi:** not alanının yer tutucusu
+sıkışık görünüyordu, temiz yeniden yüklemede normal çıktı — sıcak yenilemeden
+kalma çizim artığı.
+
 ## 2026-09-09 (7) — Harcama detayı, formun kardeşi oldu
 
 Handoff'un listesi bitti; bu, yeni dilin **handoff'ta çizilmemiş** ekranlara
