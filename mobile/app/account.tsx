@@ -9,7 +9,7 @@ import { disablePush } from "../lib/push";
 import { useLocale, useSetLocale, useTranslate } from "../lib/i18n";
 import { useApiClient, useApiGet } from "../lib/use-api";
 import { useTheme, useThemeChoice, type Theme } from "../lib/theme";
-import { Cap } from "../components/receipt";
+import { SectionRule, MemberAvatar } from "../components/receipt";
 
 /**
  * Hesap ekrani. MOBILDE BOYLE BIR EKRAN YOKTU.
@@ -127,16 +127,27 @@ export default function AccountScreen() {
   }
 
   return (
-    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
+    // Yerlesik baslik cubugu: bu bir YONETIM ekrani, tek bir "kaydet"i yok.
+    // Ozel cubuk yalnizca form ekranlarinda (bkz. members.tsx yorumu).
+    <SafeAreaView style={s.screen} edges={["left", "right"]}>
       <ScrollView contentContainerStyle={s.content}>
         {state.kind === "loading" ? (
           <ActivityIndicator color={theme.brand} />
         ) : state.kind === "error" ? (
           <Text style={s.error}>{state.text}</Text>
         ) : (
-          <View style={s.card}>
-            <Text style={s.name}>{state.data.user.displayName}</Text>
-            <Text style={s.muted}>{state.data.user.email}</Text>
+          // Grup ekranindaki baslik blogunun karsiligi: bas harfler solda,
+          // kimlik saginda.
+          <View style={s.identity}>
+            <MemberAvatar name={state.data.user.displayName} me size={48} />
+            <View style={s.identityText}>
+              <Text style={s.name} numberOfLines={1}>
+                {state.data.user.displayName}
+              </Text>
+              <Text style={s.muted} numberOfLines={1}>
+                {state.data.user.email}
+              </Text>
+            </View>
           </View>
         )}
 
@@ -145,24 +156,33 @@ export default function AccountScreen() {
             tarayicisi acik olabilir ve bu bir tutarsizlik degil.
 
             "Sistem" AYRI BIR SECENEK ve gerekli: telefonunu gun batiminda
-            koyuya geciren biri uygulamanin da gecmesini bekler. Yalnizca
-            acik/koyu sunmak o kisiyi elle secime mahkum ederdi.
+            koyuya geciren biri uygulamanin da gecmesini bekler.
 
-            BUGUNE KADAR HIC YOKTU ve bu bir karar degildi - DECISIONS.md'de
-            karsiligi yok, yani hic ele alinmamis. Web'de bastan beri var. */}
-        <View style={s.section}>
-          <Cap>{t("ui.appearance")}</Cap>
-          <View style={s.chips}>
-            {(["system", "light", "dark"] as const).map((value) => {
-              const active = themeChoice === value;
+            SEGMENT, CIP DEGIL: uc secenek birbirini disliyor ve sayilari
+            sabit - bolusum turu ve odesme yonuyle ayni kalip. Cip yigini
+            "birden fazla secilebilir" izlenimi veriyordu.
+
+            ANAHTARLAR TEK TEK YAZILI, dongude uretilmiyor: messages.test.ts
+            kaynagi tarayarak calisiyor ve sablon dizgiyle yazilan bir anahtar
+            kaynakta HIC gecmiyor - o kontrol onu goremez. Burada tam olarak
+            oyle yazilmisti. */}
+        <View style={s.block}>
+          <SectionRule label={t("ui.appearance")} />
+          <View style={s.segments}>
+            {[
+              { key: "system", label: t("ui.theme_system") },
+              { key: "light", label: t("ui.theme_light") },
+              { key: "dark", label: t("ui.theme_dark") },
+            ].map((option) => {
+              const active = themeChoice === option.key;
               return (
                 <Pressable
-                  key={value}
-                  style={[s.chip, active && s.chipActive]}
-                  onPress={() => setThemeChoice(value)}
+                  key={option.key}
+                  style={[s.segment, active && s.segmentOn]}
+                  onPress={() => setThemeChoice(option.key as typeof themeChoice)}
                 >
-                  <Text style={[s.chipText, active && s.chipTextActive]}>
-                    {t(`ui.theme_${value}`)}
+                  <Text style={[s.segmentText, active && s.segmentTextOn]}>
+                    {option.label}
                   </Text>
                 </Pressable>
               );
@@ -172,22 +192,25 @@ export default function AccountScreen() {
 
         {/* DIL. Hesabin bir parcasi cunku kayit da hesapta duruyor
             (User.locale) ve cihazdan cihaza tasiniyor. */}
-        <View style={s.section}>
-          <Cap>{t("ui.language")}</Cap>
-          <View style={s.chips}>
+        <View style={s.block}>
+          <SectionRule label={t("ui.language")} />
+          <View style={s.segments}>
             {SUPPORTED_LOCALES.map((value) => {
               const active = locale === value;
               return (
                 <Pressable
                   key={value}
-                  style={[s.chip, active && s.chipActive]}
+                  style={[s.segment, active && s.segmentOn]}
                   onPress={() => void chooseLocale(value)}
                   disabled={localeBusy !== null}
                 >
                   {localeBusy === value ? (
-                    <ActivityIndicator size="small" color={active ? theme.onBrand : theme.brand} />
+                    <ActivityIndicator
+                      size="small"
+                      color={active ? theme.onBrand : theme.brand}
+                    />
                   ) : (
-                    <Text style={[s.chipText, active && s.chipTextActive]}>
+                    <Text style={[s.segmentText, active && s.segmentTextOn]}>
                       {LOCALE_LABELS[value]}
                     </Text>
                   )}
@@ -201,6 +224,10 @@ export default function AccountScreen() {
           <Text style={s.secondaryText}>{t("ui.sign_out")}</Text>
         </Pressable>
 
+        {/* TEHLIKE BLOGU CERCEVESINI KORUYOR - ve bu, "kutu yerine cizgi"
+            kuralindan bilincli bir sapma. Sayfanin geri kalani cizgilerle
+            ayriliyor; burasi ayrilmiyor, CEVRELENIYOR. Hesap silmek geri
+            alinamaz ve cerceve "buradan sonrasi baska" diyen tek isaret. */}
         <View style={s.danger}>
           <Text style={s.dangerTitle}>{t("ui.delete_account_title")}</Text>
           {/* Kaybedilecek sey SOMUT yaziliyor; "geri alinamaz" demek yetmiyor. */}
@@ -244,42 +271,59 @@ export default function AccountScreen() {
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.paper },
-    content: { padding: 20, gap: 20 },
-    title: { fontSize: 26, fontFamily: fonts.semibold, color: theme.foreground },
-    card: { gap: 4 },
+    // ZEMIN paper DEGIL background. Bu ekran tek basina paper kullaniyordu;
+    // her yerde zemin sicak kagit, paper onun UZERINDEKI fis yapragi.
+    screen: { flex: 1, backgroundColor: theme.background },
+    content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
+
+    identity: { flexDirection: "row", alignItems: "center", gap: 12 },
+    identityText: { flex: 1, gap: 2 },
     name: { fontSize: 17, fontFamily: fonts.medium, color: theme.foreground },
-    muted: { fontFamily: fonts.body, fontSize: 14, color: theme.muted },
-    section: { gap: 10, marginTop: 4 },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    chip: {
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 999,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      minWidth: 92,
+    muted: { fontFamily: fonts.body, fontSize: 13.5, color: theme.muted },
+
+    block: { paddingTop: 28 },
+    segments: { flexDirection: "row", gap: 8, paddingTop: 14 },
+    segment: {
+      flex: 1,
       alignItems: "center",
+      justifyContent: "center",
+      minHeight: 42,
+      paddingVertical: 10,
+      borderRadius: 3,
+      borderWidth: 1,
+      borderColor: theme.inputLine,
     },
-    chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
-    chipText: { color: theme.foreground, fontFamily: fonts.body, fontSize: 14 },
-    chipTextActive: { color: theme.onBrand, fontFamily: fonts.semibold },
-    secondary: { paddingVertical: 12 },
-    secondaryText: { color: theme.muted, fontFamily: fonts.body, fontSize: 15, textAlign: "center" },
+    segmentOn: { backgroundColor: theme.brand, borderColor: theme.brand },
+    segmentText: { fontFamily: fonts.body, fontSize: 13.5, color: theme.foreground },
+    segmentTextOn: { fontFamily: fonts.semibold, color: theme.onBrand },
+
+    secondary: { paddingVertical: 28 },
+    secondaryText: {
+      color: theme.muted,
+      fontFamily: fonts.body,
+      fontSize: 15,
+      textAlign: "center",
+    },
+
+    /**
+     * TEHLIKE BLOGU. Yaricap 3 (sayfanin geri kalaniyla ayni) ama CERCEVE
+     * duruyor: ADR-021 kutu yerine cizgi diyor, burasi bilincli istisna.
+     * Gerekcesi render'da yazili.
+     */
     danger: {
       gap: 12,
       padding: 16,
-      borderRadius: 10,
+      borderRadius: 3,
       borderWidth: 1,
       borderColor: theme.destructive,
-      marginTop: 12,
+      marginTop: 8,
     },
     dangerTitle: { fontSize: 16, fontFamily: fonts.semibold, color: theme.foreground },
     dangerText: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: theme.muted },
     destructive: {
       backgroundColor: theme.destructive,
       paddingVertical: 14,
-      borderRadius: 8,
+      borderRadius: 3,
       alignItems: "center",
     },
     // Zemin kirmizi ve iki temada da koyu - burada beyaz DOGRU, onBrand degil.
@@ -288,10 +332,14 @@ function createStyles(theme: Theme) {
       borderWidth: 1,
       borderColor: theme.destructive,
       paddingVertical: 14,
-      borderRadius: 8,
+      borderRadius: 3,
       alignItems: "center",
     },
-    destructiveOutlineText: { color: theme.destructive, fontSize: 15, fontFamily: fonts.semibold },
+    destructiveOutlineText: {
+      color: theme.destructive,
+      fontSize: 15,
+      fontFamily: fonts.semibold,
+    },
     error: { color: theme.destructive, fontFamily: fonts.body, fontSize: 14 },
   });
 }
