@@ -586,6 +586,9 @@ export const MESSAGES_TR = {
   "ui.settlement_note_placeholder": "Havale ile ödendi",
   "ui.settlement_saved": "Ödeme kaydedildi",
   "ui.use_suggested_amount": "Önerilen tutarı kullan: {amount}",
+  // Tek uyeli grupta odesecek kimse YOK. Bunu yazmak, calisir gorunen ama
+  // bos bir secim sunmaktan iyi.
+  "ui.no_one_to_settle_with": "Ödeşecek kimse yok. Önce gruba birini davet et.",
   "ui.no_settlements":
     "Henüz kaydedilmiş bir ödeme yok. Borç kapatınca buraya ekleyebilirsin.",
   // Neyi iptal ettigini SOYLUYOR. Onay penceresinde "Vazgec" ile yan yana
@@ -1200,6 +1203,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.settlement_note_placeholder": "Paid by bank transfer",
   "ui.settlement_saved": "Settlement recorded",
   "ui.use_suggested_amount": "Use the suggested amount: {amount}",
+  "ui.no_one_to_settle_with":
+    "There is nobody to settle with yet. Invite someone to the group first.",
   "ui.no_settlements":
     "No settlements recorded yet. Once you pay someone back, add it here.",
   "ui.cancel_settlement": "Cancel settlement",

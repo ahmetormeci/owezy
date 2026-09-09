@@ -1,5 +1,5 @@
 import { fonts } from "../../../lib/fonts";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,7 +19,8 @@ import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
-import { Cap } from "../../../components/receipt";
+import { SectionRule } from "../../../components/receipt";
+import { Field, SelectField } from "../../../components/field";
 
 /**
  * Odeme kaydetme ve kaydedilmis odemeler.
@@ -205,87 +206,130 @@ export default function SettlementsScreen() {
   }
 
   return (
-    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
+    <SafeAreaView style={s.screen} edges={["left", "right"]}>
+      {/* Harcama ekleme ve harcama detayiyla AYNI cubuk. Ucu de "bir kayit
+          yaz/duzenle" ekrani; farkli baslik duzenleri uc ayri urun gibi
+          gosterirdi. Baslik FIIL ("Odes"), ekranin adi degil - buraya
+          gelinen dugmede de ayni kelime yaziyor. */}
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={s.headerBar}>
+        <Pressable onPress={() => router.back()} hitSlop={10} disabled={busy}>
+          <Text style={s.headerCancel}>{t("ui.cancel")}</Text>
+        </Pressable>
+        <Text style={s.headerTitle}>{t("ui.settle_action")}</Text>
+        <Pressable onPress={() => void save()} hitSlop={10} disabled={busy}>
+          {busy ? (
+            <ActivityIndicator size="small" color={theme.brand} />
+          ) : (
+            <Text style={s.headerSave}>{t("ui.save")}</Text>
+          )}
+        </Pressable>
+      </View>
+
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-          <View style={s.paper}>
-            <Cap>{t("ui.record_settlement")}</Cap>
-            <Text style={s.hint}>{t("ui.settlement_hint")}</Text>
-
-            <Cap>{t("ui.settlement_direction")}</Cap>
-            <View style={s.chips}>
-              {(["outgoing", "incoming"] as const).map((value) => (
-                <Pressable
-                  key={value}
-                  onPress={() => setDirection(value)}
-                  style={[s.chip, direction === value && s.chipActive]}
-                  disabled={busy}
-                >
-                  <Text style={[s.chipText, direction === value && s.chipTextActive]}>
-                    {value === "outgoing" ? t("ui.i_paid") : t("ui.paid_to_me")}
-                  </Text>
-                </Pressable>
-              ))}
+          {/* TUTAR EN USTTE - kaydedilen sey bu. Harcama ekleme ekraniyla
+              ayni sira ve ayni olcu. */}
+          <View style={s.amountBlock}>
+            <Text style={s.fieldLabel}>{t("ui.amount").toLocaleUpperCase(locale)}</Text>
+            <View style={s.amountRow}>
+              <TextInput
+                style={s.amountInput}
+                value={amountText}
+                onChangeText={setAmountText}
+                keyboardType="decimal-pad"
+                placeholder="0,00"
+                placeholderTextColor={theme.inputLine}
+                editable={!busy}
+              />
+              <Text style={s.amountCurrency}>{currency}</Text>
             </View>
-
-            <Cap>{t("ui.settlement_counterparty")}</Cap>
-            <View style={s.chips}>
-              {counterparties.map((member) => (
-                <Pressable
-                  key={member.userId}
-                  onPress={() => setCounterpartyId(member.userId)}
-                  style={[s.chip, member.userId === counterpartyId && s.chipActive]}
-                  disabled={busy}
-                >
-                  <Text
-                    style={[
-                      s.chipText,
-                      member.userId === counterpartyId && s.chipTextActive,
-                    ]}
-                  >
-                    {member.displayName}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Cap>{t("ui.amount")}</Cap>
-            <TextInput
-              value={amountText}
-              onChangeText={setAmountText}
-              keyboardType="decimal-pad"
-              placeholder="0,00"
-              placeholderTextColor={theme.muted}
-              editable={!busy}
-              style={s.input}
-            />
-
-            <Cap>{t("ui.settlement_note")}</Cap>
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder={t("ui.settlement_note_placeholder")}
-              placeholderTextColor={theme.muted}
-              maxLength={500}
-              editable={!busy}
-              style={s.input}
-            />
-
-            {error ? <Text style={s.error}>{error}</Text> : null}
-
-            <Pressable style={s.save} onPress={() => void save()} disabled={busy}>
-              {busy ? (
-                <ActivityIndicator color={theme.onBrand} size="small" />
-              ) : (
-                <Cap tone="onBrand">{t("ui.save")}</Cap>
-              )}
-            </Pressable>
+            {/* Uygulama para TASIMIYOR - olmus bir odemeyi kaydediyor. Bunu
+                yazmak, "gonder" bekleyen kullaniciyi bastan uyariyor. */}
+            <Text style={s.amountNote}>{t("ui.settlement_hint")}</Text>
           </View>
 
-          <View style={s.paper}>
+          <View style={s.fields}>
+            {/* IKI SECENEK, BIRBIRINI DISLIYOR -> segment. Bolusum turuyle
+                ayni kalip; cip yigini "birden fazla secilebilir" izlenimi
+                veriyordu. */}
+            <View style={s.field}>
+              <Text style={s.fieldLabel}>
+                {t("ui.settlement_direction").toLocaleUpperCase(locale)}
+              </Text>
+              <View style={s.segments}>
+                {(["outgoing", "incoming"] as const).map((value) => {
+                  const active = direction === value;
+                  return (
+                    <Pressable
+                      key={value}
+                      onPress={() => setDirection(value)}
+                      style={[s.segment, active && s.segmentOn]}
+                      disabled={busy}
+                    >
+                      <Text style={[s.segmentText, active && s.segmentTextOn]}>
+                        {value === "outgoing" ? t("ui.i_paid") : t("ui.paid_to_me")}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/*
+              ODESECEK KIMSE YOKSA SECIM GOSTERILMIYOR.
+
+              Tek uyeli bir grupta counterparties BOS. Secim yine de
+              cizilseydi calisir bir denetim gibi gorunur, dokununca bos bir
+              liste acilirdi - eski cip satirinin en azindan bos oldugu
+              belliydi, secim bunu GIZLIYOR. Bu ekranda tek dogru cumle
+              "burada yapacak bir sey yok" demek.
+            */}
+            {counterparties.length === 0 ? (
+              <View style={s.field}>
+                <Text style={s.fieldLabel}>
+                  {t("ui.settlement_counterparty").toLocaleUpperCase(locale)}
+                </Text>
+                <Text style={s.emptyField}>{t("ui.no_one_to_settle_with")}</Text>
+              </View>
+            ) : (
+              <SelectField
+                label={t("ui.settlement_counterparty")}
+                value={
+                  counterparties.find((member) => member.userId === counterpartyId)
+                    ?.displayName ?? "—"
+                }
+                options={counterparties.map((member) => ({
+                  key: member.userId,
+                  label: member.displayName,
+                }))}
+                onChange={setCounterpartyId}
+                disabled={busy}
+              />
+            )}
+
+            <Field label={t("ui.settlement_note")}>
+              <TextInput
+                style={s.fieldInput}
+                value={note}
+                onChangeText={setNote}
+                placeholder={t("ui.settlement_note_placeholder")}
+                placeholderTextColor={theme.muted}
+                maxLength={500}
+                editable={!busy}
+              />
+            </Field>
+          </View>
+
+          {error ? <Text style={s.error}>{error}</Text> : null}
+
+          {/* GECMIS. Bakir cizgili bolum basligi + noktali ayracli satirlar -
+              grup ekranindaki defterle ayni dil. */}
+          <View style={s.historyBlock}>
+            <SectionRule label={t("ui.settlements")} />
             {history.state.kind === "loading" ? (
               <ActivityIndicator style={s.loading} />
             ) : settlements.length === 0 ? (
@@ -301,7 +345,7 @@ export default function SettlementsScreen() {
                   >
                     <View style={s.rowText}>
                       <Text style={s.rowNames} numberOfLines={1}>
-                        {`${nameByUserId[settlement.fromUserId] ?? t("ui.unknown_user")} → ${
+                        {`${nameByUserId[settlement.fromUserId] ?? t("ui.unknown_user")} \u2192 ${
                           nameByUserId[settlement.toUserId] ?? t("ui.unknown_user")
                         }`}
                       </Text>
@@ -310,6 +354,7 @@ export default function SettlementsScreen() {
                         {settlement.note ? ` · ${settlement.note}` : ""}
                       </Text>
                     </View>
+                    <View style={s.leader} />
                     <Text
                       style={[s.rowAmount, settlement.cancelledAt !== null && s.cancelled]}
                     >
@@ -327,10 +372,6 @@ export default function SettlementsScreen() {
               </>
             )}
           </View>
-
-          <Pressable onPress={() => router.back()} style={s.backRow}>
-            <Text style={s.back}>{t("ui.cancel")}</Text>
-          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -341,66 +382,114 @@ function createStyles(theme: Theme) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: theme.background },
     flex: { flex: 1 },
-    scroll: { padding: 16, paddingBottom: 32, gap: 16 },
+    scroll: { paddingBottom: 40 },
     centered: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.background,
     },
-    paper: {
-      backgroundColor: theme.paper,
-      borderRadius: 3,
-      borderWidth: 1,
-      borderColor: theme.border,
-      padding: 20,
-      gap: 10,
-    },
-    hint: { fontFamily: fonts.body, fontSize: 12, color: theme.muted, lineHeight: 18 },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    chip: {
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 4,
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-    },
-    chipActive: { borderColor: theme.brand, backgroundColor: theme.brand },
-    chipText: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
-    chipTextActive: { color: theme.onBrand },
-    input: {
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
-      paddingVertical: 8,
-      fontFamily: fonts.body,
-      fontSize: 16,
-      color: theme.foreground,
-    },
-    save: {
-      marginTop: 4,
-      backgroundColor: theme.brand,
-      borderRadius: 4,
-      paddingVertical: 11,
-      alignItems: "center",
-    },
-    loading: { paddingVertical: 12 },
-    row: {
+
+    /** Harcama ekleme ve harcama detayindaki cubugun aynisi. */
+    headerBar: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingTop: 60,
+      paddingBottom: 12,
       gap: 12,
+    },
+    headerCancel: { fontFamily: fonts.body, fontSize: 15, color: theme.muted },
+    headerTitle: { fontFamily: fonts.heading, fontSize: 20, color: theme.foreground },
+    headerSave: { fontFamily: fonts.semibold, fontSize: 15, color: theme.brand },
+
+    amountBlock: {
+      paddingHorizontal: 20,
+      paddingTop: 22,
+      paddingBottom: 18,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.copper,
+      gap: 6,
+    },
+    fieldLabel: {
+      fontFamily: fonts.medium,
+      fontSize: 10,
+      letterSpacing: 2,
+      color: theme.copperText,
+    },
+    amountRow: { flexDirection: "row", alignItems: "baseline", gap: 6 },
+    amountInput: {
+      flexShrink: 1,
+      minWidth: 40,
+      fontFamily: fonts.semibold,
+      fontSize: 44,
+      letterSpacing: -1.8,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+      padding: 0,
+    },
+    amountCurrency: { fontFamily: fonts.body, fontSize: 18, color: theme.copperText },
+    amountNote: { fontFamily: fonts.body, fontSize: 11.5, color: theme.muted, lineHeight: 17 },
+
+    fields: { paddingHorizontal: 20, paddingTop: 18, gap: 16 },
+    field: { gap: 7 },
+    fieldInput: { fontFamily: fonts.body, fontSize: 16, color: theme.foreground, padding: 0 },
+    emptyField: { fontFamily: fonts.body, fontSize: 14, color: theme.muted, lineHeight: 20 },
+
+    segments: { flexDirection: "row", gap: 8 },
+    segment: {
+      flex: 1,
+      alignItems: "center",
       paddingVertical: 10,
+      borderRadius: 3,
+      borderWidth: 1,
+      borderColor: theme.inputLine,
+    },
+    segmentOn: { backgroundColor: theme.brand, borderColor: theme.brand },
+    segmentText: { fontFamily: fonts.body, fontSize: 13.5, color: theme.foreground },
+    segmentTextOn: { fontFamily: fonts.semibold, color: theme.onBrand },
+
+    historyBlock: { paddingHorizontal: 20, paddingTop: 28 },
+    hint: { fontFamily: fonts.body, fontSize: 12.5, color: theme.muted, lineHeight: 18, paddingTop: 14 },
+    loading: { paddingVertical: 16 },
+    row: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      gap: 4,
+      paddingVertical: 11,
       borderBottomWidth: 1,
       borderBottomColor: theme.lineSoft,
     },
     rowText: { flexShrink: 1 },
-    rowNames: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
-    rowMeta: { marginTop: 2, fontFamily: fonts.body, fontSize: 11, color: theme.muted },
-    rowAmount: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
+    rowNames: { fontFamily: fonts.body, fontSize: 14.5, color: theme.foreground },
+    rowMeta: { marginTop: 2, fontFamily: fonts.body, fontSize: 11.5, color: theme.muted },
+    // Noktali ayrac - grup ekrani, form ve harcama detayiyla ayni.
+    leader: {
+      flex: 1,
+      borderBottomWidth: 1,
+      borderStyle: "dotted",
+      borderColor: theme.inputLine,
+      marginHorizontal: 10,
+      transform: [{ translateY: -4 }],
+    },
+    rowAmount: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+    },
+    // Iptal edilmis kayit: ustu cizili ve soluk. RENK YOK - yesil/kiremit bu
+    // uygulamada yalnizca BAKIYE anlami tasiyor (ADR-015) ve iptal bir
+    // bakiye durumu degil. Silinmis harcama satiriyla ayni muamele.
     cancelled: { textDecorationLine: "line-through", color: theme.muted },
-    loadMore: { color: theme.brand, fontFamily: fonts.body, fontSize: 13, paddingVertical: 8 },
-    error: { fontFamily: fonts.body, fontSize: 13, color: theme.debt },
-    backRow: { paddingVertical: 4 },
-    back: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },
+    loadMore: { color: theme.brand, fontFamily: fonts.body, fontSize: 13, paddingVertical: 10 },
+    error: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: theme.debt,
+      paddingHorizontal: 20,
+      paddingTop: 14,
+    },
   });
 }
