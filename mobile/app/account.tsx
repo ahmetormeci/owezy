@@ -185,7 +185,7 @@ export default function AccountScreen() {
                   disabled={localeBusy !== null}
                 >
                   {localeBusy === value ? (
-                    <ActivityIndicator size="small" color={active ? "#fff" : theme.brand} />
+                    <ActivityIndicator size="small" color={active ? theme.onBrand : theme.brand} />
                   ) : (
                     <Text style={[s.chipText, active && s.chipTextActive]}>
                       {LOCALE_LABELS[value]}
@@ -263,7 +263,7 @@ function createStyles(theme: Theme) {
     },
     chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
     chipText: { color: theme.foreground, fontFamily: fonts.body, fontSize: 14 },
-    chipTextActive: { color: "#fff", fontFamily: fonts.semibold },
+    chipTextActive: { color: theme.onBrand, fontFamily: fonts.semibold },
     secondary: { paddingVertical: 12 },
     secondaryText: { color: theme.muted, fontFamily: fonts.body, fontSize: 15, textAlign: "center" },
     danger: {
@@ -282,6 +282,7 @@ function createStyles(theme: Theme) {
       borderRadius: 8,
       alignItems: "center",
     },
+    // Zemin kirmizi ve iki temada da koyu - burada beyaz DOGRU, onBrand degil.
     destructiveText: { color: "#fff", fontSize: 15, fontFamily: fonts.semibold },
     destructiveOutline: {
       borderWidth: 1,

@@ -77,7 +77,7 @@ export function GroupCreator({ onCreated }: { onCreated: () => void }) {
         {name.trim() ? (
           <Pressable style={s.button} onPress={() => void submit()} disabled={busy}>
             {busy ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={theme.onBrand} size="small" />
             ) : (
               <Cap tone="onBrand">{t("ui.create")}</Cap>
             )}

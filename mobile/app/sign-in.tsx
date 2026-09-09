@@ -202,7 +202,7 @@ export default function SignInScreen() {
               disabled={busy}
             >
               {busy ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.onBrand} />
               ) : (
                 <Text style={s.buttonText}>{t("ui.sign_in")}</Text>
               )}
@@ -242,7 +242,7 @@ export default function SignInScreen() {
             />
             <Pressable style={s.button} onPress={() => void verifyCode()} disabled={busy}>
               {busy ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.onBrand} />
               ) : (
                 <Text style={s.buttonText}>{t("ui.sign_in")}</Text>
               )}
@@ -290,7 +290,7 @@ export default function SignInScreen() {
               disabled={busy}
             >
               {busy ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.onBrand} />
               ) : (
                 <Text style={s.buttonText}>
                   {step === "password" ? t("ui.sign_in") : t("ui.send_code")}
@@ -386,7 +386,7 @@ function createStyles(theme: Theme) {
       borderRadius: 8,
       alignItems: "center",
     },
-    buttonText: { color: "#fff", fontFamily: fonts.body, fontSize: 16 },
+    buttonText: { color: theme.onBrand, fontFamily: fonts.body, fontSize: 16 },
     link: { color: theme.muted, paddingVertical: 12, textAlign: "center" },
     // Hata rengi theme.debt: bu ekranlarda yerlesik olan bu (on ekranda
     // boyle). ADR-015 kirmizinin ANLAM tasidigi yerleri koruyor; buradaki

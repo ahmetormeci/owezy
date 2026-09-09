@@ -170,7 +170,7 @@ function createStyles(theme: Theme) {
     firstRunForm: { alignSelf: "stretch", marginTop: 12, gap: 18 },
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
-    buttonText: { color: "#fff", fontFamily: fonts.body, fontSize: 15 },
+    buttonText: { color: theme.onBrand, fontFamily: fonts.body, fontSize: 15 },
     footer: { flexDirection: "row", justifyContent: "center", gap: 20 },
     signOut: { paddingVertical: 16 },
     signOutText: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },

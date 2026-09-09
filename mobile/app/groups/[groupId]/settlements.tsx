@@ -278,7 +278,7 @@ export default function SettlementsScreen() {
 
             <Pressable style={s.save} onPress={() => void save()} disabled={busy}>
               {busy ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={theme.onBrand} size="small" />
               ) : (
                 <Cap tone="onBrand">{t("ui.save")}</Cap>
               )}
@@ -367,7 +367,7 @@ function createStyles(theme: Theme) {
     },
     chipActive: { borderColor: theme.brand, backgroundColor: theme.brand },
     chipText: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
-    chipTextActive: { color: "#fff" },
+    chipTextActive: { color: theme.onBrand },
     input: {
       borderBottomWidth: 1,
       borderBottomColor: theme.border,

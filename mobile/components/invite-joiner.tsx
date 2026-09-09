@@ -94,7 +94,7 @@ export function InviteJoiner({ onJoined }: { onJoined: () => void }) {
         {value.trim() ? (
           <Pressable style={s.button} onPress={() => void submit()} disabled={busy}>
             {busy ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={theme.onBrand} size="small" />
             ) : (
               <Cap tone="onBrand">{t("ui.join_group")}</Cap>
             )}

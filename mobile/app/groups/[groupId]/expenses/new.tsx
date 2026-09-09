@@ -578,7 +578,7 @@ export default function NewExpenseScreen() {
               disabled={busy}
             >
               {busy ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.onBrand} />
               ) : (
                 <Text style={s.primaryText}>{t("ui.save_expense")}</Text>
               )}
@@ -616,7 +616,7 @@ function createStyles(theme: Theme) {
     },
     chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
     chipText: { color: theme.foreground, fontFamily: fonts.body, fontSize: 14 },
-    chipTextActive: { color: "#fff", fontFamily: fonts.semibold },
+    chipTextActive: { color: theme.onBrand, fontFamily: fonts.semibold },
     rows: { gap: 10, marginTop: 4 },
     checkRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     box: {
@@ -629,7 +629,7 @@ function createStyles(theme: Theme) {
       justifyContent: "center",
     },
     boxOn: { backgroundColor: theme.brand, borderColor: theme.brand },
-    tick: { color: "#fff", fontSize: 14, fontFamily: fonts.semibold },
+    tick: { color: theme.onBrand, fontSize: 14, fontFamily: fonts.semibold },
     rowName: { flex: 1, color: theme.foreground, fontFamily: fonts.body, fontSize: 15 },
     shareRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     shareInput: {
@@ -650,7 +650,7 @@ function createStyles(theme: Theme) {
       alignItems: "center",
       marginTop: 4,
     },
-    primaryText: { color: "#fff", fontSize: 16, fontFamily: fonts.semibold },
+    primaryText: { color: theme.onBrand, fontSize: 16, fontFamily: fonts.semibold },
     receiptRow: {
       flexDirection: "row",
       alignItems: "center",

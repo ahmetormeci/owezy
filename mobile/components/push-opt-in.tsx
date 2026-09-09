@@ -79,7 +79,7 @@ export function PushOptIn() {
       <Text style={s.hint}>{t("ui.push_hint")}</Text>
       <Pressable style={s.button} onPress={() => void ask()} disabled={busy}>
         {busy ? (
-          <ActivityIndicator color="#fff" size="small" />
+          <ActivityIndicator color={theme.onBrand} size="small" />
         ) : (
           <Cap tone="onBrand">{t("ui.push_enable")}</Cap>
         )}

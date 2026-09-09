@@ -75,6 +75,6 @@ function styles(theme: Theme) {
       alignItems: "center",
       justifyContent: "center",
     },
-    badgeText: { color: "#fff", fontSize: 10, fontFamily: fonts.semibold },
+    badgeText: { color: theme.onBrand, fontSize: 10, fontFamily: fonts.semibold },
   });
 }

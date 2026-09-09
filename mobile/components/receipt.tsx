@@ -40,7 +40,8 @@ export function Cap({
   color,
 }: {
   children: string;
-  /** "onBrand": kobalt bir zeminin uzerinde - gri metin orada okunmuyor. */
+  /** "onBrand": petrol dolgulu bir dugmenin uzerinde - gri metin orada
+   *  okunmuyor. Rengi tema veriyor, sabit beyaz DEGIL. */
   tone?: "muted" | "onBrand";
   /**
    * Etiketin ANLAM TASIDIGI yerler icin. Bakiye muhrunde renk bilgi
@@ -256,9 +257,10 @@ function styles(theme: Theme) {
       letterSpacing: 1.6,
       color: theme.copperText,
     },
-    // Koyu petrol kartin UZERINDE. Beyaz degil bakir: kart iki temada da
-    // koyu, o yuzden bu renk temaya gore degismiyor.
-    capOnBrand: { color: theme.copperOnCard },
+    // BIRINCIL DUGMENIN uzerinde (petrol dolgu) - koyu bakiye kartinin
+    // degil. Sabit theme.onBrand DEGIL: koyu temada petrol aciliyor ve beyaz metin
+    // orada 3.89:1 kaliyor, AA'yi gecmiyor (ADR-048'de olculdu).
+    capOnBrand: { color: theme.onBrand },
 
     doubleRule: { gap: 2 },
     rule: { height: 1, backgroundColor: theme.border },

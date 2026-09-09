@@ -501,7 +501,7 @@ export default function ExpenseScreen() {
               <View style={s.actions}>
                 <Pressable style={s.save} onPress={() => void save()} disabled={busy || gone}>
                   {busy ? (
-                    <ActivityIndicator color="#fff" size="small" />
+                    <ActivityIndicator color={theme.onBrand} size="small" />
                   ) : (
                     <Cap tone="onBrand">{t("ui.save")}</Cap>
                   )}
@@ -591,7 +591,7 @@ function createStyles(theme: Theme) {
     },
     payerActive: { borderColor: theme.brand, backgroundColor: theme.brand },
     payerText: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
-    payerTextActive: { color: "#fff" },
+    payerTextActive: { color: theme.onBrand },
     facts: { gap: 6, borderTopWidth: 1, borderStyle: "dashed", borderColor: theme.border, paddingTop: 14 },
     factRow: { flexDirection: "row", justifyContent: "space-between", gap: 16 },
     factLabel: { fontFamily: fonts.body, fontSize: 13, color: theme.muted },

@@ -268,7 +268,7 @@ export default function MembersScreen() {
 
           <Pressable style={s.invite} onPress={() => void createInvite()} disabled={busy}>
             {busy ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={theme.onBrand} size="small" />
             ) : (
               <Cap tone="onBrand">{t("ui.create_invite")}</Cap>
             )}
@@ -437,7 +437,7 @@ function createStyles(theme: Theme) {
     },
     chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
     chipText: { fontFamily: fonts.body, fontSize: 13, color: theme.foreground },
-    chipTextActive: { color: "#fff" },
+    chipTextActive: { color: theme.onBrand },
     leave: { color: theme.debt, fontFamily: fonts.body, fontSize: 15 },
     invite: {
       backgroundColor: theme.brand,

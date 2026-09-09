@@ -174,7 +174,7 @@ export default function EditGroupScreen() {
 
           <Pressable style={s.button} onPress={() => void submit()} disabled={busy}>
             {busy ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={theme.onBrand} />
             ) : (
               <Text style={s.buttonText}>{t("ui.save")}</Text>
             )}
@@ -217,6 +217,6 @@ function createStyles(theme: Theme) {
       alignItems: "center",
       marginTop: 4,
     },
-    buttonText: { color: "#fff", fontSize: 15, fontFamily: fonts.semibold },
+    buttonText: { color: theme.onBrand, fontSize: 15, fontFamily: fonts.semibold },
   });
 }

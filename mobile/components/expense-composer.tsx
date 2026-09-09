@@ -142,7 +142,7 @@ export function ExpenseComposer({
           </Text>
           <Pressable style={s.button} onPress={() => void submit()} disabled={busy}>
             {busy ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={theme.onBrand} size="small" />
             ) : (
               <Cap tone="onBrand">{t("ui.composer_submit")}</Cap>
             )}

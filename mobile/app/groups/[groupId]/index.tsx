@@ -1459,7 +1459,7 @@ function createStyles(theme: Theme) {
     },
     chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
     chipText: { color: theme.foreground, fontFamily: fonts.body, fontSize: 14 },
-    chipTextActive: { color: "#fff", fontFamily: fonts.semibold },
+    chipTextActive: { color: theme.onBrand, fontFamily: fonts.semibold },
     clearButton: { paddingHorizontal: 6, paddingVertical: 7 },
     foundBlock: { gap: 12 },
     matchLine: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
@@ -1468,7 +1468,7 @@ function createStyles(theme: Theme) {
     totals: { gap: 4 },
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
-    buttonText: { color: "#fff", fontFamily: fonts.body, fontSize: 15 },
+    buttonText: { color: theme.onBrand, fontFamily: fonts.body, fontSize: 15 },
     // flexWrap SART: alt bilgide dort giris var ve tek satira sigmiyor.
     // Sarmadan once sonuncusu ("cikis yap") ekranin disinda kaliyordu.
     footer: { flexDirection: "row", flexWrap: "wrap", rowGap: 12, columnGap: 24, paddingTop: 24 },
