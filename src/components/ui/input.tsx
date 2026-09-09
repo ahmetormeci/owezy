@@ -37,4 +37,18 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   )
 }
 
+/**
+ * NATIVE <select> ICIN, Input ile AYNI bicim.
+ *
+ * NEDEN BURADA: bu satir DORT dosyaya kopyalanmisti (harcama formu, uye
+ * eylemleri, odesme diyalogu, davet yoneticisi) ve Input alt cizgiye
+ * gecince dordu de kutulu kaldi - ayni formda iki farkli alan bicimi.
+ * Kopyalanan bir satir, zamanla ayrisan bir satirdir; artik tek yerde.
+ *
+ * Native <select> shadcn'in Select bilesenine tercih ediliyor: daha az kod
+ * ve mobilde isletim sisteminin kendi secicisi aciliyor.
+ */
+export const selectClassName =
+  "h-9 w-full border-b border-input-line bg-transparent px-0 text-sm outline-none focus-visible:border-b-2 focus-visible:border-brand focus-visible:pb-[calc(0.375rem-1px)]";
+
 export { Input }

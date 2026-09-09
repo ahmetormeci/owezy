@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, selectClassName } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-client";
 import { formatDate } from "@/lib/dates";
@@ -19,8 +19,6 @@ export type InviteListItem = {
   useCount: number;
 };
 
-const selectClassName =
-  "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 export function InviteManager({
   groupId,
@@ -123,8 +121,10 @@ export function InviteManager({
         {isCreating ? t("ui.creating") : t("ui.create_invite")}
       </Button>
 
+      {/* Kutu kalkti: uretilen baglanti ayri bir NESNE degil, sayfanin bir
+          bolumu. Sayfanin geri kalani da cizgilerle ayriliyor. */}
       {createdLink ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-card px-4 py-3.5">
+        <div className="flex flex-col gap-3 border-t border-copper pt-3.5">
           <p className="cap">{t("ui.invite_ready")}</p>
           <p className="text-muted-foreground">{t("ui.invite_once_warning")}</p>
           <div className="flex gap-2">

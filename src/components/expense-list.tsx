@@ -486,7 +486,7 @@ export function ExpenseList({
           type="checkbox"
           checked={mine}
           onChange={(event) => setMine(event.target.checked)}
-          className="size-3.5"
+          className="size-3.5 accent-primary"
         />
         {t("ui.only_mine")}
       </label>
@@ -498,7 +498,7 @@ export function ExpenseList({
           type="checkbox"
           checked={showDeleted}
           onChange={(event) => setShowDeleted(event.target.checked)}
-          className="size-3.5"
+          className="size-3.5 accent-primary"
         />
         {t("ui.show_deleted")}
       </label>

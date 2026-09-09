@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Input, selectClassName } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-client";
 import { useLocale, useTranslate } from "@/lib/i18n";
@@ -30,8 +30,6 @@ type SuggestedTransfer = {
   amount: number;
 };
 
-const selectClassName =
-  "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 export function RecordSettlementDialog({
   groupId,

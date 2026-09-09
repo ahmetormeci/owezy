@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { ExpenseCategory, SplitType } from "@prisma/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, selectClassName } from "@/components/ui/input";
+import { SectionHead } from "@/components/section-head";
 import { Label } from "@/components/ui/label";
 import { ApiClientError, apiRequest } from "@/lib/api-client";
 import {
@@ -72,11 +73,6 @@ type ConflictState =
   | { kind: "deleted" }
   | { kind: "changed"; changes: ExpenseChange[] };
 
-// Native <select>, shadcn'in Select bilesenine gore daha az kod ve mobilde
-// isletim sisteminin kendi seciciyi acmasi sayesinde daha iyi bir deneyim
-// veriyor; gorunum Input ile ayni siniflarla eslestirildi.
-const selectClassName =
-  "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 // Duzenleme formunun yuzde alanlarini neyle dolduracagini belirler.
 //
@@ -580,7 +576,7 @@ export function ExpenseForm({
               <label className="flex flex-1 cursor-pointer items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  className="size-4"
+                  className="size-4 accent-primary"
                   checked={participant.selected}
                   onChange={() =>
                     updateParticipant(participant.userId, {
@@ -628,10 +624,11 @@ export function ExpenseForm({
       </div>
 
       {preview ? (
-        // Onizleme bir kart degil, formun icinde sessiz bir panel: girdiye
-        // gore degisen bir ARA sonuc, ayri bir nesne degil.
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-card px-4 py-3.5">
-          <p className="cap">{t("ui.split_preview")}</p>
+        // Onizleme bir kart DEGIL: girdiye gore degisen bir ARA sonuc, ayri
+        // bir nesne degil. Kutusu kalkti, bolum basligiyla ayriliyor -
+        // sayfanin geri kalanindaki her bolum gibi.
+        <div className="flex flex-col gap-2">
+          <SectionHead title={t("ui.split_preview")} />
           {"error" in preview ? (
             <p className="text-destructive">{preview.error}</p>
           ) : (
@@ -666,8 +663,8 @@ export function ExpenseForm({
         rengi goremeyen biri de neyin ne oldugunu okuyabiliyor.
       */}
       {conflict ? (
-        <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-card px-4 py-3.5">
-          <p className="cap">{t("ui.conflict_heading")}</p>
+        <div className="flex flex-col gap-2">
+          <SectionHead title={t("ui.conflict_heading")} />
           {conflict.kind === "deleted" ? (
             <p className="text-muted-foreground">{t("ui.conflict_deleted")}</p>
           ) : conflict.changes.length === 0 ? (

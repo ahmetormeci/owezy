@@ -1,5 +1,6 @@
 "use client";
 
+import { selectClassName } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -19,8 +20,6 @@ import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-client";
 import { useTranslate } from "@/lib/i18n";
 
-const selectClassName =
-  "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 export function RemoveMemberButton({
   groupId,

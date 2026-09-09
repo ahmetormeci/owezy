@@ -54,7 +54,7 @@ export default async function GroupMembersPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="text-[1.0625rem] font-semibold">{t("ui.members_and_invites")}</h1>
+        <h1 className="font-heading text-2xl">{t("ui.members_and_invites")}</h1>
       </div>
 
       <section className="mt-6">
