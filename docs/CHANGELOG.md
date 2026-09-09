@@ -20,6 +20,25 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (13) — Web formları ve dört kez kopyalanmış bir satır
+
+Kutulu `<select>` stili **dört dosyada** ayrı ayrı duruyordu — harcama formu,
+üye eylemleri, ödeşme diyalogu, davet yöneticisi. `Input` alt çizgiye geçince
+dördü de kutulu kaldı, yani **aynı formda iki farklı alan biçimi** oluştu.
+Artık `ui/input.tsx`'ten tek kaynak: eşleşmesi gereken şeyin yanında duruyor.
+
+**Alan etiketleri bakır kapitel oldu.** 14 punto yarı kalın hâlleriyle
+altlarındaki değerle aynı ağırlıktaydılar; kutu kalkınca ikisi "bir ad ve
+içeriği" değil, "iki satır" gibi okunmaya başladı.
+
+Ayrıca: harcama formundaki önizleme ve çakışma panelleri ile davet bloğu
+kutularını bıraktı, **dört sayfa başlığı serife geçti** (telefonda aynı
+başlıklar zaten serifti), ve **üç onay kutusu sistem mavisindeydi** —
+`sign-in-form`'a `accent-primary` verilmiş, diğerlerine verilmemişti.
+
+Dördü de testlerden geçerdi; ekran görüntüsü gösterdi. **E2E 57/57.**
+
 ## 2026-09-09 (12) — Web'in ürün sayfaları yeni dile girdi
 
 Çoğu **dört paylaşılan parçada**, kaldıraç oradaydı. `.label` ve `.cap`

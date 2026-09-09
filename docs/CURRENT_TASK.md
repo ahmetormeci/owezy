@@ -64,9 +64,18 @@ Current task:
     PersonAvatar'in isimden uretilen rengi kalkti. Grup sayfasinda baslik
     ve bakiye fisin disina cikti; sayfada hic kutu kalmadi. E2E 57/57.
 
-    KALAN WEB ISI: harcama formu, uyeler sayfasi, diyaloglar, gruplar
-    listesi, kimlik sayfalari (giris/kayit hala Card icinde). Hepsi
-    alt cizgiyi Input uzerinden ALDI ama kendi YERLESIMLERI elden gecmedi.
+  WEB - IKINCI TUR BITTI (2e1a608). Harcama formu, davet yoneticisi,
+    alan etiketleri (Label -> bakir kapitel), dort sayfa basligi (serif),
+    uc onay kutusu (sistem mavisi -> petrol). E2E 57/57.
+
+    SELECT STILI DORT DOSYAYA KOPYALANMISTI ve Input alt cizgiye gecince
+    dordu de kutulu kaldi. Artik ui/input.tsx'ten tek kaynak
+    (selectClassName). Kopyalanan bir satir, zamanla ayrisan bir satirdir.
+
+    KALAN WEB ISI: gruplar listesi ve kimlik sayfalari (giris/kayit hala
+    Card icinde), bir de diyaloglarin ic yerlesimi. Hepsi alt cizgiyi ve
+    bakir etiketi paylasilan parcalardan ALDI; kalan yalnizca kendi
+    kaplari.
 
   WEB'IN URUN SAYFALARINI GORMEK ICIN: giris gerekiyor ve ajan ne parola
     ne tek seferlik kod yazabilir. YOL: e2e/ altina gecici bir spec yazip
