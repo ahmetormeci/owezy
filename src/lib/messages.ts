@@ -467,6 +467,9 @@ export const MESSAGES_TR = {
   // --- Harcama ---
   "ui.expenses": "Harcamalar",
   "ui.add_expense": "Harcama ekle",
+  // TEKIL. "ui.expenses" cogul ve tek bir harcamanin baslıgı olamaz.
+  "ui.expense": "Harcama",
+  "ui.details": "Ayrıntılar",
   "ui.edit_expense": "Harcamayı düzenle",
   "ui.save_expense": "Harcamayı kaydet",
   // Iki adimli harcama formunun ilk adiminda: bolusme tutara bagli
@@ -1098,6 +1101,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   // --- Expenses ---
   "ui.expenses": "Expenses",
   "ui.add_expense": "Add expense",
+  "ui.expense": "Expense",
+  "ui.details": "Details",
   "ui.edit_expense": "Edit expense",
   "ui.save_expense": "Save expense",
   "ui.next": "Next",

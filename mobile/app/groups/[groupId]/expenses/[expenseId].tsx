@@ -1,5 +1,5 @@
 import { fonts } from "../../../../lib/fonts";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -21,7 +21,8 @@ import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
 import { useTheme, type Theme } from "../../../../lib/theme";
-import { Cap } from "../../../../components/receipt";
+import { SectionRule } from "../../../../components/receipt";
+import { Field, SelectField } from "../../../../components/field";
 import { ReceiptPhoto } from "../../../../components/receipt-photo";
 
 /**
@@ -385,148 +386,197 @@ export default function ExpenseScreen() {
   }
 
   return (
-    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
+    // edges'te "bottom" YOK: baslik cubugu kendi ust payini tasiyor, alt
+    // bosluk da scroll'un paddingBottom'unda.
+    <SafeAreaView style={s.screen} edges={["left", "right"]}>
+      {/*
+        HARCAMA EKLEME EKRANIYLA AYNI CUBUK. Ikisi ayni ailenin iki hali -
+        biri kaydi yaratiyor, digeri duzenliyor - ve kullanici ikisine de
+        ayni yerden (fis satiri / eylem cubugu) ulasiyor. Farkli baslik
+        duzenleri iki ayri ekran gibi gosterirdi.
+
+        KAYDET YALNIZCA DUZENLEYEBILENDE. Baskasinin kaydinda cubuk yalnizca
+        "Vazgec" ve basligi tasiyor; olmayan bir yetkiyi dugme olarak sunup
+        ardindan hata gostermek olurdu (ADR-009).
+      */}
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={s.headerBar}>
+        <Pressable onPress={() => router.back()} hitSlop={10} disabled={busy}>
+          <Text style={s.headerCancel}>{t("ui.cancel")}</Text>
+        </Pressable>
+        <Text style={s.headerTitle}>
+          {canEdit ? t("ui.edit_expense") : t("ui.expense")}
+        </Text>
+        {canEdit ? (
+          <Pressable
+            testID="save"
+            onPress={() => void save()}
+            hitSlop={10}
+            disabled={busy || gone}
+          >
+            {busy ? (
+              <ActivityIndicator size="small" color={theme.brand} />
+            ) : (
+              <Text style={[s.headerSave, gone && s.headerSaveOff]}>{t("ui.save")}</Text>
+            )}
+          </Pressable>
+        ) : (
+          // Bos yer tutucu: baslik ortada kalsin. Cubuk space-between.
+          <View style={s.headerSpacer} />
+        )}
+      </View>
+
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-          <View style={s.paper}>
-            {canEdit ? (
-              <>
-                <Cap>{t("ui.description")}</Cap>
+          {/* TUTAR EN USTTE - harcama ekleme ekranindaki sirayla ayni. */}
+          <View style={s.amountBlock}>
+            <Text style={s.fieldLabel}>{t("ui.amount").toLocaleUpperCase(locale)}</Text>
+            <View style={s.amountRow}>
+              {canEdit ? (
                 <TextInput
-                  value={description}
-                  onChangeText={setDescription}
-                  maxLength={200}
-                  editable={!busy}
-                  style={s.input}
-                />
-
-                <Cap>{t("ui.amount")}</Cap>
-                {/* EXACT'te salt okunur: paylar mutlak ve toplamlari tutara
-                    esit olmak zorunda, tek basina tutar degistirilemez.
-                    Gorunur kalmasi onemli - alani gizlemek "burada tutar diye
-                    bir sey yok" izlenimi verirdi. */}
-                <TextInput
+                  testID="amount"
+                  style={[s.amountInput, !canEditAmount && s.amountLocked]}
                   value={amountText}
                   onChangeText={setAmountText}
                   keyboardType="decimal-pad"
                   editable={!busy && canEditAmount}
-                  style={[s.input, !canEditAmount && s.inputLocked]}
                 />
-
-                <Cap>{t("ui.who_paid")}</Cap>
-                <View style={s.payers}>
-                  {memberList.map((member) => (
-                    <Pressable
-                      key={member.userId}
-                      onPress={() => setPaidById(member.userId)}
-                      style={[s.payer, member.userId === paidById && s.payerActive]}
-                      disabled={busy}
-                    >
-                      <Text
-                        style={[
-                          s.payerText,
-                          member.userId === paidById && s.payerTextActive,
-                        ]}
-                      >
-                        {member.displayName}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </>
-            ) : (
-              <>
-                <Text style={s.title}>{item.description}</Text>
-                <Text style={s.bigAmount}>
+              ) : (
+                <Text style={s.amountInput}>
                   {formatMoney(item.amount, item.currency, locale)}
                 </Text>
-              </>
+              )}
+              <Text style={s.amountCurrency}>{item.currency}</Text>
+            </View>
+            {/* EXACT'te tutar salt okunur: paylar mutlak ve toplamlari tutara
+                esit olmak zorunda. Alani GIZLEMIYORUZ - gizlemek "burada
+                tutar diye bir sey yok" izlenimi verirdi; kilidin sebebi
+                asagida yaziyor. */}
+          </View>
+
+          <View style={s.fields}>
+            {canEdit ? (
+              <Field label={t("ui.description")}>
+                <TextInput
+                  testID="description"
+                  style={s.fieldInput}
+                  value={description}
+                  onChangeText={setDescription}
+                  maxLength={200}
+                  editable={!busy}
+                />
+              </Field>
+            ) : (
+              <Field label={t("ui.description")}>
+                <Text style={s.fieldInput}>{item.description}</Text>
+              </Field>
             )}
 
-            <View style={s.facts}>
-              <Fact styles={s} label={t("ui.date")} value={formatDate(new Date(item.expenseDate), locale)} />
-              <Fact styles={s} label={t("ui.category")} value={t(EXPENSE_CATEGORY_CODES[item.category])} />
+            {canEdit ? (
+              <SelectField
+                label={t("ui.who_paid")}
+                value={nameByUserId[paidById ?? ""] ?? t("ui.unknown_user")}
+                options={memberList.map((member) => ({
+                  key: member.userId,
+                  label: member.displayName,
+                }))}
+                onChange={setPaidById}
+                disabled={busy}
+              />
+            ) : null}
+          </View>
+
+          {/* AYRINTILAR. Bakir bolum cizgisi + noktali ayracli satirlar -
+              fisin okuma yardimi, grup ekranindakiyle ayni dil. Duzenlenebilir
+              alanlar yukarida; burasi DEGISMEYENLER. */}
+          <View style={s.factsBlock}>
+            <SectionRule label={t("ui.details")} />
+            <Fact
+              styles={s}
+              label={t("ui.date")}
+              value={formatDate(new Date(item.expenseDate), locale)}
+            />
+            <Fact
+              styles={s}
+              label={t("ui.category")}
+              value={t(EXPENSE_CATEGORY_CODES[item.category])}
+            />
+            {!canEdit ? (
               <Fact
                 styles={s}
                 label={t("ui.who_paid")}
                 value={nameByUserId[item.paidById] ?? t("ui.unknown_user")}
               />
-              {myShare ? (
-                <Fact
-                  styles={s}
-                  label={t("ui.summary_your_share")}
-                  value={formatMoney(myShare.shareAmount, item.currency, locale)}
-                />
-              ) : null}
-            </View>
-
-            {/* Neden duzenlenemedigini SOYLUYORUZ. Sessizce salt okunur bir
-                ekran, kullaniciyi "neden dokunamiyorum" sorusuyla birakirdi. */}
-            {/* Yalnizca EXACT'te ve yalnizca TUTAR icin. Yuzdeli bolusumde
-                tutar da degistirilebiliyor - sunucu paylari yeniden
-                hesapliyor. */}
-            {isMine && isExact ? (
-              <Text style={s.note}>{t("ui.edit_amount_on_web")}</Text>
             ) : null}
-            {!isMine ? <Text style={s.note}>{t("access.expense_creator_only")}</Text> : null}
-
-            {/* Cakisma uyarisi (ADR-032). Kesikli ayirici fisin geri kalaniyla
-                ayni dile ait; anlami renk degil metin tasiyor (ADR-021). */}
-            {conflict ? (
-              <View style={s.conflict}>
-                <Cap>{t("ui.conflict_heading")}</Cap>
-                {conflict.kind === "deleted" ? (
-                  <Text style={s.note}>{t("ui.conflict_deleted")}</Text>
-                ) : conflict.changes.length === 0 ? (
-                  <Text style={s.note}>{t("ui.conflict_unknown")}</Text>
-                ) : (
-                  <>
-                    {conflict.changes.map((change) => (
-                      <Text key={change.field} style={s.note}>
-                        {describeChange(change)}
-                      </Text>
-                    ))}
-                    <Text style={s.note}>{t("ui.conflict_overwrite_hint")}</Text>
-                  </>
-                )}
-              </View>
-            ) : null}
-
-            {error ? <Text style={s.error}>{error}</Text> : null}
-
-            {canEdit ? (
-              <View style={s.actions}>
-                <Pressable style={s.save} onPress={() => void save()} disabled={busy || gone}>
-                  {busy ? (
-                    <ActivityIndicator color={theme.onBrand} size="small" />
-                  ) : (
-                    <Cap tone="onBrand">{t("ui.save")}</Cap>
-                  )}
-                </Pressable>
-                <Pressable onPress={confirmDelete} disabled={busy || gone}>
-                  <Text style={s.delete}>{t("ui.delete")}</Text>
-                </Pressable>
-              </View>
+            {myShare ? (
+              <Fact
+                styles={s}
+                label={t("ui.summary_your_share")}
+                value={formatMoney(myShare.shareAmount, item.currency, locale)}
+              />
             ) : null}
           </View>
 
-          {/* FIS FOTOGRAFI. Formun ALTINDA: harcamanin kendisi once okunur,
-              fis onun kaniti. Eklemek/kaldirmak harcamayi DEGISTIRME
-              yetkisiyle ayni (canEdit) - sunucu da oyle davraniyor. */}
-          <ReceiptPhoto
-            groupId={groupId}
-            expenseId={expenseId}
-            present={item.receipt !== null}
-            canEdit={canEdit && !gone}
-            onChanged={() => expense.reload()}
-          />
+          {/* Neden duzenlenemedigini SOYLUYORUZ. Sessizce salt okunur bir
+              ekran, kullaniciyi "neden dokunamiyorum" sorusuyla birakirdi. */}
+          {isMine && isExact ? <Text style={s.note}>{t("ui.edit_amount_on_web")}</Text> : null}
+          {!isMine ? <Text style={s.note}>{t("access.expense_creator_only")}</Text> : null}
 
-          <Pressable onPress={() => router.back()} style={s.backRow}>
-            <Text style={s.back}>{t("ui.cancel")}</Text>
-          </Pressable>
+          {/* Cakisma uyarisi (ADR-032). Bakir cizgili bolum basligi fisin
+              geri kalaniyla ayni dile ait; anlami renk degil METIN tasiyor
+              (ADR-021). */}
+          {conflict ? (
+            <View style={s.conflictBlock}>
+              <SectionRule label={t("ui.conflict_heading")} />
+              {conflict.kind === "deleted" ? (
+                <Text style={s.note}>{t("ui.conflict_deleted")}</Text>
+              ) : conflict.changes.length === 0 ? (
+                <Text style={s.note}>{t("ui.conflict_unknown")}</Text>
+              ) : (
+                <>
+                  {conflict.changes.map((change) => (
+                    <Text key={change.field} style={s.note}>
+                      {describeChange(change)}
+                    </Text>
+                  ))}
+                  <Text style={s.note}>{t("ui.conflict_overwrite_hint")}</Text>
+                </>
+              )}
+            </View>
+          ) : null}
+
+          {error ? <Text style={s.error}>{error}</Text> : null}
+
+          {/* FIS FOTOGRAFI. Ayrintilarin ALTINDA: harcamanin kendisi once
+              okunur, fis onun kaniti. Eklemek/kaldirmak harcamayi DEGISTIRME
+              yetkisiyle ayni (canEdit) - sunucu da oyle davraniyor. */}
+          <View style={s.receiptBlock}>
+            <ReceiptPhoto
+              groupId={groupId}
+              expenseId={expenseId}
+              present={item.receipt !== null}
+              canEdit={canEdit && !gone}
+              onChanged={() => expense.reload()}
+            />
+          </View>
+
+          {/* SILME EN ALTTA VE SESSIZ. Kaydet basliga cikti; silme onun
+              yanina konsaydi iki yikici olmayan/olan eylem yan yana dururdu.
+              Rengi theme.destructive - theme.debt DEGIL: ADR-015'in
+              yururlukteki yarisi silme ile "borclusun"un ayni renkte
+              olmasini yasakliyor. */}
+          {canEdit ? (
+            <Pressable
+              style={s.deleteRow}
+              onPress={confirmDelete}
+              disabled={busy || gone}
+            >
+              <Text style={s.delete}>{t("ui.delete")}</Text>
+            </Pressable>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -545,6 +595,7 @@ function Fact({
   return (
     <View style={s.factRow}>
       <Text style={s.factLabel}>{label}</Text>
+      <View style={s.leader} />
       <Text style={s.factValue}>{value}</Text>
     </View>
   );
@@ -554,7 +605,7 @@ function createStyles(theme: Theme) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: theme.background },
     flex: { flex: 1 },
-    scroll: { padding: 16, paddingBottom: 32 },
+    scroll: { paddingBottom: 40 },
     centered: {
       flex: 1,
       alignItems: "center",
@@ -562,61 +613,103 @@ function createStyles(theme: Theme) {
       gap: 12,
       backgroundColor: theme.background,
     },
-    paper: {
-      backgroundColor: theme.paper,
-      borderRadius: 3,
-      borderWidth: 1,
-      borderColor: theme.border,
-      padding: 20,
-      gap: 10,
+
+    /** Harcama ekleme ekranindaki cubugun aynisi. */
+    headerBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingTop: 60,
+      paddingBottom: 12,
+      gap: 12,
     },
-    title: { fontSize: 20, fontFamily: fonts.semibold, color: theme.foreground },
-    bigAmount: { fontFamily: fonts.body, fontSize: 28, color: theme.foreground, fontVariant: ["tabular-nums"] },
-    inputLocked: { opacity: 0.5 },
-    input: {
+    headerCancel: { fontFamily: fonts.body, fontSize: 15, color: theme.muted },
+    headerTitle: { fontFamily: fonts.heading, fontSize: 20, color: theme.foreground },
+    headerSave: { fontFamily: fonts.semibold, fontSize: 15, color: theme.brand },
+    headerSaveOff: { color: theme.muted },
+    // Kaydet yokken basligin ORTADA kalmasi icin: cubuk space-between.
+    headerSpacer: { width: 52 },
+
+    amountBlock: {
+      paddingHorizontal: 20,
+      paddingTop: 22,
+      paddingBottom: 18,
       borderBottomWidth: 1,
-      borderBottomColor: theme.border,
-      paddingVertical: 8,
-      fontFamily: fonts.body,
-      fontSize: 16,
-      color: theme.foreground,
-    },
-    payers: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    payer: {
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 4,
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-    },
-    payerActive: { borderColor: theme.brand, backgroundColor: theme.brand },
-    payerText: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
-    payerTextActive: { color: theme.onBrand },
-    facts: { gap: 6, borderTopWidth: 1, borderStyle: "dashed", borderColor: theme.border, paddingTop: 14 },
-    factRow: { flexDirection: "row", justifyContent: "space-between", gap: 16 },
-    factLabel: { fontFamily: fonts.body, fontSize: 13, color: theme.muted },
-    factValue: { fontFamily: fonts.body, fontSize: 13, color: theme.foreground },
-    note: { fontFamily: fonts.body, fontSize: 12, color: theme.muted, lineHeight: 18 },
-    // facts ile birebir ayni: kesikli ust cizgi + bosluk. Cerceve DEGIL -
-    // RN'de borderStyle "dashed" ile borderRadius birlikte iOS'ta duz cizgi
-    // olarak ciziliyor; fisin dilinde zaten yatay ayirici kullaniliyor.
-    conflict: {
+      borderBottomColor: theme.copper,
       gap: 6,
-      borderTopWidth: 1,
-      borderStyle: "dashed",
-      borderColor: theme.border,
+    },
+    fieldLabel: {
+      fontFamily: fonts.medium,
+      fontSize: 10,
+      letterSpacing: 2,
+      color: theme.copperText,
+    },
+    amountRow: { flexDirection: "row", alignItems: "baseline", gap: 6 },
+    amountInput: {
+      flexShrink: 1,
+      minWidth: 40,
+      fontFamily: fonts.semibold,
+      fontSize: 44,
+      letterSpacing: -1.8,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+      padding: 0,
+    },
+    // EXACT'te tutar kilitli. Alan GORUNUR kaliyor, yalnizca soluyor.
+    amountLocked: { color: theme.muted },
+    amountCurrency: { fontFamily: fonts.body, fontSize: 18, color: theme.copperText },
+
+    fields: { paddingHorizontal: 20, paddingTop: 18, gap: 16 },
+    fieldInput: { fontFamily: fonts.body, fontSize: 16, color: theme.foreground, padding: 0 },
+
+    factsBlock: { paddingHorizontal: 20, paddingTop: 24 },
+    factRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      paddingVertical: 11,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.lineSoft,
+    },
+    factLabel: { fontFamily: fonts.body, fontSize: 13.5, color: theme.muted },
+    // Noktali ayrac - grup ekranindaki ve formdakiyle ayni.
+    leader: {
+      flex: 1,
+      borderBottomWidth: 1,
+      borderStyle: "dotted",
+      borderColor: theme.inputLine,
+      marginHorizontal: 10,
+      transform: [{ translateY: -4 }],
+    },
+    factValue: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+    },
+
+    note: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: theme.muted,
+      lineHeight: 18,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+    },
+    conflictBlock: { paddingHorizontal: 20, paddingTop: 24 },
+    error: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: theme.debt,
+      paddingHorizontal: 20,
       paddingTop: 14,
     },
-    error: { fontFamily: fonts.body, fontSize: 13, color: theme.debt },
-    actions: { flexDirection: "row", alignItems: "center", gap: 20, paddingTop: 6 },
-    save: {
-      backgroundColor: theme.brand,
-      borderRadius: 4,
-      paddingHorizontal: 16,
-      paddingVertical: 9,
-    },
-    delete: { color: theme.debt, fontFamily: fonts.body, fontSize: 14 },
-    backRow: { paddingVertical: 16 },
-    back: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },
+    receiptBlock: { paddingHorizontal: 20, paddingTop: 24 },
+
+    deleteRow: { paddingHorizontal: 20, paddingTop: 28 },
+    // theme.destructive, theme.debt DEGIL. ADR-015'in yururlukteki yarisi:
+    // silme dugmesi ile "borclusun" ayni renkte olamaz. Bu ekranda bugune
+    // kadar debt kullaniliyordu.
+    delete: { color: theme.destructive, fontFamily: fonts.body, fontSize: 14 },
   });
 }

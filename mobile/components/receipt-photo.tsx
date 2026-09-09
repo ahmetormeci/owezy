@@ -234,20 +234,31 @@ export function ReceiptPhoto({
 
 function styles(theme: Theme) {
   return StyleSheet.create({
-    block: {
-      gap: 10,
-      borderTopWidth: 1,
-      borderStyle: "dashed",
-      borderColor: theme.border,
-      paddingTop: 14,
+    // Kesikli ust cizgi KALKTI: bolumu artik bakir bir cizgi aciyor
+    // (SectionRule), ekranin geri kalaniyla ayni dil.
+    block: { gap: 10 },
+    head: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      gap: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.copper,
+      paddingBottom: 7,
     },
-    head: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     actions: { flexDirection: "row", alignItems: "center", gap: 14 },
-    remove: { fontFamily: fonts.body, fontSize: 12, color: theme.debt },
+    // theme.destructive, theme.debt DEGIL: fisi kaldirmak yikici bir eylem,
+    // bir bakiye durumu degil (ADR-015'in yururlukteki yarisi).
+    remove: { fontFamily: fonts.body, fontSize: 12, color: theme.destructive },
     // Sabit yukseklik: fis dikey ya da yatay olabiliyor, ikisinde de satir
     // ziplamasin.
     photo: { width: "100%", height: 260, backgroundColor: theme.surface, borderRadius: 3 },
     empty: { fontFamily: fonts.body, fontSize: 13, color: theme.muted },
+    /**
+     * BOS HEDEF. Dolgulu zemin KALKTI ve kenarlik inputLine'a gecti: kagit
+     * yonunde bir "kutu" degil, kagidin uzerinde bir sey konulacak YER.
+     * Buyuklugu KORUNUYOR - kullanici kucuk ve pasif oldugunu bildirmisti.
+     */
     dropZone: {
       alignItems: "center",
       justifyContent: "center",
@@ -255,9 +266,8 @@ function styles(theme: Theme) {
       paddingVertical: 22,
       borderWidth: 1,
       borderStyle: "dashed",
-      borderColor: theme.border,
-      borderRadius: 4,
-      backgroundColor: theme.surface,
+      borderColor: theme.inputLine,
+      borderRadius: 3,
     },
     dropHint: { fontFamily: fonts.body, fontSize: 11, color: theme.muted },
     tapHint: { fontFamily: fonts.body, fontSize: 11, color: theme.muted, textAlign: "center", paddingTop: 6 },
