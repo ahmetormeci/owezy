@@ -13,6 +13,33 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (6) — Koyu tema gözden geçirildi
+
+Koyu tema tasarımda hiç çizilmemişti; değerler bir türetme kuralından
+üretilmişti. Simülatörde tek tek açıldı: grup, harcama ekleme, hesap, grup
+düzenleme, ödeşme.
+
+**İki kusur çıktı ve ikisi aynı sınıftan:** açık temada doğru olan bir çizgi,
+koyu temada ekranın en gürültülü şeyi oluyordu.
+
+Giriş alt çizgileri dört yerde `theme.foreground`'du (grup düzenleme, satır
+içi ekleyici, davet, grup oluşturucu). Kâğıt üzerinde sağlam bir çizgi, koyu
+zeminde neredeyse beyaz. Artık `inputLine` — yeni yönün tam bunun için
+eklediği token.
+
+Harcama formunun kapanış çizgisi aynı sebeple `muted`'a alındı. Burada kesin
+olmak gerekiyor: **kontrast oranı iki yönde de ~14.8:1**, yani koyu sürüm
+objektif olarak daha güçlü değil — parlak çizgi koyu zeminde yayılıyor ve
+altındaki toplamdan dikkati çekiyordu.
+
+**Sabit kalan renkler kasıtlı** ve gerekçeleri kodda yazılı: kırmızı silme
+düğmesi, tam ekran fotoğraf zemini, QR kodu (taranabilmesi için siyah-beyaz
+olmak zorunda) ve bakiye kartının içi — kart iki temada da koyu petrol.
+
+Açık temanın da bozulmadığı ayrıca doğrulandı: yumuşayan çizgi hâlâ bir giriş
+satırı gibi okunuyor ve artık harcama formuyla tutarlı.
+
 ## 2026-09-09 (5) — owezy.net'e tanıtım sayfası
 
 Handoff'un 5. adımı. Sayfa zaten giriş yapmamış ziyaretçiye örnek bir defter

@@ -45,13 +45,29 @@ Current task:
     3. mobil GRUP EKRANI                    BITTI  ba8a515 + 67af879
     4. mobil harcama ekleme                 BITTI  8ab8f58 + 766d87c
     5. web tanitim sayfasi                  BITTI  1379c6e
-    6. koyu tema gozden gecirme + magaza ekran goruntuleri   SIRADA
+    6a. koyu tema gozden gecirme            BITTI  4ff3b1d
+    6b. magaza ekran goruntuleri            SIRADA - GERCEK BUILD ISTER
 
   BU YONDE OLCULEN IKI SEY - TEKRAR ETME, KAYITLI:
     a. Handoff'un butun kontrast iddialari DOGRU cikti.
     b. AMA TURETILEN KOYU TEMADA KUSUR VARDI: acilmis petrol uzerinde
        beyaz metin 3.89:1, AA'yi gecmiyor. Birincil dugmenin metni koyu
        yapildi (4.78:1). onBrand token'i bu yuzden var.
+
+  KOYU TEMA GOZDEN GECIRILDI (9 Eylul, simulatorde). Tasarimda hic
+    cizilmemisti; asagidaki ekranlar tek tek acildi: grup, harcama ekleme,
+    hesap, grup duzenleme, odesme. IKI KUSUR CIKTI, ikisi de ayni sinifta:
+    "acik temada dogru, koyu temada bagiran" cizgiler.
+      - Giris alt cizgileri DORT yerde theme.foreground'du (edit, composer,
+        invite-joiner, group-creator) -> inputLine.
+      - Harcama formunun kapanis cizgisi foreground'du -> muted.
+    Kontrast orani iki yonde de ayni (~14.8:1); sorun oran degil, parlak
+    cizginin koyu zeminde yayilmasi.
+
+  KASITLI SABIT RENKLER - DOKUNMA, hepsinin gerekcesi kodda yazili:
+    kirmizi silme dugmesi, tam ekran fotograf zemini (siyah), QR kodu
+    (taranmasi icin siyah-beyaz olmak ZORUNDA), ve bakiye kartinin ici
+    (kart iki temada da koyu petrol).
 
   WEB TANITIM SAYFASI - BITTI. Dil ve tema dugmeleri PublicControls'un
     sabit kosesinden BASLIK CUBUGUNA tasindi (o bilesenin kendi yorumu bunu
