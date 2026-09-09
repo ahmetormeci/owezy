@@ -25,13 +25,51 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-08
+Updated: 2026-09-09
 
 Current task:
-  YOK - 1.0.3 (build 20) APPLE'IN INCELEMESINDE. Kod tarafinda is YOK.
+  1.0.3 (build 20) REDDEDILDI - Guideline 2.1, "demo hesabiyla giris
+  yapamadik". KOD SORUNU DEGIL: APP STORE CONNECT'TEKI ALAN YANLIS.
+  YENI BUILD GEREKMIYOR.
+
+  SEBEP OLCULDU (9 Eylul):
+    App Store Connect "User name" alaninda demouser yaziyor. Bu
+    uygulamada KULLANICI ADI DIYE BIR SEY YOK; giris e-posta ile.
+      curl -X POST https://owezy.net/api/auth/sign-in/email \
+           -H 'Content-Type: application/json' \
+           -d '{"email":"demouser","password":"<sahte>"}'
+      -> 400 {"message":"Invalid email","code":"INVALID_EMAIL"}
+    Sunucu hesaba BAKMADAN reddediyor, yani hangi parola yazilirsa
+    yazilsin inceleyici giremezdi. Inceleme hesabi appreview@owezy.net -
+    bu dosyada zaten yaziyordu, alana yanlis deger girilmis.
+
+  IKINCI TUZAK - NOTES'A YAZILMAZSA AYNI YERE YINE DUSERIZ:
+    Giris ekraninda VARSAYILAN yol e-posta kodu. Parola alani
+    "Sign in with a password" baglantisinin ARKASINDA (ADR-035 bilerek
+    boyle yapti). Inceleyici dogru adresi girip "Send code"a basarsa kod
+    okuyamadigi bir kutuya gider ve yine giremez.
+
+  YAPILACAKLAR - HEPSI APP STORE CONNECT'TE:
+    1. App Review Information -> Sign-In Information -> User name:
+       demouser  ->  appreview@owezy.net
+    2. Notes'a giris adimlarini yaz (dort adim, "Send code'a basmayin")
+    3. Resolution Center'dan cevap yaz, ayni build 20 ile yeniden gonder
+
+  ONCE DOGRULANACAK - UCU DE KULLANICININ ISI, KODDAN OLCULEMEZ:
+    a. appreview@owezy.net PAROLAYLA girebiliyor mu? Gizli pencerede
+       owezy.net. BU KONTROL CHANGELOG'DA 4 EYLUL'DE TANIMLI VE BU
+       GONDERIMDEN ONCE KOSULMADI - retin asil sebebi bu atlanan adim.
+    b. Hesapta 2FA KAPALI mi? Acikssa parola sonrasi TOTP soruluyor ve
+       inceleyicinin kimlik dogrulayicisi yok.
+    c. Hesabin icinde VERI var mi? Bos hesap Apple'in istedigi "full
+       features and functionality"yi karsilamaz.
+
+  NOTES'TAKI "IZIN ISTEMI YOK" MADDESI ARTIK YANLIS. 1.0.3 uc izin
+  istiyor: bildirim, fotograf kutuphanesi, kamera. Notes yeniden
+  yazilirken duzeltilmeli - yanlis beyan tek basina ret sebebi.
 
   SURUMLER:
-    1.0.3  build 20, INCELEMEDE (kullanici elle gonderdi, 8 Eylul).
+    1.0.3  build 20, REDDEDILDI (9 Eylul, Guideline 2.1).
            push bildirim, uye cikarma + davet iptali, {amount} duzeltmesi,
            grup eylemleri fisin USTUNDE, basliktaki hesap simgesi, tema
            secimi, FIS FOTOGRAFI.
@@ -47,7 +85,7 @@ Current task:
     2. KOPRU KALDIRILABILIR HALE GELIR - ama surum YAYGINLASINCA.
        Silinecekler "KOPRU" basliginda.
 
-  RET GELIRSE: gerekce yeni bir gorev tanimlar. Once metni oku, sonra olç.
+  RET GELDI VE GEREKCESI OKUNDU - yukaridaki gorev ondan cikti.
 
   MAGAZA SORGUSU HALA "1.0" DIYOR (8 Eylul olcumu, hem TR hem US) - oysa
   1.0.2 canli ve telefona indi. itunes.apple.com/lookup yayin anini degil

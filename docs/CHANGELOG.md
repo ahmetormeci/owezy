@@ -8,6 +8,48 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+
+## 2026-09-09 — 1.0.3 reddedildi: inceleme hesabı alanında kullanıcı adı yazıyordu
+
+Apple, build 20'yi **Guideline 2.1 — Information Needed** ile geri çevirdi:
+*"We were unable to sign in with the following demo account credentials:
+User name: demouser."*
+
+**Sebep ölçüldü, tahmin edilmedi.** Bu uygulamada kullanıcı adı diye bir şey
+yok — giriş kimliği yalnızca e-posta adresi. Üretim ucuna atılan tek istek
+yeterliydi:
+
+```
+POST https://owezy.net/api/auth/sign-in/email  {"email":"demouser", ...}
+-> 400 {"message":"Invalid email","code":"INVALID_EMAIL"}
+```
+
+Sunucu hesaba **bakmadan** reddediyor. Yani parola alanında ne yazarsa yazsın
+inceleyicinin giremeyeceği bir kombinasyon verilmişti. Doğru hesap
+`appreview@owezy.net` ve adı `CURRENT_TASK.md`'de 1 Eylül'den beri yazıyor;
+App Store Connect'teki alana yanlış değer girilmiş.
+
+**Asıl kusur alanın kendisi değil, atlanan kontrol.** 4 Eylül günlüğünde
+gönderim öncesi kontrol açıkça tanımlı: *"`appreview@owezy.net` parolayla
+girebiliyor mu, ikinci adım istiyor mu."* Bu gönderimden önce koşulmadı.
+Koşulsaydı alan hatası daha ilk adımda görülürdü — kontrolün varlık sebebi
+tam olarak buydu.
+
+**İkinci tuzak henüz patlamadı ama duruyor.** Giriş ekranının varsayılan yolu
+e-posta kodu; parola alanı *"Sign in with a password"* bağlantısının arkasında
+(ADR-035 bunu bilerek seçti — birincil akış değişmesin diye). Doğru adres
+girilse bile inceleyici "Send code"a basarsa kod okuyamadığı bir kutuya gider
+ve giriş yine başarısız olur. Bu yüzden düzeltme yalnızca alanı düzeltmek
+değil: Notes'a dört adımlı giriş yolu ve "Send code'a basmayın" cümlesi
+yazılıyor.
+
+**Notes'ta artık yanlış olan bir madde daha var:** "uygulama izin istemiyor".
+1.0.3 üç izin istiyor — bildirim, fotoğraf kütüphanesi, kamera. Yanlış beyan
+tek başına ret sebebi olabilir.
+
+**Yeni build gerekmiyor.** Düzeltmenin tamamı App Store Connect metadatası;
+build 20 değişmiyor. EAS kotası (12/15) korunuyor.
+
 ## 2026-09-08 (6) — CI dört commit boyunca kırmızıydı ve bakılmadı
 
 Kullanıcı e-postaları getirene kadar fark edilmedi: `6c0d2e9`, `dc34ddd`,
