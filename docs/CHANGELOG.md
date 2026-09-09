@@ -16,6 +16,39 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (9) — Üye ekranı, ve sözlük kontrolünün hiç bakmadığı yer
+
+Üye ekranı kutularını bıraktı: bakır bölüm çizgileri, grup ekranındakiyle aynı
+baş harf avatarı, diğer birincil düğmelerle aynı ölçüde davet düğmesi. Sahiplik
+devri seçimi de uygulamanın geri kalanındaki açılır seçime geçti.
+
+**Yerleşik başlık çubuğu burada bilerek kaldı.** Özel çubuk (Vazgeç / başlık /
+Kaydet) *tek bir kaydetme eylemi olan* form ekranları için. Burası bir yönetim
+ekranı: birden fazla bağımsız eylemi var, tek bir "kaydet"i yok. Üstüne bir
+Kaydet koymak olmayan bir şey vaat ederdi.
+
+**Eskiyen bir yorum yakalandı.** Ayrılma ve çıkarma `theme.debt` ile
+boyanıyordu ve yanındaki yorum bunu "harcama silme düğmesi de aynı kırmızıyı
+kullanıyor" diye savunuyordu — yazıldığı gün doğruydu, o düğme `destructive`'e
+alınınca yanlış oldu. İkisi de artık `destructive`.
+
+### Sözlük kontrolü mobili hiç görmüyormuş
+
+`messages.test.ts` kaynak kodu tarayıp geçen her `ui.*` kodunun sözlükte
+olduğunu doğruluyor — ADR-020'nin fiilen işleyen hâli, çünkü `translate` düz
+`string` alıyor ve tip sistemi yakalamıyor. Ama test **yalnızca `src/`
+altına bakıyordu.**
+
+İki istemci aynı sözlüğü paylaşıyor (`mobile/lib/i18n.tsx` onu `src`'den
+alıyor), yani mobil tarafta yazılan hiçbir kod denetlenmiyordu.
+
+Bir tane yazarak bulundu: üye ekranında `t("ui.invite")` çağrıldı, anahtar
+sözlükte yoktu, **617 testin hepsi yeşil kaldı.** Ekranda "ui.invite" yazacaktı.
+Test artık `mobile/app`, `mobile/components` ve `mobile/lib`'i de tarıyor ve
+eksik anahtarın hangi dosyada olduğunu söylüyor. Anahtar yeniden silinerek
+doğrulandı: artık düşüyor.
+
 ## 2026-09-09 (8) — Ödeşme ekranı da aynı aileye girdi
 
 Başlık çubuğu, tutar bloğu, alt çizgili alanlar. Yön iki segmente dönüştü —

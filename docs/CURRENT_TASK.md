@@ -53,9 +53,10 @@ Current task:
   ekranlara TASINMASI. Handoff uc yuzey ciziyordu; digerleri renk ve yazi
   tipini aldi ama YERLESIM dili eski kaldi.
     harcama detayi      BITTI  9f9e7f6  (+ receipt-photo bileseni)
-    odesmeler           BITTI  (bkz. son commit)
-    uyeler              SIRADA
-    hesap / gruplar listesi / bildirimler / giris
+    odesmeler           BITTI  70d6e4c
+    uyeler              BITTI  5882446
+    hesap               SIRADA
+    gruplar listesi / bildirimler / giris
     web urun sayfalari  ((app)/groups/...) - handoff yalnizca karsilama
                         sayfasini kapsiyordu
 
@@ -86,6 +87,12 @@ Current task:
     devam ediyor. Tasarimdaki PROFIL FOTOGRAFI BLOGU YAPILMADI: var olmayan
     bir ozelligi anlatiyor, handoff da image-slot icin "uretime tasinmaz"
     diyor. E2E TAM KOSU YAPILDI: 57/57, 10.6 dk.
+
+  SOZLUK KONTROLU ARTIK MOBILI DE TARIYOR (c6e8b04). Uzun sure yalnizca
+    src/ altina bakiyordu; iki istemci AYNI sozlugu paylastigi halde mobil
+    taraftaki her t("ui.…") korumasizdi. Uye ekraninda t("ui.invite")
+    yazildi, sozlukte yoktu, 617 test yesil kaldi. Negatif kontrolle
+    dogrulandi.
 
   DIKKAT - SOZLUK ANAHTARINI SABLON DIZGIYLE YAZMA:
     messages.test.ts kaynak kodu tarayip gecen her "ui.*" kodunu sozlukte
