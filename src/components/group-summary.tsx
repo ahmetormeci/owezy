@@ -3,6 +3,7 @@ import { formatBasisPoints, formatMoney } from "@/lib/money";
 import { formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
+import { SectionHead } from "@/components/section-head";
 
 /**
  * "Para nereye gitti" ve "bakiyem neden bu".
@@ -61,11 +62,18 @@ export async function GroupSummary({
     // toplamlar cift cizginin altinda, bakiye ustte. Ayni sayiyi bir sayfada
     // iki kez gostermek, ekran goruntusunde bakinca hemen goze carpiyordu.
     // Bu blok yalnizca fiste OLMAYANI tasiyor: paranin nereye gittigi.
-    <section className="rounded-lg border border-border bg-card">
-      <div className={`grid gap-7 p-5 md:gap-9 ${showMonths && showCategories ? "md:grid-cols-2" : ""}`}>
+    // KUTU DEGIL BOLUM. Sayfadaki son karttI; ADR-021 "kutu yerine cizgi"
+    // diyor ve her bolum artik bakir bir cizgiyle basliyor. Mobilde de ayni
+    // degisiklik yapildi.
+    <section>
+      <div className={`grid gap-7 md:gap-9 ${showMonths && showCategories ? "md:grid-cols-2" : ""}`}>
         {showMonths ? (
           <div className="min-w-0">
-            <p className="label mb-3">{t("ui.summary_by_month")}</p>
+            {/* Kutu kalkinca baslik kendi cizgisini tasimali - yoksa
+                blok, ustundeki bolume ait bir alt basligmis gibi okunuyor. */}
+            <div className="mb-4">
+              <SectionHead title={t("ui.summary_by_month")} />
+            </div>
             <div className="flex items-end gap-3">
               {months.map((slice) => (
                 <div key={slice.month} className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -96,7 +104,9 @@ export async function GroupSummary({
 
         {showCategories ? (
         <div className="min-w-0">
-          <p className="label mb-3">{t("ui.summary_by_category")}</p>
+          <div className="mb-4">
+            <SectionHead title={t("ui.summary_by_category")} />
+          </div>
           <ul className="flex flex-col gap-2.5">
             {summary.byCategory.map((slice) => (
               <li key={slice.category} className="grid grid-cols-[1fr_auto] items-baseline gap-x-3 gap-y-1">

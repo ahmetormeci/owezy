@@ -107,6 +107,14 @@
      yalnizca metin. Ayri olmalarinin sebebi kontrast, estetik degil. */
   --color-copper: var(--copper);
   --color-copper-text: var(--copper-text);
+  --color-copper-soft: var(--copper-soft);
+  /* BAKIYE KARTI. Uc token da TEMAYA GORE DEGISMIYOR ve sebebi tek: kart
+     iki temada da koyu petrol. --brand-strong kullanilamazdi, o koyu temada
+     ACILIYOR (aciklik 0.324 -> 0.670) ve kart bir anda acik yesil bir
+     dikdortgene donerdi. Mobilde de ayni ayrim var (theme.balanceCard). */
+  --color-balance-card: var(--balance-card);
+  --color-on-balance-card: var(--on-balance-card);
+  --color-on-balance-card-figure: var(--on-balance-card-figure);
   /* Form alanlarinin ALT CIZGISI. Yeni yonde girdiler kutulu degil; kutu
      kenarligi (--border) ile alan alt cizgisi ayni agirlikta olamaz. */
   --color-input-line: var(--input-line);
@@ -164,6 +172,13 @@
      Ikisini tek tokende birlestirmek, etiketlerin okunmaz olmasi demekti. */
   --copper: oklch(0.642 0.108 72.1);
   --copper-text: oklch(0.520 0.092 70.7);
+  /* Cok soluk bakir zemin - yalnizca KENDI satirini isaretlemek icin. */
+  --copper-soft: oklch(0.957 0.020 84.6);
+
+  /* #123c32 uzerinde: etiket 5.86:1, rakam 6.38:1 - ikisi de olculdu. */
+  --balance-card: oklch(0.324 0.050 174.5);
+  --on-balance-card: oklch(0.771 0.097 75.3);
+  --on-balance-card-figure: oklch(0.796 0.093 74.8);
 
   /* Notrler artik gri degil KAGIT: sicak, ton 80-87, chroma 0.006-0.022.
      Eski palet ton 265'te (kobalt meyilli gri) duruyordu.
@@ -233,6 +248,13 @@
 
   --copper: oklch(0.771 0.097 75.3);
   --copper-text: oklch(0.796 0.093 74.8);
+  --copper-soft: oklch(0.300 0.020 84.6);
+
+  /* Kart koyu zeminde bir tik aciliyor ki kendi zemininden ayrilsin;
+     ustundeki iki ton DEGISMIYOR. */
+  --balance-card: oklch(0.365 0.052 172.0);
+  --on-balance-card: oklch(0.771 0.097 75.3);
+  --on-balance-card-figure: oklch(0.796 0.093 74.8);
 
   --background: oklch(0.213 0.006 85);
   --foreground: oklch(0.940 0.004 85);
@@ -304,25 +326,14 @@
   white-space: nowrap;
 }
 
-/* Bolum basliklarinin tek bicimi: kucuk, buyuk harf, aralikli, sessiz.
-   ADR-021'in "yogunluk" kurali burada yasiyor - bolumleri buyuk baslikla
-   degil, kucuk bir etiketle ve altindaki cizgiyle ayiriyoruz. Utility
-   olmasinin sebebi 11.6'da her sayfada tekrarlanacak olmasi. */
-@utility label {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
 /* FIS GORUNUMU (Faz 16).
    Uc yardimci, uc is:
 
-   .cap    - fisin etiketi. .label ile ayni isi yapiyor gibi gorunuyor ama
-             MONO ve arasi daha acik: fis uzerindeki basili yazi, arayuz
-             etiketi degil. Ikisi ayni dosyada yan yana durabilsin diye
-             ayrildilar.
+   .cap    - ETIKETLERIN TEK BICIMI. Bir sure ".label" adinda ikinci bir
+             utility daha vardi (gri, daha dar aralikli) ve ikisi neredeyse
+             ayni isi yapiyordu; kagit & petrol yonunde ikisi de bakir
+             etikete dondu, yani ayri durmalarinin sebebi kalmadi.
+             Mobilde de tek bir karsiligi var (<Cap>).
    .leader - noktali ayrac. Aciklama ile tutar arasini dolduran nokta dizisi
              gercek fislerin okuma yardimi: goz satirdan kaymadan tutara
              ulasiyor. translateY, noktalari yazinin taban cizgisine degil

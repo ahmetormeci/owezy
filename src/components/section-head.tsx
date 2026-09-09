@@ -19,8 +19,11 @@ export function SectionHead({
   action?: { href: string; label: string };
 }) {
   return (
-    <div className="mb-1 flex items-center justify-between gap-4 border-b border-border pb-2">
-      <span className="label">{title}</span>
+    /* Cizgi BAKIR: "bolum basliyor" demenin isareti. --border ile ayni
+       agirlikta olsaydi liste satirlarini ayiran cizgiden farksiz kalirdi.
+       Mobildeki SectionRule ile birebir ayni (components/receipt.tsx). */
+    <div className="mb-1 flex items-baseline justify-between gap-4 border-b border-copper pb-2">
+      <span className="cap">{title}</span>
       {action ? (
         <Link
           href={action.href}

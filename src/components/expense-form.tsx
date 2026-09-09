@@ -631,7 +631,7 @@ export function ExpenseForm({
         // Onizleme bir kart degil, formun icinde sessiz bir panel: girdiye
         // gore degisen bir ARA sonuc, ayri bir nesne degil.
         <div className="flex flex-col gap-2 rounded-lg border border-border bg-card px-4 py-3.5">
-          <p className="label">{t("ui.split_preview")}</p>
+          <p className="cap">{t("ui.split_preview")}</p>
           {"error" in preview ? (
             <p className="text-destructive">{preview.error}</p>
           ) : (
@@ -667,7 +667,7 @@ export function ExpenseForm({
       */}
       {conflict ? (
         <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-card px-4 py-3.5">
-          <p className="label">{t("ui.conflict_heading")}</p>
+          <p className="cap">{t("ui.conflict_heading")}</p>
           {conflict.kind === "deleted" ? (
             <p className="text-muted-foreground">{t("ui.conflict_deleted")}</p>
           ) : conflict.changes.length === 0 ? (

@@ -73,7 +73,7 @@ function SuggestionGroup({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="label">{title}</p>
+      <p className="cap">{title}</p>
       <ul className="flex flex-col gap-1.5">
         {transfers.map((transfer) => {
           const person = personOf(transfer);
@@ -196,7 +196,6 @@ export default async function GroupDetailPage({
 
   // Fisin ustundeki kisi satiri. Isimler bir cumle degil, basili bir liste -
   // o yuzden araya nokta konuyor, virgul degil.
-  const memberNames = balances.map((balance) => balance.displayName).join(" · ");
 
   const hasSuggestions = suggestedTransfers.length > 0;
 
@@ -253,64 +252,100 @@ export default async function GroupDetailPage({
         </div>
       </div>
 
-      <Receipt>
-        {/* Fis basligi: grup adi basili bir baslik gibi, harf araligi acik. */}
-        <div className="flex flex-col items-center gap-2 text-center">
-          {/* Duzenle dugmesi basligin YANINDA DEGIL. Harf araligi acik basili
-              bir baslgin yanina buton koymak dengeyi bozuyordu (ekran
-              goruntusunde goruldu); eylemler zaten kagidin disinda. */}
-          <h1 className="pl-[0.34em] font-mono text-[1.0625rem] font-semibold tracking-[0.34em] uppercase">
-            {group.name}
-          </h1>
-          <p className="cap">{memberNames}</p>
-          {group.description ? (
-            <p className="text-xs text-muted-foreground">{group.description}</p>
+      {/*
+        BASLIK BLOGU FISIN DISINDA. Grup adi bir sure fisin icinde, mono ve
+        harf araligi acik bir "magaza adi" olarak duruyordu; mobil yeni yonde
+        onu disari cikardi (serif ad + bakir para birimi + uye bas harfleri)
+        ve iki istemcinin ayni sayfayi iki turlu gostermesi icin sebep yok.
+
+        Duzenle dugmesi hala basligin YANINDA DEGIL: eylemler kagidin disinda
+        ve zaten ustteki eylem satirinda.
+      */}
+      <div className="mb-5 flex items-center gap-3">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h1 className="font-heading truncate text-2xl">{group.name}</h1>
+          <span className="cap shrink-0">{currency}</span>
+        </div>
+        <div className="ml-auto flex shrink-0 items-center">
+          {balances.slice(0, 4).map((balance, index) => (
+            <div key={balance.userId} className={index === 0 ? undefined : "-ml-2"}>
+              <PersonAvatar
+                displayName={balance.displayName}
+                avatarUrl={balance.avatarUrl}
+                hasImage={balance.hasImage}
+                size="lg"
+                me={balance.userId === user.id}
+                className="ring-2 ring-background"
+              />
+            </div>
+          ))}
+          {balances.length > 4 ? (
+            <span className="-ml-2 grid size-8 place-items-center rounded-full border border-input-line bg-background text-[10px] text-muted-foreground">
+              {`+${balances.length - 4}`}
+            </span>
           ) : null}
         </div>
+      </div>
+      {group.description ? (
+        <p className="mb-5 -mt-3 text-xs text-muted-foreground">{group.description}</p>
+      ) : null}
 
-        {/* BAKIYE FISIN USTUNDE, ALTINDA DEGIL.
-            Gercek bir fiste toplam en altta durur ve tasarim onerisi de
-            oyleydi. Uygulamada boyle yapilmadi: 40 harcamali bir grupta
-            bakiye ekranin cok altina duserdi ve ADR-016'nin "sayfa bakiyeye
-            gore kurulur" kurali fiilen bozulurdu. Hesap ozetleri de ayni
-            sebeple bakiyeyi basa koyar. Fis dili korunuyor (cift cizgi,
-            mono etiket), sirasi degil. */}
-        {!isEmpty ? (
-        <div className="flex flex-col gap-2 border-t border-dashed border-border pt-5">
-          <div className="flex items-end justify-between gap-4">
-            <span className="cap text-foreground">{t("ui.your_status")}</span>
-            <p className={`money text-figure font-medium ${balanceToneClass(myAmount)}`}>
-              {myAmount === 0
-                ? formatMoney(0, currency, locale)
-                : formatSignedMoney(myAmount, currency, locale)}
-            </p>
-          </div>
-          {/* Odesmis durumda cumle yerine DAMGA. Metin ayni ("Odestin"),
-              yalnizca bir kez ekranda - iki E2E testi onu ariyor. */}
-          <div className="flex justify-end">
-            {myAmount === 0 && !hasSuggestions ? (
-              <span className="rounded-[4px] border-2 border-credit px-4 py-1.5 pl-[calc(1rem+0.22em)] font-mono text-sm font-semibold tracking-[0.22em] text-credit uppercase opacity-90 [transform:rotate(-4deg)]">
-                {t("ui.settled_up")}
+      {/*
+        BAKIYE KARTI FISIN DISINDA VE KOYU.
+
+        Bakiye bir sure fisin ICINDE, kesikli bir cizginin altinda
+        duruyordu. Yeni yonde ekranin tek koyu yuzeyi bu kart ve fisin
+        disinda - mobil de oyle. Sira degismedi: bakiye hala fisin USTUNDE,
+        cunku 40 harcamali bir grupta altta olsaydi ekranin disina duserdi
+        (ADR-016).
+
+        UC RENK DE TEMAYA GORE DEGISMIYOR: kart iki temada da koyu petrol.
+      */}
+      {!isEmpty ? (
+        <div className="mb-5 overflow-hidden rounded-[4px] bg-balance-card p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <span className="cap text-on-balance-card">
+                {myAmount === 0
+                  ? t("ui.settled_up")
+                  : myAmount > 0
+                    ? t("ui.owed_to_you")
+                    : t("ui.you_owe")}
               </span>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {myAmount > 0
-                  ? t("ui.owed_to_you")
-                  : myAmount < 0
-                    ? t("ui.you_owe")
-                    : t("ui.settled_up")}
+              <p className="money mt-2 text-[2.875rem] leading-none tracking-[-0.04em] text-on-balance-card-figure">
+                {myAmount === 0
+                  ? formatMoney(0, currency, locale)
+                  : formatSignedMoney(myAmount, currency, locale)}
               </p>
-            )}
+            </div>
+            {/* Muhur: kac odemeyle kapandigini soyluyor. Odesmis halde metin
+                "Odestin" - iki E2E testi tam o kelimeyi ariyor ve ekranda
+                BIR KEZ gorunmeli. */}
+            {hasSuggestions ? (
+              <span className="cap shrink-0 rounded-[2px] border border-copper px-2 py-1 text-on-balance-card [transform:rotate(-4deg)]">
+                {t(
+                  suggestedTransfers.length === 1
+                    ? "ui.settle_count_one"
+                    : "ui.settle_count_other",
+                  { count: suggestedTransfers.length },
+                )}
+              </span>
+            ) : null}
           </div>
         </div>
-        ) : null}
+      ) : null}
+
+      <Receipt>
 
         {/* Hesabin nasil kapanacagi. Fiil BASLIKTA, satirda degil - Turkce'de
             "{isim}'e ode" yer tutucuyla dogru yazilamiyor (ek son harfe gore
             degisiyor). Bu kural SuggestionGroup'tan beri gecerli. */}
         {!isEmpty && hasSuggestions ? (
-          <div className="flex flex-col gap-4 rounded-[3px] border border-border bg-panel px-4 py-3.5">
-            <span className="cap text-foreground">{t("ui.settle_plan")}</span>
+          /* KUTU KALKTI: bolum artik bakir bir cizgiyle basliyor, sayfanin
+             geri kalanindaki her bolum gibi (ADR-021 "kutu yerine cizgi").
+             Panel zemini, kagidin uzerinde ikinci bir yuzey demekti. */
+          <div className="flex flex-col gap-4">
+            <SectionHead title={t("ui.settle_plan")} />
             <SuggestionGroup
               title={t("ui.you_should_pay")}
               transfers={iPay}
@@ -332,7 +367,7 @@ export default async function GroupDetailPage({
                 degil. */}
             {otherTransfers.length > 0 ? (
               <div className="flex flex-col gap-2">
-                <p className="label">{t("ui.other_suggested_payments")}</p>
+                <p className="cap">{t("ui.other_suggested_payments")}</p>
                 <ul className="flex flex-col gap-1.5">
                   {otherTransfers.map((transfer) => (
                     <li
@@ -434,6 +469,7 @@ export default async function GroupDetailPage({
                     displayName={balance.displayName}
                     avatarUrl={balance.avatarUrl}
                     hasImage={balance.hasImage}
+                    me={balance.userId === user.id}
                   />
                   <span className="truncate">{balance.displayName}</span>
                   {roleByUserId.get(balance.userId) === "OWNER" ? (

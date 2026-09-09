@@ -40,19 +40,28 @@
 const SIZES = {
   sm: "size-5 text-[0.5625rem]",
   md: "size-6 text-[0.625rem]",
+  // Grup basligindaki bindirmeli yigin icin. Mobildeki 30 punto avatarin
+  // karsiligi (components/receipt.tsx, MemberAvatar).
+  lg: "size-8 text-[0.6875rem]",
 } as const;
 
-/**
- * Isimden kararli bir ton uretir. Basit bir toplama yetiyor: amac
- * kriptografik dagilim degil, "ayni isim ayni renk" ve gozle ayrilabilirlik.
+/*
+ * ISIMDEN URETILEN RENK KALDIRILDI (kagit & petrol yonu).
+ *
+ * Avatarlar bir sure isimden turetilmis bir tonda ("ayni isim ayni renk")
+ * ve uzerlerinde beyaz bas harfle duruyordu. Amaci gozle ayirt etmekti ve
+ * o isi goruyordu - ama ADR-021 renge TEK bir is birakiyor: durum. Kisiyi
+ * renkle kodlamak, kategori grafigine yedi renk vermeyi reddettigimiz
+ * kuralin aynisini cigniyordu.
+ *
+ * Tasarimin cizdigi sey de bu: butun avatarlar kagit tonunda, YALNIZCA
+ * kendi satirin bakir bir cemberle isaretli. Mobil de oyle
+ * (components/receipt.tsx, MemberAvatar) ve iki istemcinin ayni listeyi iki
+ * turlu gostermesi icin sebep yok.
+ *
+ * Ayirt etme isini bas harfler ve yanindaki AD tasiyor; her kullanimda ad
+ * avatarin hemen yaninda duruyor.
  */
-function hueFromName(name: string): number {
-  let total = 0;
-  for (let i = 0; i < name.length; i += 1) {
-    total = (total + name.charCodeAt(i) * (i + 1)) % 360;
-  }
-  return total;
-}
 
 /** Bas harf. Grafem kumesi degil kod noktasi bazli - "Ş" gibi harfler icin yeterli. */
 function initial(name: string): string {
@@ -81,12 +90,16 @@ export function PersonAvatar({
   hasImage,
   size = "md",
   className = "",
+  me = false,
 }: {
   displayName: string;
   avatarUrl?: string | null;
   hasImage?: boolean | null;
   size?: keyof typeof SIZES;
   className?: string;
+  /** Kendi satirin: bakir cember. Dort kisilik bir listede "hangisi benim"
+   *  sorusu her seferinde okumakla cevaplanmamali. */
+  me?: boolean;
 }) {
   const base = `${SIZES[size]} shrink-0 rounded-full ${className}`;
 
@@ -110,8 +123,11 @@ export function PersonAvatar({
   return (
     <span
       aria-hidden="true"
-      className={`${base} grid place-items-center font-semibold text-white`}
-      style={{ backgroundColor: `oklch(0.55 0.1 ${hueFromName(displayName)})` }}
+      className={`${base} grid place-items-center border ${
+        me
+          ? "border-copper bg-copper-soft text-copper-text"
+          : "border-input-line bg-surface text-muted-foreground"
+      }`}
     >
       {initial(displayName)}
     </span>

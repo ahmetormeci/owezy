@@ -125,7 +125,7 @@ export function InviteManager({
 
       {createdLink ? (
         <div className="flex flex-col gap-3 rounded-lg border border-border bg-card px-4 py-3.5">
-          <p className="label">{t("ui.invite_ready")}</p>
+          <p className="cap">{t("ui.invite_ready")}</p>
           <p className="text-muted-foreground">{t("ui.invite_once_warning")}</p>
           <div className="flex gap-2">
             <Input readOnly value={createdLink} onFocus={(event) => event.target.select()} />
@@ -137,7 +137,7 @@ export function InviteManager({
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <p className="label">{t("ui.active_invites")}</p>
+        <p className="cap">{t("ui.active_invites")}</p>
         {invites.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("ui.no_active_invite")}</p>
         ) : (
