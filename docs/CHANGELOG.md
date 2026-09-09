@@ -12,6 +12,40 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (5) — owezy.net'e tanıtım sayfası
+
+Handoff'un 5. adımı. Sayfa zaten giriş yapmamış ziyaretçiye örnek bir defter
+gösteriyordu; bu, o fikrin tam boyu. Başlık çubuğu, iki kolonlu hero, örnek
+defter kartı ve bakır çizgili üç adım.
+
+**Dil ve tema düğmeleri başlık çubuğuna taşındı.** `PublicControls`'un kendi
+yorumu bunu zaten istiyordu: *"dar ekranda üstteki bir kartla çakışabilir"*.
+Giriş ve kayıt sayfaları onu kullanmaya devam ediyor.
+
+**Üç rakamın üçü de doğrulanabilir** — üç bölüşüm tipi enum'dan, iki dil
+`SUPPORTED_LOCALES`'ten, kaybolmayan küsurat değiştirilemez bir kuraldan.
+ADR-021 arayüzün bilmediğini söylemesini yasaklıyor ve işi ikna etmek olan
+bir sayfada bu daha da geçerli.
+
+**Tasarımdaki profil fotoğrafı bloğu yapılmadı:** var olmayan bir özelliği
+anlatıyor, handoff da `image-slot` için "üretime taşınmaz" diyor.
+
+**Sessiz bir boşluk bulundu ve kapatıldı.** Adım başlıkları önce döngüde
+şablon dizgiyle yazılmıştı (`` t(`ui.landing_step_${step}_label`) ``) ve
+testler geçiyordu — ama `messages.test.ts` kaynak kodu tarayarak çalışıyor
+ve şablon dizgiyle yazılan anahtar kaynakta hiç geçmiyor. Dokuz anahtar
+korumasızdı. Açık anahtara çevrildi; sözlükten bir kod silinerek testin
+artık düştüğü doğrulandı.
+
+**Ölçülenler:** açık/koyu tema, 375px ve 1200px. Bir kusur çıktı — "Giriş
+yap" ve "Kayıt ol" dar ekranda iki satıra bölünüp başlığı 120px'e
+şişiriyordu, `whitespace-nowrap` ile 81px'e indi. **E2E tam koşu: 57/57.**
+
+**Bir okuma hatası:** arka plana atılan koşunun "çıkış kodu 0"ı, koşunun
+değil onu saran betiğin koduydu. Bu oturumda ikinci kez — birincisi `eas
+build`'in başarısızken 0 dönmesiydi.
+
 ## 2026-09-09 (4) — Harcama ekleme: tek ekran, kutusuz alanlar
 
 Handoff'un 4. adımı. **İki adımlı sihirbaz kaldırıldı.** Gerekçesi gerçekti —
