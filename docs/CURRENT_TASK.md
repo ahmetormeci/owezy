@@ -58,6 +58,21 @@ Current task:
     hesap               BITTI  9c25910
     gruplar listesi / bildirimler / giris   BITTI  508e1fa
 
+  WEB - ILK TUR BITTI (00833a2). Kaldiraç paylasilan dort parcadaydi:
+    .label + .cap birlesti (tek etiket bicimi), SectionHead bakir cizgiye
+    gecti, ui/input kutudan alt cizgiye (ON BIR formu birden tasidi),
+    PersonAvatar'in isimden uretilen rengi kalkti. Grup sayfasinda baslik
+    ve bakiye fisin disina cikti; sayfada hic kutu kalmadi. E2E 57/57.
+
+    KALAN WEB ISI: harcama formu, uyeler sayfasi, diyaloglar, gruplar
+    listesi, kimlik sayfalari (giris/kayit hala Card icinde). Hepsi
+    alt cizgiyi Input uzerinden ALDI ama kendi YERLESIMLERI elden gecmedi.
+
+  WEB'IN URUN SAYFALARINI GORMEK ICIN: giris gerekiyor ve ajan ne parola
+    ne tek seferlik kod yazabilir. YOL: e2e/ altina gecici bir spec yazip
+    pageAs(browser,"owner") ile giris yapip page.screenshot() almak.
+    Bu oturumda uc kez boyle bakildi; spec her seferinde SILINDI.
+
   MOBIL BITTI. Butun ekranlar yeni dilde ve HEPSI simulatorde acik VE koyu
   temada gorüldu. Kalan tek yuzey WEB'in urun sayfalari - kullanici onu
   AYRI ele almak istedi, yeni bir gorev olarak baslasin.

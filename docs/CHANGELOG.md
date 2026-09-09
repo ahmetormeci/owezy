@@ -19,6 +19,45 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (12) — Web'in ürün sayfaları yeni dile girdi
+
+Çoğu **dört paylaşılan parçada**, kaldıraç oradaydı. `.label` ve `.cap`
+neredeyse aynı işi iki renkte yapan iki utility'ydi; birleşti — telefonda
+zaten tek karşılığı vardı. `SectionHead`'in çizgisi bakır oldu. `Input`
+kutusunu bırakıp tek bir alt çizgiye indi ve **on bir formu** birden taşıdı.
+
+**Grup sayfası**: ad ve bakiye fişin dışına çıktı — serif ad, bakır para
+birimi, ve sayfanın tek koyu yüzeyi olarak bakiye kartı. Sıra değişmedi;
+bakiye hâlâ fişin üstünde, çünkü kırk harcamalı bir grupta altta olsa
+ekranın dışına düşerdi (ADR-016).
+
+**Bakiye kartı üç token istedi ve üçü de temayı yok sayıyor:**
+`--brand-strong` koyu temada açılıyor, kart bir anda soluk yeşil bir
+dikdörtgene dönerdi. Telefon aynı tuzağa düşmüş ve aynı tokenları almıştı.
+
+### Avatarların rengi kaldırıldı
+
+Web'de avatarlar isimden üretilen bir ton taşıyordu ve insanları ayırt etme
+işini görüyordu. Ama **ADR-021 renge tek bir iş bırakıyor: durum** — ve bu,
+yedi kategoriye yedi renk vermeyi reddederken kullandığımız kuralın aynısı.
+Artboard ve telefon kağıt tonlu baş harf gösteriyor, yalnızca kendi satırın
+bakır çemberli; artboard'ı takip etmeyen istemci değişti.
+
+### Ekran görüntüsünü almanın yolu
+
+Web'in ürün sayfaları giriş istiyor ve ajan ne parola ne tek seferlik kod
+yazabilir. `e2e/` altına geçici bir spec yazıp `pageAs(browser, "owner")`
+ile girip `page.screenshot()` almak tek doğru yol. Üç kez böyle bakıldı;
+spec her seferinde silindi.
+
+**İki kusuru yalnızca ekran görüntüsü gösterdi.** Odak halkası tam bir kutu
+çiziyordu — alanı kutudan çıkardık, odaklanınca kutu geri geliyordu; yerine
+alt çizgi 2px petrole çıkıyor (7.37:1). Ve kutu kalkınca özet başlıkları
+kendi çizgilerini istedi, yoksa üstteki bölümün alt başlığı gibi okunuyordu.
+
+**E2E 57/57.**
+
 ## 2026-09-09 (11) — Mobilde yeni dil tamamlandı
 
 Gruplar listesi, bildirimler ve giriş ekranı. Yanında bir denetimin
