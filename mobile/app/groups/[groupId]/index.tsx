@@ -15,7 +15,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate, formatMonth } from "@/lib/dates";
-import { EXPENSE_CATEGORY_CODES, EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
+import {
+  EXPENSE_CATEGORY_CODES,
+  EXPENSE_CATEGORY_OPTIONS,
+  EXPENSE_SPLIT_TYPE_SHORT_CODES,
+} from "@/lib/expense-labels";
 import {
   displayNameForLine,
   groupByMonth,
@@ -33,12 +37,17 @@ import { useSession } from "../../../lib/auth";
 import { CsvExport } from "../../../components/csv-export";
 import { ReceiptViewer } from "../../../components/receipt-viewer";
 import { ExpenseComposer } from "../../../components/expense-composer";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   Receipt,
   ReceiptDoubleRule,
   ReceiptLine,
   ReceiptPerforation,
   Cap,
+  SectionRule,
+  MemberAvatar,
+  Stamp,
+  ExpenseRow,
 } from "../../../components/receipt";
 
 /**
@@ -58,6 +67,13 @@ type ExpenseItem = {
   description: string;
   amount: number;
   category: keyof typeof EXPENSE_CATEGORY_CODES;
+  /**
+   * ZATEN GELIYORDU, tip istemiyordu - participants ve receipt gibi. Liste
+   * ucu include kullaniyor (expenses.ts), yani butun skalar alanlar yanitta.
+   * Satirin alt satiri "Sen odedin · esit · yiyecek" diye okunuyor ve
+   * ortadaki parca bu.
+   */
+  splitType: keyof typeof EXPENSE_SPLIT_TYPE_SHORT_CODES;
   expenseDate: string;
   paidById: string;
   /**
@@ -587,6 +603,22 @@ export default function GroupScreen() {
     (transfer) =>
       transfer.fromUserId !== currentUserId && transfer.toUserId !== currentUserId,
   );
+  /**
+   * BENI ILGILENDIREN transferler tek listede. Onceden ikiye ayriliyordu
+   * ("odeyeceklerim" / "bana odenecekler"), her birinin kendi basligiyla.
+   * Bakiye kartinin icinde iki baslik fazla: kartin ustundeki ISARETLI
+   * rakam zaten yonu soyluyor.
+   */
+  const myTransfers = [...iPay, ...iReceive];
+
+  /**
+   * BASLIKTAKI AVATARLAR. Dorde kadar cizilip gerisi bir cipte toplaniyor:
+   * dar bir ekranda (SE, 320pt) grup adi + para birimi + avatarlar tek
+   * satira sigmali.
+   */
+  const allMembers = members.state.kind === "ok" ? members.state.data.members : [];
+  const shownMembers = allMembers.slice(0, 4);
+  const overflowCount = allMembers.length - shownMembers.length;
 
   const nameByUserId: Record<string, string> = {};
   if (members.state.kind === "ok") {
@@ -619,30 +651,47 @@ export default function GroupScreen() {
    * satir uzamiyor - cikan iki alanin yerine bir alan giriyor.
    */
   function line(expense: ExpenseItem, previous?: ExpenseItem) {
+    const fields = secondaryFieldsOf(expense);
+    /**
+     * KATEGORI PARCALARDAN AYRILIYOR cunku artik metin degil CIP.
+     *
+     * visibleSecondaryFields kategoriyi HER ZAMAN ekliyor (tarih ve odeyen
+     * tekrar ederse eleniyor, kategori elenmiyor - expense-list-view.ts).
+     * Yani kimlikle filtrelemek kesin. Yardimciyi kopyalamak yerine
+     * ciktisini ayirmak, iki istemcinin ayni eleme kuralini paylasmaya
+     * devam etmesi demek.
+     */
     const parts = visibleSecondaryFields(
-      secondaryFieldsOf(expense),
+      fields,
       previous ? secondaryFieldsOf(previous) : null,
-    );
+    ).filter((part) => part !== fields.category);
+
+    /**
+     * BOLUSUM TURU YENI. Tasarimda alt satir "Sen odedin · esit · yiyecek"
+     * diye okunuyor; ortadaki parca bugune kadar hicbir istemcide yoktu.
+     * Kisa bicim kullaniliyor ("esit"), form etiketi degil ("Esit bol").
+     */
+    parts.push(t(EXPENSE_SPLIT_TYPE_SHORT_CODES[expense.splitType]));
+
     const myShare = expense.participants.find(
       (participant) => participant.userId === currentUserId,
     );
-    if (shouldShowShare(myShare?.shareAmount, expense.amount)) {
-      parts.push(
-        t("ui.your_share_amount", {
-          amount: formatMoney(myShare!.shareAmount, currency, locale),
-        }),
-      );
-    }
-
     const isDeleted = Boolean(expense.deletedAt);
-    if (isDeleted) {
-      // Rozet SATIRIN BASINDA: neden soluk oldugunu soyluyor. Yalnizca ustu
-      // cizili olmak ekran okuyucuya hicbir sey anlatmaz.
-      parts.unshift(t("ui.deleted_badge"));
-    }
+
+    /**
+     * PAYIN RENGI ODEYENE BAKIYOR, paya degil: ben odediysem bu satir bana
+     * ALACAK yaziyor, baskasi odediyse BORC. Tutar iki durumda da ayni sayi;
+     * anlami degistiren kim odedigi.
+     */
+    const iPaid = expense.paidById === currentUserId;
+    const share = shouldShowShare(myShare?.shareAmount, expense.amount)
+      ? t("ui.your_share_amount", {
+          amount: formatMoney(myShare!.shareAmount, currency, locale),
+        })
+      : undefined;
 
     return (
-      <ReceiptLine
+      <ExpenseRow
         key={expense.id}
         // SILINMIS SATIR DETAYA GITMIYOR: o ekran duzenleme ekrani ve
         // silinmis bir kayit duzenlenemiyor - sunucu da reddediyor.
@@ -653,18 +702,17 @@ export default function GroupScreen() {
         }
         label={expense.description}
         amount={formatMoney(expense.amount, currency, locale)}
-        secondary={parts.join(" · ")}
+        // Silinmis satirda alt satir tek sey soyluyor: neden soluk oldugu.
+        meta={isDeleted ? t("ui.deleted_badge") : parts.join(" · ")}
+        category={isDeleted ? undefined : t(EXPENSE_CATEGORY_CODES[expense.category])}
+        share={share}
+        shareTone={iPaid ? theme.credit : theme.debt}
         deleted={isDeleted}
         /**
-         * FIS ISARETI. Kucuk bir ataç: "bu harcamaya bir sey ekli".
-         *
-         * KENDISI DOKUNULABILIR ve satirdan AYRI bir is yapiyor - satir
-         * harcamayi aciyor, isaret fotografi TAM EKRAN aciyor. Kullanici
-         * ikisini de istedi: listede gormek ve dokununca buyutmek.
-         *
-         * GERCEK KUCUK RESIM DEGIL, simge. Her satira fotograf koymak
-         * listeyi acarken kirk indirme demekti; simge ayni soruyu bir bitle
-         * cevapliyor.
+         * FIS ISARETI. Kucuk bir ataç: "bu harcamaya bir sey ekli". KENDISI
+         * DOKUNULABILIR ve satirdan AYRI is yapiyor - satir harcamayi aciyor,
+         * isaret fotografi TAM EKRAN aciyor. Gercek kucuk resim degil simge:
+         * her satira fotograf koymak listeyi acarken kirk indirme demekti.
          */
         mark={
           expense.receipt ? (
@@ -674,7 +722,7 @@ export default function GroupScreen() {
               accessibilityRole="imagebutton"
               accessibilityLabel={t("ui.receipt")}
             >
-              <Ionicons name="attach-outline" size={15} color={theme.muted} />
+              <Ionicons name="attach-outline" size={15} color={theme.copper} />
             </Pressable>
           ) : undefined
         }
@@ -698,8 +746,10 @@ export default function GroupScreen() {
   const settled = myBalance === 0;
   const owed = myBalance > 0;
 
+  // edges'te "bottom" YOK: alt payi eylem cubugu kendi tasiyor
+  // (paddingBottom 34). Ikisi birden olunca cubuk yukari kaciyordu.
   return (
-    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
+    <SafeAreaView style={s.screen} edges={["left", "right"]}>
       {/* Baslik VERIYLE geliyor, o yuzden _layout'ta bos birakilip burada
           kuruluyor. Grup adi fisin ustunde de yaziyor ama baslik cubugu
           KAYDIRINCA da yerinde kaliyor - uzun bir listede "hangi gruptayim"
@@ -710,139 +760,149 @@ export default function GroupScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        {/* EYLEM SATIRI - FISIN USTUNDE, web'deki duzenin aynisi.
-            (src/app/(app)/groups/[groupId]/page.tsx, ayni gerekce orada
-            yazili: "kagidin uzerine buton koymak, basili bir belgeye
-            tiklanabilir bir sey eklemek gibi durur"; ustelik fis OKUNACAK,
-            dugmeler KULLANILACAK - iki ayri is.)
+        {/*
+          BASLIK BLOGU. Grup adi serif, yanindaki para birimi bakir bir
+          etiket, sagda uyelerin bas harfleri bindirmeli.
 
-            ONCEDEN UCU DE FISIN ALTINDAYDI ve isleyisleri dogruydu. Sorun
-            mesafeydi: kirk harcamali bir grupta harcama eklemek icin butun
-            listeyi kaydirmak gerekiyordu. Zil ve hesap ayni sebeple baslik
-            cubuguna tasinmisti; bunlar da ayni sebeple yukari alindi.
+          BASLIK CUBUGUNDA DA GRUP ADI YAZIYOR ve tekrar bilerek: orasi
+          KAYDIRINCA yerinde kalan referans, burasi sayfanin kendi basligi.
+          Ayni ikilik onceden de vardi (fisin "magaza adi" satiri).
 
-            SATIR ICI GIRIS TASINMADI: o fisin SONUNDA duruyor cunku bir fise
-            satir eklemek metaforun kendisi (ADR-027). Buradaki dugme tam
-            forma gidiyor - odeyeni, katilimcilari ve bolusme turunu yalnizca
-            orada secebiliyorsun. Ikisi farkli is, web'de de ikisi birden var. */}
-        <View style={s.actions}>
-          <Link href={`/groups/${groupId}/expenses/new`} asChild>
-            <Pressable style={s.actionPrimary}>
-              <Cap tone="onBrand">{t("ui.add_expense")}</Cap>
-            </Pressable>
-          </Link>
-
-          <Link href={`/groups/${groupId}/settlements`} asChild>
-            <Pressable hitSlop={8}>
-              <Cap>{t("ui.settlements")}</Cap>
-            </Pressable>
-          </Link>
-
-          {/* Duzenleme YALNIZCA SAHIBE: uc de oyle davraniyor, olmayacak bir
-              dugme sunup ardindan hata gostermek olurdu. */}
-          {group.state.data.group.role === "OWNER" ? (
-            <Link href={`/groups/${groupId}/edit`} asChild>
-              <Pressable hitSlop={8}>
-                <Cap>{t("ui.edit_group")}</Cap>
-              </Pressable>
-            </Link>
-          ) : null}
+          ZIL VE HESAP SIMGESI BURADA YOK - baslik cubugunda, screenOptions
+          uzerinden her ekranda (header-actions.tsx).
+        */}
+        <View style={s.headerBlock}>
+          <View style={s.headerTitleRow}>
+            <Text style={s.headerName} numberOfLines={1}>
+              {group.state.data.group.name}
+            </Text>
+            <Text style={s.headerCurrency}>{currency}</Text>
+          </View>
+          <View style={s.avatarStack}>
+            {shownMembers.map((member, index) => (
+              <View key={member.userId} style={index === 0 ? undefined : s.avatarOverlap}>
+                <MemberAvatar
+                  name={member.displayName}
+                  me={member.userId === currentUserId}
+                  size={30}
+                />
+              </View>
+            ))}
+            {overflowCount > 0 ? (
+              <View style={s.avatarOverlap}>
+                <View style={s.avatarMore}>
+                  <Text style={s.avatarMoreText}>{`+${overflowCount}`}</Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
         </View>
 
-        <Receipt>
-          {/* Fisin "magaza adi" satiri: ortalanmis, tek arali, harf araligi
-              acik - web'deki fisle ayni. Onceden sola yasli kalin bir yaziydi
-              ve fisin dilinden kopuyordu. Baslik cubugunda da yaziyor ama
-              orasi kaydirinca gorunen bir referans; burasi fisin parcasi. */}
-          <Text style={s.receiptTitle}>{group.state.data.group.name}</Text>
+        {/*
+          BAKIYE KARTI. Ekranin tek koyu yuzeyi ve tek buyuk rakami.
 
-          {!isEmpty ? (
-            <View style={s.balanceBlock}>
-              <View style={s.balanceRow}>
-                <Cap>{t("ui.your_status")}</Cap>
-                <Text
-                  style={[
-                    s.balanceAmount,
-                    { color: settled ? theme.foreground : owed ? theme.credit : theme.debt },
-                  ]}
-                >
-                  {formatSignedMoney(myBalance, currency, locale)}
-                </Text>
+          ODESME PLANI BU KARTIN ICINE GIRDI. Onceden iki ayri blokti: bakiye
+          bir satir, plan fisin icinde ayri bir bolum. Ikisi ayni soruyu
+          cevapliyor - "bu bakiyeyle ne yapacagim" - ve arayi acmak cevabi
+          soruyu goren yerden uzaklastiriyordu (ADR-016).
+
+          KART IKI TEMADA DA KOYU; ustundeki bakir tonlar bu yuzden temaya
+          gore degismiyor (theme.copperOnCard / copperFigure).
+        */}
+        {!isEmpty ? (
+          <View style={s.balanceCard}>
+            {suggestions.length > 0 ? (
+              <View style={s.stampSlot}>
+                <Stamp color={theme.copperOnCard}>
+                  {t(
+                    suggestions.length === 1
+                      ? "ui.settle_count_one"
+                      : "ui.settle_count_other",
+                    { count: suggestions.length },
+                  )}
+                </Stamp>
               </View>
-              {/* DAMGA, duz yazi degil. Web'de bakiyenin yanindaki cerceveli
-                  muhur ekranin tek karakterli ani; mobilde gri bir satira
-                  dusmustu. Renk ADR-015'e uyuyor: yesil "sana borclular",
-                  kiremit "borclusun", odesmis halde notr. */}
-              <View
-                style={[
-                  s.stamp,
-                  { borderColor: settled ? theme.muted : owed ? theme.credit : theme.debt },
-                ]}
-              >
-                <Cap color={settled ? theme.muted : owed ? theme.credit : theme.debt}>
-                  {settled ? t("ui.settled_up") : owed ? t("ui.owed_to_you") : t("ui.you_owe")}
-                </Cap>
-              </View>
-            </View>
-          ) : null}
+            ) : null}
 
-          {/* Odesme plani. Bakiyenin hemen ardindan: ADR-016 sayfayi bakiyenin
-              etrafinda kuruyor ve plan "bu bakiyeyle ne yapacagim" sorusunun
-              cevabi. Fiil BASLIKTA, satirda degil - Turkcede "{isim}'e ode"
-              yer tutucuyla dogru yazilamiyor (ek son harfe gore degisiyor). */}
-          {!isEmpty && suggestions.length > 0 ? (
-            <View style={s.planBlock}>
-              <Cap>{t("ui.settle_plan")}</Cap>
+            {/*
+              ETIKET YONU SOYLUYOR, "Bakiyen" demiyor - ve bu tasarimdan bir
+              sapma degil, ONDA KAYBOLAN BIR BILGININ yerine konmasi.
 
-              <SuggestionGroup
-                styles={s}
-                title={t("ui.you_should_pay")}
-                transfers={iPay}
-                nameOf={(transfer) => nameByUserId[transfer.toUserId] ?? t("ui.unknown_user")}
-                currency={currency}
-                locale={locale}
-                onPress={(transfer) =>
-                  router.push(
-                    `/groups/${groupId}/settlements?to=${transfer.toUserId}&amount=${transfer.amount}`,
-                  )
-                }
-              />
-              <SuggestionGroup
-                styles={s}
-                title={t("ui.will_be_paid_to_you")}
-                transfers={iReceive}
-                nameOf={(transfer) => nameByUserId[transfer.fromUserId] ?? t("ui.unknown_user")}
-                currency={currency}
-                locale={locale}
-                onPress={(transfer) =>
-                  router.push(
-                    `/groups/${groupId}/settlements?from=${transfer.fromUserId}&amount=${transfer.amount}`,
-                  )
-                }
-              />
+              Eski ekranda yonu MUHUR tasiyordu ("sana borclular" /
+              "borclusun" / "odestin"). Tasarimda muhur artik kac odemeyle
+              kapandigini yaziyor, yani yon yalnizca rakamin isaretinde
+              kalirdi. ADR-015'in yururlukteki yarisi bunu yasakliyor: anlam
+              tek bir tasiyiciya yuklenmez. Etiket slotu zaten bostu.
+            */}
+            <Text style={s.balanceCap}>
+              {settled
+                ? t("ui.settled_up")
+                : owed
+                  ? t("ui.owed_to_you")
+                  : t("ui.you_owe")}
+            </Text>
+            <Text style={s.balanceFigure}>
+              {formatSignedMoney(myBalance, currency, locale)}
+            </Text>
 
-              {/* Beni ilgilendirmeyen transferler: ayni blokta ama en altta ve
-                  soluk. Grubun takas plani dogru bir bilgi, ama benim isim
-                  degil - o yuzden dokunulabilir de degil. */}
-              {others.length > 0 ? (
-                <View style={s.planGroup}>
-                  <Text style={s.planTitle}>{t("ui.other_suggested_payments")}</Text>
-                  {others.map((transfer) => (
-                    <Text
-                      key={`${transfer.fromUserId}-${transfer.toUserId}`}
-                      style={s.otherRow}
-                      numberOfLines={1}
-                    >
-                      {`${nameByUserId[transfer.fromUserId] ?? t("ui.unknown_user")} → ${
-                        nameByUserId[transfer.toUserId] ?? t("ui.unknown_user")
-                      }  ${formatMoney(transfer.amount, currency, locale)}`}
-                    </Text>
-                  ))}
+            {/* Beni ilgilendiren transferler. Her satir odesme ekranini o
+                kisi ve o tutarla aciyor. */}
+            {myTransfers.length > 0 ? (
+              <>
+                <View style={s.balanceDivider} />
+                <View style={s.balanceRows}>
+                  {myTransfers.map((transfer) => {
+                    const iOwe = transfer.fromUserId === currentUserId;
+                    const otherId = iOwe ? transfer.toUserId : transfer.fromUserId;
+                    return (
+                      <Pressable
+                        key={`${transfer.fromUserId}-${transfer.toUserId}`}
+                        style={s.balanceRow}
+                        onPress={() =>
+                          router.push(
+                            iOwe
+                              ? `/groups/${groupId}/settlements?to=${otherId}&amount=${transfer.amount}`
+                              : `/groups/${groupId}/settlements?from=${otherId}&amount=${transfer.amount}`,
+                          )
+                        }
+                      >
+                        <Text style={s.balanceRowName} numberOfLines={1}>
+                          {nameByUserId[otherId] ?? t("ui.unknown_user")}
+                        </Text>
+                        <View style={s.balanceLeader} />
+                        <Text style={s.balanceRowAmount}>
+                          {formatMoney(transfer.amount, currency, locale)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
-              ) : null}
-            </View>
-          ) : null}
+              </>
+            ) : null}
+          </View>
+        ) : null}
 
+        {/* Beni ilgilendirmeyen transferler: kartin DISINDA ve soluk. Grubun
+            takas plani dogru bir bilgi ama benim isim degil - o yuzden
+            dokunulabilir de degil. */}
+        {!isEmpty && others.length > 0 ? (
+          <View style={s.othersBlock}>
+            <Text style={s.planTitle}>{t("ui.other_suggested_payments")}</Text>
+            {others.map((transfer) => (
+              <Text
+                key={`${transfer.fromUserId}-${transfer.toUserId}`}
+                style={s.otherRow}
+                numberOfLines={1}
+              >
+                {`${nameByUserId[transfer.fromUserId] ?? t("ui.unknown_user")} \u2192 ${
+                  nameByUserId[transfer.toUserId] ?? t("ui.unknown_user")
+                }  ${formatMoney(transfer.amount, currency, locale)}`}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
+        <Receipt>
           {isEmpty ? (
             // Bos fis BOS gorunuyor: uydurma ornek satir konmuyor, cunku
             // gercek kayitlarla karisirdi (web'de de ayni karar).
@@ -992,13 +1052,21 @@ export default function GroupScreen() {
 
                 return (
                   <View key={slice.month} style={s.monthBlock}>
+                    {/* AY BASLIGI ARTIK BAKIR CIZGILI BOLUM BASLIGI, perfore
+                        satir degil - ve ayin toplami basligin SAGINDA. Onceden
+                        toplam yalnizca ayin ALTINDA vardi, yani KAPALI bir ayda
+                        hic gorunmuyordu. */}
                     {isOpen ? (
-                      <ReceiptPerforation>{formatMonth(slice.month, locale)}</ReceiptPerforation>
+                      <SectionRule
+                        label={formatMonth(slice.month, locale)}
+                        value={formatMoney(slice.amount, currency, locale)}
+                      />
                     ) : (
                       <Pressable onPress={() => toggleMonth(slice.month)}>
-                        <ReceiptPerforation>
-                          {`${formatMonth(slice.month, locale)}  ${state ? "▾" : "▸"}`}
-                        </ReceiptPerforation>
+                        <SectionRule
+                          label={`${formatMonth(slice.month, locale)}  ${state ? "▾" : "▸"}`}
+                          value={formatMoney(slice.amount, currency, locale)}
+                        />
                       </Pressable>
                     )}
 
@@ -1122,39 +1190,71 @@ export default function GroupScreen() {
             ekrana gitmeden "kim ne durumda" gorunmeli - grubun asil sorusu
             bu. */}
         {memberBalances.length > 0 ? (
-          <View style={s.card}>
-            <View style={s.cardHead}>
-              <Cap>{t("ui.members_and_balances")}</Cap>
+          <View style={s.membersBlock}>
+            <SectionRule
+              label={t("ui.members_and_balances")}
+              value={t(
+                memberBalances.length === 1
+                  ? "ui.member_count_one"
+                  : "ui.member_count_other",
+                { count: memberBalances.length },
+              )}
+            />
+            {memberBalances.map((member) => (
+              <View key={member.userId} style={s.memberRow}>
+                {/* Bas harfler, fotograf DEGIL: liste ucu adres dondurmuyor
+                    ve her satira bir indirme koymak, ataç yerine kucuk resim
+                    koymayi reddettigimiz gerekcenin aynisi. */}
+                <MemberAvatar
+                  name={member.displayName}
+                  me={member.userId === currentUserId}
+                />
+                <View style={s.memberNames}>
+                  <Text style={s.memberName} numberOfLines={1}>
+                    {member.displayName}
+                  </Text>
+                  {/* AYRILMIS UYENIN BAKIYESI LISTEDE KALIYOR: borcu
+                      ayrilmakla silinmiyor. Durum adin ALTINDA yaziyor. */}
+                  {member.hasLeft ? (
+                    <Text style={s.memberLeft}>{t("ui.member_left")}</Text>
+                  ) : null}
+                </View>
+                <Text
+                  style={[
+                    s.memberAmount,
+                    {
+                      color:
+                        member.amount === 0
+                          ? theme.muted
+                          : member.amount > 0
+                            ? theme.credit
+                            : theme.debt,
+                    },
+                  ]}
+                >
+                  {formatSignedMoney(member.amount, currency, locale)}
+                </Text>
+              </View>
+            ))}
+
+            {/* YONETIM BAGLANTILARI. Alt cubukta yalnizca iki dugme var
+                ("Harcama ekle", "Odes"); uyeler ve grup ayarlari gunluk eylem
+                degil, o yuzden listenin dibinde duz baglanti. Duzenleme
+                YALNIZCA SAHIBE: uc de oyle davraniyor, olmayacak bir dugme
+                sunup ardindan hata gostermek olurdu. */}
+            <View style={s.memberLinks}>
               <Link href={`/groups/${groupId}/members`} asChild>
-                <Pressable>
+                <Pressable hitSlop={8}>
                   <Text style={s.cardLink}>{t("ui.manage_members")}</Text>
                 </Pressable>
               </Link>
-            </View>
-            <View style={s.cardBody}>
-              {memberBalances.map((member) => (
-                <View key={member.userId} style={s.memberRow}>
-                  <Text style={s.memberName} numberOfLines={1}>
-                    {member.displayName}
-                    {member.hasLeft ? ` · ${t("ui.member_left")}` : ""}
-                  </Text>
-                  <Text
-                    style={[
-                      s.memberAmount,
-                      {
-                        color:
-                          member.amount === 0
-                            ? theme.muted
-                            : member.amount > 0
-                              ? theme.credit
-                              : theme.debt,
-                      },
-                    ]}
-                  >
-                    {formatSignedMoney(member.amount, currency, locale)}
-                  </Text>
-                </View>
-              ))}
+              {group.state.data.group.role === "OWNER" ? (
+                <Link href={`/groups/${groupId}/edit`} asChild>
+                  <Pressable hitSlop={8}>
+                    <Text style={s.cardLink}>{t("ui.edit_group")}</Text>
+                  </Pressable>
+                </Link>
+              ) : null}
             </View>
           </View>
         ) : null}
@@ -1181,6 +1281,35 @@ export default function GroupScreen() {
             Kaldirmadan once bu kontrol edildi; simgeyi basliktan alan,
             burayi geri koymak zorunda. */}
       </ScrollView>
+
+      {/*
+        SABIT EYLEM CUBUGU. ScrollView'in DISINDA: icinde olsaydi listeyle
+        birlikte kayar ve kirk harcamali bir grupta yine dibe duserdi -
+        yukari tasinmalarinin sebebi tam olarak buydu.
+
+        BU BIR YON DEGISIKLIGI. Eylemler 6 Eylul'de fisin USTUNE alinmisti
+        (ayni sorun, baska cozum); tasarim onlari alta SABITLIYOR. Ikisi de
+        mesafe sorununu cozuyor, ama sabit cubuk listeyi kisaltmiyor.
+
+        GRADYAN MASKE: alttaki icerik cubugun altina girerken sert bir kenarla
+        kesilmiyor, kagit zemine dogru soluyor.
+      */}
+      <LinearGradient
+        colors={[`${theme.background}00`, theme.background, theme.background]}
+        locations={[0, 0.32, 1]}
+        style={s.actionBar}
+      >
+        <Link href={`/groups/${groupId}/expenses/new`} asChild>
+          <Pressable style={s.actionPrimary}>
+            <Text style={s.actionPrimaryText}>{t("ui.add_expense")}</Text>
+          </Pressable>
+        </Link>
+        <Link href={`/groups/${groupId}/settlements`} asChild>
+          <Pressable style={s.actionSecondary}>
+            <Text style={s.actionSecondaryText}>{t("ui.settlements")}</Text>
+          </Pressable>
+        </Link>
+      </LinearGradient>
       </KeyboardAvoidingView>
 
       {/* FIS KATMANI. Ekranin en disinda: ScrollView'in icinde olsaydi
@@ -1288,99 +1417,152 @@ function FilteredResults({
   );
 }
 
-/**
- * Odesme onerilerinin bir grubu.
- *
- * FIIL BASLIKTA, SATIRDA DEGIL. Turkcede "{isim}'e ode" yer tutucuyla dogru
- * yazilamiyor - ek ismin son harfine gore degisiyor (Ayse'ye / Ahmet'e).
- * Web'de de ayni kural gecerli.
- */
-function SuggestionGroup({
-  styles: s,
-  title,
-  transfers,
-  nameOf,
-  currency,
-  locale,
-  onPress,
-}: {
-  styles: ReturnType<typeof createStyles>;
-  title: string;
-  transfers: SuggestedTransfer[];
-  nameOf: (transfer: SuggestedTransfer) => string;
-  currency: string;
-  locale: Locale;
-  onPress: (transfer: SuggestedTransfer) => void;
-}) {
-  if (transfers.length === 0) {
-    return null;
-  }
-
-  return (
-    <View style={s.planGroup}>
-      <Text style={s.planTitle}>{title}</Text>
-      {transfers.map((transfer) => (
-        <Pressable
-          key={`${transfer.fromUserId}-${transfer.toUserId}`}
-          style={s.planRow}
-          onPress={() => onPress(transfer)}
-        >
-          <Text style={s.planName} numberOfLines={1}>
-            {nameOf(transfer)}
-          </Text>
-          <Text style={s.planAmount}>{formatMoney(transfer.amount, currency, locale)}</Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
 function createStyles(theme: Theme) {
   return StyleSheet.create({
     // Zemin fisten bir ton KOYU: kagidin bir yuzeyin uzerinde durdugunu
     // soyleyen sey bu.
     screen: { flex: 1, backgroundColor: theme.background },
     flex: { flex: 1 },
-    scroll: { padding: 16, paddingBottom: 32 },
-    /**
-     * EYLEM SATIRI. flexWrap SART: Turkce etiketler uzun ("HARCAMA EKLE",
-     * "ODESMELER", "GRUP DUZENLE") ve dar bir telefonda (SE, 320pt) tek
-     * satira sigmiyorlar. Sarmasaydi son etiket ekranin disina tasardi -
-     * yani sahip, duzenleme dugmesini hic goremezdi.
-     */
-    actions: {
+    // paddingBottom sabit eylem cubugunun yuksekligini karsiliyor: son
+    // satir cubugun altinda kalmamali.
+    scroll: { padding: 16, paddingBottom: 130 },
+    /** BASLIK BLOGU. */
+    headerBlock: {
       flexDirection: "row",
-      flexWrap: "wrap",
       alignItems: "center",
-      gap: 14,
-      marginBottom: 14,
+      gap: 12,
+      paddingTop: 8,
+      paddingBottom: 14,
     },
-    // Birincil eylem TEK: harcama eklemek. Digerleri duz baglanti - hepsini
-    // dugme yapmak hicbirini one cikarmamak olurdu.
-    actionPrimary: {
-      backgroundColor: theme.brand,
+    headerTitleRow: { flexDirection: "row", alignItems: "baseline", gap: 8, flexShrink: 1 },
+    // Serif ve 24 punto: ekranin tek serif basligi.
+    headerName: { fontFamily: fonts.heading, fontSize: 24, color: theme.foreground, flexShrink: 1 },
+    headerCurrency: {
+      fontFamily: fonts.body,
+      fontSize: 10.5,
+      letterSpacing: 1.5,
+      color: theme.copperText,
+    },
+    avatarStack: { flexDirection: "row", alignItems: "center", marginLeft: "auto" },
+    // Her avatar oncekinin uzerine 8 birim biniyor.
+    avatarOverlap: { marginLeft: -8 },
+    avatarMore: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.inputLine,
+      backgroundColor: theme.background,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    avatarMoreText: { fontFamily: fonts.body, fontSize: 10, color: theme.muted },
+
+    /**
+     * BAKIYE KARTI - ekranin tek koyu yuzeyi.
+     * overflow: hidden SART: muhur donduruldugu icin kosesi karttan tasiyor.
+     */
+    balanceCard: {
+      backgroundColor: theme.balanceCard,
       borderRadius: 4,
-      paddingVertical: 10,
-      paddingHorizontal: 16,
+      padding: 20,
+      overflow: "hidden",
+      marginBottom: 20,
     },
+    stampSlot: { position: "absolute", top: 14, right: 14 },
+    balanceCap: {
+      fontFamily: fonts.medium,
+      fontSize: 10,
+      letterSpacing: 2,
+      textTransform: "uppercase",
+      color: theme.copperOnCard,
+    },
+    // 46 punto: uygulamadaki en buyuk sey. Negatif harf araligi olmadan
+    // buyuk rakamlar dagilmis gorunuyor.
+    balanceFigure: {
+      fontFamily: fonts.semibold,
+      fontSize: 46,
+      lineHeight: 50,
+      letterSpacing: -1.8,
+      color: theme.copperFigure,
+      fontVariant: ["tabular-nums"],
+      paddingTop: 8,
+    },
+    /**
+     * KARTIN KENDI IC CIZGILERI SABIT RENKTE ve bu bilincli: kart iki temada
+     * da koyu petrol, yani uzerindeki cizgiler temayla degismemeli.
+     * theme.border burada gorunmez olurdu.
+     */
+    balanceDivider: { height: 1, backgroundColor: "#2f5a4e", marginTop: 16, marginBottom: 12 },
+    balanceRows: { gap: 7 },
+    balanceRow: { flexDirection: "row", alignItems: "baseline" },
+    balanceRowName: { fontFamily: fonts.body, fontSize: 13.5, color: "#e6efe9", flexShrink: 1 },
+    balanceLeader: {
+      flex: 1,
+      borderBottomWidth: 1,
+      borderStyle: "dotted",
+      borderColor: "#3f6a5d",
+      marginHorizontal: 8,
+      transform: [{ translateY: -4 }],
+    },
+    balanceRowAmount: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: "#ffffff",
+      fontVariant: ["tabular-nums"],
+    },
+    othersBlock: { gap: 4, marginBottom: 20 },
+
+    membersBlock: { marginTop: 24 },
+    memberLinks: { flexDirection: "row", gap: 20, paddingTop: 14 },
+    memberNames: { flex: 1, gap: 1 },
+    memberLeft: { fontFamily: fonts.body, fontSize: 11, color: theme.muted },
+
+    /**
+     * EYLEM CUBUGU. position: absolute - ScrollView'in UZERINDE duruyor.
+     * Gradyan kendi zeminini tasidigi icin backgroundColor YOK.
+     * paddingBottom 34: home gostergesi payi (SafeAreaView'in alt kenari
+     * bu ekranda kapali, yoksa iki pay ust uste binerdi).
+     */
+    actionBar: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingHorizontal: 20,
+      paddingTop: 14,
+      paddingBottom: 34,
+    },
+    actionPrimary: {
+      flex: 1,
+      height: 50,
+      borderRadius: 3,
+      backgroundColor: theme.brand,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    actionPrimaryText: { fontFamily: fonts.semibold, fontSize: 15.5, color: theme.onBrand },
+    // Ikincil eylem CERCEVELI: iki dolgulu dugme hicbirini one cikarmazdi.
+    actionSecondary: {
+      height: 50,
+      paddingHorizontal: 18,
+      borderRadius: 3,
+      borderWidth: 1,
+      borderColor: theme.foreground,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    actionSecondaryText: { fontFamily: fonts.semibold, fontSize: 15.5, color: theme.foreground },
+
     centered: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
       gap: 12,
       backgroundColor: theme.background,
-    },
-    groupName: { fontSize: 24, fontFamily: fonts.heading, color: theme.foreground },
-    // Fisin "magaza adi". MONO'DAN SERIFE gecti: tasarimda grup adi
-    // Instrument Serif. Harf araligi da 2'den 0'a indi - mono'da aralik
-    // yaziyi "basili" gosteriyordu, serifte ayni aralik yalnizca dagitiyor.
-    receiptTitle: {
-      fontFamily: fonts.heading,
-      fontSize: 20,
-      letterSpacing: 0,
-      textAlign: "center",
-      color: theme.foreground,
-      marginBottom: 4,
     },
     // Cerceveli damga. Zemin YOK: mureklep izlenimi cerceveden geliyor.
     card: {
@@ -1390,9 +1572,6 @@ function createStyles(theme: Theme) {
       marginTop: 12,
       gap: 10,
     },
-    cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    // Hesap kapilari grubun bloklarindan bir nefes ayri: kapsamlari farkli.
-    accountBlock: { marginTop: 16 },
     emptyDeletedLink: { marginTop: 10 },
     cardBody: { gap: 12 },
     cardLink: { color: theme.brand, fontSize: 13, fontFamily: fonts.medium },
@@ -1402,9 +1581,16 @@ function createStyles(theme: Theme) {
     catAmount: { color: theme.muted, fontFamily: fonts.body, fontSize: 12 },
     catTrack: { height: 5, borderRadius: 3, backgroundColor: theme.surface, overflow: "hidden" },
     catFill: { height: "100%", borderRadius: 3, backgroundColor: theme.brand },
-    memberRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12 },
-    memberName: { flex: 1, color: theme.foreground, fontFamily: fonts.body, fontSize: 15 },
-    memberAmount: { fontSize: 15, fontFamily: fonts.medium },
+    memberRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.lineSoft,
+    },
+    memberName: { color: theme.foreground, fontFamily: fonts.body, fontSize: 14.5 },
+    memberAmount: { fontSize: 14, fontFamily: fonts.semibold, fontVariant: ["tabular-nums"] },
     stamp: {
       alignSelf: "flex-end",
       borderWidth: 1.5,
@@ -1413,23 +1599,8 @@ function createStyles(theme: Theme) {
       paddingVertical: 4,
       marginTop: 6,
     },
-    balanceBlock: { gap: 2, borderTopWidth: 1, borderStyle: "dashed", borderColor: theme.border, paddingTop: 16 },
-    balanceRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" },
-    balanceAmount: { fontSize: 26, fontFamily: fonts.medium, fontVariant: ["tabular-nums"] },
-    balanceLabel: { fontFamily: fonts.body, fontSize: 12, color: theme.muted, textAlign: "right" },
     emptyText: { color: theme.muted, lineHeight: 22 },
-    planBlock: {
-      gap: 10,
-      borderTopWidth: 1,
-      borderStyle: "dashed",
-      borderColor: theme.border,
-      paddingTop: 16,
-    },
-    planGroup: { gap: 4 },
     planTitle: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
-    planRow: { flexDirection: "row", alignItems: "baseline", gap: 8, paddingVertical: 3 },
-    planName: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
-    planAmount: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground, fontVariant: ["tabular-nums"] },
     otherRow: { fontFamily: fonts.body, fontSize: 13, color: theme.muted, paddingVertical: 2 },
     monthBlock: { gap: 4 },
     // Suzgec satiri: kutusuz, kesikli iki cizgi arasinda - fisin uzerine
@@ -1469,9 +1640,5 @@ function createStyles(theme: Theme) {
     error: { color: theme.debt, textAlign: "center", paddingHorizontal: 24 },
     button: { paddingVertical: 12, paddingHorizontal: 20, backgroundColor: theme.brand, borderRadius: 8 },
     buttonText: { color: theme.onBrand, fontFamily: fonts.body, fontSize: 15 },
-    // flexWrap SART: alt bilgide dort giris var ve tek satira sigmiyor.
-    // Sarmadan once sonuncusu ("cikis yap") ekranin disinda kaliyordu.
-    footer: { flexDirection: "row", flexWrap: "wrap", rowGap: 12, columnGap: 24, paddingTop: 24 },
-    footerText: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },
   });
 }

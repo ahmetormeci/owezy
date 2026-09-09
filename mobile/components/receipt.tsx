@@ -220,6 +220,157 @@ export function Receipt({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Bolum basligi: solda bakir etiket, sagda bir deger, altinda BAKIR cizgi.
+ *
+ * Cizgi neden bakir ve neden yalnizca burada: tasarimda bakir "bolum
+ * basliyor" demenin isareti. Liste satirlarini ayiran cizgi (--line-soft)
+ * ondan cok daha soluk; ikisi ayni agirlikta olsaydi liste bir tabloya
+ * donerdi (ADR-021'in "kutu yerine cizgi" kuralinin devami).
+ */
+export function SectionRule({ label, value }: { label: string; value?: string }) {
+  const theme = useTheme();
+  const s = styles(theme);
+  return (
+    <View style={s.sectionRule}>
+      <Cap>{label}</Cap>
+      {value ? <Text style={s.sectionValue}>{value}</Text> : null}
+    </View>
+  );
+}
+
+/**
+ * Uyenin bas harfleri.
+ *
+ * NEDEN FOTOGRAF DEGIL: liste ucu fotograf adresi dondurmuyor ve her satira
+ * bir indirme koymak, ataç yerine kucuk resim koymayi reddettigimiz gerekcenin
+ * aynisi. Bas harf ayni soruyu ("kim") ag turu olmadan cevapliyor.
+ *
+ * KENDI SATIRIN BAKIR CERCEVELI: dort kisilik bir listede "hangisi benim"
+ * sorusu her seferinde okumakla cevaplanmamali.
+ */
+export function MemberAvatar({ name, me = false, size = 48 }: {
+  name: string;
+  me?: boolean;
+  size?: number;
+}) {
+  const theme = useTheme();
+  const s = styles(theme);
+  const locale = useLocale();
+  // toLocaleUpperCase(locale) SART: Turkce'de "i" -> "I" degil "İ".
+  const initials = name.trim().slice(0, 2).toLocaleUpperCase(locale);
+  return (
+    <View
+      style={[
+        s.avatar,
+        { width: size, height: size, borderRadius: size / 2 },
+        me && s.avatarMe,
+      ]}
+    >
+      <Text style={[s.avatarText, me && s.avatarTextMe, { fontSize: size / 4 }]}>
+        {initials}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Cerceveli, hafif egik muhur. Zemin YOK: murekkep izlenimi cerceveden.
+ *
+ * DONDURME KUCUK (-4 derece) ve bilerek: daha fazlasi "sticker" gibi durup
+ * fisin sakinligini bozuyor.
+ */
+export function Stamp({ children, color }: { children: string; color?: string }) {
+  const theme = useTheme();
+  const s = styles(theme);
+  return (
+    <View style={[s.stamp, color ? { borderColor: color } : null]}>
+      <Cap color={color ?? theme.copper}>{children}</Cap>
+    </View>
+  );
+}
+
+/**
+ * FISIN HARCAMA SATIRI - toplam satirlarindan (ReceiptLine) AYRI bir bilesen.
+ *
+ * NEDEN AYRI: ReceiptLine noktali ayracli tek satir; toplamlarda ve ay ara
+ * toplamlarinda dogru olan bicim o. Harcama satiri iki sutunlu: solda
+ * aciklama + kim odedi/nasil bolundu/kategori, sagda tutar + senin payin.
+ * Ikisini tek bilesende toplamak, her cagriya "hangi bicim" diye bir bayrak
+ * gecirmek olurdu.
+ *
+ * KATEGORI BIR CIP, duz metin degil - ve cip TEXT ICINDE DEGIL ayri bir View.
+ * React Native ic ice <Text> icinde kenarlik guvenilir cizmiyor.
+ */
+export function ExpenseRow({
+  label,
+  amount,
+  meta,
+  category,
+  share,
+  shareTone,
+  deleted = false,
+  onPress,
+  mark,
+  action,
+}: {
+  label: string;
+  amount: string;
+  /** "Sen odedin · esit" - kategori HARIC, o cip olarak geliyor. */
+  meta?: string;
+  category?: string;
+  /** "payin 213,34" - tutarin ALTINDA, rengi anlam tasiyor. */
+  share?: string;
+  shareTone?: string;
+  deleted?: boolean;
+  onPress?: () => void;
+  mark?: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  const theme = useTheme();
+  const s = styles(theme);
+  const Wrapper = onPress ? Pressable : View;
+
+  return (
+    <Wrapper style={s.expenseRow} onPress={onPress}>
+      <View style={s.expenseMain}>
+        <View style={s.expenseTitleRow}>
+          <Text
+            style={[s.expenseLabel, deleted && s.deletedLabel]}
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
+          {mark}
+        </View>
+        {meta || category || action ? (
+          <View style={s.expenseMetaRow}>
+            {meta ? (
+              <Text style={s.expenseMeta} numberOfLines={1}>
+                {meta}
+              </Text>
+            ) : null}
+            {category ? (
+              <View style={s.chip}>
+                <Text style={s.chipText}>{category}</Text>
+              </View>
+            ) : null}
+            {action}
+          </View>
+        ) : null}
+      </View>
+      <View style={s.expenseNumbers}>
+        <Text style={[s.expenseAmount, deleted && s.deletedAmount]}>{amount}</Text>
+        {share && !deleted ? (
+          <Text style={[s.expenseShare, shareTone ? { color: shareTone } : null]}>
+            {share}
+          </Text>
+        ) : null}
+      </View>
+    </Wrapper>
+  );
+}
+
 function styles(theme: Theme) {
   return StyleSheet.create({
     paper: {
@@ -258,9 +409,77 @@ function styles(theme: Theme) {
       color: theme.copperText,
     },
     // BIRINCIL DUGMENIN uzerinde (petrol dolgu) - koyu bakiye kartinin
-    // degil. Sabit theme.onBrand DEGIL: koyu temada petrol aciliyor ve beyaz metin
+    // degil. Sabit "#fff" DEGIL: koyu temada petrol aciliyor ve beyaz metin
     // orada 3.89:1 kaliyor, AA'yi gecmiyor (ADR-048'de olculdu).
     capOnBrand: { color: theme.onBrand },
+
+    sectionRule: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: theme.copper,
+      paddingBottom: 7,
+    },
+    sectionValue: { fontFamily: fonts.body, fontSize: 11.5, color: theme.muted },
+
+    avatar: {
+      borderWidth: 1,
+      borderColor: theme.inputLine,
+      backgroundColor: theme.surface,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    avatarMe: { borderColor: theme.copper, backgroundColor: theme.copperSoft },
+    avatarText: { fontFamily: fonts.body, color: theme.muted },
+    avatarTextMe: { color: theme.copperText },
+
+    stamp: {
+      alignSelf: "flex-start",
+      borderWidth: 1,
+      borderColor: theme.copper,
+      borderRadius: 2,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      transform: [{ rotate: "-4deg" }],
+    },
+
+    expenseRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingVertical: 13,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.lineSoft,
+    },
+    expenseMain: { flex: 1, gap: 3, minWidth: 0 },
+    expenseTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    expenseLabel: { fontFamily: fonts.medium, fontSize: 15, color: theme.foreground, flexShrink: 1 },
+    expenseMetaRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
+    expenseMeta: { fontFamily: fonts.body, fontSize: 11.5, color: theme.muted, flexShrink: 1 },
+    // Cip: tam yuvarlak kenar, kagit tonunda kenarlik, bakir metin.
+    chip: {
+      borderWidth: 1,
+      borderColor: theme.chipBorder,
+      borderRadius: 999,
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+    },
+    chipText: { fontFamily: fonts.body, fontSize: 11, color: theme.copperText },
+    expenseNumbers: { alignItems: "flex-end", gap: 3 },
+    expenseAmount: {
+      fontFamily: fonts.semibold,
+      fontSize: 16,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+    },
+    expenseShare: {
+      fontFamily: fonts.body,
+      fontSize: 10.5,
+      color: theme.muted,
+      fontVariant: ["tabular-nums"],
+    },
 
     doubleRule: { gap: 2 },
     rule: { height: 1, backgroundColor: theme.border },

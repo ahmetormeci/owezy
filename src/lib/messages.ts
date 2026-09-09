@@ -480,6 +480,17 @@ export const MESSAGES_TR = {
   "ui.category_guessed": "Tahmin: {category}",
   "ui.date": "Tarih",
   "ui.how_to_split": "Nasıl bölünecek?",
+  // KISA BICIMLER, form etiketleri DEGIL. Fis satirinin alt satirinda
+  // "Eşit böl" emir kipinde okunuyor ("Sen ödedin · Eşit böl · yiyecek");
+  // orada gereken sifat. Ayni ayrimi web de kullanacak.
+  // Bakiye kartindaki muhur: "2 ÖDEME". Cogul sozlukte (ADR-044).
+  "ui.member_count_one": "{count} üye",
+  "ui.member_count_other": "{count} üye",
+  "ui.settle_count_one": "{count} ödeme",
+  "ui.settle_count_other": "{count} ödeme",
+  "ui.split_short_equal": "eşit",
+  "ui.split_short_exact": "tam tutar",
+  "ui.split_short_percentage": "yüzde",
   "ui.split_equal": "Eşit böl",
   "ui.split_exact": "Tutar gir",
   "ui.split_percentage": "Yüzde gir",
@@ -1060,6 +1071,13 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.category_guessed": "Guessed: {category}",
   "ui.date": "Date",
   "ui.how_to_split": "How should it be split?",
+  "ui.member_count_one": "{count} member",
+  "ui.member_count_other": "{count} members",
+  "ui.settle_count_one": "{count} payment",
+  "ui.settle_count_other": "{count} payments",
+  "ui.split_short_equal": "equal",
+  "ui.split_short_exact": "exact",
+  "ui.split_short_percentage": "percentage",
   "ui.split_equal": "Split equally",
   "ui.split_exact": "Enter amounts",
   "ui.split_percentage": "Enter percentages",

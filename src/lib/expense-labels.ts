@@ -31,3 +31,12 @@ export const EXPENSE_SPLIT_TYPE_CODES: Record<SplitType, MessageCode> = {
   EXACT: "ui.split_exact",
   PERCENTAGE: "ui.split_percentage",
 };
+
+// Fis satirinin ALT SATIRINDA kullanilan kisa biçim. Yukaridakiler form
+// etiketi ("Eşit böl"), burasi sifat ("eşit") - alt satir "Sen ödedin ·
+// eşit · yiyecek" diye okunuyor ve orada emir kipi yanlis.
+export const EXPENSE_SPLIT_TYPE_SHORT_CODES: Record<SplitType, MessageCode> = {
+  EQUAL: "ui.split_short_equal",
+  EXACT: "ui.split_short_exact",
+  PERCENTAGE: "ui.split_short_percentage",
+};

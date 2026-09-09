@@ -46,6 +46,9 @@ export type Theme = {
   copper: string;
   /** Bakir METIN (kucuk etiketler). Kagit uzerinde 5.29:1. */
   copperText: string;
+  /** Cok soluk bakir zemin - bugun yalnizca KENDI satirini isaretlemek icin
+   *  (uye listesindeki avatar). Bakir metin uzerinde 7.15:1. */
+  copperSoft: string;
   /** Koyu petrol kart UZERINDEKI bakir - kart iki temada da koyu oldugu
    *  icin bu ikisi temaya gore DEGISMIYOR. */
   copperOnCard: string;
@@ -80,6 +83,7 @@ const LIGHT: Theme = {
   balanceCard: "#123c32", //  --brand-strong
   copper: "#b5813a", //       --copper      (CIZGI)
   copperText: "#8a5f26", //   --copper-text (METIN)
+  copperSoft: "#f7f0e2",
   copperOnCard: "#d9ac6c",
   copperFigure: "#e0b477",
   credit: "#1c5c4c", //       --credit (= brand)
@@ -107,6 +111,7 @@ const DARK: Theme = {
   balanceCard: "#16483c", //  koyu zeminden bir tik acik
   copper: "#d9ac6c",
   copperText: "#e0b477",
+  copperSoft: "#322d22",
   copperOnCard: "#d9ac6c",
   copperFigure: "#e0b477",
   credit: "#6bbc9a",
