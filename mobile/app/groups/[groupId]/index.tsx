@@ -37,7 +37,6 @@ import { useSession } from "../../../lib/auth";
 import { CsvExport } from "../../../components/csv-export";
 import { ReceiptViewer } from "../../../components/receipt-viewer";
 import { ExpenseComposer } from "../../../components/expense-composer";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   Receipt,
   ReceiptDoubleRule,
@@ -1291,14 +1290,17 @@ export default function GroupScreen() {
         (ayni sorun, baska cozum); tasarim onlari alta SABITLIYOR. Ikisi de
         mesafe sorununu cozuyor, ama sabit cubuk listeyi kisaltmiyor.
 
-        GRADYAN MASKE: alttaki icerik cubugun altina girerken sert bir kenarla
-        kesilmiyor, kagit zemine dogru soluyor.
+        TASARIM BURADA GRADYAN MASKE ISTIYOR, BIZ DUZ ZEMIN + SAC TELI CIZGI
+        KOYDUK. Gerekce bagimlilik: gradyan native bir modul (expo-linear-
+        gradient) demek ve uygulamada bugun hic gradyan yok. Bu proje bir kez
+        Expo surum kaymasi yuzunden CI'i kaybetti; SDK ile senkron tutulacak
+        bir modulu SUSLEME icin eklemek kotu bir takas. Islevi - icerigin sert
+        bir kenarla kesilmemesi - opak bir cubuk zaten karsiliyor.
+
+        Gradyan gerekirse: expo-linear-gradient eklenip dev build yeniden
+        alinmali, cunku mevcut build'de o modul yok.
       */}
-      <LinearGradient
-        colors={[`${theme.background}00`, theme.background, theme.background]}
-        locations={[0, 0.32, 1]}
-        style={s.actionBar}
-      >
+      <View style={s.actionBar}>
         <Link href={`/groups/${groupId}/expenses/new`} asChild>
           <Pressable style={s.actionPrimary}>
             <Text style={s.actionPrimaryText}>{t("ui.add_expense")}</Text>
@@ -1306,10 +1308,10 @@ export default function GroupScreen() {
         </Link>
         <Link href={`/groups/${groupId}/settlements`} asChild>
           <Pressable style={s.actionSecondary}>
-            <Text style={s.actionSecondaryText}>{t("ui.settlements")}</Text>
+            <Text style={s.actionSecondaryText}>{t("ui.settle_action")}</Text>
           </Pressable>
         </Link>
-      </LinearGradient>
+      </View>
       </KeyboardAvoidingView>
 
       {/* FIS KATMANI. Ekranin en disinda: ScrollView'in icinde olsaydi
@@ -1520,7 +1522,6 @@ function createStyles(theme: Theme) {
 
     /**
      * EYLEM CUBUGU. position: absolute - ScrollView'in UZERINDE duruyor.
-     * Gradyan kendi zeminini tasidigi icin backgroundColor YOK.
      * paddingBottom 34: home gostergesi payi (SafeAreaView'in alt kenari
      * bu ekranda kapali, yoksa iki pay ust uste binerdi).
      */
@@ -1529,6 +1530,9 @@ function createStyles(theme: Theme) {
       left: 0,
       right: 0,
       bottom: 0,
+      backgroundColor: theme.background,
+      borderTopWidth: 1,
+      borderTopColor: theme.lineSoft,
       flexDirection: "row",
       alignItems: "center",
       gap: 10,

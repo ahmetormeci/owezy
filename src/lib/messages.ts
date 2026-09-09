@@ -484,6 +484,10 @@ export const MESSAGES_TR = {
   // "Eşit böl" emir kipinde okunuyor ("Sen ödedin · Eşit böl · yiyecek");
   // orada gereken sifat. Ayni ayrimi web de kullanacak.
   // Bakiye kartindaki muhur: "2 ÖDEME". Cogul sozlukte (ADR-044).
+  // EYLEM ETIKETI, ekran adi DEGIL. "ui.settlements" o ekranin BASLIGI
+  // ("Kaydedilen ödemeler") ve baslik olarak dogru; alt cubuktaki dugmede
+  // ise cubugun yarisini kapliyor ve bir eylem gibi okunmuyor.
+  "ui.settle_action": "Ödeş",
   "ui.member_count_one": "{count} üye",
   "ui.member_count_other": "{count} üye",
   "ui.settle_count_one": "{count} ödeme",
@@ -1071,6 +1075,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.category_guessed": "Guessed: {category}",
   "ui.date": "Date",
   "ui.how_to_split": "How should it be split?",
+  "ui.settle_action": "Settle up",
   "ui.member_count_one": "{count} member",
   "ui.member_count_other": "{count} members",
   "ui.settle_count_one": "{count} payment",
