@@ -53,7 +53,14 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // KAGIT, HALKA DEGIL (ADR-048). Onceki hali "ring-1
+          // ring-foreground/10 rounded-xl bg-popover" idi: bulanik bir halka
+          // ve ayri bir yuzey. Diyalog artik kucuk bir KAGIT parcasi -
+          // --paper her iki temada da --background'dan bir tik acik (acik
+          // 0.980 -> 0.994, koyu 0.213 -> 0.256), yani yukselmeyi golge
+          // degil YUZEYIN KENDISI tasiyor; sinirini da tek bir cizgi
+          // veriyor.
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border border-border bg-paper p-4 text-sm text-popover-foreground duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}
@@ -84,7 +91,10 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      // Basligin altinda bakir cizgi - fisin ust bolum sinirinin aynisi
+      // (tanitim sayfasindaki ornek fiste de oyle). Basligi govdeden
+      // AYIRIYOR; onceden ikisini yalnizca bosluk ayiriyordu.
+      className={cn("flex flex-col gap-2 border-b border-copper pb-3", className)}
       {...props}
     />
   )
@@ -102,7 +112,11 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        // GRI SERIT KALKTI (bg-muted/50). O shadcn'in varsayilaniydi ve
+        // diyalogun icinde IKINCI bir yuzey uretiyordu; kagit uzerinde tek
+        // yuzey var. Ayrimi artik tam genislikte tek bir cizgi tasiyor -
+        // negatif marjlar bu yuzden duruyor, dolgu icin degil.
+        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-lg border-t border-border p-4 sm:flex-row sm:justify-end",
         className
       )}
       {...props}

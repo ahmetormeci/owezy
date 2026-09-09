@@ -72,8 +72,14 @@ export default async function GroupMembersPage({
                   hasImage={member.hasImage}
                 />
                 <span className="truncate">{member.displayName}</span>
+                {/* Rol duz metin - gruplar listesindekiyle ayni sebep ve ayni
+                    bicim: rol bir DURUM degil (ADR-021). Yanindaki "sen"
+                    rozeti duruyor; o bir durum degil ama KIMLIK isareti ve
+                    ayri bir karar. */}
                 {member.role === "OWNER" ? (
-                  <Badge variant="secondary">{t("ui.role_owner")}</Badge>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {t("ui.role_owner")}
+                  </span>
                 ) : null}
                 {member.userId === user.id ? (
                   <Badge variant="outline">{t("ui.you")}</Badge>

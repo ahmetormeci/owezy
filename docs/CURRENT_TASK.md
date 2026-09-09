@@ -28,11 +28,14 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-09 (gun sonu)
 
 Current task:
-  YOK. Kagit & petrol tasarim yonu HEM MOBILDE HEM WEB'DE UYGULANDI.
-  Sirada bekleyen tek sey 1.0.3'un inceleme sonucu - ona kadar kod
-  tarafinda zorunlu is yok.
+  YOK. Kagit & petrol tasarim yonu HEM MOBILDE HEM WEB'DE UYGULANDI - artik
+  EKRANLARIN ICI DE ONLARI TASIYAN KAPLAR DA. Sirada bekleyen tek sey 1.0.3'un
+  inceleme sonucu; ona kadar kod tarafinda zorunlu is yok.
 
-  BUGUN 32 COMMIT. Hepsi push edildi, agac temiz, CI yesil (5a4e411).
+  SON IS (9 Eylul, aksam): web'in kalan kaplari. AuthShell, diyalog/onay
+  diyalogu/acilir menu yuzeyleri, rol rozetinin duz metne donmesi ve <Card>'in
+  arayuzden tamamen cikmasi. Ayrinti CHANGELOG (14) ve PROGRESS Faz 41'de.
+  BU COMMIT HENUZ PUSH EDILMEDI - kod commit'i, kullanici soylemeden push yok.
 
 TASARIM YONU - NE YAPILDI (ADR-048)
 
@@ -64,18 +67,20 @@ BEKLEYEN TEK IS: MAGAZA EKRAN GORUNTULERI
   (b) 1.0.3'un sonucu belli olmadan uretmenin anlami yok, cunku o surum
   ESKI tasarimi tasiyor.
 
-KALAN WEB ISI - ZORUNLU DEGIL, TAMAMLAMA:
-  gruplar listesi · giris/kayit sayfalari (hala Card icinde) ·
-  diyaloglarin ic yerlesimi. Hepsi alt cizgiyi ve bakir etiketi
-  PAYLASILAN parcalardan aldi; kalan yalnizca kendi kaplari. Yani
-  tutarsiz degiller, tamamlanmamislar.
-
 BU OTURUMDA OGRENILEN - TEKRAR ARAMA:
 
   WEB'IN KIMLIKLI SAYFASINI GORMEK: giris gerekiyor ve ajan ne parola ne
     tek seferlik kod yazabilir. YOL: e2e/ altina gecici bir spec yazip
-    pageAs(browser,"owner") ile girip page.screenshot() almak. Bes kez
+    pageAs(browser,"owner") ile girip page.screenshot() almak. Sekiz kez
     boyle bakildi; spec HER SEFERINDE silindi.
+    TEMAYI SECMEK: page.emulateMedia({ colorScheme: "dark" }) yetiyor -
+    next-themes defaultTheme="system" ile kuruldugu icin sistem tercihi
+    dogrudan surukluyor, localStorage'a dokunmaya gerek yok.
+    DIYALOG CEKERKEN screenshot({ animations: "disabled" }) SART. Diyalog
+    fade-in + zoom ile aciliyor; baslik gorunur olur olmaz cekilen kare
+    YARIM SAYDAM cikiyor ve her sey solgun/yanlis renkte gorunuyor. Bu
+    oturumda tam olarak bu yasandi: ilk kare "renkler ucmus" gibi
+    okundu, oysa yalnizca animasyon bitmemisti.
 
   MOBILI SIMULATORDE GORMEK: kurulu Owezy bir RELEASE build (preview
     profili), expo-dev-client bagimliligi YOK, yani Metro'ya HIC

@@ -599,6 +599,21 @@ yüzler arasında geçiş yapmıyor: iOS yapay kalınlaştırıyor, Android ço�
 zaman hiçbir şey yapmıyor. Ekranlarda `fontWeight` kullanılmıyor;
 `lib/fonts.ts` aile adlarını veriyor.
 
+### Sonuç: web arayüzünde kart yok (2026-09-09)
+
+Yönün kapları da uygulanınca `<Card>` **hiçbir yerden import edilmez oldu** —
+son dört kullanıcısı `/sign-in`, `/sign-up`, `/reset-password` ve `/join`'di.
+Bu bir temizlik değil, yüzey kararının doğal sonucu: kart bir halka (`ring-1`)
+ve yuvarlak köşeyle sayfadan **ayrı bir yüzey** üretiyor; bu yönde yüzey tek
+(kağıt) ve bölümleri kutu değil çizgi ayırıyor (ADR-021). Aynı gerekçeyle
+diyaloglar, onay diyalogları ve açılır menüler de halkayı bıraktı: sınırlarını
+tek bir çizgi, yükselmelerini `--paper` yüzeyin kendisi taşıyor.
+
+`src/components/ui/card.tsx` **silinmedi** — vendor'lanmış bir shadcn parçası
+ve import edilmediği için üretim paketine zaten girmiyor. Dosyanın başında
+neden boşta durduğu yazıyor. **Yeni bir kart eklemek bir yüzey kararıdır,
+biçim kararı değil**; önce bu ADR ve ADR-021 tartışılmalı.
+
 **Alternatifler:** kobaltı korumak (yeni yönün tamamı kobalt üzerine
 kurulmadığı için tutarsız bir melez olurdu); bakırı tek token yapmak
 (etiketler okunmazdı); mono'yu korumak (yeni ailede iki yazı tipi bir arada

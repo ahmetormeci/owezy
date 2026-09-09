@@ -1135,11 +1135,41 @@ ekranlar da aynı dile taşındı.
 | Tokenlar, yazı tipleri | `9e44613` · `cf94a4e` — Familjen Grotesk + Instrument Serif, iki istemcide |
 | Mobil ekranlar | grup, harcama ekleme/detay, ödeşme, üyeler, hesap, gruplar, bildirimler, giriş |
 | Web | tanıtım sayfası, ürün sayfaları, formlar |
+| Web'in kapları | giriş/kayıt/parola/davet sayfaları, gruplar listesi, diyaloglar, açılır menüler |
 | Koyu tema | tasarımda çizilmemişti; türetildi, ölçüldü, düzeltildi |
 
 **Ölçümle bulunan üç kusur** — hiçbiri testle yakalanmazdı: açılmış petrol
 üzerinde beyaz metin AA'yı geçmiyordu (3.89:1), marka zemininde 30 yerde sabit
 `#fff` vardı, ve `<select>` stili dört dosyaya kopyalanmıştı.
+
+### Son adım — kapların kendisi (9 Eylül)
+
+Ekranların içi yeni dile geçmişti ama onları TAŞIYAN yüzeyler geçmemişti.
+Dört sayfa hâlâ `<Card>` içindeydi (halka + yuvarlak köşe + ayrı yüzey),
+diyaloglar ve açılır menüler aynı halkayı ve shadcn'den kalma gri alt şeridi
+taşıyordu. Kullanıcı tanıtım sayfasından "Giriş yap"a bastığında **malzeme
+değişiyordu**.
+
+- **`AuthShell`** (`src/components/auth-shell.tsx`): `/sign-in`, `/sign-up`,
+  `/reset-password` ve `/join/[token]` için tek iskelet — kağıt zemin, serif
+  kelime işareti, bakır çizgi. `reset-password`'ün üstündeki yorum bu
+  aynılığı zaten fark etmişti; ama aynılığı bir bileşen değil **kopya**
+  taşıyordu.
+- **`dialog` · `alert-dialog` · `popover`**: halka yerine tek çizgi, `--paper`
+  yüzey, başlığın altına bakır çizgi, gri şerit yok.
+- **Rol artık rozet değil**, düz metin — gruplar listesi, üyeler sayfası ve
+  grup sayfasında. Renk yalnızca durum taşır (ADR-021) ve rol bir durum
+  değil. Mobil bunu zaten böyle gösteriyordu.
+- **`<Card>` arayüzden tamamen çıktı.** Dosya duruyor (vendor'lanmış shadcn
+  parçası), başına neden boşta durduğu yazıldı.
+
+**Tarayıcıda bakınca iki kusur çıktı** — ikisi de kod okuyarak görülemezdi:
+sayfa başlığı (`GİRİŞ YAP`) formun ilk alan etiketiyle (`E-POSTA`) aynı
+biçimdeydi ve alt alta duruyordu, yani başlık bir alan etiketi gibi
+okunuyordu — bakır çizgi ikisinin arasına alındı. Onay diyaloglarında ise
+başlığın bakır çizgisi ile alt şeridin çizgisi 16 piksel arayla **iki paralel
+çizgi** üretiyordu: form diyaloğunun ikisi arasında gövdesi var, onay
+diyaloğunun yok.
 
 **Testlerde bir boşluk kapatıldı:** sözlük kontrolü yalnızca `src/`'yi
 tarıyordu, yani mobil istemcideki hiçbir `t("ui.…")` denetlenmiyordu.

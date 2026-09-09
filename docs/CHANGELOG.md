@@ -21,6 +21,38 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-09 (14) — Kapların kendisi: kart arayüzden çıktı
+
+Ekranların içi yeni dile geçmişti, onları **taşıyan yüzeyler** geçmemişti.
+Dört sayfa (`/sign-in`, `/sign-up`, `/reset-password`, `/join`) hâlâ `<Card>`
+içindeydi; diyaloglar, onay diyalogları ve açılır menüler aynı halkayı
+(`ring-1`) ve shadcn'den kalma gri alt şeridi taşıyordu. Kullanıcı tanıtım
+sayfasından "Giriş yap"a bastığında **malzeme değişiyordu**.
+
+**`AuthShell`** dört sayfanın tek iskeleti oldu: kağıt zemin, serif kelime
+işareti, bakır çizgi. `reset-password`'ün üstündeki yorum bu aynılığı zaten
+fark etmişti — ama aynılığı bir bileşen değil **kopya** taşıyordu.
+
+**Rol artık rozet değil, düz metin** — üç yerde birden (gruplar listesi,
+üyeler sayfası, grup sayfası). Renk yalnızca durum taşır (ADR-021) ve rol bir
+durum değil; mobil bunu zaten böyle gösteriyordu. `sen`, `ayrıldı` ve `davet
+tükendi` rozetlerine dokunulmadı: onlar durum ya da kimlik işareti.
+
+**`<Card>` arayüzden tamamen çıktı** (ADR-048'e sonuç bölümü eklendi). Dosya
+duruyor — vendor'lanmış shadcn parçası, import edilmediği için pakete zaten
+girmiyor.
+
+**Tarayıcıda bakınca iki kusur çıktı, ikisi de kod okuyarak görülemezdi:**
+sayfa başlığı (`GİRİŞ YAP`) formun ilk alan etiketiyle (`E-POSTA`) aynı
+biçimde ve alt alta duruyordu — başlık bir alan etiketi gibi okunuyordu;
+bakır çizgi ikisinin arasına alındı. Onay diyaloglarında ise başlığın bakır
+çizgisi ile alt şeridin çizgisi 16 piksel arayla **iki paralel çizgi**
+üretiyordu: form diyaloğunun ikisi arasında gövdesi var, onay diyaloğunun yok.
+
+Sekiz sayfa açık ve koyu temada görüldü. **E2E 57/57.**
+
+---
+
 ## 2026-09-09 (13) — Web formları ve dört kez kopyalanmış bir satır
 
 Kutulu `<select>` stili **dört dosyada** ayrı ayrı duruyordu — harcama formu,

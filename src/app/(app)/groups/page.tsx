@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { findCurrentUser } from "@/lib/auth";
 import { listGroupsForUser } from "@/lib/groups";
-import { Badge } from "@/components/ui/badge";
 import { CreateGroupDialog } from "@/components/create-group-dialog";
 import { BrandMark } from "@/components/brand-mark";
 import { getTranslate } from "@/lib/i18n-server";
@@ -61,9 +60,13 @@ export default async function GroupsPage() {
                     </p>
                   ) : null}
                 </div>
-                <Badge variant="secondary">
+                {/* Rol bir ROZET DEGIL, duz metin. <Badge variant="secondary">
+                    dolu bir hapti; ADR-021'e gore renk yalnizca DURUM tasir ve
+                    rol bir durum degil. Mobil ayni bilgiyi zaten boyle
+                    veriyor (mobile/app/groups/index.tsx, rowRole). */}
+                <span className="shrink-0 text-xs text-muted-foreground">
                   {group.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
-                </Badge>
+                </span>
               </Link>
             </li>
           ))}

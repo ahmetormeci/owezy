@@ -2,6 +2,25 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * SU AN HICBIR YERDEN IMPORT EDILMIYOR - ve bu bir kaza degil.
+ *
+ * Son dort kullanicisi /sign-in, /sign-up, /reset-password ve /join'di;
+ * dorduncusu de AuthShell'e gecince (ADR-048, kagit & petrol yonu) kart
+ * arayuzden tamamen cikti. Sebep: <Card> bir HALKA (ring-1) ve yuvarlak
+ * koseyle sayfadan AYRI bir yuzey uretiyor; bu yonde yuzey tek - kagidin
+ * kendisi - ve bolumleri kutu degil CIZGI ayiriyor (ADR-021).
+ *
+ * DOSYA NEDEN DURUYOR: shadcn'in vendor'lanmis parcasi, elle yazilmis kod
+ * degil. Silmek yeni bir sey kazandirmiyor (uretim paketine girmiyor -
+ * import edilmeyen modul agaca dahil olmuyor), geri getirmek ise
+ * "npx shadcn add card" demek.
+ *
+ * YENI BIR KART EKLEMEDEN ONCE OKU: buraya donmek bir yuzey karari, bicim
+ * karari degil. Yeni bir yuzeye gercekten ihtiyac varsa ADR-021 ve ADR-048
+ * once tartisilmali.
+ */
+
 function Card({
   className,
   size = "default",

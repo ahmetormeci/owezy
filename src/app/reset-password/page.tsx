@@ -1,6 +1,5 @@
 import { ResetPasswordForm } from "@/components/reset-password-form";
-import { PublicControls } from "@/components/public-controls";
-import { Card, CardContent } from "@/components/ui/card";
+import { AuthShell } from "@/components/auth-shell";
 import { getTranslate } from "@/lib/i18n-server";
 
 /**
@@ -13,20 +12,14 @@ import { getTranslate } from "@/lib/i18n-server";
  * (bkz. security-dialog.tsx).
  *
  * Sayfa iskeleti /sign-in ve /sign-up ile AYNI - bu uc ekran kullanicinin
- * gozunde tek bir is.
+ * gozunde tek bir is. Ayniligi artik kopya degil AuthShell tasiyor.
  */
 export default async function ResetPasswordPage() {
   const t = await getTranslate();
 
   return (
-    <div className="flex flex-1 items-center justify-center p-6">
-      <PublicControls />
-      <Card className="w-full max-w-sm">
-        <CardContent className="flex flex-col gap-6 py-8">
-          <h1 className="text-xl font-semibold">{t("ui.reset_password_title")}</h1>
-          <ResetPasswordForm />
-        </CardContent>
-      </Card>
-    </div>
+    <AuthShell label={t("ui.reset_password_title")}>
+      <ResetPasswordForm />
+    </AuthShell>
   );
 }

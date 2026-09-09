@@ -2,9 +2,8 @@ import Link from "next/link";
 import { findCurrentUser } from "@/lib/auth";
 import { getInviteStatus } from "@/lib/groups";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { AuthShell } from "@/components/auth-shell";
 import { AcceptInvite } from "@/components/accept-invite";
-import { PublicControls } from "@/components/public-controls";
 import { getTranslate } from "@/lib/i18n-server";
 import type { MessageCode } from "@/lib/messages";
 
@@ -41,62 +40,54 @@ export default async function JoinPage({
 
   if (!status.valid) {
     return (
-      <div className="flex flex-1 items-center justify-center p-6">
-        <PublicControls />
-        <Card className="w-full max-w-md">
-          <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
-            <h1 className="text-xl font-semibold">{t("ui.invite_unusable")}</h1>
-            <p className="text-muted-foreground">
-              {t(INVALID_INVITE_CODES[status.reason])} {t("ui.invite_ask_new_link")}
-            </p>
-            <Link href="/" className={buttonVariants({ variant: "outline" })}>
-              {t("ui.back_home")}
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthShell className="max-w-md">
+        {/* Basligi .cap YAPMIYORUZ - bu bir etiket degil, cumle. .cap kucuk,
+            genis aralikli ve BUYUK harf; bir cumleyi oyle dizmek okunurlugu
+            bozar. Sola dayali serif baslik kaliyor. */}
+        <h1 className="font-heading text-xl">{t("ui.invite_unusable")}</h1>
+        <p className="text-muted-foreground">
+          {t(INVALID_INVITE_CODES[status.reason])} {t("ui.invite_ask_new_link")}
+        </p>
+        <Link
+          href="/"
+          className={buttonVariants({ variant: "outline", className: "self-start" })}
+        >
+          {t("ui.back_home")}
+        </Link>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center p-6">
-      <PublicControls />
-      <Card className="w-full max-w-md">
-        <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
-          <h1 className="text-xl font-semibold">
-            {t("ui.invited_to_group", { groupName: status.groupName })}
-          </h1>
+    <AuthShell className="max-w-md">
+      <h1 className="font-heading text-xl">
+        {t("ui.invited_to_group", { groupName: status.groupName })}
+      </h1>
 
-          {userId ? (
-            <>
-              <p className="text-muted-foreground">
-                {t("ui.join_press_button")}
-              </p>
-              <AcceptInvite token={token} />
-            </>
-          ) : (
-            <>
-              <p className="text-muted-foreground">
-                {t("ui.join_sign_in_first")}
-              </p>
-              <div className="flex gap-3">
-                <Link
-                  href={`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`}
-                  className={buttonVariants({ variant: "outline" })}
-                >
-                  {t("ui.sign_in")}
-                </Link>
-                <Link
-                  href={`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`}
-                  className={buttonVariants()}
-                >
-                  {t("ui.sign_up")}
-                </Link>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      {userId ? (
+        <>
+          <p className="text-muted-foreground">{t("ui.join_press_button")}</p>
+          <AcceptInvite token={token} />
+        </>
+      ) : (
+        <>
+          <p className="text-muted-foreground">{t("ui.join_sign_in_first")}</p>
+          <div className="flex gap-3">
+            <Link
+              href={`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              {t("ui.sign_in")}
+            </Link>
+            <Link
+              href={`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`}
+              className={buttonVariants()}
+            >
+              {t("ui.sign_up")}
+            </Link>
+          </div>
+        </>
+      )}
+    </AuthShell>
   );
 }

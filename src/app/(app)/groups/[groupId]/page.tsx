@@ -472,8 +472,13 @@ export default async function GroupDetailPage({
                     me={balance.userId === user.id}
                   />
                   <span className="truncate">{balance.displayName}</span>
+                  {/* Rol duz metin (ADR-021) - uyeler sayfasi ve gruplar
+                      listesiyle ayni. "Ayrildi" rozeti duruyor: o gercek bir
+                      DURUM. */}
                   {roleByUserId.get(balance.userId) === "OWNER" ? (
-                    <Badge variant="secondary">{t("ui.role_owner")}</Badge>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {t("ui.role_owner")}
+                    </span>
                   ) : null}
                   {balance.hasLeft ? <Badge variant="outline">{t("ui.member_left")}</Badge> : null}
                 </div>
