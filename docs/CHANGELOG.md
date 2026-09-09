@@ -14,6 +14,31 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (7) — Harcama detayı, formun kardeşi oldu
+
+Handoff'un listesi bitti; bu, yeni dilin **handoff'ta çizilmemiş** ekranlara
+taşınmasının ilki. Harcama detayı artık harcama ekleme formuyla aynı başlık
+çubuğunu, aynı tutar bloğunu ve aynı alt çizgili alanları kullanıyor. İkisi
+tek ailenin iki hâli — biri kaydı yaratıyor, diğeri düzenliyor — ve kullanıcı
+ikisine de aynı fiş satırından ulaşıyor.
+
+"Kaydet" başlık çubuğuna taşındı ve **yalnızca düzenleyebilene** görünüyor;
+yetkisi olmayana olmayan bir düğme sunup ardından hata göstermek olurdu
+(ADR-009). Ayrıntılar bakır bir çizginin altında noktalı ayraçlı fiş
+satırlarına dönüştü.
+
+**ADR-015'in adını koyduğu iki renk hatası düzeltildi.** Harcamayı silmek ve
+fişi kaldırmak `theme.debt` ile boyanıyordu — yani "borçlusun" rengiyle. O
+ADR'nin yürürlükteki yarısı yıkıcı bir eylemin bir bakiye durumuyla aynı
+renkte olmasını yasaklıyor. İkisi de artık `destructive`.
+
+Fiş bloğunun boş durumu **boyunu koruyor** (küçük ve pasif olduğu
+bildirilmişti) ama dolgulu panelini bıraktı: kâğıt üzerinde bir kutu değil,
+bir şey konulacak yer.
+
+Açık ve koyu temada simülatörde görüldü.
+
 ## 2026-09-09 (6) — Koyu tema gözden geçirildi
 
 Koyu tema tasarımda hiç çizilmemişti; değerler bir türetme kuralından

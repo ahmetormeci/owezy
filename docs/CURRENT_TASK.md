@@ -46,7 +46,17 @@ Current task:
     4. mobil harcama ekleme                 BITTI  8ab8f58 + 766d87c
     5. web tanitim sayfasi                  BITTI  1379c6e
     6a. koyu tema gozden gecirme            BITTI  4ff3b1d
-    6b. magaza ekran goruntuleri            SIRADA - GERCEK BUILD ISTER
+    6b. magaza ekran goruntuleri            BEKLIYOR - gercek build ister VE
+        1.0.3'un inceleme sonucu belli olmadan anlamsiz
+
+  HANDOFF BITTI. BUNDAN SONRASI HANDOFF'TA YOK - yeni dilin kalan
+  ekranlara TASINMASI. Handoff uc yuzey ciziyordu; digerleri renk ve yazi
+  tipini aldi ama YERLESIM dili eski kaldi.
+    harcama detayi      BITTI  9f9e7f6  (+ receipt-photo bileseni)
+    odesmeler           SIRADA
+    uyeler / hesap / gruplar listesi / bildirimler / giris
+    web urun sayfalari  ((app)/groups/...) - handoff yalnizca karsilama
+                        sayfasini kapsiyordu
 
   BU YONDE OLCULEN IKI SEY - TEKRAR ETME, KAYITLI:
     a. Handoff'un butun kontrast iddialari DOGRU cikti.
