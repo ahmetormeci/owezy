@@ -178,6 +178,36 @@ export const MESSAGES_TR = {
   "ui.meta_description":
     "Grup harcamalarını paylaş, kimin kime ne kadar borçlu olduğunu gör.",
   "ui.sign_in": "Giriş yap",
+  // ---- KARSILAMA SAYFASI ----
+  // Uc rakam da DOGRULANABILIR: uc bolusum tipi (SplitType enum), iki dil
+  // (SUPPORTED_LOCALES), ve kusuratin kaybolmamasi degistirilemez bir kural
+  // (split.ts, paylarin toplami tutara birebir esit). ADR-021: arayuz
+  // bilmedigi seyi soylemez - bir tanitim sayfasi icin bu daha da gecerli.
+  "ui.landing_platforms": "Web & iOS",
+  "ui.landing_eyebrow": "Ortak hesap defteri",
+  "ui.landing_title_lead": "Hesap kapansın,",
+  "ui.landing_title_rest": "arkadaşlık kalsın.",
+  "ui.landing_lede":
+    "Ortak harcamayı yaz, bölüşümü seç. Owezy kimin kime ne kadar borçlu olduğunu hesaplar, borçları sadeleştirir, tek kuruş kaybetmez.",
+  "ui.landing_cta": "Ücretsiz başla",
+  "ui.landing_app_store": "App Store",
+  "ui.landing_stat_splits": "bölüşüm tipi",
+  "ui.landing_stat_locales": "dil, tek arayüz",
+  "ui.landing_stat_rounding": "kaybolan küsurat",
+  "ui.landing_sample_stamp": "6 transfer → 2 ödeme",
+  "ui.landing_step_1_label": "01 · yaz",
+  "ui.landing_step_1_title": "Üç bölüşüm tipi",
+  "ui.landing_step_1_body":
+    "Eşit, tam tutar, yüzde. Payların toplamı her zaman tutara birebir eşit.",
+  "ui.landing_step_2_label": "02 · sadeleş",
+  "ui.landing_step_2_title": "Altı transfer, iki ödeme",
+  "ui.landing_step_2_body":
+    "Borçlar sadeleştirilir; gruptan ayrılan üyenin bakiyesi listede kalır.",
+  "ui.landing_step_3_label": "03 · ödeş",
+  "ui.landing_step_3_title": "Geri alınabilir geçmiş",
+  "ui.landing_step_3_body":
+    "Her düzenleme kayda geçer, silinen harcama geri yüklenir.",
+  "ui.landing_footer": "Owezy · 2026",
   "ui.sign_up": "Kayıt ol",
   "ui.sample_note": "Örnek — gerçek bir gruba ait değil",
 
@@ -860,6 +890,31 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.tagline": "Track group expenses and see who owes whom at a glance.",
   "ui.meta_description": "Share group expenses and see who owes whom.",
   "ui.sign_in": "Sign in",
+  "ui.landing_platforms": "Web & iOS",
+  "ui.landing_eyebrow": "A shared ledger",
+  "ui.landing_title_lead": "Settle the bill,",
+  "ui.landing_title_rest": "keep the friendship.",
+  "ui.landing_lede":
+    "Write down what you shared and pick how to split it. Owezy works out who owes whom, simplifies the debts, and loses nothing to rounding.",
+  "ui.landing_cta": "Start for free",
+  "ui.landing_app_store": "App Store",
+  "ui.landing_stat_splits": "ways to split",
+  "ui.landing_stat_locales": "languages, one interface",
+  "ui.landing_stat_rounding": "lost to rounding",
+  "ui.landing_sample_stamp": "6 transfers → 2 payments",
+  "ui.landing_step_1_label": "01 · record",
+  "ui.landing_step_1_title": "Three ways to split",
+  "ui.landing_step_1_body":
+    "Equally, by exact amounts, by percentage. The shares always add up to the total, to the cent.",
+  "ui.landing_step_2_label": "02 · simplify",
+  "ui.landing_step_2_title": "Six transfers, two payments",
+  "ui.landing_step_2_body":
+    "Debts are simplified, and a member who leaves keeps their balance on the list.",
+  "ui.landing_step_3_label": "03 · settle",
+  "ui.landing_step_3_title": "A history you can undo",
+  "ui.landing_step_3_body":
+    "Every edit is recorded, and a deleted expense can be restored.",
+  "ui.landing_footer": "Owezy · 2026",
   "ui.sign_up": "Sign up",
   "ui.sample_note": "Sample — not a real group",
 
