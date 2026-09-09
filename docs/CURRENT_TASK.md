@@ -55,8 +55,9 @@ Current task:
     harcama detayi      BITTI  9f9e7f6  (+ receipt-photo bileseni)
     odesmeler           BITTI  70d6e4c
     uyeler              BITTI  5882446
-    hesap               SIRADA
-    gruplar listesi / bildirimler / giris
+    hesap               BITTI  (bkz. son commit)
+    gruplar listesi     SIRADA
+    bildirimler / giris
     web urun sayfalari  ((app)/groups/...) - handoff yalnizca karsilama
                         sayfasini kapsiyordu
 

@@ -17,6 +17,24 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (10) — Hesap ekranı
+
+Baş harf avatarlı kimlik bloğu, bakır bölüm çizgileri, çip yerine segment:
+görünüm ve dil ikisi de birbirini dışlayan sabit kümeler — segmentin
+söylediği şey bu, çip satırının söylemediği de.
+
+**Zemini `theme.paper`'dı** — fiş yüzeyini ekran zemini olarak kullanan tek
+ekran. Artık her yerdeki gibi `background`.
+
+Silme bloğu çerçevesini koruyor ve bu "kutu yerine çizgi" kuralından bilinçli
+bir istisna: sayfanın geri kalanı ayrılıyor, burası çevreleniyor — geri
+alınamayan tek şey o.
+
+**Görünüm seçenekleri şablon dizgiyle üretiliyordu** — sözlük kontrolünün az
+önce kapatılan boşluğu, ve o kontrol bunu kapatamazdı: öyle yazılan bir anahtar
+kaynakta hiç geçmiyor. Tek tek yazıldı.
+
 ## 2026-09-09 (9) — Üye ekranı, ve sözlük kontrolünün hiç bakmadığı yer
 
 Üye ekranı kutularını bıraktı: bakır bölüm çizgileri, grup ekranındakiyle aynı
