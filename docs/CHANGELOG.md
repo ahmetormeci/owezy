@@ -18,6 +18,28 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (11) — Mobilde yeni dil tamamlandı
+
+Gruplar listesi, bildirimler ve giriş ekranı. Yanında bir denetimin
+çıkardıkları: **yedi ekran zeminini `theme.paper` ile boyuyordu** — yani fiş
+yüzeyiyle. Ayrım ancak korunursa bir şey ifade ediyor.
+
+**En çok değişen giriş ekranı.** Uygulamanın ilk ekranıydı ve hâlâ 8px köşeli
+kutulu alanlar ile gövde fontunda bir kelime işareti taşıyordu; yani ilk
+görülen şey gerisinden başka bir ürüne benziyordu. Serif kelime işareti, alt
+çizgili alan, diğerleriyle aynı 50px düğme.
+
+**Kategori kırılımı grup ekranındaki son kutuydu**; artık bakır çizgili bir
+bölüm — ADR-021'in istediği ve diğer blokların zaten yaptığı şey.
+
+Bütün ekranlar simülatörde **açık ve koyu temada** görüldü. Giriş ekranını
+görebilmek için simülatörde oturum kapatıldı; oturum açıkken o ekran hiç
+çizilmiyor.
+
+Geriye tek yüzey kaldı: **web'in ürün sayfaları.** Handoff yalnızca karşılama
+sayfasını çiziyordu; orası ayrı bir görev olarak ele alınacak.
+
 ## 2026-09-09 (10) — Hesap ekranı
 
 Baş harf avatarlı kimlik bloğu, bakır bölüm çizgileri, çip yerine segment:

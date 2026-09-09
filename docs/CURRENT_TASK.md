@@ -55,9 +55,16 @@ Current task:
     harcama detayi      BITTI  9f9e7f6  (+ receipt-photo bileseni)
     odesmeler           BITTI  70d6e4c
     uyeler              BITTI  5882446
-    hesap               BITTI  (bkz. son commit)
-    gruplar listesi     SIRADA
-    bildirimler / giris
+    hesap               BITTI  9c25910
+    gruplar listesi / bildirimler / giris   BITTI  508e1fa
+
+  MOBIL BITTI. Butun ekranlar yeni dilde ve HEPSI simulatorde acik VE koyu
+  temada gorüldu. Kalan tek yuzey WEB'in urun sayfalari - kullanici onu
+  AYRI ele almak istedi, yeni bir gorev olarak baslasin.
+
+  SIMULATORDE OTURUM KAPATILDI (giris ekranini gormek icin; oturum acikken
+  o ekran hic cizilmiyor). Tekrar bakilacaksa once giris yapilmali -
+  AJAN YAPAMAZ: parola da tek seferlik kod da yazamaz.
     web urun sayfalari  ((app)/groups/...) - handoff yalnizca karsilama
                         sayfasini kapsiyordu
 
