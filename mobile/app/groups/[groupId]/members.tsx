@@ -8,7 +8,8 @@ import { useLocale, useTranslate } from "../../../lib/i18n";
 import { apiBaseUrl } from "../../../lib/api";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
-import { Cap } from "../../../components/receipt";
+import { Cap, SectionRule, MemberAvatar } from "../../../components/receipt";
+import { SelectField } from "../../../components/field";
 
 /**
  * Uyeler ve davet.
@@ -228,49 +229,76 @@ export default function MembersScreen() {
   }
 
   return (
-    <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
+    /*
+      YERLESIK BASLIK CUBUGU KALIYOR - ve bu bir tutarsizlik degil, kural.
+      Ozel cubuk (Vazgec / baslik / Kaydet) TEK bir kaydetme eylemi olan
+      FORM ekranlari icin: harcama ekleme, harcama detayi, odesme. Burasi
+      bir YONETIM ekrani; tek bir "kaydet"i yok, birden fazla bagimsiz
+      eylemi var. Ustune bir "Kaydet" koymak olmayan bir sey vaat ederdi.
+      Grup ekrani da ayni sebeple yerlesik cubugu kullaniyor.
+    */
+    <SafeAreaView style={s.screen} edges={["left", "right"]}>
       <ScrollView contentContainerStyle={s.scroll}>
-        <View style={s.paper}>
-          {members.state.kind === "loading" ? (
-            <ActivityIndicator style={s.loading} />
-          ) : members.state.kind === "error" ? (
-            <Text style={s.error}>{members.state.text}</Text>
-          ) : (
-            <View style={s.list}>
-              {members.state.data.members.map((member) => (
-                <View key={member.userId} style={s.row}>
-                  <Text style={s.name}>{member.displayName}</Text>
-                  <View style={s.rowActions}>
-                    <Text style={s.role}>
-                      {member.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
-                    </Text>
-                    {me?.role === "OWNER" && member.userId !== currentUserId ? (
-                      removingId === member.userId ? (
-                        <ActivityIndicator size="small" color={theme.debt} />
-                      ) : (
-                        /* hitSlop GENIS: bu projede kucuk metin hedefleri
-                           dokunma almiyor (simulatorde defalarca goruldu) ve
-                           yikici bir eylemin yanlislikla degil, GUCLUKLE
-                           tetiklenmesi zaten dogru olan. */
-                        <Pressable
-                          hitSlop={12}
-                          onPress={() => confirmRemove(member.userId, member.displayName)}
-                        >
-                          <Text style={s.remove}>{t("ui.remove_member")}</Text>
-                        </Pressable>
-                      )
-                    ) : null}
-                  </View>
+        {members.state.kind === "loading" ? (
+          <ActivityIndicator style={s.loading} />
+        ) : members.state.kind === "error" ? (
+          <Text style={s.error}>{members.state.text}</Text>
+        ) : (
+          <View style={s.block}>
+            <SectionRule
+              label={t("ui.members")}
+              value={t(
+                members.state.data.members.length === 1
+                  ? "ui.member_count_one"
+                  : "ui.member_count_other",
+                { count: members.state.data.members.length },
+              )}
+            />
+            {members.state.data.members.map((member) => (
+              <View key={member.userId} style={s.row}>
+                {/* Bas harfler - grup ekranindaki uye bakiyeleriyle ayni
+                    bilesen, yalnizca daha kucuk. */}
+                <MemberAvatar
+                  name={member.displayName}
+                  me={member.userId === currentUserId}
+                  size={36}
+                />
+                <View style={s.rowText}>
+                  <Text style={s.name} numberOfLines={1}>
+                    {member.displayName}
+                  </Text>
+                  <Text style={s.role}>
+                    {member.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
+                  </Text>
                 </View>
-              ))}
-            </View>
-          )}
+                {me?.role === "OWNER" && member.userId !== currentUserId ? (
+                  removingId === member.userId ? (
+                    <ActivityIndicator size="small" color={theme.destructive} />
+                  ) : (
+                    /* hitSlop GENIS: bu projede kucuk metin hedefleri dokunma
+                       almiyor (simulatorde defalarca goruldu) ve yikici bir
+                       eylemin yanlislikla degil, GUCLUKLE tetiklenmesi zaten
+                       dogru olan. */
+                    <Pressable
+                      hitSlop={12}
+                      onPress={() => confirmRemove(member.userId, member.displayName)}
+                    >
+                      <Text style={s.remove}>{t("ui.remove_member")}</Text>
+                    </Pressable>
+                  )
+                ) : null}
+              </View>
+            ))}
+          </View>
+        )}
 
+        <View style={s.block}>
+          <SectionRule label={t("ui.invite")} />
           <Pressable style={s.invite} onPress={() => void createInvite()} disabled={busy}>
             {busy ? (
               <ActivityIndicator color={theme.onBrand} size="small" />
             ) : (
-              <Cap tone="onBrand">{t("ui.create_invite")}</Cap>
+              <Text style={s.inviteText}>{t("ui.create_invite")}</Text>
             )}
           </Pressable>
 
@@ -291,90 +319,78 @@ export default function MembersScreen() {
               </Pressable>
             </View>
           ) : null}
-
-          {/* AKTIF DAVETLER. Liste bossa bolum HIC cizilmiyor - bos bir
-              baslik, olmayan bir sey icin yer kaplamak olurdu.
-              Baglantinin kendisi burada YOK ve olamaz (bkz. InvitesResponse). */}
-          {activeInvites.length > 0 ? (
-            <View style={s.inviteList}>
-              <Cap>{t("ui.active_invites")}</Cap>
-              {activeInvites.map((invite) => (
-                <View key={invite.id} style={s.inviteRow}>
-                  <View style={s.inviteFacts}>
-                    <Text style={s.inviteUses}>
-                      {t("ui.invite_uses_count", {
-                        used: invite.useCount,
-                        max: invite.maxUses,
-                      })}
-                    </Text>
-                    <Text style={s.inviteDate}>
-                      {t("ui.invite_valid_until", {
-                        date: formatDate(new Date(invite.expiresAt), locale),
-                      })}
-                    </Text>
-                  </View>
-                  {invite.invitedById === currentUserId || me?.role === "OWNER" ? (
-                    revokingId === invite.id ? (
-                      <ActivityIndicator size="small" color={theme.debt} />
-                    ) : (
-                      <Pressable hitSlop={12} onPress={() => confirmRevoke(invite.id)}>
-                        <Text style={s.remove}>{t("ui.invite_revoke")}</Text>
-                      </Pressable>
-                    )
-                  ) : null}
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {error ? <Text style={s.error}>{error}</Text> : null}
         </View>
 
-        {/* AYRILMA FISIN DISINDA. Web'de de eylemler kagidin uzerinde
-            durmuyor: basili bir belgeye tiklanabilir bir sey eklemek gibi
-            olurdu. Kirmizi cunku GERI ALINAMAZ - tekrar girmek icin yeni bir
-            davet gerekiyor. (ADR-015'in "renk yalnizca bakiye" kurali
-            bakiye SAYILARI icin; yikici eylem uyarisi ayri bir dil ve
-            harcama silme dugmesi de ayni kirmizi.) */}
+        {/* AKTIF DAVETLER. Liste bossa bolum HIC cizilmiyor - bos bir baslik,
+            olmayan bir sey icin yer kaplamak olurdu. Baglantinin kendisi
+            burada YOK ve olamaz (bkz. InvitesResponse). */}
+        {activeInvites.length > 0 ? (
+          <View style={s.block}>
+            <SectionRule label={t("ui.active_invites")} />
+            {activeInvites.map((invite) => (
+              <View key={invite.id} style={s.row}>
+                <View style={s.rowText}>
+                  <Text style={s.inviteUses}>
+                    {t("ui.invite_uses_count", {
+                      used: invite.useCount,
+                      max: invite.maxUses,
+                    })}
+                  </Text>
+                  <Text style={s.role}>
+                    {t("ui.invite_valid_until", {
+                      date: formatDate(new Date(invite.expiresAt), locale),
+                    })}
+                  </Text>
+                </View>
+                {invite.invitedById === currentUserId || me?.role === "OWNER" ? (
+                  revokingId === invite.id ? (
+                    <ActivityIndicator size="small" color={theme.destructive} />
+                  ) : (
+                    <Pressable hitSlop={12} onPress={() => confirmRevoke(invite.id)}>
+                      <Text style={s.remove}>{t("ui.invite_revoke")}</Text>
+                    </Pressable>
+                  )
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {error ? <Text style={s.error}>{error}</Text> : null}
+
+        {/* AYRILMA EN ALTTA VE SESSIZ. Geri alinamaz: tekrar girmek icin yeni
+            bir davet gerekiyor. Rengi theme.destructive - theme.debt DEGIL.
+            ADR-015'in yururlukteki yarisi yikici eylemi bakiye renginden
+            ayri tutuyor; bu ekranda ikisi ayni renkti. */}
         {me ? (
           <View style={s.leaveBlock}>
             {mustTransfer ? (
-              <View style={s.transferBlock}>
-                {/* SAHIP CIKARKEN GRUBU SAHIPSIZ BIRAKAMAZ. Kural sunucuda;
-                    burada sorulmasi, kullaniciyi reddedilecek bir istekle
-                    karsilastirmamak icin. */}
-                <Cap>{t("ui.transfer_to_whom")}</Cap>
-                <View style={s.chips}>
-                  {others.map((member) => (
-                    <Pressable
-                      key={member.userId}
-                      style={[s.chip, successorId === member.userId && s.chipActive]}
-                      onPress={() => setSuccessorId(member.userId)}
-                    >
-                      <Text
-                        style={[
-                          s.chipText,
-                          successorId === member.userId && s.chipTextActive,
-                        ]}
-                      >
-                        {member.displayName}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
+              // SAHIP CIKARKEN GRUBU SAHIPSIZ BIRAKAMAZ. Kural sunucuda;
+              // burada sorulmasi, kullaniciyi reddedilecek bir istekle
+              // karsilastirmamak icin.
+              <SelectField
+                label={t("ui.transfer_to_whom")}
+                value={
+                  others.find((member) => member.userId === successorId)?.displayName ?? "—"
+                }
+                options={others.map((member) => ({
+                  key: member.userId,
+                  label: member.displayName,
+                }))}
+                onChange={setSuccessorId}
+                disabled={leaving}
+              />
             ) : null}
 
             <Pressable onPress={confirmLeave} disabled={leaving} hitSlop={8}>
               {leaving ? (
-                <ActivityIndicator color={theme.debt} size="small" />
+                <ActivityIndicator color={theme.destructive} size="small" />
               ) : (
                 <Text style={s.leave}>{t("ui.leave_group")}</Text>
               )}
             </Pressable>
           </View>
         ) : null}
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -383,81 +399,57 @@ export default function MembersScreen() {
 function createStyles(theme: Theme) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: theme.background },
-    scroll: { padding: 16, paddingBottom: 32 },
-    paper: {
-      backgroundColor: theme.paper,
-      borderRadius: 3,
-      borderWidth: 1,
-      borderColor: theme.border,
-      padding: 20,
-      gap: 14,
-    },
-    loading: { paddingVertical: 16 },
-    list: { gap: 2 },
+    scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 },
+    loading: { paddingVertical: 24 },
+
+    // Her bolum bakir bir cizgiyle basliyor - grup ekraniyla ayni dil.
+    // Kutu YOK: ADR-021'in "kutu yerine cizgi" kurali.
+    block: { paddingTop: 20 },
+
     row: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      paddingVertical: 10,
+      gap: 12,
+      paddingVertical: 11,
       borderBottomWidth: 1,
       borderBottomColor: theme.lineSoft,
     },
-    name: { fontFamily: fonts.body, fontSize: 15, color: theme.foreground },
-    role: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
-    rowActions: { flexDirection: "row", alignItems: "center", gap: 14 },
-    // Yikici eylemlerin rengi. ADR-015'in "renk yalnizca bakiye tasir"
-    // kurali bakiye SAYILARI icin; uyari ayri bir dil ve harcama silme de
-    // ayni kirmiziyi kullaniyor.
-    remove: { fontFamily: fonts.body, fontSize: 12, color: theme.debt },
-    inviteList: {
-      gap: 10,
-      borderTopWidth: 1,
-      borderStyle: "dashed",
-      borderColor: theme.border,
-      paddingTop: 14,
-    },
-    inviteRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 12,
-    },
-    inviteFacts: { gap: 2, flexShrink: 1 },
-    inviteUses: { fontFamily: fonts.body, fontSize: 13, color: theme.foreground },
-    inviteDate: { fontFamily: fonts.body, fontSize: 11, color: theme.muted },
-    leaveBlock: { marginTop: 20, gap: 12, alignItems: "center" },
-    transferBlock: { gap: 8, alignItems: "center" },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center" },
-    chip: {
-      borderWidth: 1,
-      borderColor: theme.lineSoft,
-      borderRadius: 16,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-    },
-    chipActive: { backgroundColor: theme.brand, borderColor: theme.brand },
-    chipText: { fontFamily: fonts.body, fontSize: 13, color: theme.foreground },
-    chipTextActive: { color: theme.onBrand },
-    leave: { color: theme.debt, fontFamily: fonts.body, fontSize: 15 },
+    rowText: { flex: 1, gap: 2 },
+    name: { fontFamily: fonts.body, fontSize: 14.5, color: theme.foreground },
+    role: { fontFamily: fonts.body, fontSize: 11.5, color: theme.muted },
+    inviteUses: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
+    /**
+     * YIKICI EYLEMLERIN RENGI. theme.debt DEGIL.
+     *
+     * Buradaki eski yorum "harcama silme dugmesi de ayni kirmiziyi
+     * kullaniyor" diyordu ve o gun DOGRUYDU - ama o dugme destructive'e
+     * alindi, yani cumle eskimisti. ADR-015'in yururlukteki yarisi zaten
+     * bunu istiyor: yikici eylem, bir bakiye durumuyla ayni renkte olamaz.
+     */
+    remove: { fontFamily: fonts.body, fontSize: 12, color: theme.destructive },
+
+    // Birincil eylem: harcama ekleme ekranindaki dugmeyle ayni olcu ve
+    // yaricap.
     invite: {
+      height: 50,
+      borderRadius: 3,
       backgroundColor: theme.brand,
-      borderRadius: 4,
-      paddingVertical: 11,
       alignItems: "center",
+      justifyContent: "center",
+      marginTop: 14,
     },
-    linkBlock: {
-      gap: 8,
-      borderTopWidth: 1,
-      borderStyle: "dashed",
-      borderColor: theme.border,
-      paddingTop: 14,
-    },
+    inviteText: { fontFamily: fonts.semibold, fontSize: 15.5, color: theme.onBrand },
+
+    linkBlock: { gap: 8, paddingTop: 16 },
     // Davet baglantisi TEKNIK gosterim: mono kaliyor (web'de --font-mono
     // de ayni sebeple duruyor).
     link: { fontSize: 12, color: theme.foreground, fontFamily: fonts.mono },
     warning: { fontFamily: fonts.body, fontSize: 11, color: theme.muted, lineHeight: 16 },
     shareAgain: { fontFamily: fonts.body, fontSize: 13, color: theme.brand, paddingTop: 4 },
-    error: { fontFamily: fonts.body, fontSize: 13, color: theme.debt },
-    back: { color: theme.muted, fontFamily: fonts.body, fontSize: 14 },
+
+    leaveBlock: { marginTop: 32, gap: 20 },
+    leave: { color: theme.destructive, fontFamily: fonts.body, fontSize: 15 },
+
+    error: { fontFamily: fonts.body, fontSize: 13, color: theme.debt, paddingTop: 14 },
   });
 }

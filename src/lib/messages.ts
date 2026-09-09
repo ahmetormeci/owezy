@@ -660,6 +660,7 @@ export const MESSAGES_TR = {
   "ui.back_home": "Ana sayfaya dön",
 
   // --- Uyelik ---
+  "ui.invite": "Davet",
   "ui.members": "Üyeler",
   "ui.members_and_invites": "Üyeler ve davetler",
   "ui.remove_member": "Çıkar",
@@ -1267,6 +1268,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.back_home": "Back to home",
 
   // --- Membership ---
+  "ui.invite": "Invite",
   "ui.members": "Members",
   "ui.members_and_invites": "Members and invites",
   "ui.remove_member": "Remove",
