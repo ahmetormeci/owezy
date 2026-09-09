@@ -44,14 +44,33 @@ Current task:
        + mobil fontlar (lib/fonts.ts)       BITTI  cf94a4e
     3. mobil GRUP EKRANI                    BITTI  ba8a515 + 67af879
     4. mobil harcama ekleme                 BITTI  8ab8f58 + 766d87c
-    5. web tanitim sayfasi                  SIRADA (YENI - bugun page.tsx girisliyi urune atiyor)
-    6. koyu tema gozden gecirme + magaza ekran goruntuleri
+    5. web tanitim sayfasi                  BITTI  1379c6e
+    6. koyu tema gozden gecirme + magaza ekran goruntuleri   SIRADA
 
   BU YONDE OLCULEN IKI SEY - TEKRAR ETME, KAYITLI:
     a. Handoff'un butun kontrast iddialari DOGRU cikti.
     b. AMA TURETILEN KOYU TEMADA KUSUR VARDI: acilmis petrol uzerinde
        beyaz metin 3.89:1, AA'yi gecmiyor. Birincil dugmenin metni koyu
        yapildi (4.78:1). onBrand token'i bu yuzden var.
+
+  WEB TANITIM SAYFASI - BITTI. Dil ve tema dugmeleri PublicControls'un
+    sabit kosesinden BASLIK CUBUGUNA tasindi (o bilesenin kendi yorumu bunu
+    zaten istiyordu). Giris/kayit sayfalari PublicControls'u kullanmaya
+    devam ediyor. Tasarimdaki PROFIL FOTOGRAFI BLOGU YAPILMADI: var olmayan
+    bir ozelligi anlatiyor, handoff da image-slot icin "uretime tasinmaz"
+    diyor. E2E TAM KOSU YAPILDI: 57/57, 10.6 dk.
+
+  DIKKAT - SOZLUK ANAHTARINI SABLON DIZGIYLE YAZMA:
+    messages.test.ts kaynak kodu tarayip gecen her "ui.*" kodunu sozlukte
+    ariyor - ADR-020'nin FIILEN isleyen hali (Translator duz string aldigi
+    icin tip sistemi yakalamiyor). Sablon dizgiyle yazilan anahtar kaynakta
+    HIC GECMIYOR, yani o kontrol onu goremiyor. Bu oturumda dokuz anahtar
+    boyle yazildi, testler sessizce gecti; acik anahtara cevrilip negatif
+    kontrolle dogrulandi.
+
+  ARKA PLAN KOSUSUNUN CIKIS KODUNU OKURKEN: "exit code 0" SARMALAYICI
+    betigin kodu olabilir, kosunun degil. Bu oturumda iki kez yasandi
+    (once eas build, sonra e2e). Once hangi surecin kodu oldugunu dogrula.
 
   EKRANLARDA YAPILAN: GRUP EKRANI ve HARCAMA EKLEME. Digerlerinin (harcama
   detayi, odesmeler, uyeler, hesap, gruplar listesi) rengi ve yazi tipi
