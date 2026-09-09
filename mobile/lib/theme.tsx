@@ -13,17 +13,43 @@ import { readStoredTheme, writeStoredTheme, type ThemeChoice } from "./theme-sto
  * degisirse burasi ELLE guncellenmeli. Alternatifi derleme sirasinda
  * cevirmekti - bu boyuttaki bir uygulama icin fazla makine.
  *
- * RENK ANLAM TASIR (ADR-021): credit yesili "sana borclu", debt kiremiti
- * "borclusun", brand kobalti kimlik. Baska hicbir yerde kullanilmazlar.
+ * RENK ANLAM TASIR: brand petroli hem kimlik hem ALACAK, debt kiremiti
+ * "borclusun". Kagit & petrol yonunde anlam tasiyan renk sayisi ikiye indi;
+ * gerekce globals.css'in basindaki blokta.
  */
 export type Theme = {
+  /** Ekran zemini - sicak kagit. Web'de --background. */
+  background: string;
+  /** Fis yapragi: zeminin UZERINDE duran daha beyaz yuzey. --paper. */
   paper: string;
+  /** Girinti: ilerleme cubugu olugu, gorsel yer tutucu. --surface. */
   surface: string;
   foreground: string;
   muted: string;
   border: string;
   lineSoft: string;
+  /** Form alanlarinin ALT CIZGISI. Kutu yok; kenarliktan bir ton koyu. */
+  inputLine: string;
+  /** Kategori cipinin kenarligi. */
+  chipBorder: string;
   brand: string;
+  /**
+   * BIRINCIL DUGMENIN UZERINDEKI METIN. Sabit beyaz DEGIL ve bu olculdu:
+   * koyu temada petrol aciliyor (#3f8f76) ve beyaz metin orada 3.89:1
+   * veriyor - AA'yi gecmiyor. Koyu metin 4.78:1. Acik temada iliski ters,
+   * orada beyaz 7.82:1.
+   */
+  onBrand: string;
+  /** Bakiye kartinin zemini - iki temada da KOYU petrol. */
+  balanceCard: string;
+  /** Bakir CIZGI. Metin icin kullanilmaz: kagit uzerinde 3.21:1. */
+  copper: string;
+  /** Bakir METIN (kucuk etiketler). Kagit uzerinde 5.29:1. */
+  copperText: string;
+  /** Koyu petrol kart UZERINDEKI bakir - kart iki temada da koyu oldugu
+   *  icin bu ikisi temaya gore DEGISMIYOR. */
+  copperOnCard: string;
+  copperFigure: string;
   credit: string;
   debt: string;
   /**
@@ -40,28 +66,51 @@ export type Theme = {
 };
 
 const LIGHT: Theme = {
-  paper: "#fdfefe", //      --paper
-  surface: "#e9eaed", //    --surface
-  foreground: "#212327", // --foreground
-  muted: "#6e7075", //      --muted-foreground
-  border: "#e2e4e7", //     --border
-  lineSoft: "#edeef0", //   --line-soft
-  brand: "#065ac0", //      --brand
-  credit: "#388064", //     --credit
-  debt: "#a5564e", //       --debt
-  destructive: "#e7000b", // --destructive
+  background: "#faf8f4", //   --background
+  paper: "#fffdf9", //        --paper / --card
+  surface: "#ece8df", //      --surface
+  foreground: "#1f2420", //   --foreground
+  muted: "#6b6459", //        --muted-foreground
+  border: "#ded9d0", //       --border
+  lineSoft: "#eee9df", //     --line-soft
+  inputLine: "#cfc7b8", //    --input-line
+  chipBorder: "#e0d3bd", //   --chip-border
+  brand: "#1c5c4c", //        --brand
+  onBrand: "#ffffff", //      beyaz / petrol = 7.82:1
+  balanceCard: "#123c32", //  --brand-strong
+  copper: "#b5813a", //       --copper      (CIZGI)
+  copperText: "#8a5f26", //   --copper-text (METIN)
+  copperOnCard: "#d9ac6c",
+  copperFigure: "#e0b477",
+  credit: "#1c5c4c", //       --credit (= brand)
+  debt: "#a8503f", //         --debt
+  destructive: "#e7000b", //  --destructive
 };
 
+/**
+ * KOYU TEMA TASARIMDA CIZILMEDI - handoff yalnizca bir turetme kurali
+ * veriyor. Buradaki degerler o kurala gore uretildi ve kontrastlari
+ * OLCULDU; acik temadaki sira korunuyor (surface < background < paper).
+ */
 const DARK: Theme = {
-  paper: "#141518",
-  surface: "#07080a",
-  foreground: "#ecedef",
-  muted: "#9a9da2",
-  border: "#212428",
-  lineSoft: "#17191d",
-  brand: "#5b9af6",
+  background: "#1a1916",
+  paper: "#25231f",
+  surface: "#141310",
+  foreground: "#ecebe8",
+  muted: "#a19e98",
+  border: "#33302b",
+  lineSoft: "#262420",
+  inputLine: "#46423a",
+  chipBorder: "#3f3a30",
+  brand: "#3f8f76",
+  onBrand: "#141310", //      koyu metin / acilmis petrol = 4.78:1
+  balanceCard: "#16483c", //  koyu zeminden bir tik acik
+  copper: "#d9ac6c",
+  copperText: "#e0b477",
+  copperOnCard: "#d9ac6c",
+  copperFigure: "#e0b477",
   credit: "#6bbc9a",
-  debt: "#cb6d64",
+  debt: "#cb7a68",
   destructive: "#ff6467",
 };
 

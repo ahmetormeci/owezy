@@ -592,8 +592,8 @@ export default function NewExpenseScreen() {
 function createStyles(theme: Theme) {
   return StyleSheet.create({
     flex: { flex: 1 },
-    screen: { flex: 1, backgroundColor: theme.surface },
-    centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: theme.surface },
+    screen: { flex: 1, backgroundColor: theme.background },
+    centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: theme.background },
     scroll: { padding: 16, gap: 12, paddingBottom: 40 },
     card: { backgroundColor: theme.paper, borderRadius: 10, padding: 16, gap: 10 },
     input: {

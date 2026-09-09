@@ -1338,7 +1338,7 @@ function createStyles(theme: Theme) {
   return StyleSheet.create({
     // Zemin fisten bir ton KOYU: kagidin bir yuzeyin uzerinde durdugunu
     // soyleyen sey bu.
-    screen: { flex: 1, backgroundColor: theme.surface },
+    screen: { flex: 1, backgroundColor: theme.background },
     flex: { flex: 1 },
     scroll: { padding: 16, paddingBottom: 32 },
     /**
@@ -1367,7 +1367,7 @@ function createStyles(theme: Theme) {
       alignItems: "center",
       justifyContent: "center",
       gap: 12,
-      backgroundColor: theme.surface,
+      backgroundColor: theme.background,
     },
     groupName: { fontSize: 24, fontWeight: "600", color: theme.foreground },
     // Fisin "magaza adi": ortalanmis, harf araligi acik, tek arali.

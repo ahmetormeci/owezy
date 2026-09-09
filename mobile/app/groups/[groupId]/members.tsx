@@ -381,7 +381,7 @@ export default function MembersScreen() {
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.surface },
+    screen: { flex: 1, backgroundColor: theme.background },
     scroll: { padding: 16, paddingBottom: 32 },
     paper: {
       backgroundColor: theme.paper,

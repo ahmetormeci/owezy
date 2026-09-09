@@ -1,16 +1,31 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Familjen_Grotesk, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LocaleProvider } from "@/lib/i18n";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// GOVDE VE ARAYUZ. Geist'in yerini aldi (kagit & petrol yonu).
+// subsets'te "latin-ext" VAR ve gerekli: Turkce'nin s, g, I, i karakterleri
+// temel latin kumesinde YOK. Yalnizca "latin" birakilsaydi tarayici o
+// harflerde yedek yazi tipine duserdi - ayni cumle icinde iki farkli yazi
+// tipi demek. Kolay gozden kacar cunku Ingilizce arayuzde hic gorunmez.
+const familjen = Familjen_Grotesk({
+  variable: "--font-familjen",
+  subsets: ["latin", "latin-ext"],
 });
 
+// YALNIZCA BASLIKLAR. Instrument Serif tek agirlikta (400) geliyor -
+// degisken bir aile degil, o yuzden weight acikca yaziliyor.
+const instrument = Instrument_Serif({
+  variable: "--font-instrument",
+  weight: "400",
+  subsets: ["latin", "latin-ext"],
+});
+
+// KALDI ama isi daraldi: tutarlar artik grotesk-tnum (bkz. globals.css
+// .money). Mono yalnizca teknik gosterimlerde - davet token'i gibi.
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -53,7 +68,7 @@ export default async function RootLayout({
         // telaffuz ederdi, Ingilizce metni de. lang yalnizca bir etiket degil,
         // sesletim ve tireleme kurallarini secen sey.
         lang={locale}
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        className={`${familjen.variable} ${instrument.variable} ${geistMono.variable} h-full antialiased`}
         // next-themes ".dark" sinifini tarayicida ekliyor; sunucudan gelen
         // HTML'de o sinif yok. suppressHydrationWarning olmadan React bunu
         // uyumsuzluk sayip konsola uyari basar.

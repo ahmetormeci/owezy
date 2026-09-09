@@ -338,14 +338,14 @@ export default function SettlementsScreen() {
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.surface },
+    screen: { flex: 1, backgroundColor: theme.background },
     flex: { flex: 1 },
     scroll: { padding: 16, paddingBottom: 32, gap: 16 },
     centered: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.surface,
+      backgroundColor: theme.background,
     },
     paper: {
       backgroundColor: theme.paper,

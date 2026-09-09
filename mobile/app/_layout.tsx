@@ -151,7 +151,7 @@ function AppStack() {
         // Geri dugmesinde ONCEKI ekranin adi yerine yalnizca ok: uzun grup
         // adlari basligi tasiriyor.
         headerBackButtonDisplayMode: "minimal",
-        contentStyle: { backgroundColor: theme.surface },
+        contentStyle: { backgroundColor: theme.background },
         /**
          * ZIL HER EKRANDA - web'de de oyle: orada uygulama duzeyindeki
          * baslikta duruyor ((app)/layout.tsx), yani her sayfada.

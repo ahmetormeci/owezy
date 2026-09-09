@@ -551,7 +551,7 @@ function Fact({
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.surface },
+    screen: { flex: 1, backgroundColor: theme.background },
     flex: { flex: 1 },
     scroll: { padding: 16, paddingBottom: 32 },
     centered: {
@@ -559,7 +559,7 @@ function createStyles(theme: Theme) {
       alignItems: "center",
       justifyContent: "center",
       gap: 12,
-      backgroundColor: theme.surface,
+      backgroundColor: theme.background,
     },
     paper: {
       backgroundColor: theme.paper,
