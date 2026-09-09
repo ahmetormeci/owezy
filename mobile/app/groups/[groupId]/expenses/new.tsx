@@ -748,7 +748,16 @@ function createStyles(theme: Theme) {
 
     /** Fisin kapanisi: cift cizgi. ADR-021'in fis dili. */
     doubleRule: { gap: 2, marginTop: 8 },
-    rule: { height: 1, backgroundColor: theme.foreground },
+    /**
+     * KAPANIS CIZGISI foreground DEGIL muted - ve bu tasarimdan bilincli
+     * bir sapma. Tasarim "3px double #1f2420" diyor, yani kagit uzerinde
+     * neredeyse siyah; acik temada dogru duruyor. Koyu temada ayni token
+     * beyaza donuyor ve KONTRAST ORANI AYNI OLMASINA RAGMEN (her iki yonde
+     * de ~14.8:1) parlak cizgi koyu zeminde yayiliyor: ekranin en gurultulu
+     * seyi haline geliyor ve altindaki toplamdan daha cok dikkat cekiyor.
+     * muted iki temada da saglam ama bagirmayan bir cizgi veriyor.
+     */
+    rule: { height: 1, backgroundColor: theme.muted },
     totalRow: {
       flexDirection: "row",
       alignItems: "baseline",

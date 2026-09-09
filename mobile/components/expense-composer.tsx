@@ -162,7 +162,11 @@ function styles(theme: Theme) {
       flexDirection: "row",
       alignItems: "center",
       borderBottomWidth: 1,
-      borderBottomColor: theme.foreground,
+      // ALT CIZGI foreground DEGIL inputLine. foreground acik temada koyu
+      // bir cizgi veriyordu ve dogru duruyordu; koyu temada BEYAZA donuyor
+      // ve ekranin en gurultulu seyi oluyor. inputLine tam bu is icin var
+      // (kagit & petrol yonu) ve harcama formundaki alanlarla ayni.
+      borderBottomColor: theme.inputLine,
       paddingBottom: 6,
     },
     plus: { color: theme.muted, fontFamily: fonts.body, fontSize: 15, marginRight: 8 },
