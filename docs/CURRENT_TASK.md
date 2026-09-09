@@ -42,8 +42,8 @@ Current task:
     1. web tokenlari (globals.css)          BITTI  9e44613
     2. mobil tema (theme.tsx)               BITTI  9e44613
        + mobil fontlar (lib/fonts.ts)       BITTI  cf94a4e
-    3. mobil GRUP EKRANI                    SIRADA
-    4. mobil harcama ekleme
+    3. mobil GRUP EKRANI                    BITTI  ba8a515 + 67af879
+    4. mobil harcama ekleme                 SIRADA
     5. web tanitim sayfasi (YENI - bugun page.tsx girisliyi urune atiyor)
     6. koyu tema gozden gecirme + magaza ekran goruntuleri
 
@@ -53,8 +53,28 @@ Current task:
        beyaz metin 3.89:1, AA'yi gecmiyor. Birincil dugmenin metni koyu
        yapildi (4.78:1). onBrand token'i bu yuzden var.
 
-  EKRANLARDA HENUZ YAPILMADI: 3-6 arasi hicbir sey. Yani su an
-  uygulamanin RENGI ve YAZI TIPI yeni, YERLESIMI eski.
+  EKRANLARDA YAPILAN: yalnizca GRUP EKRANI. Digerlerinin (harcama ekleme,
+  harcama detayi, odesmeler, uyeler, hesap, gruplar listesi) rengi ve yazi
+  tipi yeni, YERLESIMI eski.
+
+  SIMULATORDE GORULDU (9 Eylul, iPhone 17 Pro, acik VE koyu tema):
+  baslik blogu, koyu bakiye karti, bakir bolum cizgileri, cipli harcama
+  satiri, avatarli uye listesi, sabit alt cubuk. Koyu temada birincil
+  dugmenin koyu metni de dogrulandi.
+
+  SIMULATORE NASIL BAKILIR - BU OTURUMDA OGRENILDI:
+    Kurulu Owezy bir RELEASE build (preview profili); expo-dev-client
+    bagimliligi YOK, yani Metro'ya HIC baglanmiyor - "owezy://expo-
+    development-client/?url=..." hicbir sey yapmiyor ve ekranda eski
+    gomulu paket kaliyor. Yaniltici: uygulama aciliyor, sadece eski.
+    YEREL DEBUG BUILD DA ALINAMIYOR: CocoaPods kurulu degil, Homebrew yok
+    ve "gem install cocoapods" yetki istiyor - KULLANICININ PAROLASI
+    GEREKIYOR, ajan yapamaz.
+    CALISAN YOL: npx expo start --go  ->  Expo Go simulatore kendi
+    kuruluyor  ->  xcrun simctl openurl booted "exp://127.0.0.1:8081".
+    Bildirim uyarilari cikiyor (Expo Go'da push yok), gerisi calisiyor.
+    AYRICA: mobil .env.local localhost:3000'e bakiyor, yani once web dev
+    sunucusu acilmali - yoksa ekran "baglanti yok" diyor.
 
   DIKKAT - SABIT EYLEM CUBUGU 56c7a14'U GERI ALIYOR:
     3 gun once grup eylemleri fisin USTUNE tasindi (build 20'de, incelemede,
@@ -62,8 +82,23 @@ Current task:
     "bilincli bir degisiklik" diye yaziyor - yani kasitli, ama hic bakilmamis
     bir seyin uzerine yaziliyor.
 
-  MOBIL SIMULATORDE HENUZ HIC BAKILMADI. Yeni renk ve font gercek ekranda
-  gorulmedi; testler ve tarayici (web) disinda kanit yok.
+  TASARIMDAN BILEREK SAPILAN IKI YER:
+    1. GRADYAN MASKE YOK. Alt cubuk duz zemin + sac teli cizgi. Gradyan
+       expo-linear-gradient (native modul) demek; uygulamada hic gradyan
+       yok ve bu proje bir kez Expo surum kaymasindan CI kaybetti.
+       Islevi opak cubuk zaten karsiliyor. Istenirse geri eklenir ama
+       DEV BUILD YENIDEN ALINMALI - mevcut build'de o modul yok.
+    2. BAKIYE KARTININ ETIKETI YONU SOYLUYOR ("sana borclular" /
+       "borclusun" / "odestin"), tasarimdaki gibi sabit "Bakiyen" degil.
+       Sebep: tasarimda muhur artik odeme SAYISINI yaziyor, yani yon
+       yalnizca rakamin isaretinde kalirdi. ADR-015'in yururlukteki
+       yarisi bunu yasakliyor.
+
+  TASARIMIN CIZMEDIGI AMA KORUNAN DORT SEY: arama, filtreler, kategori
+  kirilimi, sayfalama. Handoff "mevcut davranislar korunur" diyor.
+  "Grup duzenle" de eski eylem satiriyla birlikte kaybolmadi - uye
+  listesinin dibine, "Uyeleri yonet"in yanina tasindi.
+
   EAS KOTASI 12/15 - build ALMADAN once sor.
 
 1.0.3 (build 20) - INCELEMEYE YENIDEN GONDERILDI (9 Eylul):

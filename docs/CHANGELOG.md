@@ -10,6 +10,44 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+
+## 2026-09-09 (3) — Grup ekranı kağıt & petrol yönüne geçti
+
+Handoff'un 3. adımı. Başlık kendi bloğu oldu (serif ad, bakır para birimi,
+bindirmeli üye baş harfleri); bakiye koyu petrol bir kart ve **ödeşme planı
+onun içine girdi** — ikisi aynı soruyu cevaplıyor ve ayrı durmaları cevabı
+sorudan bir kaydırma uzağa koyuyordu (ADR-016). Harcama satırı iki sütun:
+açıklama üstünde ödeyen/bölüşüm/kategori çipi, tutar altında senin payın.
+Eylemler alta sabitlendi.
+
+**Simülatörde açık ve koyu temada görüldü.** Koyu temadaki koyu düğme metni
+de orada doğrulandı.
+
+**Tasarımdan iki bilinçli sapma.** Alt çubuğun gradyan maskesi yerine düz
+zemin + saç teli çizgi: gradyan `expo-linear-gradient` demek, uygulamada hiç
+gradyan yok ve bu proje bir kez Expo sürüm kaymasından CI kaybetti; işlevi
+opak çubuk zaten karşılıyor. İkincisi, bakiye kartının etiketi yönü söylüyor
+(*"sana borçlular"*), sabit "Bakiyen" değil — tasarımda mühür artık ödeme
+**sayısını** yazıyor, yani yön yalnızca rakamın işaretinde kalırdı ve
+ADR-015'in yürürlükteki yarısı bunu yasaklıyor.
+
+**Artboard'ın çizmediği dört şey korundu** — arama, filtreler, kategori
+kırılımı, sayfalama — çünkü handoff "mevcut davranışlar korunur" diyor.
+"Grup düzenle" eski eylem satırıyla birlikte kaybolmadı, üye listesinin
+dibine taşındı.
+
+**Simülatöre bakmanın yolu bulundu ve bir tuzağı var:** kurulu Owezy bir
+release build, `expo-dev-client` bağımlılığı yok, yani Metro'ya hiç
+bağlanmıyor — dev-client derin bağlantısı sessizce hiçbir şey yapıyor ve
+ekranda eski gömülü paket kalıyor. Yerel debug build de alınamadı:
+CocoaPods kurulu değil ve kurulumu kullanıcının parolasını istiyor. Çalışan
+yol `npx expo start --go` + Expo Go.
+
+**Bir hata kendi işimde yakalandı:** `capOnBrand` koyu bakiye kartının
+üzerinde sanılıp bakıra çevrilmişti; on ekranda petrol düğmenin üzerinde
+duruyor. Peşine düşünce marka zemininde **30 yerde sabit `#fff`** çıktı —
+kobalt iki temada da koyuydu, petrol değil.
+
 ## 2026-09-09 (2) — Kağıt & petrol: palet, yazı tipleri ve ADR-048
 
 Kullanıcının Claude Design'da hazırladığı yeni görsel yön uygulanmaya
