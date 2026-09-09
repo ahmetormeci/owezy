@@ -18,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   EXPENSE_CATEGORY_CODES,
   EXPENSE_CATEGORY_OPTIONS,
-  EXPENSE_SPLIT_TYPE_CODES,
+  EXPENSE_SPLIT_TYPE_SHORT_CODES,
 } from "@/lib/expense-labels";
 import { guessCategory } from "@/lib/expense-category-guess";
 import { splitEqually } from "@/lib/split";
@@ -454,7 +454,7 @@ export default function NewExpenseScreen() {
           </View>
 
           <View style={s.splitBlock}>
-            <Text style={s.fieldLabel}>{t("ui.how_to_split").toLocaleUpperCase(locale)}</Text>
+            <Text style={s.fieldLabel}>{t("ui.split_type").toLocaleUpperCase(locale)}</Text>
             {/* UC ESIT SEGMENT, cip yigini degil: secenek sayisi sabit uc ve
                 birbirini disliyorlar - segment tam olarak bunu anlatiyor. */}
             <View style={s.segments}>
@@ -468,7 +468,7 @@ export default function NewExpenseScreen() {
                     disabled={busy}
                   >
                     <Text style={[s.segmentText, active && s.segmentTextOn]}>
-                      {t(EXPENSE_SPLIT_TYPE_CODES[type])}
+                      {t(EXPENSE_SPLIT_TYPE_SHORT_CODES[type])}
                     </Text>
                   </Pressable>
                 );
@@ -554,6 +554,13 @@ export default function NewExpenseScreen() {
             {/* CIFT CIZGI VE TOPLAM - fisin kapanisi. Kusuratin kime
                 yazildigi burada YAZIYOR: "eşit" bolusumde kurus tam
                 bolunmuyor ve kimin bir kurus fazla odedigi gorunmeli. */}
+            {/* CIFT CIZGI IKI AYRI CIZGI olarak. React Native
+                borderStyle: "double" DESTEKLEMIYOR: 3px'i tek kalin bir
+                cizgi olarak ciziyor ve fisin kapanis isareti kayboluyor. */}
+            <View style={s.doubleRule}>
+              <View style={s.rule} />
+              <View style={s.rule} />
+            </View>
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>
                 {roundingGoesTo === currentUserId
@@ -653,7 +660,7 @@ function createStyles(theme: Theme) {
     // 44 punto, negatif harf araligi: buyuk rakamlar aralıksiz dagiliyor.
     amountInput: {
       flexShrink: 1,
-      minWidth: 120,
+      minWidth: 40,
       fontFamily: fonts.semibold,
       fontSize: 44,
       letterSpacing: -1.8,
@@ -740,16 +747,14 @@ function createStyles(theme: Theme) {
     },
 
     /** Fisin kapanisi: cift cizgi. ADR-021'in fis dili. */
+    doubleRule: { gap: 2, marginTop: 8 },
+    rule: { height: 1, backgroundColor: theme.foreground },
     totalRow: {
       flexDirection: "row",
       alignItems: "baseline",
       justifyContent: "space-between",
       gap: 12,
-      borderTopWidth: 3,
-      borderTopColor: theme.foreground,
-      borderStyle: "solid",
       paddingTop: 10,
-      marginTop: 4,
     },
     totalLabel: {
       fontFamily: fonts.medium,
