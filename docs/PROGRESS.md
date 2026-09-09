@@ -1123,6 +1123,31 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
+## Faz 41 — Kağıt & petrol tasarım yönü · **BİTTİ, YAYINLANMADI**
+
+Kullanıcının Claude Design'da hazırladığı yön (ADR-048) iki istemcide de
+uygulandı. Handoff'un altı adımı bitti, sonra handoff'un **çizmediği** bütün
+ekranlar da aynı dile taşındı.
+
+| | |
+|---|---|
+| Tokenlar, yazı tipleri | `9e44613` · `cf94a4e` — Familjen Grotesk + Instrument Serif, iki istemcide |
+| Mobil ekranlar | grup, harcama ekleme/detay, ödeşme, üyeler, hesap, gruplar, bildirimler, giriş |
+| Web | tanıtım sayfası, ürün sayfaları, formlar |
+| Koyu tema | tasarımda çizilmemişti; türetildi, ölçüldü, düzeltildi |
+
+**Ölçümle bulunan üç kusur** — hiçbiri testle yakalanmazdı: açılmış petrol
+üzerinde beyaz metin AA'yı geçmiyordu (3.89:1), marka zemininde 30 yerde sabit
+`#fff` vardı, ve `<select>` stili dört dosyaya kopyalanmıştı.
+
+**Testlerde bir boşluk kapatıldı:** sözlük kontrolü yalnızca `src/`'yi
+tarıyordu, yani mobil istemcideki hiçbir `t("ui.…")` denetlenmiyordu.
+
+**YAYINLANMADI.** Mağazadaki 1.0.2 ve incelemedeki 1.0.3 eski tasarımı
+taşıyor; bu yön ancak sonraki sürümle kullanıcıya ulaşacak.
+
+---
+
 ## Faz 40 — Mobilde gruptan ayrılma · **BİTTİ**
 
 Kullanıcı bildirdi: **telefonda gruptan çıkılamıyor.** Ölçüldü — uç
@@ -2220,13 +2245,21 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Mobil ekran testleri** | Birim katmanı 27 Ağustos'ta kapandı (ADR-042) ama `components/*` ve `app/*` hâlâ yalnızca simülatörde elle doğrulanıyor. `@testing-library/react-native` + jest-expo gerektiriyor — ikinci bir koşucu |
-| **Mobil kodu lint görmüyor** | Kökün eslint'i `mobile/**`'ı yok sayıyor ve gerekçe olarak gösterdiği `mobile/eslint.config.js` **hiç var olmadı** (27 Ağustos'ta ölçüldü). Yani 3745 satır hiçbir kural görmüyor. `eslint-config-expo` var, kurulumu küçük |
-| **Silineni geri alma arayüzü** | `restore` ucu var, hiçbir istemci kullanmıyor |
-| **Mobilde bildirimler / dil seçimi / grup düzenleme** | Web'de var, mobilde yok |
-| **Fişin canlıda gözle görülmesi** | Uzun açıklamalarda noktalı ayraç ve çok aylı katlama yalnızca yapay veriyle sınandı |
-| **`disableLogger` ölçümü** | `next.config.ts`'teki satır Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
-| **Fiş / fatura VE profil fotoğrafı** | Aşağıda ayrıca. İkisi tek aday: aynı depo, aynı yükleme arayüzü, aynı beyan güncellemeleri |
+| **Harcamaya yorum** | En ucuzu. Yorum silinebilir mi — finansal kayıt değil, ayrı karar |
+| **Ödeme hatırlatması** | Push altyapısı hazır; **cron** gerekiyor (`vercel.json` yok) |
+| **Fiş OCR** | Fotoğraf zaten var. Dış servis = **ücretli** + gizlilik/App Privacy yeniden |
+| **Tekrarlayan harcama** | Kira, abonelik. Cron'u ödeme hatırlatmasıyla **paylaşıyor** |
+| **Kalem kalem bölüşüm** | En pahalısı: küsurat değişmezi **iki katmanda** korunmalı |
+| **Profil fotoğrafı** | Fiş fotoğrafıyla aynı depo ve arayüz; uç henüz yok |
+| **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
+| **Web'in kalan kapları** | Gruplar listesi, giriş/kayıt (hâlâ `Card` içinde), diyalogların iç yerleşimi |
+
+> **Bitenler listeden çıkarıldı (9 Eylül):** mobil ekran testleri (ADR-043,
+> 39 test), mobil lint (`mobile/eslint.config.js` var ve `--max-warnings 0`
+> koşuyor), silineni geri alma arayüzü (iki istemcide de kullanılıyor),
+> mobilde bildirimler/dil/grup düzenleme, fişin canlıda görülmesi, ve fiş
+> fotoğrafı. Aday listesi bir plan değil seçenek listesidir; biteni taşımak
+> onu yanıltıcı yapıyordu.
 
 ### Aday ayrıntısı — fiş / fatura VE profil fotoğrafı
 

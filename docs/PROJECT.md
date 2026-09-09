@@ -37,6 +37,8 @@ o yoksa hesaptan okunur (`User.locale`).
 | Parola belirleme / yenileme (e-posta koduyla) | ✅ web |
 | Hesap silme (anonimleştirme) | ✅ |
 | İki dil (TR/EN), açık/koyu tema, avatarlar | ✅ |
+| Fiş fotoğrafı (harcamaya ekle, tam ekran görüntüle) | ✅ |
+| Push bildirimi (iOS) | ✅ |
 
 ## Teknoloji stack'i
 
@@ -45,6 +47,7 @@ o yoksa hesaptan okunur (`User.locale`).
 | Framework | Next.js 16.2.11 (App Router, Turbopack) | |
 | Dil | TypeScript | strict |
 | UI | React 19.2.4, Tailwind CSS 4, shadcn/ui (**Base UI** preset, "Nova") | Radix değil |
+| Görsel yön | **Kağıt & petrol** (ADR-048) | Instrument Serif + Familjen Grotesk; token'lar `globals.css` ve `mobile/lib/theme.tsx` |
 | Veritabanı | PostgreSQL (Neon serverless) | |
 | ORM | Prisma 7.9.0 + `@prisma/adapter-neon` | |
 | Kimlik doğrulama | Better Auth 1.7.1 | kendi `User` tablomuzun üstünde; ADR-038 |

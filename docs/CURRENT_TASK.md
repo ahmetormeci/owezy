@@ -25,184 +25,92 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-09
+Updated: 2026-09-09 (gun sonu)
 
 Current task:
-  KAGIT & PETROL TASARIM YONUNUN UYGULANMASI (ADR-048).
+  YOK. Kagit & petrol tasarim yonu HEM MOBILDE HEM WEB'DE UYGULANDI.
+  Sirada bekleyen tek sey 1.0.3'un inceleme sonucu - ona kadar kod
+  tarafinda zorunlu is yok.
+
+  BUGUN 31 COMMIT. Hepsi push edildi, agac temiz, CI yesil (5a4e411).
+
+TASARIM YONU - NE YAPILDI (ADR-048)
 
   KAYNAK: kullanicinin Claude Design'daki projesi.
     proje  2f16cec7-532e-466b-8493-4cc5a7792d07  "Owezy mobil ve web tasarimi"
     dosya  design_handoff_owezy_kagit_petrol/Owezy Urun Tasarimi.dc.html
-    UYGULANACAK BOLUM id="5a". 2a/3a/3b/4a REDDEDILMIS alternatifler.
+    UYGULANAN BOLUM id="5a". 2a/3a/3b/4a REDDEDILMIS alternatifler.
     Yanindaki README.md spec'in kendisi - her token, her olcu orada.
-    OKUMA YOLU: DesignSync (list_files / get_file). /design-login yapildi.
-    Kullanici ayni paketi zip olarak da verdi; ikisi BIREBIR AYNI.
+    OKUMA YOLU: DesignSync (get_file). /design-login BIR KEZ yapildi ve
+    kaliyor. list_projects BOS doner - proje "design system" tipinde degil,
+    dogrudan projectId ile get_project/list_files/get_file calisiyor.
 
-  HANDOFF'UN KENDI SIRASI - NEREDE KALINDI:
-    1. web tokenlari (globals.css)          BITTI  9e44613
-    2. mobil tema (theme.tsx)               BITTI  9e44613
-       + mobil fontlar (lib/fonts.ts)       BITTI  cf94a4e
-    3. mobil GRUP EKRANI                    BITTI  ba8a515 + 67af879
-    4. mobil harcama ekleme                 BITTI  8ab8f58 + 766d87c
-    5. web tanitim sayfasi                  BITTI  1379c6e
-    6a. koyu tema gozden gecirme            BITTI  4ff3b1d
-    6b. magaza ekran goruntuleri            BEKLIYOR - gercek build ister VE
-        1.0.3'un inceleme sonucu belli olmadan anlamsiz
+  HANDOFF'UN ALTI ADIMI - HEPSI BITTI:
+    1. web tokenlari          9e44613     4. mobil harcama ekleme  8ab8f58
+    2. mobil tema + fontlar   9e44613/cf94a4e   5. web tanitim sayfasi  1379c6e
+    3. mobil grup ekrani      ba8a515     6a. koyu tema             4ff3b1d
+    6b. magaza ekran goruntuleri  BEKLIYOR (asagida)
 
-  HANDOFF BITTI. BUNDAN SONRASI HANDOFF'TA YOK - yeni dilin kalan
-  ekranlara TASINMASI. Handoff uc yuzey ciziyordu; digerleri renk ve yazi
-  tipini aldi ama YERLESIM dili eski kaldi.
-    harcama detayi      BITTI  9f9e7f6  (+ receipt-photo bileseni)
-    odesmeler           BITTI  70d6e4c
-    uyeler              BITTI  5882446
-    hesap               BITTI  9c25910
-    gruplar listesi / bildirimler / giris   BITTI  508e1fa
+  HANDOFF'UN CIZMEDIGI EKRANLAR - HEPSI YENI DILE TASINDI:
+    mobil : harcama detayi 9f9e7f6 · odesmeler 70d6e4c · uyeler 5882446
+            hesap 9c25910 · gruplar/bildirimler/giris 508e1fa
+    web   : urun sayfalari 00833a2 · formlar+etiketler 2e1a608
 
-  WEB - ILK TUR BITTI (00833a2). Kaldiraç paylasilan dort parcadaydi:
-    .label + .cap birlesti (tek etiket bicimi), SectionHead bakir cizgiye
-    gecti, ui/input kutudan alt cizgiye (ON BIR formu birden tasidi),
-    PersonAvatar'in isimden uretilen rengi kalkti. Grup sayfasinda baslik
-    ve bakiye fisin disina cikti; sayfada hic kutu kalmadi. E2E 57/57.
+  BUTUN MOBIL EKRANLAR SIMULATORDE ACIK VE KOYU TEMADA GORULDU.
+  Web'in kimlikli sayfalari Playwright ile goruldu (yol asagida).
 
-  WEB - IKINCI TUR BITTI (2e1a608). Harcama formu, davet yoneticisi,
-    alan etiketleri (Label -> bakir kapitel), dort sayfa basligi (serif),
-    uc onay kutusu (sistem mavisi -> petrol). E2E 57/57.
+BEKLEYEN TEK IS: MAGAZA EKRAN GORUNTULERI
+  Iki sebeple bekliyor: (a) gercek bir build ister - Expo Go yetmez,
+  (b) 1.0.3'un sonucu belli olmadan uretmenin anlami yok, cunku o surum
+  ESKI tasarimi tasiyor.
 
-    SELECT STILI DORT DOSYAYA KOPYALANMISTI ve Input alt cizgiye gecince
-    dordu de kutulu kaldi. Artik ui/input.tsx'ten tek kaynak
-    (selectClassName). Kopyalanan bir satir, zamanla ayrisan bir satirdir.
+KALAN WEB ISI - ZORUNLU DEGIL, TAMAMLAMA:
+  gruplar listesi · giris/kayit sayfalari (hala Card icinde) ·
+  diyaloglarin ic yerlesimi. Hepsi alt cizgiyi ve bakir etiketi
+  PAYLASILAN parcalardan aldi; kalan yalnizca kendi kaplari. Yani
+  tutarsiz degiller, tamamlanmamislar.
 
-    KALAN WEB ISI: gruplar listesi ve kimlik sayfalari (giris/kayit hala
-    Card icinde), bir de diyaloglarin ic yerlesimi. Hepsi alt cizgiyi ve
-    bakir etiketi paylasilan parcalardan ALDI; kalan yalnizca kendi
-    kaplari.
+BU OTURUMDA OGRENILEN - TEKRAR ARAMA:
 
-  WEB'IN URUN SAYFALARINI GORMEK ICIN: giris gerekiyor ve ajan ne parola
-    ne tek seferlik kod yazabilir. YOL: e2e/ altina gecici bir spec yazip
-    pageAs(browser,"owner") ile giris yapip page.screenshot() almak.
-    Bu oturumda uc kez boyle bakildi; spec her seferinde SILINDI.
+  WEB'IN KIMLIKLI SAYFASINI GORMEK: giris gerekiyor ve ajan ne parola ne
+    tek seferlik kod yazabilir. YOL: e2e/ altina gecici bir spec yazip
+    pageAs(browser,"owner") ile girip page.screenshot() almak. Bes kez
+    boyle bakildi; spec HER SEFERINDE silindi.
 
-  MOBIL BITTI. Butun ekranlar yeni dilde ve HEPSI simulatorde acik VE koyu
-  temada gorüldu. Kalan tek yuzey WEB'in urun sayfalari - kullanici onu
-  AYRI ele almak istedi, yeni bir gorev olarak baslasin.
+  MOBILI SIMULATORDE GORMEK: kurulu Owezy bir RELEASE build (preview
+    profili), expo-dev-client bagimliligi YOK, yani Metro'ya HIC
+    baglanmiyor - dev-client derin baglantisi sessizce hicbir sey yapiyor
+    ve ekranda ESKI gomulu paket kaliyor. Yaniltici: uygulama aciliyor.
+    CALISAN YOL: npx expo start --go -> Expo Go kendi kuruluyor ->
+    xcrun simctl openurl booted "exp://127.0.0.1:8081".
+    ONCE web dev sunucusu acilmali: mobil .env.local localhost:3000'e bakiyor.
+    YEREL DEV BUILD ALINAMIYOR: CocoaPods kurulamadi - macOS'un Ruby'si
+    2.6.10, ffi >= 3.0 istiyor. Hatanin kendi onerisi (gem install ffi -v
+    1.17.4) DA calismiyor. Cozum Homebrew; kullanicinin parolasi gerekiyor.
 
-  SIMULATORDE OTURUM KAPATILDI (giris ekranini gormek icin; oturum acikken
-  o ekran hic cizilmiyor). Tekrar bakilacaksa once giris yapilmali -
-  AJAN YAPAMAZ: parola da tek seferlik kod da yazamaz.
-    web urun sayfalari  ((app)/groups/...) - handoff yalnizca karsilama
-                        sayfasini kapsiyordu
+  ARKA PLAN KOSUSUNUN "exit code 0"I SARMALAYICI betigin kodu olabilir,
+    kosunun degil. Bu oturumda iki kez yasandi (eas build, sonra e2e).
 
-  BU YONDE OLCULEN IKI SEY - TEKRAR ETME, KAYITLI:
-    a. Handoff'un butun kontrast iddialari DOGRU cikti.
-    b. AMA TURETILEN KOYU TEMADA KUSUR VARDI: acilmis petrol uzerinde
-       beyaz metin 3.89:1, AA'yi gecmiyor. Birincil dugmenin metni koyu
-       yapildi (4.78:1). onBrand token'i bu yuzden var.
+  SOZLUK ANAHTARINI SABLON DIZGIYLE YAZMA: messages.test.ts kaynagi
+    TARAYARAK calisiyor; `t(\`ui.x_${...}\`)` kaynakta hic gecmiyor ve o
+    kontrol onu goremiyor. Iki kez yasandi (web karsilama, mobil hesap).
 
-  KOYU TEMA GOZDEN GECIRILDI (9 Eylul, simulatorde). Tasarimda hic
-    cizilmemisti; asagidaki ekranlar tek tek acildi: grup, harcama ekleme,
-    hesap, grup duzenleme, odesme. IKI KUSUR CIKTI, ikisi de ayni sinifta:
-    "acik temada dogru, koyu temada bagiran" cizgiler.
-      - Giris alt cizgileri DORT yerde theme.foreground'du (edit, composer,
-        invite-joiner, group-creator) -> inputLine.
-      - Harcama formunun kapanis cizgisi foreground'du -> muted.
-    Kontrast orani iki yonde de ayni (~14.8:1); sorun oran degil, parlak
-    cizginin koyu zeminde yayilmasi.
+  SIMULATORDE OTURUM KAPALI - giris ekranini gormek icin cikildi. Tekrar
+    bakilacaksa once giris yapilmali; AJAN YAPAMAZ.
 
-  KASITLI SABIT RENKLER - DOKUNMA, hepsinin gerekcesi kodda yazili:
-    kirmizi silme dugmesi, tam ekran fotograf zemini (siyah), QR kodu
-    (taranmasi icin siyah-beyaz olmak ZORUNDA), ve bakiye kartinin ici
-    (kart iki temada da koyu petrol).
-
-  WEB TANITIM SAYFASI - BITTI. Dil ve tema dugmeleri PublicControls'un
-    sabit kosesinden BASLIK CUBUGUNA tasindi (o bilesenin kendi yorumu bunu
-    zaten istiyordu). Giris/kayit sayfalari PublicControls'u kullanmaya
-    devam ediyor. Tasarimdaki PROFIL FOTOGRAFI BLOGU YAPILMADI: var olmayan
-    bir ozelligi anlatiyor, handoff da image-slot icin "uretime tasinmaz"
-    diyor. E2E TAM KOSU YAPILDI: 57/57, 10.6 dk.
-
-  SOZLUK KONTROLU ARTIK MOBILI DE TARIYOR (c6e8b04). Uzun sure yalnizca
-    src/ altina bakiyordu; iki istemci AYNI sozlugu paylastigi halde mobil
-    taraftaki her t("ui.…") korumasizdi. Uye ekraninda t("ui.invite")
-    yazildi, sozlukte yoktu, 617 test yesil kaldi. Negatif kontrolle
-    dogrulandi.
-
-  DIKKAT - SOZLUK ANAHTARINI SABLON DIZGIYLE YAZMA:
-    messages.test.ts kaynak kodu tarayip gecen her "ui.*" kodunu sozlukte
-    ariyor - ADR-020'nin FIILEN isleyen hali (Translator duz string aldigi
-    icin tip sistemi yakalamiyor). Sablon dizgiyle yazilan anahtar kaynakta
-    HIC GECMIYOR, yani o kontrol onu goremiyor. Bu oturumda dokuz anahtar
-    boyle yazildi, testler sessizce gecti; acik anahtara cevrilip negatif
-    kontrolle dogrulandi.
-
-  ARKA PLAN KOSUSUNUN CIKIS KODUNU OKURKEN: "exit code 0" SARMALAYICI
-    betigin kodu olabilir, kosunun degil. Bu oturumda iki kez yasandi
-    (once eas build, sonra e2e). Once hangi surecin kodu oldugunu dogrula.
-
-  EKRANLARDA YAPILAN: GRUP EKRANI ve HARCAMA EKLEME. Digerlerinin (harcama
-  detayi, odesmeler, uyeler, hesap, gruplar listesi) rengi ve yazi tipi
-  yeni, YERLESIMI eski.
-
-  HARCAMA EKLEME - IKI ADIMLI SIHIRBAZ KALDIRILDI:
-    Gerekcesi gercekti (bolusme arayuzu TUTARA bagimli) ama onu saglayan
-    sey adim SINIRI degil alanlarin SIRASI - tasarim tutari ilk alan
-    yapiyor. Sinir kalkti, sira kaldi. Testteki "next" adimi da kalkti.
-    Odeyen ve kategori CIP degil ACILIR SECIM artik (components/field.tsx,
-    React Native'in kendi Modal'i - yeni bagimlilik yok).
-    Esit bolusumde her satir PAYINI gosteriyor; hesap sunucuyla AYNI
-    fonksiyondan (src/lib/split.ts), yani ekrandaki kurus kaydedilenle
-    ayrisamiyor - kusuratin kime yazildigi dahil.
-
-  TASARIMDA OLAN AMA YAPILMAYAN IKI ALAN:
-    "Gruba not"  -> Expense'te NOT SUTUNU YOK (yalnizca Settlement'ta var).
-                    Sema + migration + API + web demek: ozellik, restyle
-                    degil. YAPILMADI.
-    "Tarih"      -> sunucu kabul ediyor (web'de var) ama mobilde tarih
-                    secici hic olmadi ve yeni bir bagimlilik ister.
-                    Sunucu bugunu varsaymaya devam ediyor. YAPILMADI.
-
-  SIMULATORDE GORULDU (9 Eylul, iPhone 17 Pro, acik VE koyu tema):
-  baslik blogu, koyu bakiye karti, bakir bolum cizgileri, cipli harcama
-  satiri, avatarli uye listesi, sabit alt cubuk. Koyu temada birincil
-  dugmenin koyu metni de dogrulandi.
-
-  SIMULATORE NASIL BAKILIR - BU OTURUMDA OGRENILDI:
-    Kurulu Owezy bir RELEASE build (preview profili); expo-dev-client
-    bagimliligi YOK, yani Metro'ya HIC baglanmiyor - "owezy://expo-
-    development-client/?url=..." hicbir sey yapmiyor ve ekranda eski
-    gomulu paket kaliyor. Yaniltici: uygulama aciliyor, sadece eski.
-    YEREL DEBUG BUILD DA ALINAMIYOR: CocoaPods kurulu degil, Homebrew yok
-    ve "gem install cocoapods" yetki istiyor - KULLANICININ PAROLASI
-    GEREKIYOR, ajan yapamaz.
-    CALISAN YOL: npx expo start --go  ->  Expo Go simulatore kendi
-    kuruluyor  ->  xcrun simctl openurl booted "exp://127.0.0.1:8081".
-    Bildirim uyarilari cikiyor (Expo Go'da push yok), gerisi calisiyor.
-    AYRICA: mobil .env.local localhost:3000'e bakiyor, yani once web dev
-    sunucusu acilmali - yoksa ekran "baglanti yok" diyor.
-
-  DIKKAT - SABIT EYLEM CUBUGU 56c7a14'U GERI ALIYOR:
-    3 gun once grup eylemleri fisin USTUNE tasindi (build 20'de, incelemede,
-    ve HIC EKRANDA GORULMEDI). Tasarim onlari alta SABITLIYOR. Handoff bunu
-    "bilincli bir degisiklik" diye yaziyor - yani kasitli, ama hic bakilmamis
-    bir seyin uzerine yaziliyor.
-
-  TASARIMDAN BILEREK SAPILAN IKI YER:
-    1. GRADYAN MASKE YOK. Alt cubuk duz zemin + sac teli cizgi. Gradyan
-       expo-linear-gradient (native modul) demek; uygulamada hic gradyan
-       yok ve bu proje bir kez Expo surum kaymasindan CI kaybetti.
-       Islevi opak cubuk zaten karsiliyor. Istenirse geri eklenir ama
-       DEV BUILD YENIDEN ALINMALI - mevcut build'de o modul yok.
-    2. BAKIYE KARTININ ETIKETI YONU SOYLUYOR ("sana borclular" /
-       "borclusun" / "odestin"), tasarimdaki gibi sabit "Bakiyen" degil.
-       Sebep: tasarimda muhur artik odeme SAYISINI yaziyor, yani yon
-       yalnizca rakamin isaretinde kalirdi. ADR-015'in yururlukteki
-       yarisi bunu yasakliyor.
-
-  TASARIMIN CIZMEDIGI AMA KORUNAN DORT SEY: arama, filtreler, kategori
-  kirilimi, sayfalama. Handoff "mevcut davranislar korunur" diyor.
-  "Grup duzenle" de eski eylem satiriyla birlikte kaybolmadi - uye
-  listesinin dibine, "Uyeleri yonet"in yanina tasindi.
-
-  EAS KOTASI 12/15 - build ALMADAN once sor.
+DIS DUNYA - 9 EYLUL OLCUMU (bu dosya her yazildiginda TEKRAR olculecek):
+  DMARC    v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r
+  CANLI    / , /support , /privacy , /.well-known/... -> hepsi 200
+  AASA     Apple CDN 200
+  ALAN ADI askIda degil
+  MAGAZA   1.0.2 | 2026-09-07 | ['EN','TR']
+           NOT: bu sorgu 8 Eylul'de hala "1.0" ve yalnizca ['EN'] diyordu
+           ve "aciklanamadi" diye kaydedilmisti. KENDILIGINDEN duzeldi -
+           itunes lookup yayin anini degil kendi onbelleginin tazelenmesini
+           gosteriyor. Tek basina kanit sayma kurali gecerliligini koruyor.
+  CI       5a4e411 success
+  PANEL    olculemez - App Store Connect'teki inceleme durumu KULLANICIYA
+           SORULACAK. Son bilinen: "Waiting for Review" (9 Eylul).
 
 1.0.3 (build 20) - INCELEMEYE YENIDEN GONDERILDI (9 Eylul):
   Once Guideline 2.1 ile reddedildi: App Store Connect'teki "User name"
