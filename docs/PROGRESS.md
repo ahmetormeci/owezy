@@ -8,17 +8,18 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 31 faz tamamlandı, **Faz 36 sürüyor** (1.0.1 build'i bekliyor). **Faz 35 ile iOS uygulaması
-App Store'da yayında** (1.0, 4 Eylül 2026) — web zaten canlıydı, artık iki
-istemci de kullanıcıya açık. Yayından sonra çıkan 2FA giriş hatasının sunucu
-tarafı kapatıldı; mobil düzeltmesi 1.0.1'e kaldı (Faz 36). `main`'e giden her
-değişiklik CI'dan geçiyor.
+**Özet:** 41 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
+yayında** (mağazada 1.0.2, 8 Eylül 2026) — web zaten canlıydı, artık iki
+istemci de kullanıcıya açık. Faz 41'in kağıt & petrol tasarım yönü iki
+istemcide de uygulandı ama **henüz kullanıcıya ulaşmadı**: mağazadaki 1.0.2 de
+incelemedeki 1.0.3 de eski görünümü taşıyor. `main`'e giden her değişiklik
+CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim — kök (Vitest) | 584 | ✅ tümü geçiyor |
-| Birim — mobil (Vitest) | 77 | ✅ tümü geçiyor |
-| Ekran — mobil (jest-expo) | 18 | ✅ tümü geçiyor |
+| Birim — kök (Vitest) | 617 | ✅ tümü geçiyor |
+| Birim — mobil (Vitest) | 86 | ✅ tümü geçiyor |
+| Ekran — mobil (jest-expo) | 39 | ✅ tümü geçiyor |
 | E2E (Playwright) | 57 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
 | `npm run lint` | — | ✅ temiz (kök + mobil) |
@@ -1301,7 +1302,7 @@ yoktu. Testlerle kapsandı.
 
 ---
 
-## Faz 36 — 2FA girişi mobilde kırıktı · **SÜRÜYOR**
+## Faz 36 — 2FA girişi mobilde kırıktı · **BİTTİ**
 
 1.0 yayına girdikten saatler sonra çıktı: **2FA açık hesaplar iOS
 uygulamasına hiç giremiyordu.** İkinci adımda "Doğrulama süresi doldu"
@@ -1379,10 +1380,13 @@ eklendi: gerçek parolayla giriş → gerçek `__Secure-` önekli imzalı çerez
 Test `skip` — öneki `NODE_ENV` tetikliyor, E2E geliştirme modunda koşuyor.
 Çalıştırma talimatı testin başında; köprüyle birlikte silinecek.
 
-### Kalan
+### Kalan — yalnızca köprünün kaldırılması
 
-- 1.0.1 build + submit (sürüm `app.json`'da 1.0.1'e alındı)
-- **Köprünün kaldırılması** — 1.0.1 yaygınlaşınca, önce değil
+Mobil ayrıştırıcı **mağazada**: 1.0.1 build'i TestFlight'ta kullanılmadan
+atlandı, düzeltme 1.0.2 ile yayına girdi (8 Eylül, telefonda doğrulandı).
+Geriye tek şey kaldı: **sunucu köprüsünün kaldırılması** — ve o, düzeltilmiş
+sürüm *yaygınlaşınca*, önce değil. Köprü hâlâ mağazadaki 1.0'ı taşıyan
+telefonları ayakta tutuyor.
 
 ---
 

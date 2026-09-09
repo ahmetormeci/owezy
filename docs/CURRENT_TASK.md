@@ -32,7 +32,7 @@ Current task:
   Sirada bekleyen tek sey 1.0.3'un inceleme sonucu - ona kadar kod
   tarafinda zorunlu is yok.
 
-  BUGUN 31 COMMIT. Hepsi push edildi, agac temiz, CI yesil (5a4e411).
+  BUGUN 32 COMMIT. Hepsi push edildi, agac temiz, CI yesil (5a4e411).
 
 TASARIM YONU - NE YAPILDI (ADR-048)
 
@@ -145,11 +145,6 @@ DIS DUNYA - 9 EYLUL OLCUMU (bu dosya her yazildiginda TEKRAR olculecek):
        Silinecekler "KOPRU" basliginda.
 
   RET GELDI VE GEREKCESI OKUNDU - yukaridaki gorev ondan cikti.
-
-  MAGAZA SORGUSU HALA "1.0" DIYOR (8 Eylul olcumu, hem TR hem US) - oysa
-  1.0.2 canli ve telefona indi. itunes.apple.com/lookup yayin anini degil
-  kendi onbelleginin tazelenmesini gosteriyor; asamali yayin (phased release)
-  de olabilir. TEK BASINA KANIT SAYMA.
 
 EKRANDA HENUZ GORULMEYENLER - 1.0.3'un icinde ve HICBIRI bakilmadi:
   yerlesim (eylemler fisin ustunde), basliktaki hesap simgesi, tema secimi,
@@ -502,10 +497,10 @@ AKILDA TUTULACAKLAR:
   yalnizca bizim demo hesaplarimiz oldugu VARSAYILAMAZ. Production'a
   dokunan her betik once OKUYUP saymali, sonra yazmali.
 
-TESTLER - NE NEREDE:
-  KOK      npm test                  584 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      77 vitest + 18 jest
-  E2E      npm run test:e2e           56 test, ~10 dk
+TESTLER - NE NEREDE (9 Eylul'de kosuldu):
+  KOK      npm test                  617 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      86 vitest + 39 jest
+  E2E      npm run test:e2e           57 test, ~10 dk
 
   MOBILDE IKI KOSUCU VAR ve sinir DIZINE gore (ADR-042, ADR-043):
     lib/**                    -> vitest   (react-native'e dokunmuyor)
