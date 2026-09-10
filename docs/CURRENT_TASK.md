@@ -61,24 +61,24 @@ Current task:
   (belirtec expo-secure-store'da). Kalmasaydi bakilamazdi - tek seferlik
   kod bir kimlik dogrulama kodudur ve forma yazilmasi yasak.
 
-  >>> BU COMMIT'TE YARIM KALAN TEK SEY: TAM E2E KOSUSU <<<
+  >>> TAM E2E KOSTU VE GECTI: 61 passed, 1 bilerek atlanan (13.2 dk) <<<
 
-  Faz 46 commit'lenirken tam E2E kosusu ARKA PLANDA SURUYORDU (16/62'de
-  birakildi, hepsi yesildi). Sonucu OKUNMADI.
+  Kosu Faz 46 commit'lenirken arka planda suruyordu ve SONRADAN bitti;
+  sonucu okundu. TEKRAR KOSMAYA GEREK YOK.
 
-  NEDEN MUHTEMELEN YESIL: web tarafinda HICBIR dosya degismedi.
-  src/lib/receipt-amount.ts YENI ve web onu import ETMIYOR (olculdu);
-  src/lib/messages.ts 14 EKLEME 0 SILME. Yani E2E'nin gordugu web
-  davranisi bir onceki yesil kosuyla ayni.
+  Beklenen de buydu, sebebi olculmustu: web tarafinda HICBIR dosya
+  degismedi. src/lib/receipt-amount.ts YENI ve web onu import ETMIYOR;
+  src/lib/messages.ts 14 EKLEME 0 SILME. Yine de kosuldu, cunku bu proje
+  "supheliyse tam kosu" diyor - ve olcmeden kabul etmek bugun uc kez
+  hataya goturdu.
 
-  YINE DE KOSULACAK - bu proje "supheliyse tam kosu" diyor ve iddiayi
-  olcmeden kabul etmek tam da bugun iki kez hataya goturen sey oldu:
-      npm run test:e2e
-  Beklenen: 61 passed (+1 bilerek atlanan).
+  BU IKI COMMIT PUSH EDILMEDI (fb12a8a + hash commit'i). Kod commit'i ve
+  kullanicinin bu faz icin push izni YOK - uc maddelik serinin izni
+  Faz 43-45'e aitti. Testler yesil; push KULLANICI ISTEYINCE.
 
-  BU COMMIT PUSH EDILMEDI. Kod commit'i ve kullanicinin bu faz icin push
-  izni YOK - uc maddelik serinin izni Faz 43-45'e aitti. E2E yesilse ve
-  kullanici isterse push edilecek.
+  DIKKAT: bu dosyaya yapilacak DOKUMAN commit'i otomatik push ediliyor
+  (AGENTS.md) ve o push ALTTAKI KOD COMMIT'INI DE goturur. Bugun tam
+  boyle bir kaza oldu. Kullanici izin verene kadar bu dala push YAPMA.
 
   >>> CRON_SECRET MADDESI KAPANDI (10 Eylul). Asagisi kaydi. <<<
 
