@@ -197,12 +197,21 @@ export function RecurringList({
 function styles(theme: Theme) {
   return StyleSheet.create({
     /**
-     * YATAY DOLGU BURADA. Bu ekranda ScrollView'da yatay dolgu YOK ve her
-     * blok kendi paddingHorizontal'ini tasiyor - yorum bolumunde tam bu
-     * unutulmus, bolum ekranin kenarina yapismisti (10 Eylul, simulatorde
-     * goruldu).
+     * YATAY DOLGU YOK - VE BU OLCULEREK DUZELTILDI.
+     *
+     * Ilk yazilisinda paddingHorizontal: 20 vardi. Gerekce dogruydu ama
+     * YANLIS EKRANDAN tasinmisti: harcama detayi ve harcama ekleme
+     * ekranlarinda ScrollView'da yatay dolgu YOK ve her blok kendi
+     * dolgusunu tasiyor (yorum bolumunde tam bu unutulmustu). GRUP EKRANI
+     * BOYLE DEGIL - onun ScrollView'unda zaten padding: 16 var.
+     *
+     * Sonucu simulatorde goruldu: "Tekrarlayan harcamalar" basligi, hemen
+     * altindaki "Uyeler ve bakiyeler" basligindan 20 punto ICERIDE
+     * duruyordu - ayni sayfada iki farkli sol kenar.
+     *
+     * marginTop: 24 membersBlock ile AYNI: iki bolum kardes.
      */
-    block: { paddingHorizontal: 20, marginTop: 24 },
+    block: { marginTop: 24 },
     empty: {
       fontFamily: fonts.body,
       fontSize: 13,

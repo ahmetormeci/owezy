@@ -2442,6 +2442,12 @@ geçiyordu, diğeri hatanın kodunu sınamıyordu.
 görünmüyordu. Mobilde ekran çökerdi ve bir açıklama düzeltmesi kalemleri
 silerdi. Şekil artık tek yerde düzleşiyor.
 
+**Simülatörde bir hizalama kusuru daha çıktı** (Faz 44'ün bölümünde): blok
+kendi yatay dolgusunu taşıyordu ama grup ekranının ScrollView'unda zaten
+ var — doğru ders yanlış ekrandan taşınmıştı. İki istemcide de
+iki yeni ekran açık ve koyu temada görüldü; kalem kalem bir harcama telefondan
+kurulup düzenlendi ve kalemlerin düzenlemeden sonra da durduğu doğrulandı.
+
 **Test:** 715 kök birim (+19), 77 mobil ekran (+6), E2E (+1).
 **Commit:** `b271e56`
 

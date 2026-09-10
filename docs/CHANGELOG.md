@@ -83,6 +83,14 @@ düzeltmesi **kalemleri silerdi** — gövdeye boş bir dizi giderdi. Şekil art
 tek yerde düzleşiyor (`commentCount` ile aynı karar) ve bir test bunu
 bekçiliyor; negatif kontrolü koşuldu.
 
+**Simülatörde bir hizalama kusuru bulundu ve düzeltildi** — testlerin
+göremeyeceği türden. Tekrarlayan harcamalar bölümü, hemen altındaki "Üyeler ve
+bakiyeler"den **20 punto içeride** duruyordu: bloğa kendi yatay dolgusunu
+vermiştim, oysa doğru ders **başka bir ekrandan** taşınmıştı. Harcama detayı ve
+harcama ekleme ekranlarında ScrollView'ın yatay dolgusu yok ve her blok kendi
+dolgusunu taşıyor; **grup ekranı böyle değil**, onun ScrollView'unda zaten
+ var. Aynı sayfada iki farklı sol kenar.
+
 **Üç negatif kontrol koşuldu:** kalem silme koşullu hâle getirildiğinde,
 katılımcı türetmesi bozulduğunda ve kalemler snapshot'tan çıkarıldığında
 ilgili testler düştü; geri alınınca yeniden geçti.
