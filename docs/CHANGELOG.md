@@ -21,6 +21,39 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-10 — Grup sayfası tek sütun oldu
+
+Bakiye kartı ile fiş aynı sütunda **farklı genişlikteydi**; kullanıcı
+fark etti ve sordu. Ölçüldü: kart `x=208 w=864`, fiş `x=350 w=580` —
+**284 piksel fark**.
+
+Bu kimsenin verdiği bir karar değildi. Sütun genişliği (`36.25rem`) **üç
+ayrı yerde** tek tek yazılıydı ve iki blok o listeden düşmüştü: başlık
+satırı ve bakiye kartı. Kendi kısıtları olmayınca `main`'in
+`max-w-4xl`'ini alıyorlardı. Sayfa boyunca genişlik 580 → 896 → 896 →
+580 → 580 diye gidip geliyordu. Başlık satırı da aynı kusurdaydı ve üye
+avatarlarının ekranın ta sağ kenarına gitmesinin sebebi oydu — o güne
+kadar kimse adını koymamıştı.
+
+**Fiş kazandı, kullanıcı seçti:** fiş fiziksel bir metafor ve
+genişletmek onu bozar; 896 piksellik koyu petrol kart tek bir sayı için
+fazla mürekkep; mobilde zaten her şey tek genişlikte. `Receipt` kendi
+`max-w`'sini koruyor çünkü `expense-list.tsx` de onu kullanıyor — dar
+bir kabın içinde etkisiz.
+
+**Asıl onarım genişliğin sayfada BİR KEZ tanımlanması.** Ayrışma ancak
+sayının kopyaları olduğu için mümkündü.
+
+Test **ilişki** sınıyor, piksel değil: aynı sol kenar, aynı genişlik.
+Sütun genişliği ileride değişirse test geçmeye devam eder; yalnızca
+ikisinin birbirinden ayrılması bozar — kusur tam olarak oydu. Negatif
+kontrol koşuldu: eski biçim geri konunca `Expected: 350 / Received: 208`
+ile düştü.
+
+Tam E2E: 62 geçti, 1 bilerek atlandı.
+
+---
+
 ## 2026-09-10 — Fiş fotoğrafından tutar okuma
 
 Fiş fotoğrafı eklendiğinde tutar alanı kendiliğinden doluyor. Okuma
