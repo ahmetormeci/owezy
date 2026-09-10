@@ -43,7 +43,7 @@ Current task:
   YAPILANLAR:
     Faz 43  odeme hatirlatmasi   BITTI  (ADR-050)  cbfb887  CI yesil
     Faz 44  tekrarlayan harcama  BITTI  (ADR-051)  503ad2e  CI yesil
-    Faz 45  kalem kalem bolusum  BITTI  (ADR-052)  <COMMIT>
+    Faz 45  kalem kalem bolusum  BITTI  (ADR-052)  b271e56
 
   >>> KULLANICININ YAPMASI GEREKEN TEK SEY - BASKA KIMSE YAPAMAZ <<<
 

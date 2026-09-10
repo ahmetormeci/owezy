@@ -2360,7 +2360,7 @@ kaldırıldığında ve bildirime fazladan bir alıcı eklendiğinde ilgili test
 düştü, geri alınınca yeniden geçti.
 
 **Test:** 653 kök birim (+17), 58 mobil ekran (+8), E2E (+1).
-**Commit:** `<COMMIT>`
+**Commit:** `cbfb887`
 
 ---
 
@@ -2402,7 +2402,7 @@ beklemediği bir gövdede bütün grup ekranını çökertiyordu; ve mobilde bö
 boş grupta gizleniyordu — yani şablonunu yeni kuran kullanıcı onu göremezdi.
 
 **Test:** 696 kök birim (+43), 71 mobil ekran (+13), E2E (+1).
-**Commit:** `<COMMIT>`
+**Commit:** `503ad2e`
 
 ---
 
@@ -2443,7 +2443,7 @@ görünmüyordu. Mobilde ekran çökerdi ve bir açıklama düzeltmesi kalemleri
 silerdi. Şekil artık tek yerde düzleşiyor.
 
 **Test:** 715 kök birim (+19), 77 mobil ekran (+6), E2E (+1).
-**Commit:** `<COMMIT>`
+**Commit:** `b271e56`
 
 ---
 
