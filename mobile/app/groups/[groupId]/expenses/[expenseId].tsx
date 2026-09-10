@@ -47,11 +47,20 @@ type Expense = {
   amount: number;
   currency: string;
   category: keyof typeof EXPENSE_CATEGORY_CODES;
-  splitType: "EQUAL" | "EXACT" | "PERCENTAGE";
+  splitType: "EQUAL" | "EXACT" | "PERCENTAGE" | "ITEMIZED";
   expenseDate: string;
   paidById: string;
   createdById: string;
   participants: Participant[];
+  /**
+   * Kalemler (ADR-052). Yalnizca ITEMIZED harcamalarda dolu - eski bir
+   * sunucu cevabinda alan HIC olmayabilir, o yuzden opsiyonel.
+   *
+   * NEDEN BURADA: bu ekran tutari duzenleyebiliyor ve sunucu "tam
+   * degistirme" bekliyor - yani kalemler de govdede olmak zorunda.
+   * Gelmeseydi telefondan yapilan bir aciklama duzeltmesi MASAYI SILERDI.
+   */
+  items?: { description: string; amount: number; userIds: string[] }[];
   /** Optimistic locking sayaci (ADR-032). */
   version: number;
   /**
@@ -214,7 +223,19 @@ export default function ExpenseScreen() {
        * govdede olmak zorunda.
        */
       const splitBody =
-        item.splitType === "EQUAL"
+        item.splitType === "ITEMIZED"
+          ? {
+              splitType: "ITEMIZED" as const,
+              /**
+               * KALEMLER OLDUGU GIBI GERI GIDIYOR. Bu ekran bolusumu
+               * degistirmiyor; tutar degisirse paylar kalemlerden YENIDEN
+               * hesaplaniyor ve fark (bahsis/indirim) herkesin payina
+               * oranla dagiliyor - yani telefondan bahsis eklemek dogal
+               * olarak calisiyor.
+               */
+              items: item.items ?? [],
+            }
+          : item.splitType === "EQUAL"
           ? {
               splitType: "EQUAL" as const,
               participantUserIds: item.participants.map((p) => p.userId),
@@ -521,6 +542,38 @@ export default function ExpenseScreen() {
             ) : null}
           </View>
 
+          {/* KALEMLER (ADR-052) - SALT OKUNUR.
+              Duzenleme web'de: dar bir ekranda kalem adi + tutar + kisi
+              cipleri bir SATIRA sigmiyor ve giris ekraninda o yuzden her
+              kalem kendi blogunu aliyor. Burada amac masayi HATIRLATMAK,
+              yeniden kurmak degil - "kim ne yedi" sorusunun cevabi.
+
+              KISI BASINA TUTAR YAZILMIYOR: kalem ici bolusum esit ve
+              kisinin TOPLAM payi zaten ustte duruyor; kalem basina ikinci
+              bir rakam, ayni bilgiyi ucuncu kez soylemek olurdu. */}
+          {item.items && item.items.length > 0 ? (
+            <View style={s.itemsBlock}>
+              <SectionRule label={t("ui.items")} />
+              {item.items.map((line, index) => (
+                <View key={index} style={s.itemRow}>
+                  <View style={s.itemTexts}>
+                    <Text style={s.itemName} numberOfLines={1}>
+                      {line.description}
+                    </Text>
+                    <Text style={s.itemPeople} numberOfLines={1}>
+                      {line.userIds
+                        .map((userId) => nameByUserId[userId] ?? t("ui.unknown_user"))
+                        .join(" · ")}
+                    </Text>
+                  </View>
+                  <Text style={s.itemAmount}>
+                    {formatMoney(line.amount, item.currency, locale)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
           {/* Neden duzenlenemedigini SOYLUYORUZ. Sessizce salt okunur bir
               ekran, kullaniciyi "neden dokunamiyorum" sorusuyla birakirdi. */}
           {isMine && isExact ? <Text style={s.note}>{t("ui.edit_amount_on_web")}</Text> : null}
@@ -708,6 +761,29 @@ function createStyles(theme: Theme) {
       lineHeight: 18,
       paddingHorizontal: 20,
       paddingTop: 12,
+    },
+    /**
+     * YATAY DOLGU BURADA. Bu ekranda ScrollView'da yatay dolgu YOK ve her
+     * blok kendi paddingHorizontal'ini tasiyor - yorum bolumunde tam bu
+     * unutulmustu (10 Eylul, simulatorde goruldu).
+     */
+    itemsBlock: { paddingHorizontal: 20, paddingTop: 24 },
+    itemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.lineSoft,
+    },
+    itemTexts: { flex: 1, minWidth: 0, gap: 2 },
+    itemName: { fontFamily: fonts.body, fontSize: 14, color: theme.foreground },
+    itemPeople: { fontFamily: fonts.body, fontSize: 11, color: theme.muted },
+    itemAmount: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
     },
     conflictBlock: { paddingHorizontal: 20, paddingTop: 24 },
     error: {

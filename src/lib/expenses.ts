@@ -16,10 +16,12 @@ import {
   MAX_EXPENSE_PAGE_SIZE,
 } from "@/lib/expense-schemas";
 import {
+  splitByItems,
   splitByPercentage,
   splitEqually,
   splitExactly,
   type ExactShareInput,
+  type ItemInput,
   type PercentageShareInput,
   type SplitShare,
 } from "@/lib/split";
@@ -32,10 +34,14 @@ type CreateExpenseBase = {
   expenseDate?: Date;
 };
 
+/** Kalemin yazma girdisi: aciklama da tasiyor (ItemInput yalnizca hesap icin). */
+export type ExpenseItemInput = ItemInput & { description: string };
+
 export type CreateExpenseInput =
   | (CreateExpenseBase & { splitType: "EQUAL"; participantUserIds: string[] })
   | (CreateExpenseBase & { splitType: "EXACT"; shares: ExactShareInput[] })
-  | (CreateExpenseBase & { splitType: "PERCENTAGE"; shares: PercentageShareInput[] });
+  | (CreateExpenseBase & { splitType: "PERCENTAGE"; shares: PercentageShareInput[] })
+  | (CreateExpenseBase & { splitType: "ITEMIZED"; items: ExpenseItemInput[] });
 
 // Guncelleme "tam degistirme" semantigi tasir: istemci harcamanin tam halini
 // gonderir, bu yuzden govde olusturma ile ayni sekle sahiptir.
@@ -48,6 +54,14 @@ function getParticipantUserIds(input: CreateExpenseInput): string[] {
     case "EXACT":
     case "PERCENTAGE":
       return input.shares.map((share) => share.userId);
+    case "ITEMIZED":
+      /**
+       * KATILIMCILAR TURETILIYOR: kalem atamalarinin birlesimi (ADR-052).
+       * Ayri bir liste alinsaydi ikisi celisebilirdi. Tekrar eleniyor -
+       * ayni kisi birden fazla kalemde geciyor olabilir ve bu cagrinin
+       * cevapladigi soru "kimler var", "kac kez" degil.
+       */
+      return [...new Set(input.items.flatMap((item) => item.userIds))];
   }
 }
 
@@ -73,6 +87,8 @@ function computeShares(amount: number, input: CreateExpenseInput): SplitShare[] 
         return splitExactly({ amount, shares: input.shares });
       case "PERCENTAGE":
         return splitByPercentage({ amount, shares: input.shares });
+      case "ITEMIZED":
+        return splitByItems({ amount, items: input.items });
     }
   } catch (error) {
     // split.ts artik ValidationError firlatiyor: kodu ve parametreleri
@@ -117,6 +133,16 @@ type ExpenseSnapshot = {
   // dedi" ayri iki bilgi. Ikincisi disarida kalirsa audit log, artik
   // saklayabildigimiz bir seyi kaybediyor demektir.
   participants: { userId: string; shareAmount: number; basisPoints: number | null }[];
+  /**
+   * KALEMLER DE SNAPSHOT'A GIRIYOR (ADR-052) ve gerekcesi paylarinkiyle
+   * ayni: ExpenseItem satirlari guncellemede FIZIKSEL olarak silinip
+   * yeniden yaziliyor, yani eski masanin tek kalici kaydi bu.
+   *
+   * Yalnizca ITEMIZED harcamalarda dolu; digerlerinde alan HIC yok
+   * (bos dizi degil undefined - "kalemsiz" ile "kalemleri bosaltilmis"
+   * ayni sey degil).
+   */
+  items?: { description: string; amount: number; userIds: string[] }[];
 };
 
 type SnapshotExpenseFields = {
@@ -134,8 +160,10 @@ type SnapshotExpenseFields = {
 function buildSnapshot(
   expense: SnapshotExpenseFields,
   participants: { userId: string; shareAmount: number; basisPoints: number | null }[],
+  items?: { description: string; amount: number; userIds: string[] }[],
 ): ExpenseSnapshot {
   return {
+    ...(items ? { items } : {}),
     description: expense.description,
     amount: expense.amount,
     currency: expense.currency,
@@ -157,6 +185,72 @@ function buildSnapshot(
       .sort((a, b) => a.userId.localeCompare(b.userId)),
   };
 }
+
+/**
+ * Kalem satirlarini yazar (ADR-052).
+ *
+ * ATAMA SAKLANIYOR, TUTAR DEGIL: kalem ici bolusum ESIT ve deterministik,
+ * yani kisi basina dusen tutar atamadan her zaman aynen yeniden uretiliyor.
+ * Saklasaydik ayni bilgi iki yerde durur ve biri digerinden sapabilirdi.
+ * Bakiyeye giren tutar zaten ExpenseParticipant'ta ve orada bir veritabani
+ * tetikleyicisi bekliyor.
+ *
+ * SIRA KORUNUYOR (position): kalemler bir liste ve sirasi kullanicinin
+ * kurdugu sira. createdAt ile siralamak ayni milisaniyede yazilan
+ * kalemlerde belirsiz kalirdi.
+ */
+async function writeItems(
+  tx: Prisma.TransactionClient,
+  expenseId: string,
+  items: ExpenseItemInput[],
+): Promise<void> {
+  for (const [position, item] of items.entries()) {
+    await tx.expenseItem.create({
+      data: {
+        expenseId,
+        description: item.description,
+        amount: item.amount,
+        position,
+        shares: { create: item.userIds.map((userId) => ({ userId })) },
+      },
+    });
+  }
+}
+
+/** Yazma girdisindeki kalemleri snapshot bicimine cevirir. */
+function itemsForSnapshot(input: CreateExpenseInput) {
+  return input.splitType === "ITEMIZED"
+    ? input.items.map((item) => ({
+        description: item.description,
+        amount: item.amount,
+        userIds: [...item.userIds].sort((a, b) => a.localeCompare(b)),
+      }))
+    : undefined;
+}
+
+/**
+ * Kayitli kalemleri snapshot bicimine cevirir. Sira ve kisi sirasi
+ * DETERMINISTIK: iki snapshot karsilastirilirken yalnizca sira farkindan
+ * kaynaklanan sahte bir "degisiklik" gorunmesin (participants'taki kuralin
+ * aynisi).
+ */
+function storedItemsForSnapshot(
+  items: { description: string; amount: number; position: number; shares: { userId: string }[] }[],
+) {
+  return [...items]
+    .sort((a, b) => a.position - b.position)
+    .map((item) => ({
+      description: item.description,
+      amount: item.amount,
+      userIds: item.shares.map((share) => share.userId).sort((a, b) => a.localeCompare(b)),
+    }));
+}
+
+/** Snapshot ve duzenleme icin kalemleri de getiren include. */
+const ITEMS_INCLUDE = {
+  include: { shares: { select: { userId: true } } },
+  orderBy: { position: "asc" },
+} satisfies Prisma.Expense$itemsArgs;
 
 export type ListExpensesOptions = {
   limit?: number;
@@ -353,6 +447,13 @@ export async function getExpenseForUser(
        * koysaydik her harcama sorgusu bir megabayt tasirdi.
        */
       receipt: { select: { contentType: true, byteSize: true, createdAt: true } },
+      /**
+       * KALEMLER DE GELIYOR (ADR-052). Duzenleme formu masayi yeniden
+       * kurabilmeli; gelmeseydi ITEMIZED bir harcamayi acan kullanici
+       * kalemleri BASTAN girmek zorunda kalirdi - ki o zaman ayri bir
+       * SplitType tutmanin bir anlami kalmazdi.
+       */
+      items: ITEMS_INCLUDE,
     },
   });
 
@@ -360,7 +461,28 @@ export async function getExpenseForUser(
     throw new NotFoundError("expense.not_found");
   }
 
-  return expense;
+  /**
+   * KALEMLER DUZLESTIRILEREK CIKIYOR - ham Prisma sekliyle DEGIL.
+   *
+   * Ham hali her kalemin altinda bir "shares: [{ userId }]" dizisi tasiyor;
+   * yazma tarafinin bekledigi sekil ise "userIds: string[]". Ikisini birden
+   * birakmak, IKI ISTEMCININ ayni veriyi ayri ayri duzlestirmesi demekti -
+   * ve biri unutulurdu. Nitekim UNUTULDU: mobil detay ekrani "userIds"
+   * bekliyordu, uc "shares" donduruyordu; ekran kalemleri cizerken
+   * cokerdi ve telefondan yapilan bir duzeltme kalemleri SILERDI. Web
+   * sayfasi duzlestirmeyi kendi yaptigi icin bu kusur web'de gorunmuyordu.
+   *
+   * commentCount'ta oldugu gibi: sekil TEK YERDE duzlestiriliyor.
+   */
+  const { items, ...rest } = expense;
+  return {
+    ...rest,
+    items: items.map((item) => ({
+      description: item.description,
+      amount: item.amount,
+      userIds: item.shares.map((share) => share.userId),
+    })),
+  };
 }
 
 export async function createExpense(userId: string, groupId: string, input: CreateExpenseInput) {
@@ -419,6 +541,14 @@ export async function createExpense(userId: string, groupId: string, input: Crea
       })),
     });
 
+    // Kalemler PAYLARDAN SONRA yaziliyor: paylarin toplamini bekleyen
+    // tetikleyici COMMIT aninda calisiyor (DEFERRABLE), yani sira onemli
+    // degil - ama okuyan icin "once bakiyeye giren, sonra girdi katmani"
+    // sirasi anlasilir.
+    if (input.splitType === "ITEMIZED") {
+      await writeItems(tx, expense.id, input.items);
+    }
+
     // Bildirim yalnizca KATILIMCILARA gider, tum gruba degil: harcamaya dahil
     // olmayan birinin bakiyesi degismiyor, dolayisiyla haber vermek gurultu olur.
     await createNotifications(tx, {
@@ -457,7 +587,8 @@ export async function updateExpense(
   return prisma.$transaction(async (tx) => {
     const existing = await tx.expense.findUnique({
       where: { id: expenseId },
-      include: { participants: true },
+      // Kalemler de: eski masanin snapshot'a girmesi icin (ADR-052).
+      include: { participants: true, items: ITEMS_INCLUDE },
     });
 
     // Soft-delete edilmis harcama guncellenemez. groupId eslesmesi de burada
@@ -474,8 +605,12 @@ export async function updateExpense(
 
     await assertCanModifyExpense(tx, groupId, existing, userId);
 
-    // Snapshot, participant satirlari silinmeden ONCE aliniyor.
-    const previousData = buildSnapshot(existing, existing.participants);
+    // Snapshot, participant VE item satirlari silinmeden ONCE aliniyor.
+    const previousData = buildSnapshot(
+      existing,
+      existing.participants,
+      existing.items.length > 0 ? storedItemsForSnapshot(existing.items) : undefined,
+    );
 
     const participantUserIds = getParticipantUserIds(input);
     const userIdsToCheck = [...new Set([userId, input.paidById, ...participantUserIds])];
@@ -550,6 +685,21 @@ export async function updateExpense(
       })),
     });
 
+    /**
+     * KALEMLER DE TAM DEGISTIRME (ADR-052): eskiler silinip yenileri
+     * yaziliyor - ExpenseParticipant ile ayni desen ve ayni gerekce.
+     *
+     * SILME KOSULSUZ: ITEMIZED bir harcama EQUAL'a cevrildiginde kalemler
+     * GITMELI. Yalnizca yeni tur ITEMIZED'ken silseydik, tur degistiren
+     * bir harcamanin altinda artik hicbir seyi anlatmayan kalemler kalirdi.
+     *
+     * ExpenseItemShare Cascade ile gidiyor - o satirlar kalemin PARCASI.
+     */
+    await tx.expenseItem.deleteMany({ where: { expenseId } });
+    if (input.splitType === "ITEMIZED") {
+      await writeItems(tx, expenseId, input.items);
+    }
+
     // Guncellenmis satir TEK KEZ okunuyor: hem audit snapshot'i hem de donen
     // deger bundan uretiliyor. updateMany satiri geri vermedigi icin bu okuma
     // sart; iki ayri okuma yapmak ise ayni veriyi iki kez cekmek olurdu.
@@ -565,6 +715,7 @@ export async function updateExpense(
         shareAmount: share.amount,
         basisPoints: basisPointsByUser?.get(share.userId) ?? null,
       })),
+      itemsForSnapshot(input),
     );
 
     // Audit kaydi ayni transaction icinde yaziliyor: transaction geri alinirsa
@@ -619,7 +770,8 @@ export async function deleteExpense(
   return prisma.$transaction(async (tx) => {
     const existing = await tx.expense.findUnique({
       where: { id: expenseId },
-      include: { participants: true },
+      // Kalemler de: silinen kaydin snapshot'i EKSIK olmamali (ADR-052).
+      include: { participants: true, items: ITEMS_INCLUDE },
     });
 
     // Zaten silinmis bir harcama tekrar silinemez; baska grubun harcamasi da
@@ -635,7 +787,11 @@ export async function deleteExpense(
 
     await assertCanModifyExpense(tx, groupId, existing, userId);
 
-    const previousData = buildSnapshot(existing, existing.participants);
+    const previousData = buildSnapshot(
+      existing,
+      existing.participants,
+      existing.items.length > 0 ? storedItemsForSnapshot(existing.items) : undefined,
+    );
 
     // Fiziksel silme YOK: yalnizca deletedAt/deletedById isaretleniyor.
     // ExpenseParticipant satirlarina da dokunulmuyor - hem paylar korunuyor
@@ -688,7 +844,7 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
   return prisma.$transaction(async (tx) => {
     const existing = await tx.expense.findUnique({
       where: { id: expenseId },
-      include: { participants: true },
+      include: { participants: true, items: ITEMS_INCLUDE },
     });
 
     if (!existing || existing.groupId !== groupId) {
@@ -706,7 +862,11 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
 
     await assertCanModifyExpense(tx, groupId, existing, userId);
 
-    const previousData = buildSnapshot(existing, existing.participants);
+    const previousData = buildSnapshot(
+      existing,
+      existing.participants,
+      existing.items.length > 0 ? storedItemsForSnapshot(existing.items) : undefined,
+    );
 
     // Geri yukleme surum ISTEMIYOR (cakisabilecek tek rakip islem yine geri
     // yukleme, o da yukaridaki "zaten silinmemis" kontroluyle eleniyor) ama
@@ -719,7 +879,11 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
 
     // Paylar silme/geri yukleme sirasinda hic degismedigi icin ayni listeyi
     // kullaniyoruz; iki snapshot yalnizca deletedAt/deletedById'de farklilasir.
-    const newData = buildSnapshot(restored, existing.participants);
+    const newData = buildSnapshot(
+      restored,
+      existing.participants,
+      existing.items.length > 0 ? storedItemsForSnapshot(existing.items) : undefined,
+    );
 
     // action = RESTORE -> previousData (silinmis hal) ve newData (geri yuklenen hal) dolu.
     await tx.expenseEdit.create({

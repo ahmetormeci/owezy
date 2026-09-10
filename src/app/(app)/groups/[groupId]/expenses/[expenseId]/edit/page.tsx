@@ -69,6 +69,11 @@ export default async function EditExpensePage({
             shareAmount: participant.shareAmount,
             basisPoints: participant.basisPoints,
           })),
+          // Kalemler (ADR-052). Sira ve sekil SERVISTEN geliyor: uc zaten
+          // "userIds" donduruyor ve sirayi position'a gore veriyor.
+          // Buradaki duzlestirme kaldirildi - iki istemcinin ayni veriyi
+          // ayri ayri duzlestirmesi, birinin unutulmasi demekti.
+          items: expense.items,
           // Sayfa sunucuda render edildigi icin bu, formun acildigi ANDAKI
           // surum. Kaydederken geri gidiyor; arada baskasi yazdiysa 409
           // doner (ADR-032).

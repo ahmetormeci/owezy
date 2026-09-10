@@ -35,6 +35,11 @@ enum SplitType {
   EQUAL
   EXACT
   PERCENTAGE
+  /// Kalem kalem (ADR-052). Kalemler bir GIRDI katmani: bakiyeye giren sey
+  /// yine ExpenseParticipant paylari. Ayri bir tur olmasinin sebebi
+  /// DUZENLEME - "EXACT" olarak saklansaydi form kalemleri unutur ve
+  /// kullanici masayi bastan kurmak zorunda kalirdi.
+  ITEMIZED
 }
 
 /// Tekrarlayan harcamanin donem araligi (ADR-051).
@@ -188,6 +193,7 @@ model User {
   recurringCreated  RecurringExpense[]      @relation("recurringCreatedBy")
   recurringPaid     RecurringExpense[]      @relation("recurringPaidBy")
   recurringShares   RecurringExpenseShare[] @relation("recurringShareUser")
+  itemShares        ExpenseItemShare[]      @relation("itemShareUser")
 
   @@index([email])
 }
@@ -291,6 +297,7 @@ model Expense {
   edits        ExpenseEdit[]
   receipt      ExpenseReceipt?
   comments     ExpenseComment[]
+  items        ExpenseItem[]
   recurring    RecurringExpense?    @relation("generatedFrom", fields: [recurringExpenseId], references: [id], onDelete: Restrict)
 
   // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
@@ -846,5 +853,59 @@ model RecurringExpenseShare {
   // ExpenseParticipant satirlarini tasiyor ve onlara dokunulmuyor.
 
   @@unique([recurringExpenseId, userId])
+  @@index([userId])
+}
+
+/// Harcamanin bir KALEMI (ADR-052).
+///
+/// KALEM BIR HARCAMA DEGIL: bakiyeye giren sey hala ExpenseParticipant
+/// satirlari. Kalem, o paylarin NASIL hesaplandigini tutan girdi katmani -
+/// ve saklanmasinin tek sebebi harcamayi yeniden acabilmek. Saklanmasaydi
+/// duzenlemede kalemler kaybolur, kullanici masayi bastan kurmak zorunda
+/// kalirdi.
+model ExpenseItem {
+  id String @id @default(uuid()) @db.Uuid
+
+  expenseId   String @db.Uuid
+  description String @db.Text
+  amount      Int
+
+  /// Girildigi sira. Kalemler bir liste ve sirasi kullanicinin kurdugu
+  /// sira - createdAt ile siralamak ayni milisaniyede yazilan kalemlerde
+  /// belirsiz kalirdi.
+  position Int
+
+  createdAt DateTime @default(now())
+
+  expense Expense            @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  shares  ExpenseItemShare[]
+
+  // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
+  //   CHECK (amount > 0)
+
+  @@index([expenseId, position])
+}
+
+/// Bir kalemi kimin paylastigi. YALNIZCA ATAMA - tutar YOK.
+///
+/// TUTAR SAKLANMIYOR ve bu bilincli: kalem ici bolusum ESIT ve
+/// deterministik, yani tutar atamadan her zaman aynen yeniden uretiliyor.
+/// Saklasaydik ayni bilgi iki yerde durur ve biri digerinden sapabilirdi -
+/// paranin en sevmedigi sey. Bakiyeye giren tutar zaten
+/// ExpenseParticipant'ta ve orada bir veritabani tetikleyicisi bekliyor.
+model ExpenseItemShare {
+  id String @id @default(uuid()) @db.Uuid
+
+  itemId String @db.Uuid
+  userId String @db.Uuid
+
+  item ExpenseItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User        @relation("itemShareUser", fields: [userId], references: [id], onDelete: Restrict)
+
+  // Cascade BILEREK: bu satir kalemin PARCASI, ayri bir kayit degil.
+  // ExpenseParticipant gibi guncellemede silinip yeniden yaziliyor; eski
+  // halin kalici kaydi ExpenseEdit snapshot'i.
+
+  @@unique([itemId, userId])
   @@index([userId])
 }

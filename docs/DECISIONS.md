@@ -530,6 +530,117 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-052 — Kalem kalem bölüşüm: kalemler bir GİRDİ katmanıdır, bakiyeye giren şey yine paylar
+**Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
+
+**Karar:** Dördüncü bir bölüşüm türü — `ITEMIZED`. Kullanıcı hesabın
+kalemlerini girer ve her kalemi kimin paylaştığını işaretler; sunucu bundan
+kişi paylarını hesaplar. Bakiyeye giren şey yine `ExpenseParticipant`
+satırlarıdır — kalemler yalnızca o payların **nasıl** hesaplandığını tutar.
+
+### Hesap iki katmanlı ve her iki katman da TAM
+
+1. **Kalem içi.** Her kalem, kendi katılımcıları arasında **eşit** bölünüyor
+   (`splitEqually` — aynı fonksiyon, aynı "kalan kuruş listedeki ilk kişilere"
+   kuralı). Bir kalemin payları o kalemin tutarına **tam** eşit.
+2. **Harcama çapında.** Kişi payı =
+   `ara toplamı × amount ÷ kalem toplamı`, yine en büyük kalan yöntemiyle.
+   Payların toplamı `amount`'a **tam** eşit.
+
+İkinci adımın oransal ölçekleme olması, bahşişi/servisi/indirimi **tek bir
+kuralla** çözüyor:
+
+| | Sonuç |
+|---|---|
+| `amount` > kalem toplamı | bahşiş, herkesin yediği kadar dağılıyor |
+| `amount` < kalem toplamı | indirim, herkesin yediği kadar düşüyor |
+| `amount` = kalem toplamı | pay **ara toplamın aynısı** — kırpma sıfır |
+
+Son satır önemli: oran 1 olduğunda çarpma/bölme tam kapanıyor, yani bahşişsiz
+bir hesapta kimse "bir kuruş oynadı" görmüyor.
+
+**"Ara toplam + oransal fark" diye iki aşamalı yazmak** da aynı sonucu
+verirdi ama iki kural olurdu ve ikisinin ayrı ayrı doğrulanması gerekirdi.
+
+### BigInt — ve iddianın ölçülmüş hâli
+
+`ara toplamı × amount` iki tam sayının çarpımı ama ikisi de
+`MAX_SPLIT_AMOUNT` (2\_147\_483\_647) kadar büyük olabilir; çarpım
+~4.6 × 10¹⁸, Number'ın güvenli tam sayı aralığından (9 × 10¹⁵) **büyük**.
+`split.ts`'in geri kalanında bu sorun yok çünkü orada çarpanlardan biri
+`BASIS_POINTS_TOTAL` (10.000).
+
+**Buraya önce "BigInt şart, tercih değil" diye yazılmıştı. Ölçüm bunu
+doğrulamadı ve cümle düzeltildi.** Ölçülenler:
+
+- Number ile hesaplandığında **taban (floor) bazı girdilerde bir eksik
+  çıkıyor** — böyle girdiler arandı ve bulundu.
+- **Ama o bir kuruşu en büyük kalan adımı geri veriyor:** kaybeden kişinin
+  kesirli kısmı en büyük oluyor ve kuruş ona dönüyor. 600.000 rastgele
+  girdide Number ile BigInt'in ürettiği paylar **hiç ayrışmadı** ve toplam
+  her seferinde `amount`'a eşit çıktı.
+
+Yani BigInt burada *"yoksa yanlış sonuç"* değil, *"yoksa doğru sonuç bir
+tesadüfe bağlı"* demek. Paranın doğruluğunu, başka bir amaç için yazılmış bir
+yuvarlama adımının yan etkisine bağlamak istemedik — gerekçe bu, ve
+olduğundan büyük gösterilmiyor.
+
+Testi de bu yüzden "BigInt kaldırılırsa düşer" diye yazamadık: **düşmüyor.**
+Test bunun yerine girdinin gerçekten taşma bölgesinde olduğunu kanıtlıyor
+(`a * total > Number.MAX_SAFE_INTEGER`), böylece biri sayıları küçültürse
+test sessizce anlamsızlaşmıyor.
+
+### Kalem başına tutar SAKLANMIYOR
+
+`ExpenseItemShare` yalnızca **atamayı** taşıyor (kim), tutarı değil. Kalem içi
+bölüşüm eşit ve deterministik, yani tutar atamadan her zaman aynen yeniden
+üretiliyor. Saklasaydık aynı bilgi iki yerde durur ve biri diğerinden
+sapabilirdi — paranın en sevmediği şey. Bakiyeye giren tutar zaten
+`ExpenseParticipant`'ta ve orada bir veritabanı tetikleyicisi bekliyor.
+
+### Neden yeni bir SplitType
+
+`EXACT` olarak saklayıp kalemleri yanına iliştirmek mümkündü. Ama o zaman
+harcamayı yeniden açan form "bu kesin tutarlı bir bölüşüm" derdi ve kalemler
+düzenlemede **kaybolurdu** — kullanıcı masayı baştan kurmak zorunda kalırdı.
+Tür, kaydın kendi hakkındaki iddiasıdır.
+
+### Katılımcılar türetiliyor
+
+`ITEMIZED`'da katılımcı onay kutuları **hiç çizilmiyor**: katılımcı kümesi
+kalem atamalarının birleşimi. İki yerden girilebilseydi ikisi çelişebilirdi —
+hiçbir kaleme atanmamış bir "katılımcı" ne demek olurdu?
+
+### Kapsam dışı bırakılanlar (bilinçli)
+
+| Bırakılan | Neden |
+|---|---|
+| Kalemde **adet** | "2 bira" tek kalem olarak 2× fiyatla giriliyor. Adet, birim fiyat × adet demek ve üçüncü bir yuvarlama katmanı açardı |
+| Kalem başına farklı bölüşüm | Kalem, atananlar arasında hep **eşit**. Kalem içinde yüzde/kesin tutar, ikinci bir bölüşüm dili olurdu |
+| Kalem düzeyinde geçmiş | Değişiklik kaydı harcama düzeyinde (`ExpenseEdit`) ve kalemler snapshot'a **giriyor** — ayrıca bir kalem geçmişi gerekmedi |
+
+### Şekil TEK YERDE düzleşiyor
+
+`getExpenseForUser` kalemleri `{ description, amount, userIds }` olarak
+döndürüyor — ham Prisma şekliyle (`shares: [{ userId }]`) değil. Gerekçesi
+ölçülmüş bir kusur: uç bir süre ham şekli döndürdü ve **web sayfası
+düzleştirmeyi kendi yaptığı için kusur orada görünmedi**. Mobil detay ekranı
+`userIds` bekliyor; kalemleri çizerken çökerdi ve telefondan yapılan bir
+açıklama düzeltmesi gövdeye boş bir dizi göndererek **kalemleri silerdi**.
+
+İki istemcinin aynı veriyi ayrı ayrı düzleştirmesi, birinin unutulması
+demekti — `commentCount`'ta verilen kararın aynısı.
+
+### Çakışma ekranı kalemleri göstermiyor
+
+`diffExpenses` `participants` üzerinden çalışıyor ve itemized bir harcamada da
+paylar üretildiği için çakışma **doğru** anlatılıyor ("payları değişti").
+Kalemlerin kendisi farkta görünmüyor; bu bir eksik ve açıkça yazılıyor — ama
+kullanıcının kaybettiği bir bilgi yok, çünkü çakışmadan sonra formdaki
+kalemler olduğu gibi duruyor.
+
+---
+
 ## ADR-051 — Tekrarlayan harcama: şablon bir harcama değildir, bir takvimdir
 **Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
 

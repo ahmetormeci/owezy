@@ -172,6 +172,9 @@ export const MESSAGES_TR = {
     "{userId} için yüzde negatif olamaz ve tam sayı (basis point) olmalıdır",
   "split.percentage_too_large": "{userId} için yüzde %100'ü aşamaz",
   "split.percentage_sum_mismatch": "yüzdelerin toplamı ({total}) tam olarak %100 olmalıdır",
+  "split.no_items": "en az bir kalem gerekli",
+  "split.item_amount_invalid": "kalem tutarı pozitif bir tam sayı olmalıdır",
+  "split.item_no_participants": "her kalemi en az bir kişi paylaşmalı",
   "split.failed": "Bölüşüm hesaplanamadı",
 
   // --- Dogrulama (Zod semalari bu kodlari mesaj olarak tasiyor) ---
@@ -625,14 +628,34 @@ export const MESSAGES_TR = {
   "ui.split_short_equal": "eşit",
   "ui.split_short_exact": "tam tutar",
   "ui.split_short_percentage": "yüzde",
+  "ui.split_short_itemized": "kalem kalem",
   "ui.split_equal": "Eşit böl",
   "ui.split_exact": "Tutar gir",
   "ui.split_percentage": "Yüzde gir",
+  "ui.split_itemized": "Kalem kalem",
   "ui.split_preview": "Bölüşüm önizlemesi",
   "ui.participants": "Katılımcılar",
   "ui.participant_required": "En az bir katılımcı seçmelisin",
   "ui.each_amount_required": "Her katılımcı için geçerli bir tutar gir",
   "ui.each_percentage_required": "Her katılımcı için geçerli bir yüzde gir",
+  // --- Kalem kalem bolusum (ADR-052) ---
+  "ui.items": "Kalemler",
+  "ui.add_item": "Kalem ekle",
+  "ui.remove_item": "Kalemi çıkar",
+  "ui.item_description": "Kalem",
+  "ui.item_amount": "Tutar",
+  "ui.items_total": "Kalem toplamı",
+  "ui.items_tip": "Bahşiş / servis",
+  "ui.items_discount": "İndirim",
+  "ui.each_item_amount_required": "Her kalem için geçerli bir tutar gir",
+  "ui.each_item_description_required": "Her kaleme bir ad ver",
+  /**
+   * FORMDAKI ACIKLAMA. Bahsisin/indirimin nasil dagildigini kullanici
+   * ONCEDEN bilmeli - sonradan bakiyeye bakip cikarmasi gereken bir sey
+   * olmamali.
+   */
+  "ui.items_hint":
+    "Kalemleri gir ve her kalemi kimin paylaştığını işaretle. Hesabın toplamı kalemlerin toplamından farklıysa (bahşiş, servis, indirim) aradaki fark herkesin payına oranla dağılır.",
   "ui.deleting": "Siliniyor...",
   "ui.unknown_user": "Bilinmeyen",
 
@@ -1003,6 +1026,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "split.percentage_too_large": "the percentage for {userId} cannot exceed 100%",
   "split.percentage_sum_mismatch":
     "the percentages ({total}) must add up to exactly 100%",
+  "split.no_items": "at least one item is required",
+  "split.item_amount_invalid": "an item amount must be a positive integer",
+  "split.item_no_participants": "each item needs at least one person",
   "split.failed": "The split could not be calculated",
 
   // --- Validation (Zod schemas carry these codes as messages) ---
@@ -1330,14 +1356,28 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.split_short_equal": "equal",
   "ui.split_short_exact": "exact",
   "ui.split_short_percentage": "percentage",
+  "ui.split_short_itemized": "itemized",
   "ui.split_equal": "Split equally",
   "ui.split_exact": "Enter amounts",
   "ui.split_percentage": "Enter percentages",
+  "ui.split_itemized": "By item",
   "ui.split_preview": "Split preview",
   "ui.participants": "Participants",
   "ui.participant_required": "Select at least one participant",
   "ui.each_amount_required": "Enter a valid amount for each participant",
   "ui.each_percentage_required": "Enter a valid percentage for each participant",
+  "ui.items": "Items",
+  "ui.add_item": "Add item",
+  "ui.remove_item": "Remove item",
+  "ui.item_description": "Item",
+  "ui.item_amount": "Amount",
+  "ui.items_total": "Items total",
+  "ui.items_tip": "Tip / service",
+  "ui.items_discount": "Discount",
+  "ui.each_item_amount_required": "Enter a valid amount for each item",
+  "ui.each_item_description_required": "Give each item a name",
+  "ui.items_hint":
+    "Enter the items and tick who shares each one. If the total differs from the sum of the items (tip, service, a discount), the difference is spread in proportion to what each person had.",
   "ui.deleting": "Deleting...",
   "ui.unknown_user": "Unknown",
 

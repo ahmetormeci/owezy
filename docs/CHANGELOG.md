@@ -21,6 +21,72 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-10 — Kalem kalem bölüşüm
+
+Restoran hesabı gibi harcamalar artık kalem kalem bölüşülebiliyor: kalemleri
+gir, her kalemi kimin paylaştığını işaretle, paylar oradan çıksın. Dördüncü
+bir bölüşüm türü — `ITEMIZED` (ADR-052).
+
+**Kalemler bir girdi katmanı.** Bakiyeye giren şey yine `ExpenseParticipant`
+payları; kalemler yalnızca o payların **nasıl** hesaplandığını tutuyor.
+
+**Hesap iki katmanlı ve her iki katman da tam:** kalem kendi katılımcıları
+arasında eşit bölünüyor (aynı `splitEqually`, aynı "kalan kuruş ilk kişilere"
+kuralı), sonra kişi payı `ara toplam × tutar ÷ kalem toplamı` ile ölçekleniyor.
+İkinci adım bahşişi, servis ücretini ve indirimi **tek bir kuralla** çözüyor —
+ve tutar kalem toplamına eşitken kırpma **sıfır**, yani bahşişsiz bir hesapta
+kimse "bir kuruş oynadı" görmüyor.
+
+**Katılımcılar türetiliyor.** İstemci katılımcı listesi göndermiyor; liste
+kalem atamalarının birleşimi. İki yerden girilebilseydi çelişebilirlerdi —
+hiçbir kaleme atanmamış bir "katılımcı" ne demek olurdu?
+
+**Kalem başına tutar saklanmıyor,** yalnızca atama: kalem içi bölüşüm eşit ve
+deterministik, tutar atamadan her zaman aynen yeniden üretiliyor. Saklasaydık
+aynı bilgi iki yerde durur ve biri diğerinden sapabilirdi.
+
+**Neden yeni bir tür:** `EXACT` olarak saklayıp kalemleri yanına iliştirmek
+mümkündü, ama o zaman harcamayı yeniden açan form "bu kesin tutarlı bir
+bölüşüm" der ve **kalemler düzenlemede kaybolurdu**. Tür, kaydın kendi
+hakkındaki iddiasıdır.
+
+**Bir iddia ölçüldü ve küçültüldü.** Koda önce *"BigInt şart, tercih değil"*
+diye yazılmıştı. Ölçüm bunu doğrulamadı: Number ile taban bazı girdilerde bir
+eksik çıkıyor — ama o kuruşu en büyük kalan adımı geri veriyor ve 600.000
+rastgele girdide üretilen paylar **hiç ayrışmadı**. Doğru cümle şu: BigInt
+burada *"yoksa yanlış sonuç"* değil, *"yoksa doğru sonuç bir tesadüfe bağlı"*
+demek. Kod yorumu, testi ve ADR bu hâliyle düzeltildi.
+
+**Aynı gün iki test de zayıf çıktı ve düzeltildi:** biri BigInt kaldırılınca da
+geçiyordu (seçtiği sayılar tesadüfen double olarak tam temsil ediliyordu),
+diğeri yalnızca "fırlattı mı" diye soruyordu ve `splitEqually`'nin zaten
+fırlattığı bir dalı kendi kontrolü sanıyordu. İkisi de artık ölçülmüş
+değerlerle ve hata **kodunu** sınayarak yazıldı.
+
+**Playwright'ta üç ayrı tuzak ölçüldü:** `filter({ hasText })` bir input'un
+**değerini** satırın metni saymıyor (satıra artık `filter({ has: locator })`
+ile tutunuluyor); `getByLabel` alt dizi arıyor, yani "Tutar" hem ana alanı hem
+"Tutar 1"i buluyor (`exact: true`); ve aynı tutar bakiye kartında da üye
+listesinde de yazdığı için sayfa geneline bakan bir `getByText` iki eleman
+buluyor.
+
+**Tekrarlayan harcama kalem kalem olamıyor** ve ayrım **tipte**, bir kontrol
+satırında değil: `nonItemizedExpenseBodySchema`'ya ITEMIZED bir gövde
+ulaşamıyor. Formlarda da "Bunu tekrarla" anahtarı bu modda hiç çizilmiyor.
+
+**Bir kusur yalnızca mobil tarafı yazarken görüldü ve web'de görünmüyordu.**
+Uç kalemleri ham Prisma şekliyle döndürüyordu (her kalemin altında
+`shares: [{ userId }]`); web düzenleme sayfası düzleştirmeyi **kendi**
+yaptığı için orada bir sorun yoktu. Mobil detay ekranı ise `userIds`
+bekliyor: kalemleri çizerken çökerdi, üstelik telefondan yapılan bir açıklama
+düzeltmesi **kalemleri silerdi** — gövdeye boş bir dizi giderdi. Şekil artık
+tek yerde düzleşiyor (`commentCount` ile aynı karar) ve bir test bunu
+bekçiliyor; negatif kontrolü koşuldu.
+
+**Üç negatif kontrol koşuldu:** kalem silme koşullu hâle getirildiğinde,
+katılımcı türetmesi bozulduğunda ve kalemler snapshot'tan çıkarıldığında
+ilgili testler düştü; geri alınınca yeniden geçti.
+
 ## 2026-09-10 — Tekrarlayan harcama
 
 Kira, abonelik, aidat: bir harcama artık haftalık ya da aylık tekrarlanacak

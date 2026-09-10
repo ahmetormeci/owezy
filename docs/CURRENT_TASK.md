@@ -28,24 +28,22 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-10
 
 Current task:
-  UC MADDELIK BIR SERI SURUYOR. Kullanici 10 Eylul'de bilgisayar basindan
-  ayrilirken "geri kalan 4 maddeyi tamamlamaya calis" dedi ve ayrilmadan
-  once UC SORUYA CEVAP VERDI. O cevaplar bu serinin sozlesmesi:
+  YOK. UC MADDELIK SERI BITTI.
 
-    1. FIS OCR ATLANDI (kullanici secti). Gerekcesi: ucretli bir dis servis
-       + yeni bir "veri isleyici" beyani (gizlilik politikasi, App Privacy)
-       + bir API anahtari gerekiyor. Anahtar olmadan gercek istek/cevap bir
-       kez bile olculemez, yani dogrulanmamis kod yazilmis olurdu.
-       KALAN UC MADDE tam yapiliyor.
-    2. PUSH: "her ozellik yesilken push et" (kullanici secti). Yani bu
-       seride kod commit'leri de push ediliyor - AGENTS.md'nin "sormadan
-       atma" kurali bu seri icin ACIKCA kaldirildi.
+  Kullanici 10 Eylul'de bilgisayar basindan ayrilirken "geri kalan 4 maddeyi
+  tamamlamaya calis" dedi ve ayrilmadan once UC SORUYA CEVAP VERDI. O cevaplar
+  bu serinin sozlesmesiydi:
+
+    1. FIS OCR ATLANDI (kullanici secti) - ucretli dis servis + yeni veri
+       isleyici beyani + API anahtari gerekiyor. Anahtar olmadan gercek
+       istek/cevap bir kez bile olculemez.
+    2. PUSH: "her ozellik yesilken push et" (kullanici secti).
     3. KAPSAM: web + mobil TAM PARITE (kullanici secti).
 
-  DURUM:
-    Faz 43  odeme hatirlatmasi   BITTI  (ADR-050)
-    Faz 44  tekrarlayan harcama  BITTI  (ADR-051)
-    Faz 45  kalem kalem bolusum  SIRADA
+  YAPILANLAR:
+    Faz 43  odeme hatirlatmasi   BITTI  (ADR-050)  cbfb887  CI yesil
+    Faz 44  tekrarlayan harcama  BITTI  (ADR-051)  503ad2e  CI yesil
+    Faz 45  kalem kalem bolusum  BITTI  (ADR-052)  <COMMIT>
 
   >>> KULLANICININ YAPMASI GEREKEN TEK SEY - BASKA KIMSE YAPAMAZ <<<
 
@@ -55,21 +53,19 @@ Current task:
     Ad    : CRON_SECRET
     Deger : uzun ve rastgele bir metin (orn. `openssl rand -hex 32` ciktisi)
     Ortam : Production (Preview de isaretlenebilir, zarari yok)
-    Sonra : yeni bir deploy gerekiyor - degiskeni ekledikten sonra
-            Deployments -> son deploy -> Redeploy
+    Sonra : Deployments -> son deploy -> Redeploy
 
-  NEDEN: /api/cron/recurring, CRON_SECRET tanimli DEGILSE 503 donuyor ve
-  HICBIR SEY URETMIYOR (ADR-051). Bu bilincli - o uc finansal kayit
-  uretiyor ve acik kapi birakilamaz. Vercel, degisken tanimliysa gunluk
-  cagriya "Authorization: Bearer <deger>" basligini KENDISI ekliyor.
+  OLCULDU (10 Eylul): https://owezy.net/api/cron/recurring -> 503
+  Yani uc CANLIDA ve kapali; degisken tanimlanip yeniden deploy edilince
+  401 donmeye baslamali (kimliksiz cagri reddediliyor demektir).
 
   BU YAPILANA KADAR: tekrarlayan harcama kurulabiliyor, listede gorunuyor,
   duraklatilabiliyor - ama HICBIR HARCAMA URETILMIYOR. Ozellik canlida
-  sessizce bekliyor.
+  sessizce bekliyor. Kullanici verisi bakimindan tehlikesiz: uretim
+  yapilmadigi icin yanlis bir bakiye de olusmuyor.
 
-  ELLE DOGRULAMA (degiskeni ekledikten sonra):
-    curl -s -o /dev/null -w '%{http_code}\n' https://owezy.net/api/cron/recurring
-    401 bekleniyor. 503 gorurseniz degisken hala yok ya da deploy edilmedi.
+  SIRADAKI ADAYLAR: PROGRESS.md'deki liste. Fis OCR orada duruyor ve
+  ATLANMA GEREKCESI yazili - yeniden gundeme gelirse once o okunmali.
 
   YORUM - NE YAPILDI: ExpenseComment tablosu, uc uc (listele/yaz/sil),
   EXPENSE_COMMENTED bildirimi, web'de satirdan acilan diyalog, mobilde detay
@@ -598,9 +594,10 @@ AKILDA TUTULACAKLAR:
   dokunan her betik once OKUYUP saymali, sonra yazmali.
 
 TESTLER - NE NEREDE (10 Eylul'de kosuldu):
-  KOK      npm test                  696 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      86 vitest + 71 jest
-  E2E      npm run test:e2e           60 test, ~14 dk
+  KOK      npm test                  716 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      86 vitest + 77 jest
+  E2E      npm run test:e2e           61 test, ~15 dk  (+1 BILEREK atlanan:
+           two-factor.spec.ts'teki 2FA kopru testi, oteden beri skip)
 
   E2E SUNUCUSUNUN KENDI CRON_SECRET'I VAR: playwright.config.ts'te
   webServer.env icinde ("e2e-cron-secret"). .env.local'a KONMADI - o dosyayi

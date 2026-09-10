@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { expenseBodySchema } from "@/lib/expense-schemas";
+import { nonItemizedExpenseBodySchema } from "@/lib/expense-schemas";
 
 /**
  * Bir cagrida en fazla kac donem yakalanir (ADR-051).
@@ -27,7 +27,13 @@ const intervalSchema = z.enum(["WEEKLY", "MONTHLY"]);
  * duzenlenmiyor (kapsam karari, ADR-051).
  */
 export const createRecurringSchema = z.intersection(
-  expenseBodySchema,
+  /**
+   * KALEM KALEM BIR SABLON YOK (ADR-052). "Her ay ayni restoran hesabi,
+   * ayni kalemlerle" diye bir ihtiyac yok; kira ve abonelik duz bir toplam.
+   * Ayrim TIPTE: ITEMIZED bir govde buraya ULASAMIYOR, bir kontrol satiri
+   * unutulsa bile.
+   */
+  nonItemizedExpenseBodySchema,
   z.object({
     interval: intervalSchema,
     startsOn: z.coerce.date(),

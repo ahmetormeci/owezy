@@ -166,6 +166,129 @@ export function splitByPercentage({ amount, shares }: PercentageSplitInput): Spl
   }));
 }
 
+// ============================================================
+// ITEMIZED - kalem kalem bolusum (ADR-052)
+// ============================================================
+
+export type ItemInput = {
+  /** Kalemin tutari (kurus). */
+  amount: number;
+  /** Bu kalemi PAYLASANLAR. Kalem aralarinda ESIT bolunuyor. */
+  userIds: string[];
+};
+
+export type ItemizedSplitInput = {
+  /**
+   * Harcamanin TOPLAM tutari. Kalem toplamindan FARKLI olabilir - bahsis,
+   * servis ucreti ya da indirim aradaki farki olusturuyor.
+   */
+  amount: number;
+  items: ItemInput[];
+};
+
+/**
+ * Kalem kalem bolusum.
+ *
+ * IKI KATMANLI VE HER IKISI DE TAM:
+ *
+ *   1. Her kalem, kendi katilimcilari arasinda esit bolunuyor. Bir kalemin
+ *      paylari o kalemin tutarina TAM esit - ve isi splitEqually yapiyor,
+ *      yani "kalan kurus listedeki ilk kisilere" kurali TEK YERDE duruyor.
+ *   2. Kisi payi = (ara toplami) x amount / (kalem toplami), yine en buyuk
+ *      kalan yontemiyle. Paylarin toplami amount'a TAM esit.
+ *
+ * IKINCI ADIM NEDEN ORANSAL OLCEKLEME: masada bahsis, servis ucreti ya da
+ * indirim olabilir - harcamanin tutari kalemlerin toplamiyla ayni olmak
+ * zorunda degil. "Ara toplam + oransal fark" diye iki asamali yazmak ayni
+ * sonucu verirdi ama IKI kural olurdu; boyle TEK kural var:
+ *
+ *   amount > kalem toplami  -> bahsis, herkesin yedigi kadar dagiliyor
+ *   amount < kalem toplami  -> indirim, herkesin yedigi kadar dusuyor
+ *   amount = kalem toplami  -> pay ARA TOPLAMIN AYNISI, kirpma SIFIR
+ *
+ * Son satir onemli ve testle bekciliniyor: oran 1 oldugunda carpma/bolme tam
+ * kapaniyor, yani bahsissiz bir hesapta kimse "bir kurus oynadi" gormuyor.
+ */
+export function splitByItems({ amount, items }: ItemizedSplitInput): SplitShare[] {
+  assertValidAmount(amount);
+  if (items.length === 0) {
+    throw new ValidationError("split.no_items");
+  }
+
+  // --- 1. KATMAN: her kalem kendi icinde ---
+  const subtotals = new Map<string, number>();
+  let itemsTotal = 0;
+
+  for (const item of items) {
+    if (!Number.isInteger(item.amount) || item.amount <= 0) {
+      throw new ValidationError("split.item_amount_invalid");
+    }
+    if (item.userIds.length === 0) {
+      throw new ValidationError("split.item_no_participants");
+    }
+
+    itemsTotal += item.amount;
+    if (itemsTotal > MAX_SPLIT_AMOUNT) {
+      throw new ValidationError("split.amount_too_large", { max: MAX_SPLIT_AMOUNT });
+    }
+
+    // Ayni kisinin tekrari kontrolu de splitEqually'de: kural tek yerde.
+    for (const share of splitEqually({
+      amount: item.amount,
+      participantUserIds: item.userIds,
+    })) {
+      subtotals.set(share.userId, (subtotals.get(share.userId) ?? 0) + share.amount);
+    }
+  }
+
+  // --- 2. KATMAN: ara toplamlari harcamanin tutarina olcekle ---
+  const total = BigInt(itemsTotal);
+
+  const floors = [...subtotals.entries()].map(([userId, subtotal], index) => {
+    /**
+     * BigInt: ARA DEGER TAM KALSIN DIYE - ve iddiasi burada OLCULMUS
+     * haliyle duruyor, buyutulmus haliyle degil.
+     *
+     * OLCULEN: subtotal ile amount'un ikisi de MAX_SPLIT_AMOUNT kadar
+     * buyuk olabilir; carpimlari ~4.6e18, yani Number'in guvenli tam sayi
+     * araliginin (9.0e15) UZERINDE. Number ile hesaplandiginda taban
+     * (floor) bazi girdilerde BIR EKSIK cikiyor; boyle girdiler arandi ve
+     * bulundu.
+     *
+     * AMA SU DA OLCULDU: o bir kurusu, hemen asagidaki en-buyuk-kalan
+     * adimi GERI VERIYOR - kaybeden kisinin kesirli kismi en buyuk oluyor
+     * ve kurus ona donuyor. 600.000 rastgele girdide Number ile BigInt'in
+     * URETTIGI PAYLAR HIC AYRISMADI ve toplam her seferinde amount'a esit
+     * cikti.
+     *
+     * YANI BigInt BURADA "yoksa yanlis sonuc" DEGIL, "yoksa DOGRU SONUC
+     * BIR TESADUFE BAGLI" demek. Paranin dogrulugunu, baska bir amac icin
+     * yazilmis bir yuvarlama adiminin yan etkisine baglamak istemedik.
+     * Bu dosyanin geri kalaninda sorun yok, cunku orada carpanlardan biri
+     * BASIS_POINTS_TOTAL (10.000).
+     */
+    const exact = BigInt(subtotal) * BigInt(amount);
+    const floor = exact / total;
+    return { userId, floor: Number(floor), fraction: exact - floor * total, index };
+  });
+
+  const distributed = floors.reduce((sum, entry) => sum + entry.floor, 0);
+  const remainder = amount - distributed; // 0 <= remainder < floors.length
+
+  // splitByPercentage ile AYNI kalip: yuvarlamada en cok kaybeden once,
+  // esitlikte girdi sirasi kazaniyor. Kaliba sadik kalmak bilincli - iki
+  // fonksiyon ayni soruyu iki turlu cevaplamamali.
+  const order = [...floors].sort((a, b) =>
+    a.fraction === b.fraction ? a.index - b.index : a.fraction > b.fraction ? -1 : 1,
+  );
+  const extraRecipientIndexes = new Set(order.slice(0, remainder).map((entry) => entry.index));
+
+  return floors.map((entry, index) => ({
+    userId: entry.userId,
+    amount: entry.floor + (extraRecipientIndexes.has(index) ? 1 : 0),
+  }));
+}
+
 /**
  * Kayitli paylardan yuzdeleri geri hesaplar - AMA yalnizca sonuc
  * ispatlanabildiginde.

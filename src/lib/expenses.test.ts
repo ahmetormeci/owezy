@@ -20,6 +20,9 @@ const { mockTx } = vi.hoisted(() => ({
       findUniqueOrThrow: vi.fn(),
     },
     expenseParticipant: { createMany: vi.fn(), deleteMany: vi.fn() },
+    // Kalemler (ADR-052). deleteMany KOSULSUZ cagriliyor - tur degistiren
+    // bir harcamanin altinda eski kalemler kalmasin diye.
+    expenseItem: { create: vi.fn(), deleteMany: vi.fn() },
     expenseEdit: { create: vi.fn() },
     // Bildirimler harcamayla AYNI transaction'da yaziliyor; createNotifications
     // islemi yapanin adini okumak icin user.findUnique de cagiriyor.
@@ -81,6 +84,11 @@ function resetMocks() {
   mockTx.expense.findUniqueOrThrow.mockReset();
   mockTx.expenseParticipant.createMany.mockReset();
   mockTx.expenseParticipant.deleteMany.mockReset();
+  // Kalemler (ADR-052). SIFIRLANMASI SART: "kac kez cagrildi" ve "hic
+  // cagrilmadi" iddialarinin ikisi de bir onceki testten sizan cagrilarla
+  // sessizce yanlis cevap verirdi - nitekim verdi.
+  mockTx.expenseItem.create.mockReset();
+  mockTx.expenseItem.deleteMany.mockReset().mockResolvedValue({ count: 0 });
   mockTx.expenseEdit.create.mockReset();
   mockPrisma.group.findUnique.mockReset();
   mockPrisma.groupMember.findFirst.mockReset();
@@ -314,6 +322,13 @@ function existingExpense(overrides: Record<string, unknown> = {}) {
       { userId: PARTICIPANT_ID, shareAmount: 4500, basisPoints: null },
       { userId: PAYER_ID, shareAmount: 4500, basisPoints: null },
     ],
+    /**
+     * KALEMLER BOS AMA VAR (ADR-052). Servis bu satiri include ile
+     * cekiyor, yani Prisma her zaman bir dizi donduruyor - taklit de oyle
+     * davranmali. undefined biraksaydik test, uretimde OLMAYAN bir durumu
+     * sinamis olurdu.
+     */
+    items: [],
     ...overrides,
   };
 }
@@ -1383,11 +1398,56 @@ describe("getExpenseForUser", () => {
      * FIS: yalnizca VARLIGI cekiliyor, baytlari degil. Buraya bir gun
      * baytlar eklenirse bu test duser - ve dusmeli: her harcama sorgusu
      * bir megabayt tasimaya baslardi.
+     *
+     * KALEMLER DE VAR (ADR-052) ve ucuzlar: kalem basina bir aciklama, bir
+     * tutar ve KIMLIKLER - tutar YOK, cunku kalem ici bolusum turetiliyor.
+     * Ust sinir 50 kalem (MAX_EXPENSE_ITEMS). Bu TEK harcama ucu; listede
+     * kalemler HIC cekilmiyor.
      */
     expect(mockPrisma.expense.findUnique.mock.calls[0][0].include).toEqual({
       participants: true,
       receipt: { select: { contentType: true, byteSize: true, createdAt: true } },
+      items: {
+        include: { shares: { select: { userId: true } } },
+        orderBy: { position: "asc" },
+      },
     });
+  });
+
+  it("KALEMLERI DUZLESTIREREK donuyor - ham 'shares' disari cikmiyor", async () => {
+    /**
+     * BU TESTIN VARLIK SEBEBI OLCULMUS BIR KUSUR.
+     *
+     * Uc bir sure ham Prisma seklini donduruyordu (her kalemin altinda
+     * "shares: [{ userId }]"). Web sayfasi duzlestirmeyi KENDI yaptigi icin
+     * kusur orada gorunmuyordu; mobil detay ekrani ise "userIds" bekliyor
+     * ve kalemleri cizerken cokerdi - ustelik telefondan yapilan bir
+     * aciklama duzeltmesi kalemleri SILERDI, cunku govdeye bos bir dizi
+     * giderdi.
+     *
+     * Sekil artik TEK YERDE duzlesiyor (commentCount ile ayni karar).
+     */
+    readableGroup();
+    mockPrisma.expense.findUnique.mockResolvedValue(
+      existingExpense({
+        splitType: "ITEMIZED",
+        items: [
+          {
+            description: "Pizza",
+            amount: 9000,
+            position: 0,
+            shares: [{ userId: PAYER_ID }, { userId: PARTICIPANT_ID }],
+          },
+        ],
+      }),
+    );
+
+    const expense = await getExpenseForUser(CALLER_ID, GROUP_ID, EXPENSE_ID);
+
+    expect(expense.items).toEqual([
+      { description: "Pizza", amount: 9000, userIds: [PAYER_ID, PARTICIPANT_ID] },
+    ]);
+    expect((expense.items[0] as Record<string, unknown>).shares).toBeUndefined();
   });
 });
 
@@ -1485,5 +1545,180 @@ describe("monthKeyToRange", () => {
     for (const bozuk of ["2026-13", "2026-00", "26-08", "2026-8", "2026-08-01", ""]) {
       expect(() => monthKeyToRange(bozuk)).toThrow(ValidationError);
     }
+  });
+});
+
+/**
+ * KALEM KALEM BOLUSUM - SERVIS KATMANI (ADR-052).
+ *
+ * BU BLOK NEYI KORUYOR: birim testlerin (split.test.ts) goremedigi UC seyi.
+ *
+ *   1. KATILIMCILARIN TURETILMESI. Istemci katilimci listesi GONDERMIYOR;
+ *      liste kalem atamalarindan cikiyor. Kural bozulursa ya kimse
+ *      bolusume girmez ya da yanlis kisiler girer.
+ *   2. KALEMLERIN YAZILMASI ve tur degisince SILINMESI. ITEMIZED bir
+ *      harcama EQUAL'a cevrildiginde eski kalemler kalirsa, altinda artik
+ *      hicbir seyi anlatmayan satirlar birikir.
+ *   3. KALEMLERIN SNAPSHOT'A GIRMESI. ExpenseItem satirlari guncellemede
+ *      FIZIKSEL olarak siliniyor - eski masanin tek kalici kaydi audit log.
+ */
+describe("createExpense - ITEMIZED", () => {
+  beforeEach(() => {
+    resetMocks();
+    mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
+    mockTx.groupMember.findMany.mockResolvedValue([
+      { userId: CALLER_ID },
+      { userId: PAYER_ID },
+      { userId: PARTICIPANT_ID },
+    ]);
+    mockTx.expense.create.mockResolvedValue({ id: "expense-1" });
+    mockTx.expense.findUniqueOrThrow.mockResolvedValue({ id: "expense-1", participants: [] });
+  });
+
+  const itemizedInput = {
+    description: "Aksam yemegi",
+    amount: 30000,
+    paidById: PAYER_ID,
+    splitType: "ITEMIZED" as const,
+    items: [
+      { description: "Pizza", amount: 20000, userIds: [PAYER_ID, PARTICIPANT_ID] },
+      { description: "Tatli", amount: 10000, userIds: [PARTICIPANT_ID] },
+    ],
+  };
+
+  it("KATILIMCILARI kalem atamalarindan turetiyor", async () => {
+    await createExpense(CALLER_ID, GROUP_ID, itemizedInput);
+
+    const rows = mockTx.expenseParticipant.createMany.mock.calls[0][0].data;
+    expect(rows.map((row: { userId: string }) => row.userId).sort()).toEqual(
+      [PARTICIPANT_ID, PAYER_ID].sort(),
+    );
+    // Pizza 10000/10000, tatli tamamen katilimciya: 10000 / 20000.
+    const byUser = Object.fromEntries(
+      rows.map((row: { userId: string; shareAmount: number }) => [row.userId, row.shareAmount]),
+    );
+    expect(byUser[PAYER_ID]).toBe(10000);
+    expect(byUser[PARTICIPANT_ID]).toBe(20000);
+  });
+
+  it("UYELIK KONTROLU kalemdeki herkesi kapsiyor", async () => {
+    // Kalemde gecen ama gruptan ayrilmis biri, harcamanin yazilmasini
+    // engellemeli - katilimci listesi gonderilmedigi icin bu kontrol
+    // yalnizca turetilen kume uzerinden calisiyor.
+    mockTx.groupMember.findMany.mockResolvedValue([{ userId: CALLER_ID }, { userId: PAYER_ID }]);
+
+    await expect(createExpense(CALLER_ID, GROUP_ID, itemizedInput)).rejects.toThrow(
+      ForbiddenError,
+    );
+    expect(mockTx.expense.create).not.toHaveBeenCalled();
+  });
+
+  it("kalemleri SIRASIYLA yaziyor ve atamalari birlikte kuruyor", async () => {
+    await createExpense(CALLER_ID, GROUP_ID, itemizedInput);
+
+    expect(mockTx.expenseItem.create).toHaveBeenCalledTimes(2);
+    const first = mockTx.expenseItem.create.mock.calls[0][0].data;
+    expect(first).toMatchObject({ description: "Pizza", amount: 20000, position: 0 });
+    expect(first.shares.create).toEqual([
+      { userId: PAYER_ID },
+      { userId: PARTICIPANT_ID },
+    ]);
+    expect(mockTx.expenseItem.create.mock.calls[1][0].data.position).toBe(1);
+  });
+
+  it("kalem basina TUTAR saklanmiyor - yalnizca atama", async () => {
+    // Kalem ici bolusum esit ve deterministik; tutari saklamak ayni bilgiyi
+    // iki yerde tutmak olurdu ve biri digerinden sapabilirdi.
+    await createExpense(CALLER_ID, GROUP_ID, itemizedInput);
+
+    const shares = mockTx.expenseItem.create.mock.calls[0][0].data.shares.create;
+    for (const share of shares) {
+      expect(Object.keys(share)).toEqual(["userId"]);
+    }
+  });
+});
+
+describe("updateExpense - ITEMIZED", () => {
+  beforeEach(() => {
+    resetMocks();
+    mockTx.expense.findUnique.mockResolvedValue(existingExpense());
+    mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
+    mockTx.groupMember.findFirst.mockResolvedValue({ userId: CALLER_ID, role: "MEMBER" });
+    mockTx.groupMember.findMany.mockResolvedValue([
+      { userId: CALLER_ID },
+      { userId: PAYER_ID },
+      { userId: PARTICIPANT_ID },
+    ]);
+  });
+
+  it("tur ne olursa olsun eski kalemleri SILIYOR", async () => {
+    // NEGATIF KONTROL: silme kosullu olsaydi (yalnizca yeni tur ITEMIZED
+    // iken), ITEMIZED'dan EQUAL'a gecen bir harcamanin altinda artik
+    // hicbir seyi anlatmayan kalemler kalirdi.
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
+
+    expect(mockTx.expenseItem.deleteMany).toHaveBeenCalledWith({
+      where: { expenseId: EXPENSE_ID },
+    });
+    expect(mockTx.expenseItem.create).not.toHaveBeenCalled();
+  });
+
+  it("ESKI KALEMLER audit snapshot'ina giriyor", async () => {
+    // ExpenseItem satirlari fiziksel olarak siliniyor; eski masanin tek
+    // kalici kaydi bu snapshot.
+    mockTx.expense.findUnique.mockResolvedValue(
+      existingExpense({
+        splitType: "ITEMIZED",
+        items: [
+          {
+            description: "Pizza",
+            amount: 9000,
+            position: 0,
+            shares: [{ userId: PAYER_ID }, { userId: PARTICIPANT_ID }],
+          },
+        ],
+      }),
+    );
+
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
+
+    const previous = mockTx.expenseEdit.create.mock.calls[0][0].data.previousData;
+    expect(previous.items).toEqual([
+      {
+        description: "Pizza",
+        amount: 9000,
+        userIds: [PARTICIPANT_ID, PAYER_ID].sort((a, b) => a.localeCompare(b)),
+      },
+    ]);
+  });
+
+  it("kalemsiz bir harcamanin snapshot'inda items ALANI HIC YOK", async () => {
+    // Bos dizi degil undefined: "kalemsiz" ile "kalemleri bosaltilmis" ayni
+    // sey degil ve fark, iki snapshot karsilastirilirken onemli.
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, updateInput, CURRENT_VERSION);
+
+    const previous = mockTx.expenseEdit.create.mock.calls[0][0].data.previousData;
+    expect(previous.items).toBeUndefined();
+  });
+
+  it("YENI kalemler de snapshot'a giriyor", async () => {
+    await updateExpense(
+      CALLER_ID,
+      GROUP_ID,
+      EXPENSE_ID,
+      {
+        description: "Aksam yemegi",
+        amount: 30000,
+        paidById: PAYER_ID,
+        splitType: "ITEMIZED" as const,
+        items: [{ description: "Pizza", amount: 30000, userIds: [PAYER_ID] }],
+      },
+      CURRENT_VERSION,
+    );
+
+    const newData = mockTx.expenseEdit.create.mock.calls[0][0].data.newData;
+    expect(newData.items).toEqual([
+      { description: "Pizza", amount: 30000, userIds: [PAYER_ID] },
+    ]);
   });
 });

@@ -8,20 +8,20 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 44 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
+**Özet:** 45 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
 yayında** (mağazada 1.0.2, 8 Eylül 2026) — web zaten canlıydı, artık iki
 istemci de kullanıcıya açık. Faz 41'in kağıt & petrol tasarım yönü iki
 istemcide de uygulandı ama **henüz kullanıcıya ulaşmadı**: mağazadaki 1.0.2 de
 incelemedeki 1.0.3 de eski görünümü taşıyor — **Faz 42 (yorum) ve Faz 43
-(ödeme hatırlatması) ve Faz 44 (tekrarlayan harcama) de aynı kuyrukta**. `main`'e giden her değişiklik
+(ödeme hatırlatması) Faz 44 (tekrarlayan harcama) ve Faz 45 (kalem kalem bölüşüm) de aynı kuyrukta**. `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim — kök (Vitest) | 696 | ✅ tümü geçiyor |
+| Birim — kök (Vitest) | 716 | ✅ tümü geçiyor |
 | Birim — mobil (Vitest) | 86 | ✅ tümü geçiyor |
-| Ekran — mobil (jest-expo) | 71 | ✅ tümü geçiyor |
-| E2E (Playwright) | 60 | ✅ tümü geçiyor |
+| Ekran — mobil (jest-expo) | 77 | ✅ tümü geçiyor |
+| E2E (Playwright) | 61 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
 | `npm run lint` | — | ✅ temiz (kök + mobil) |
 
@@ -2406,6 +2406,47 @@ boş grupta gizleniyordu — yani şablonunu yeni kuran kullanıcı onu göremez
 
 ---
 
+## Faz 45 — Kalem kalem bölüşüm · **BİTTİ, MOBİLİ YAYINLANMADI**
+
+Restoran hesabı. Kullanıcının seçtiği dört maddeden dördüncüsü ve
+sonuncusu — fiş OCR kullanıcının kararıyla atlandı.
+
+| | |
+|---|---|
+| Veri | `SplitType.ITEMIZED`, `ExpenseItem`, `ExpenseItemShare` |
+| Hesap | `splitByItems` — iki katmanlı, her ikisi de tam |
+| Web | formda dördüncü seçenek + kalem editörü + canlı önizleme |
+| Mobil | dördüncü segment + kalem editörü; detayda salt okunur liste |
+
+**Kalemler bir girdi katmanı** (ADR-052): bakiyeye giren şey yine
+`ExpenseParticipant` payları. Kalem başına tutar **saklanmıyor**, yalnızca
+atama — kalem içi bölüşüm eşit ve deterministik.
+
+**Katılımcılar türetiliyor**, istemciden gelmiyor.
+
+**Bahşiş/indirim tek kuralla:** kişi payı = `ara toplam × tutar ÷ kalem
+toplamı`. Tutar kalem toplamına eşitken kırpma sıfır.
+
+**Bir iddia ölçüldü ve küçültüldü:** "BigInt şart" yazılmıştı; ölçümde Number
+ile de sonuç ayrışmadı (en büyük kalan adımı ±1'i onarıyor). Kod, test ve ADR
+düzeltildi — BigInt doğruluğu bir tesadüfe bağlı olmaktan çıkarıyor, tek
+başına sağlamıyor.
+
+**İki zayıf test aynı gün bulundu ve düzeltildi:** biri BigInt kaldırılınca da
+geçiyordu, diğeri hatanın kodunu sınamıyordu.
+
+**Tekrarlayan harcama kalem kalem olamıyor** ve ayrım **tipte** duruyor.
+
+**Bir kusur yalnızca mobil tarafı yazarken görüldü:** uç kalemleri ham Prisma
+şekliyle döndürüyordu ve web sayfası düzleştirmeyi kendi yaptığı için orada
+görünmüyordu. Mobilde ekran çökerdi ve bir açıklama düzeltmesi kalemleri
+silerdi. Şekil artık tek yerde düzleşiyor.
+
+**Test:** 715 kök birim (+19), 77 mobil ekran (+6), E2E (+1).
+**Commit:** `<COMMIT>`
+
+---
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
@@ -2413,11 +2454,14 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Fiş OCR** | Fotoğraf zaten var. Dış servis = **ücretli** + gizlilik/App Privacy yeniden |
-| **Kalem kalem bölüşüm** | En pahalısı: küsurat değişmezi **iki katmanda** korunmalı |
+| **Fiş OCR** | Fotoğraf zaten var. Dış servis = **ücretli** + gizlilik/App Privacy yeniden. **10 Eylül'de kullanıcı bunu bilerek ATLADI**: anahtar olmadan gerçek istek/cevap bir kez bile ölçülemez, yani doğrulanmamış kod yazılmış olurdu |
 | **Profil fotoğrafı** | Fiş fotoğrafıyla aynı depo ve arayüz; uç henüz yok |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
+> **Kalem kalem bölüşüm listeden çıktı (10 Eylül, Faz 45)** — ve "küsurat
+> değişmezi iki katmanda korunmalı" notu doğru çıktı: hesap iki katmanlı ve
+> her iki katman da tam (ADR-052).
+>
 > **Tekrarlayan harcama listeden çıktı (10 Eylül, Faz 44)** — ve cron
 > gerçekten gerekti: `vercel.json` artık **var**, her gün 06:00 UTC.
 > Çalışması için Vercel'de `CRON_SECRET` tanımlanmalı.

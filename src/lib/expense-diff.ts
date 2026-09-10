@@ -12,7 +12,13 @@
  * tarafin isi: ayni fark web'de Intl ile, mobilde RN tarafinda yazilir.
  */
 
-export type ExpenseSplitTypeValue = "EQUAL" | "EXACT" | "PERCENTAGE";
+/**
+ * ELLE YAZILIYOR, Prisma'dan TURETILMIYOR - ve bu bilincli: bu modul saf
+ * (mobil agac da import ediyor, ADR-042) ve @prisma/client'a dokunamaz.
+ * Bedeli, yeni bir tur eklendiginde burayi da guncellemek; kazanci, tek bir
+ * karsilastirma kodunun iki istemcide de calismasi.
+ */
+export type ExpenseSplitTypeValue = "EQUAL" | "EXACT" | "PERCENTAGE" | "ITEMIZED";
 
 /**
  * Her iki istemcinin de GET'ten aldigi alanlarin ortak alt kumesi.

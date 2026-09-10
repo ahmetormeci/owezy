@@ -48,6 +48,16 @@ versiyonladığımız yüzeydir. `/api/auth` ise sözleşmesini Better Auth'un
 belirlediği ayrı bir yüzey; onu `v1`'in altına koymak, kendi
 versiyonlayamadığımız bir şeye kendi versiyon numaramızı vermek olurdu.
 
+**`/api/cron` neden `/api/v1` altında değil:** aynı gerekçenin ikinci
+yüzü. `/api/v1`'in her ucu bir **oturum** taşıyor ve iki istemci de aynı yolu
+kullanıyor; `/api/cron/recurring` ise makineden makineye bir tetikleyici —
+Vercel'in günlük çağrısı. Aynı ağaçta durması, bir gün `v1`'e uygulanacak bir
+kuralın (örneğin oturum zorunluluğu) buraya da uygulanması anlamına gelirdi.
+
+Yetkisi tek bir ortam değişkenine bağlı: `CRON_SECRET` **tanımlı değilse uç
+503 dönüyor ve hiçbir şey üretmiyor** (ADR-051). "Yapılandırılmamışsa serbest
+bırak" demek, adresi bilen herkesin finansal kayıt ürettirebilmesi demekti.
+
 **`src/proxy.ts` YOK ve olmaması bilinçli.** Faz 25.7'ye kadar vardı ve tek işi
 Clerk'in oturum bağlamını her isteğe eklemekti; hiçbir route'u korumuyordu.
 Korumanın nerede olduğu aşağıda.

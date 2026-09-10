@@ -30,6 +30,7 @@ export const EXPENSE_SPLIT_TYPE_CODES: Record<SplitType, MessageCode> = {
   EQUAL: "ui.split_equal",
   EXACT: "ui.split_exact",
   PERCENTAGE: "ui.split_percentage",
+  ITEMIZED: "ui.split_itemized",
 };
 
 // Fis satirinin ALT SATIRINDA kullanilan kisa biçim. Yukaridakiler form
@@ -39,4 +40,5 @@ export const EXPENSE_SPLIT_TYPE_SHORT_CODES: Record<SplitType, MessageCode> = {
   EQUAL: "ui.split_short_equal",
   EXACT: "ui.split_short_exact",
   PERCENTAGE: "ui.split_short_percentage",
+  ITEMIZED: "ui.split_short_itemized",
 };

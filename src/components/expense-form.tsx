@@ -21,11 +21,13 @@ import {
 import { guessCategory } from "@/lib/expense-category-guess";
 import {
   inferBasisPoints,
+  splitByItems,
   splitByPercentage,
   splitEqually,
   splitExactly,
   type SplitShare,
 } from "@/lib/split";
+import { MAX_EXPENSE_ITEMS } from "@/lib/expense-schemas";
 import {
   EXPENSE_CATEGORY_CODES,
   EXPENSE_CATEGORY_OPTIONS,
@@ -50,8 +52,21 @@ export type ExpenseFormInitialValues = {
   splitType: SplitType;
   expenseDate: string;
   participants: { userId: string; shareAmount: number; basisPoints: number | null }[];
+  /**
+   * Kalemler (ADR-052). Yalnizca ITEMIZED harcamalarda dolu. Duzenleme
+   * formu masayi yeniden kurabilsin diye geliyor - gelmeseydi kullanici
+   * kalemleri bastan girmek zorunda kalirdi.
+   */
+  items?: { description: string; amount: number; userIds: string[] }[];
   /** Optimistic locking sayaci (ADR-032). Kaydederken geri gonderiliyor. */
   version: number;
+};
+
+/** Formdaki bir kalem satiri. Tutar METIN: kullanici yazarken ara hallerden gecer. */
+type ItemDraft = {
+  description: string;
+  amountText: string;
+  userIds: string[];
 };
 
 type ParticipantDraft = {
@@ -201,6 +216,21 @@ export function ExpenseForm({
   const [interval, setInterval] = useState<"WEEKLY" | "MONTHLY">("MONTHLY");
 
   /**
+   * KALEMLER (ADR-052). Kayitli bir ITEMIZED harcama aciliyorsa oradan,
+   * yoksa BIR BOS satirla basliyor: sifir satirli bir liste, kullaniciya
+   * once "ekle"ye basmayi ogretmek olurdu.
+   */
+  const [items, setItems] = useState<ItemDraft[]>(() =>
+    initialValues?.items && initialValues.items.length > 0
+      ? initialValues.items.map((item) => ({
+          description: item.description,
+          amountText: formatMoneyForInput(item.amount, locale),
+          userIds: item.userIds,
+        }))
+      : [{ description: "", amountText: "", userIds: [] }],
+  );
+
+  /**
    * Optimistic locking (ADR-032) icin iki parca durum.
    *
    * `baseline`: ekrana YUKLENEN harcamanin sunucudaki hali. Cakisma sonrasi
@@ -224,6 +254,25 @@ export function ExpenseForm({
     }
 
     try {
+      if (splitType === "ITEMIZED") {
+        const parsed = items.map((item) => ({
+          amount: parseMoney(item.amountText),
+          userIds: item.userIds,
+        }));
+        if (parsed.some((item) => item.amount === null || item.amount <= 0)) {
+          return { error: t("ui.each_item_amount_required") };
+        }
+        if (parsed.some((item) => item.userIds.length === 0)) {
+          return { error: t("split.item_no_participants") };
+        }
+        return {
+          shares: splitByItems({
+            amount,
+            items: parsed as { amount: number; userIds: string[] }[],
+          }),
+        };
+      }
+
       if (splitType === "EQUAL") {
         return {
           shares: splitEqually({
@@ -271,7 +320,42 @@ export function ExpenseForm({
       }
       return { error: t("split.failed") };
     }
-  }, [amount, selected, splitType, t]);
+  }, [amount, selected, splitType, items, t]);
+
+  /** Kalem toplami - hepsi gecerliyse. Bir tanesi bile bos ise null. */
+  const itemsTotal =
+    splitType === "ITEMIZED"
+      ? items.reduce<number | null>((total, item) => {
+          if (total === null) return null;
+          const value = parseMoney(item.amountText);
+          return value === null ? null : total + value;
+        }, 0)
+      : null;
+
+  function updateItem(index: number, changes: Partial<ItemDraft>) {
+    setItems((current) =>
+      current.map((item, at) => (at === index ? { ...item, ...changes } : item)),
+    );
+  }
+
+  function removeItem(index: number) {
+    setItems((current) => current.filter((_, at) => at !== index));
+  }
+
+  function toggleItemMember(index: number, userId: string) {
+    setItems((current) =>
+      current.map((item, at) =>
+        at === index
+          ? {
+              ...item,
+              userIds: item.userIds.includes(userId)
+                ? item.userIds.filter((candidate) => candidate !== userId)
+                : [...item.userIds, userId],
+            }
+          : item,
+      ),
+    );
+  }
 
   function updateParticipant(userId: string, changes: Partial<ParticipantDraft>) {
     setParticipants((current) =>
@@ -312,6 +396,20 @@ export function ExpenseForm({
       };
     }
 
+    if (splitType === "ITEMIZED") {
+      return {
+        ...base,
+        splitType: "ITEMIZED" as const,
+        // KATILIMCI LISTESI GONDERILMIYOR: sunucu onu kalem atamalarindan
+        // turetiyor (ADR-052). Iki yerden gitseydi celisebilirlerdi.
+        items: items.map((item) => ({
+          description: item.description.trim(),
+          amount: parseMoney(item.amountText) ?? 0,
+          userIds: item.userIds,
+        })),
+      };
+    }
+
     return {
       ...base,
       splitType: "PERCENTAGE" as const,
@@ -334,7 +432,12 @@ export function ExpenseForm({
       setError(t("ui.amount_required"));
       return;
     }
-    if (selected.length === 0) {
+    if (splitType === "ITEMIZED") {
+      if (items.some((item) => item.description.trim() === "")) {
+        setError(t("ui.each_item_description_required"));
+        return;
+      }
+    } else if (selected.length === 0) {
       setError(t("ui.participant_required"));
       return;
     }
@@ -612,7 +715,10 @@ export function ExpenseForm({
         DUZENLEMEDE HIC CIZILMIYOR: var olan bir harcamayi tekrarlayana
         cevirmek, onu baska bir seye donusturmek olurdu.
       */}
-      {!isEditing ? (
+      {/* ITEMIZED'DA HIC CIZILMIYOR: kalem kalem bir SABLON yok (ADR-052).
+          Cizilseydi kullanici isaretler, kaydeder ve sunucudan bir dogrulama
+          hatasi alirdi - olmayan bir yetenegi vaat etmis olurduk. */}
+      {!isEditing && splitType !== "ITEMIZED" ? (
         <div className="flex flex-col gap-3 border-t border-line-soft pt-4">
           <label className="flex cursor-pointer items-center gap-2 text-sm">
             <input
@@ -646,6 +752,108 @@ export function ExpenseForm({
         </div>
       ) : null}
 
+      {splitType === "ITEMIZED" ? (
+        /*
+          KALEM EDITORU (ADR-052).
+          KATILIMCI ONAY KUTULARI BURADA HIC YOK: katilimcilar kalem
+          atamalarinin BIRLESIMI. Ikisi birden dursaydi celisebilirlerdi -
+          hicbir kaleme atanmamis bir "katilimci" ne demek olurdu?
+        */
+        <div className="flex flex-col gap-3">
+          <Label>{t("ui.items")}</Label>
+          <p className="text-xs text-muted-foreground">{t("ui.items_hint")}</p>
+
+          <ul className="flex flex-col gap-4">
+            {items.map((item, index) => (
+              <li key={index} className="flex flex-col gap-2 border-t border-line-soft pt-3">
+                <div className="flex items-start gap-2">
+                  <Input
+                    className="flex-1"
+                    value={item.description}
+                    onChange={(event) =>
+                      updateItem(index, { description: event.target.value })
+                    }
+                    placeholder={t("ui.item_description")}
+                    aria-label={`${t("ui.item_description")} ${index + 1}`}
+                  />
+                  <Input
+                    className="w-32"
+                    value={item.amountText}
+                    onChange={(event) => updateItem(index, { amountText: event.target.value })}
+                    placeholder="0,00"
+                    inputMode="decimal"
+                    aria-label={`${t("ui.item_amount")} ${index + 1}`}
+                  />
+                  {/* TEK KALEM KALDIYSA CIKARMA YOK: bos bir liste, kaydi
+                      imkansiz bir forma birakirdi. */}
+                  {items.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="shrink-0 rounded-[3px] px-1 py-2 text-xs text-muted-foreground underline underline-offset-3 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                      aria-label={`${t("ui.remove_item")} ${index + 1}`}
+                    >
+                      {t("ui.remove_item")}
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {members.map((member) => (
+                    <label
+                      key={member.userId}
+                      className="flex cursor-pointer items-center gap-1.5 text-xs"
+                    >
+                      <input
+                        type="checkbox"
+                        className="size-3.5 accent-primary"
+                        checked={item.userIds.includes(member.userId)}
+                        onChange={() => toggleItemMember(index, member.userId)}
+                      />
+                      {member.displayName}
+                    </label>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {items.length < MAX_EXPENSE_ITEMS ? (
+            <button
+              type="button"
+              onClick={() =>
+                setItems((current) => [
+                  ...current,
+                  { description: "", amountText: "", userIds: [] },
+                ])
+              }
+              className="self-start rounded-[3px] text-xs text-brand underline underline-offset-3 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              {t("ui.add_item")}
+            </button>
+          ) : null}
+
+          {/* KALEM TOPLAMI VE FARK. Kullanici bahsisi/indirimi kaydetmeden
+              once GORMELI - bakiyeye bakip cikarmasi gereken bir sey
+              olmamali. */}
+          {itemsTotal !== null ? (
+            <div className="flex flex-col gap-1 border-t border-line-soft pt-2 text-xs text-muted-foreground">
+              <div className="flex justify-between gap-4">
+                <span>{t("ui.items_total")}</span>
+                <span className="money">{formatMoney(itemsTotal, currency, locale)}</span>
+              </div>
+              {amount !== null && amount !== itemsTotal ? (
+                <div className="flex justify-between gap-4">
+                  <span>{amount > itemsTotal ? t("ui.items_tip") : t("ui.items_discount")}</span>
+                  <span className="money">
+                    {formatMoney(Math.abs(amount - itemsTotal), currency, locale)}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : (
       <div className="flex flex-col gap-3">
         <Label>{t("ui.participants")}</Label>
         <div className="flex flex-col gap-2">
@@ -700,12 +908,17 @@ export function ExpenseForm({
           ))}
         </div>
       </div>
+      )}
 
       {preview ? (
         // Onizleme bir kart DEGIL: girdiye gore degisen bir ARA sonuc, ayri
         // bir nesne degil. Kutusu kalkti, bolum basligiyla ayriliyor -
         // sayfanin geri kalanindaki her bolum gibi.
-        <div className="flex flex-col gap-2">
+        /* data-slot: onizlemeye DISARIDAN tutunmak icin. Sayfada baska
+           listeler de var (kalemler) ve onlarin icinde de kisi adlari
+           geciyor; testin hangi listeye baktigi belirsiz kalamaz. Kalip
+           projedeki ui bilesenlerinin aynisi. */
+        <div className="flex flex-col gap-2" data-slot="split-preview">
           <SectionHead title={t("ui.split_preview")} />
           {"error" in preview ? (
             <p className="text-destructive">{preview.error}</p>

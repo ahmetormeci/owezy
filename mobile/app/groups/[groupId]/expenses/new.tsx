@@ -70,7 +70,10 @@ type MembersResponse = { members: Member[] };
 type MeResponse = { user: { id: string } };
 type GroupResponse = { group: { id: string; name: string; currency: string } };
 
-type SplitType = "EQUAL" | "EXACT" | "PERCENTAGE";
+type SplitType = "EQUAL" | "EXACT" | "PERCENTAGE" | "ITEMIZED";
+
+/** Formdaki bir kalem satiri. Tutar METIN: kullanici yazarken ara hallerden gecer. */
+type ItemDraft = { description: string; amountText: string; userIds: string[] };
 
 export default function NewExpenseScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -95,6 +98,13 @@ export default function NewExpenseScreen() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   /** EXACT ve PERCENTAGE icin: kisi basina girilen ham metin. */
   const [shareText, setShareText] = useState<Record<string, string>>({});
+  /**
+   * ITEMIZED icin kalemler (ADR-052). BIR BOS satirla basliyor: sifir
+   * satirli bir liste, kullaniciya once "ekle"ye basmayi ogretmek olurdu.
+   */
+  const [items, setItems] = useState<ItemDraft[]>([
+    { description: "", amountText: "", userIds: [] },
+  ]);
   /**
    * KATEGORI. Kullanici SECMEDIYSE null kaliyor ve gonderilmiyor - sunucu o
    * zaman aciklamadan kendisi tahmin ediyor (ADR-028: karari sunucu verir).
@@ -228,6 +238,37 @@ export default function NewExpenseScreen() {
     return Object.fromEntries(rows.map((row) => [row.userId, row.amount]));
   }, [splitType, amount, participants]);
 
+  /** Kalem toplami - hepsi gecerliyse. Bir tanesi bile bos ise null. */
+  const itemsTotal =
+    splitType === "ITEMIZED"
+      ? items.reduce<number | null>((total, item) => {
+          if (total === null) return null;
+          const value = parseMoney(item.amountText);
+          return value === null ? null : total + value;
+        }, 0)
+      : null;
+
+  function updateItem(index: number, changes: Partial<ItemDraft>) {
+    setItems((current) =>
+      current.map((item, at) => (at === index ? { ...item, ...changes } : item)),
+    );
+  }
+
+  function toggleItemMember(index: number, userId: string) {
+    setItems((current) =>
+      current.map((item, at) =>
+        at === index
+          ? {
+              ...item,
+              userIds: item.userIds.includes(userId)
+                ? item.userIds.filter((candidate) => candidate !== userId)
+                : [...item.userIds, userId],
+            }
+          : item,
+      ),
+    );
+  }
+
   /** Kusuratin kime yazildigi GORUNUR olmali - tasarimin kendi ifadesi. */
   const roundingGoesTo = equalShares
     ? (participants.find((m) => equalShares[m.userId] === Math.max(...Object.values(equalShares)))
@@ -256,7 +297,28 @@ export default function NewExpenseScreen() {
     }
 
     let body: Record<string, unknown>;
-    if (splitType === "EQUAL") {
+    if (splitType === "ITEMIZED") {
+      const parsed = items.map((item) => ({
+        description: item.description.trim(),
+        amount: parseMoney(item.amountText),
+        userIds: item.userIds,
+      }));
+      if (parsed.some((item) => item.description === "")) {
+        setError(t("ui.each_item_description_required"));
+        return;
+      }
+      if (parsed.some((item) => item.amount === null || item.amount <= 0)) {
+        setError(t("ui.each_item_amount_required"));
+        return;
+      }
+      if (parsed.some((item) => item.userIds.length === 0)) {
+        setError(t("split.item_no_participants"));
+        return;
+      }
+      // KATILIMCI LISTESI GONDERILMIYOR: sunucu onu kalem atamalarindan
+      // turetiyor (ADR-052).
+      body = { items: parsed };
+    } else if (splitType === "EQUAL") {
       if (participants.length === 0) {
         setError(t("ui.participant_required"));
         return;
@@ -496,10 +558,13 @@ export default function NewExpenseScreen() {
 
           <View style={s.splitBlock}>
             <Text style={s.fieldLabel}>{t("ui.split_type").toLocaleUpperCase(locale)}</Text>
-            {/* UC ESIT SEGMENT, cip yigini degil: secenek sayisi sabit uc ve
-                birbirini disliyorlar - segment tam olarak bunu anlatiyor. */}
+            {/* DORT ESIT SEGMENT, cip yigini degil: secenek sayisi sabit ve
+                birbirini disliyorlar - segment tam olarak bunu anlatiyor.
+                Ucken de oyleydi; kalem kalem (ADR-052) dorduncusu oldu ve
+                kisa etiketler (EXPENSE_SPLIT_TYPE_SHORT_CODES) dar ekranda
+                da sigiyor. */}
             <View style={s.segments}>
-              {(["EQUAL", "EXACT", "PERCENTAGE"] as const).map((type) => {
+              {(["EQUAL", "EXACT", "PERCENTAGE", "ITEMIZED"] as const).map((type) => {
                 const active = splitType === type;
                 return (
                   <Pressable
@@ -516,7 +581,113 @@ export default function NewExpenseScreen() {
               })}
             </View>
 
-            {splitType === "EQUAL" ? (
+            {splitType === "ITEMIZED" ? (
+              /*
+                KALEM EDITORU (ADR-052).
+                UYE ONAY KUTULARI BURADA HIC YOK: katilimcilar kalem
+                atamalarinin BIRLESIMI. Ikisi birden dursaydi
+                celisebilirlerdi.
+              */
+              <View style={s.itemsBlock}>
+                <Text style={s.itemsHint}>{t("ui.items_hint")}</Text>
+
+                {items.map((item, index) => (
+                  <View key={index} style={s.itemCard}>
+                    <View style={s.itemTop}>
+                      <TextInput
+                        testID={`item-name-${index}`}
+                        style={s.itemName}
+                        value={item.description}
+                        onChangeText={(value) => updateItem(index, { description: value })}
+                        placeholder={t("ui.item_description")}
+                        placeholderTextColor={theme.inputLine}
+                        editable={!busy}
+                      />
+                      <TextInput
+                        testID={`item-amount-${index}`}
+                        style={s.itemAmount}
+                        value={item.amountText}
+                        onChangeText={(value) => updateItem(index, { amountText: value })}
+                        keyboardType="decimal-pad"
+                        placeholder="0,00"
+                        placeholderTextColor={theme.inputLine}
+                        editable={!busy}
+                      />
+                      {/* TEK KALEM KALDIYSA CIKARMA YOK: bos bir liste,
+                          kaydi imkansiz bir forma birakirdi. */}
+                      {items.length > 1 ? (
+                        <Pressable
+                          hitSlop={8}
+                          onPress={() =>
+                            setItems((current) => current.filter((_, at) => at !== index))
+                          }
+                          disabled={busy}
+                        >
+                          <Text style={s.itemRemove}>×</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+
+                    <View style={s.itemPeople}>
+                      {memberList.map((member) => {
+                        const on = item.userIds.includes(member.userId);
+                        return (
+                          <Pressable
+                            key={member.userId}
+                            style={[s.itemChip, on && s.itemChipOn]}
+                            onPress={() => toggleItemMember(index, member.userId)}
+                            disabled={busy}
+                          >
+                            <Text
+                              style={[s.itemChipText, on && s.itemChipTextOn]}
+                              numberOfLines={1}
+                            >
+                              {member.displayName}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ))}
+
+                <Pressable
+                  hitSlop={8}
+                  onPress={() =>
+                    setItems((current) => [
+                      ...current,
+                      { description: "", amountText: "", userIds: [] },
+                    ])
+                  }
+                  disabled={busy || items.length >= 50}
+                >
+                  <Cap color={theme.brand}>{t("ui.add_item")}</Cap>
+                </Pressable>
+
+                {/* KALEM TOPLAMI VE FARK - kullanici bahsisi/indirimi
+                    kaydetmeden ONCE gormeli. */}
+                {itemsTotal !== null ? (
+                  <View style={s.itemsSummary}>
+                    <View style={s.itemsSummaryRow}>
+                      <Text style={s.itemsSummaryLabel}>{t("ui.items_total")}</Text>
+                      <Text style={s.itemsSummaryValue}>
+                        {formatMoney(itemsTotal, currency, locale)}
+                      </Text>
+                    </View>
+                    {amount !== null && amount !== itemsTotal ? (
+                      <View style={s.itemsSummaryRow}>
+                        <Text style={s.itemsSummaryLabel}>
+                          {amount > itemsTotal ? t("ui.items_tip") : t("ui.items_discount")}
+                        </Text>
+                        <Text style={s.itemsSummaryValue}>
+                          {formatMoney(Math.abs(amount - itemsTotal), currency, locale)}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+            ) : splitType === "EQUAL" ? (
               <View>
                 {memberList.map((member) => {
                   const on = touchedSelection ? !!selected[member.userId] : true;
@@ -619,6 +790,10 @@ export default function NewExpenseScreen() {
             sonra "her donem tekrarlansin mi". Fisin USTUNDE cunku fis bu
             dalda hic cizilmiyor.
           */}
+          {/* ITEMIZED'DA HIC CIZILMIYOR: kalem kalem bir SABLON yok
+              (ADR-052) - cizilseydi kullanici isaretler ve sunucudan
+              dogrulama hatasi alirdi. */}
+          {splitType === "ITEMIZED" ? null : (
           <View style={s.repeatBlock}>
             <Pressable
               style={s.repeatRow}
@@ -656,6 +831,7 @@ export default function NewExpenseScreen() {
               </>
             ) : null}
           </View>
+          )}
 
           {error ? <Text style={s.error}>{error}</Text> : null}
 
@@ -705,6 +881,53 @@ function createStyles(theme: Theme) {
       backgroundColor: theme.background,
     },
     scroll: { paddingBottom: 40 },
+    itemsBlock: { gap: 12, paddingTop: 4 },
+    itemsHint: { fontFamily: fonts.body, fontSize: 12, color: theme.muted, lineHeight: 17 },
+    itemCard: { gap: 8, borderTopWidth: 1, borderTopColor: theme.lineSoft, paddingTop: 10 },
+    itemTop: { flexDirection: "row", alignItems: "center", gap: 8 },
+    itemName: {
+      flex: 1,
+      fontFamily: fonts.body,
+      fontSize: 14,
+      color: theme.foreground,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.inputLine,
+      paddingVertical: 4,
+    },
+    itemAmount: {
+      width: 92,
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: theme.foreground,
+      textAlign: "right",
+      borderBottomWidth: 1,
+      borderBottomColor: theme.inputLine,
+      paddingVertical: 4,
+      fontVariant: ["tabular-nums"],
+    },
+    itemRemove: { fontFamily: fonts.body, fontSize: 20, color: theme.muted, paddingHorizontal: 2 },
+    itemPeople: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    /** Kalem katilimcilari CIP: sayilari degisken ve secim cok secimli -
+        segment burada yanlis olurdu. */
+    itemChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 3,
+      borderWidth: 1,
+      borderColor: theme.inputLine,
+    },
+    itemChipOn: { backgroundColor: theme.brand, borderColor: theme.brand },
+    itemChipText: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
+    itemChipTextOn: { color: theme.onBrand },
+    itemsSummary: { gap: 4, paddingTop: 6 },
+    itemsSummaryRow: { flexDirection: "row", justifyContent: "space-between" },
+    itemsSummaryLabel: { fontFamily: fonts.body, fontSize: 12, color: theme.muted },
+    itemsSummaryValue: {
+      fontFamily: fonts.medium,
+      fontSize: 12,
+      color: theme.muted,
+      fontVariant: ["tabular-nums"],
+    },
     repeatBlock: { paddingHorizontal: 20, paddingTop: 20, gap: 10 },
     repeatRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     repeatLabel: { fontFamily: fonts.body, fontSize: 15, color: theme.foreground },

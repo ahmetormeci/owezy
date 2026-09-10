@@ -3,14 +3,14 @@
 > Kaynak: `prisma/schema.prisma` + `prisma/migrations/`. Bu dosya onların
 > özetidir; çelişki halinde **şema ve migration'lar doğrudur**.
 
-PostgreSQL (Neon). 21 model, 6 enum, 19 migration.
+PostgreSQL (Neon). 23 model, 6 enum, 20 migration.
 
 ## Enum'lar
 
 | Enum | Değerler |
 |---|---|
 | `GroupRole` | OWNER, MEMBER |
-| `SplitType` | EQUAL, EXACT, PERCENTAGE |
+| `SplitType` | EQUAL, EXACT, PERCENTAGE, ITEMIZED |
 | `ExpenseCategory` | FOOD, TRANSPORT, ACCOMMODATION, SHOPPING, BILLS, ENTERTAINMENT, OTHER |
 | `ExpenseEditAction` | UPDATE, DELETE, RESTORE |
 | `RecurrenceInterval` | WEEKLY, MONTHLY |
@@ -119,6 +119,32 @@ saklanmaz**, kullanıcıya bir kez gösterilir. `maxUses` / `useCount` / `expire
 ### Notification
 `payload` JsonB — anlık görüntü (grup adı, işlemi yapanın adı, tutar).
 Tutar burada da **kuruş cinsinden tam sayıdır**.
+
+### ExpenseItem / ExpenseItemShare
+Kalem kalem bölüşümün **girdi katmanı** (ADR-052). Bakiyeye giren şey yine
+`ExpenseParticipant` payları; bu iki tablo o payların **nasıl** hesaplandığını
+tutuyor ve tek sebebi harcamayı yeniden açabilmek — saklanmasaydı düzenlemede
+kalemler kaybolurdu.
+
+`ExpenseItemShare` yalnızca **atamayı** taşıyor (kim), tutarı değil. Kalem içi
+bölüşüm eşit ve deterministik, yani tutar atamadan her zaman aynen yeniden
+üretiliyor; saklamak aynı bilgiyi iki yerde tutmak olurdu. Bakiyeye giren tutar
+`ExpenseParticipant`'ta ve orada bir tetikleyici bekliyor.
+
+`position` sırayı koruyor: kalemler bir liste ve sırası kullanıcının kurduğu
+sıra. `createdAt` ile sıralamak aynı milisaniyede yazılan kalemlerde belirsiz
+kalırdı.
+
+`ExpenseItem` → `Expense` bağı **Restrict** (harcama zaten fiziksel olarak
+silinmiyor); `ExpenseItemShare` → `ExpenseItem` bağı **Cascade**, çünkü o
+satırlar kalemin **parçası**. Güncellemede kalemler koşulsuz silinip yeniden
+yazılıyor — `ExpenseParticipant` ile aynı desen; eski hâlin kalıcı kaydı
+`ExpenseEdit` snapshot'ı ve **kalemler de o snapshot'a giriyor**.
+
+Elle eklenen kısıt: `CHECK (amount > 0)`. Sıfır bir kalem oransal ölçeklemede
+paya hiçbir şey katmadığı hâlde listede yer kaplardı; negatif bir kalem ise
+indirimi yanlış yerde ifade etmek olurdu — indirim, harcamanın **toplamını**
+kalem toplamından küçük yazarak ifade ediliyor.
 
 ### PaymentReminder
 Bir alacaklının bir borçluya gönderdiği ödeme hatırlatması (ADR-050).
@@ -283,6 +309,7 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260910070000_add_expense_comment` | `ExpenseComment` + `NotificationType.EXPENSE_COMMENTED`. Yorum finansal kayıt değil (ADR-049): silme yumuşak, hesap silmede **fiziksel** |
 | `20260910130000_add_payment_reminder` | `PaymentReminder` + `NotificationType.PAYMENT_REMINDED`. Soğuma penceresi (24 saat) bu tablo olmadan uygulanamazdı (ADR-050) |
 | `20260910180000_add_recurring_expense` | `RecurringExpense` + `RecurringExpenseShare` + `RecurrenceInterval` + `Expense.recurringExpenseId`. Şablon bir harcama değil bir takvim (ADR-051); pay toplamı ve para birimi için iki tetikleyici |
+| `20260910200000_add_expense_item` | `SplitType.ITEMIZED` + `ExpenseItem` + `ExpenseItemShare`. Kalemler bir GIRDI katmani; bakiyeye giren sey yine paylar (ADR-052) |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 [DECISIONS.md](DECISIONS.md) ADR-012.

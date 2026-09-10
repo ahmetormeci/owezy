@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { ValidationError } from "@/lib/errors";
 import {
   MAX_SPLIT_AMOUNT,
   inferBasisPoints,
+  splitByItems,
   splitByPercentage,
   splitEqually,
   splitExactly,
+  type SplitShare,
 } from "@/lib/split";
 
 describe("splitEqually", () => {
@@ -407,5 +410,170 @@ describe("inferBasisPoints", () => {
         ],
       }),
     ).toBeNull();
+  });
+});
+
+describe("splitByItems", () => {
+  const sum = (shares: SplitShare[]) => shares.reduce((t, s) => t + s.amount, 0);
+
+  it("kalem toplami ile tutar AYNIYSA paylar ara toplamlarin AYNISI", () => {
+    // Bahsissiz bir hesapta kimse "bir kurus oynadi" gormemeli.
+    const shares = splitByItems({
+      amount: 3000,
+      items: [
+        { amount: 1000, userIds: ["a"] },
+        { amount: 2000, userIds: ["b"] },
+      ],
+    });
+    expect(shares).toEqual([
+      { userId: "a", amount: 1000 },
+      { userId: "b", amount: 2000 },
+    ]);
+  });
+
+  it("bir kalemi paylasanlar arasinda ESIT bolunuyor", () => {
+    const shares = splitByItems({
+      amount: 1000,
+      items: [{ amount: 1000, userIds: ["a", "b", "c"] }],
+    });
+    expect(sum(shares)).toBe(1000);
+    // 1000 / 3 = 333.33 -> kalan bir kurus ILK kisiye
+    expect(shares).toEqual([
+      { userId: "a", amount: 334 },
+      { userId: "b", amount: 333 },
+      { userId: "c", amount: 333 },
+    ]);
+  });
+
+  it("BAHSIS herkesin yedigi kadar dagiliyor", () => {
+    // Kalemler 3000, hesap 3300 (%10 bahsis).
+    const shares = splitByItems({
+      amount: 3300,
+      items: [
+        { amount: 1000, userIds: ["a"] },
+        { amount: 2000, userIds: ["b"] },
+      ],
+    });
+    expect(sum(shares)).toBe(3300);
+    expect(shares).toEqual([
+      { userId: "a", amount: 1100 },
+      { userId: "b", amount: 2200 },
+    ]);
+  });
+
+  it("INDIRIM de ayni kuralla dusuyor", () => {
+    const shares = splitByItems({
+      amount: 2700,
+      items: [
+        { amount: 1000, userIds: ["a"] },
+        { amount: 2000, userIds: ["b"] },
+      ],
+    });
+    expect(sum(shares)).toBe(2700);
+    expect(shares).toEqual([
+      { userId: "a", amount: 900 },
+      { userId: "b", amount: 1800 },
+    ]);
+  });
+
+  it("KUSURAT DEGISMEZI: her durumda toplam tam olarak amount", () => {
+    // Kaba kuvvet: kirpmanin kacabilecegi tutarlar taraniyor.
+    for (let amount = 1; amount <= 500; amount += 1) {
+      const shares = splitByItems({
+        amount,
+        items: [
+          { amount: 7, userIds: ["a", "b", "c"] },
+          { amount: 11, userIds: ["b", "c"] },
+          { amount: 13, userIds: ["a"] },
+        ],
+      });
+      expect(sum(shares)).toBe(amount);
+      expect(shares.every((s) => s.amount >= 0)).toBe(true);
+    }
+  });
+
+  it("CARPIMIN Number'IN GUVENLI ARALIGINI ASTIGI BOLGEDE de dogru", () => {
+    /**
+     * BU TESTIN NE YAPTIGI - VE NE YAPMADIGI.
+     *
+     * YAPTIGI: girdiyi, ara carpimin (subtotal x amount) Number'in guvenli
+     * tam sayi araligini ASTIGI bolgeye tasiyor ve sonucun hala tam
+     * oldugunu gosteriyor. Asagidaki iddia o bolgede oldugumuzu KANITLIYOR;
+     * yani biri gelip sayilari kucultursen test sessizce anlamsizlasmasin.
+     *
+     * YAPMADIGI: "BigInt kaldirilirsa duser" demiyor - CUNKU DUSMUYOR.
+     * Olculdu: Number ile taban bazi girdilerde bir eksik cikiyor, ama o
+     * kurusu en-buyuk-kalan adimi geri veriyor ve 600.000 rastgele girdide
+     * uretilen paylar hic ayrismadi. BigInt burada dogrulugu bir tesadufe
+     * bagli olmaktan cikariyor; gerekcesi split.ts'te yaziyor.
+     */
+    const a = 1_003_296_636;
+    const b = 1_051_275_845;
+    const total = a + b;
+
+    expect(a * total).toBeGreaterThan(Number.MAX_SAFE_INTEGER);
+
+    const shares = splitByItems({
+      amount: total,
+      items: [
+        { amount: a, userIds: ["a"] },
+        { amount: b, userIds: ["b"] },
+      ],
+    });
+
+    // Oran 1: kirpma SIFIR olmali, paylar ara toplamlarin aynisi.
+    expect(shares).toEqual([
+      { userId: "a", amount: a },
+      { userId: "b", amount: b },
+    ]);
+    expect(sum(shares)).toBe(total);
+  });
+
+  it("bos kalem listesi REDDEDILIYOR", () => {
+    expect(() => splitByItems({ amount: 100, items: [] })).toThrow(ValidationError);
+  });
+
+  it("katilimcisiz kalem REDDEDILIYOR - VE KENDI KODUYLA", () => {
+    /**
+     * KOD DA SINANIYOR, yalnizca "firlatti mi" degil.
+     *
+     * splitEqually bos listeye zaten "split.no_participants" firlatiyor,
+     * yani buradaki kontrol kaldirilsa da bir hata olusurdu ve
+     * toThrow(ValidationError) GECERDI - test korudugunu sandigi seyi
+     * korumuyordu. Ayrimi yapan sey kodun kendisi: kullanici "en az bir
+     * katilimci gerekli" degil "her kalemi en az bir kisi paylasmali"
+     * okumali; ilki hangi kalem oldugunu soylemiyor.
+     */
+    expect(() =>
+      splitByItems({ amount: 100, items: [{ amount: 100, userIds: [] }] }),
+    ).toThrowError(
+      expect.objectContaining({ code: "split.item_no_participants" }),
+    );
+  });
+
+  it("sifir ya da negatif kalem tutari REDDEDILIYOR", () => {
+    expect(() =>
+      splitByItems({ amount: 100, items: [{ amount: 0, userIds: ["a"] }] }),
+    ).toThrow(ValidationError);
+  });
+
+  it("ayni kisi bir kalemde iki kez gecemiyor", () => {
+    expect(() =>
+      splitByItems({ amount: 100, items: [{ amount: 100, userIds: ["a", "a"] }] }),
+    ).toThrow(ValidationError);
+  });
+
+  it("ayni kisi FARKLI kalemlerde gecebilir - ara toplamlar birikiyor", () => {
+    const shares = splitByItems({
+      amount: 300,
+      items: [
+        { amount: 100, userIds: ["a"] },
+        { amount: 200, userIds: ["a", "b"] },
+      ],
+    });
+    expect(shares).toEqual([
+      { userId: "a", amount: 200 },
+      { userId: "b", amount: 100 },
+    ]);
   });
 });
