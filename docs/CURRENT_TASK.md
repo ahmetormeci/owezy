@@ -403,6 +403,16 @@ UNIVERSAL LINK - YAPILDI (1.0.2, 4 Eylul). Uc parcasi da yerinde:
   Kalan tek soru yukarida ("TEK ACIK SORU"). EXPO GO'DA DENENEMEZ -
   development ya da production build sart.
 
+MAGAZA METNI ARTIK REPODA: docs/STORE.md (10 Eylul).
+  Aciklama ve surum notlari CANLI MAGAZADAN cekildi (itunes lookup ucu).
+  Altyazi, anahtar kelimeler, tanitim metni ve TURKCE yerelestirme o uctan
+  GELMIYOR - ASC'den yapistirilacak, dosyada bos duruyor.
+
+  ORADA BEKLEYEN BIR IS VAR: aciklamadaki "SPLITS THAT MATCH REAL LIFE"
+  listesi UC madde sayiyor; kalem kalem bolusum dordunculer. Bugun DOGRU
+  (magazadaki surumde yok), 1.0.4 ciktigi an EKSIK olur. Fis fotografi da
+  aciklamada hic gecmiyor. Ayrintisi docs/STORE.md'de.
+
 PRODUCTION'DAKI DEMO HESAPLAR - DIKKAT:
   appreview@owezy.net  inceleme hesabi. SILME, PAROLASINI DEGISTIRME -
                        sonraki gonderimlerde de Apple bunu kullanacak.

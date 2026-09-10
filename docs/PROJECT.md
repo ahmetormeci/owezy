@@ -153,6 +153,10 @@ bağlanmadı).
   İçinde örnek grup ve harcamalar olmalı.
 - Mağaza sayfası: ekran görüntüleri, açıklama, **gizlilik politikası URL'si
   (zorunlu)**, App Privacy formu, yaş sınırı, kategori.
+- **Yayımlanan metnin kendisi [STORE.md](STORE.md)'de.** Burası süreci
+  anlatıyor; oradaki dosya App Store Connect'teki metnin kopyasını tutuyor.
+  Sebebi somut: repoda olmayan bir cümlenin ne zaman yanlış hâle geldiğini
+  kimse fark etmiyor — destek sayfasında tam bu yaşandı.
 - İnceleme genelde 1-2 gün.
 
 ### Google
