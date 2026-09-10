@@ -89,7 +89,7 @@ bakiyeler"den **20 punto içeride** duruyordu: bloğa kendi yatay dolgusunu
 vermiştim, oysa doğru ders **başka bir ekrandan** taşınmıştı. Harcama detayı ve
 harcama ekleme ekranlarında ScrollView'ın yatay dolgusu yok ve her blok kendi
 dolgusunu taşıyor; **grup ekranı böyle değil**, onun ScrollView'unda zaten
- var. Aynı sayfada iki farklı sol kenar.
+`padding: 16` var. Aynı sayfada iki farklı sol kenar.
 
 **Üç negatif kontrol koşuldu:** kalem silme koşullu hâle getirildiğinde,
 katılımcı türetmesi bozulduğunda ve kalemler snapshot'tan çıkarıldığında
