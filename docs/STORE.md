@@ -192,12 +192,40 @@ things the web app already had to the phone.
   still has an open balance.
 ```
 
-> **TÜRKÇESİ ELDE YOK.** Kullanıcı yalnızca İngilizcesini yapıştırdı;
-> ASC'de Türkçe bir sürüm notu var mı bilinmiyor. Yoksa Türkçe mağaza
-> sayfasında İngilizce not görünür — 1.0.2'nin son maddesi tam da
-> *"mağaza sayfası artık iki dilde olduğunu söylüyor"* diyor, yani bu
-> ayrım bu projede bir kez konu olmuş. **Bir sonraki gönderimde kontrol
-> edilecek.**
+Türkçesi:
+
+```
+• Harcamaya fiş fotoğrafı ekleyebiliyorsun. Telefonun kamerasıyla çek ya da
+  galerinden seç. Listede fişi olan harcamaların yanında küçük bir işaret
+  çıkıyor; dokununca fotoğraf tam ekran açılıyor. Fotoğrafı yalnızca o
+  grubun üyeleri görüyor, herkese açık bir adresi yok. Hesabını silersen
+  yüklediğin fişler de silinir.
+• Telefonuna bildirim gelebiliyor. Grubunda bir hareket olduğunda uygulama
+  kapalıyken de haberin oluyor. Bildirimde tutar ve kişi adı yazmaz;
+  yalnızca grubun adı ve ne olduğu görünür.
+• Grup sahibi bir üyeyi gruptan çıkarabiliyor, oluşturulmuş bir davet
+  bağlantısını iptal edebiliyor.
+• Harcama ekleme, ödeşme ve grup düzenleme artık grup sayfasının en üstünde.
+  Önceden listenin altındaydı; uzun bir grupta tek bir işlem için sayfayı
+  sonuna kadar kaydırmak gerekiyordu.
+• Hesabına artık her ekranda, üstteki simgeden ulaşıyorsun.
+• Görünüm seçilebiliyor: Sistem, Açık ya da Koyu.
+• Bakiyesi olan bir üyeyi çıkarırken tutarın görünmediği hata düzeltildi.
+```
+
+> **İKİSİ KARŞILAŞTIRILDI (10 Eylül):** yedi madde, yedi madde — aynı
+> sıra, aynı içerik. Türkçesi İngilizcenin kısaltılmışı değil, tam
+> karşılığı. Bir ara "Türkçesi eksik olabilir" diye not düşülmüştü;
+> **öyle değilmiş**, ASC'de ikisi de var.
+>
+> Maddelerin uygulamada karşılığı da kontrol edildi: hesap silmede fişler
+> gerçekten gidiyor (ADR-046), bildirimde tutar ve isim gerçekten yok
+> (ADR-047), tema seçimi ve üye çıkarma yerinde. Sürüm notu vaat ettiği
+> şeyleri anlatıyor.
+
+**1.0.2'nin notu yalnızca İngilizce elde** — Türkçesi lookup ucundan
+gelmiyor ve ASC'den alınmadı. Yayında olan sürüm o olduğu için bir gün
+gerekirse oradan bakılmalı.
 
 ---
 
