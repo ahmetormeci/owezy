@@ -3,7 +3,7 @@
 > Kaynak: `prisma/schema.prisma` + `prisma/migrations/`. Bu dosya onların
 > özetidir; çelişki halinde **şema ve migration'lar doğrudur**.
 
-PostgreSQL (Neon). 19 model, 5 enum, 18 migration.
+PostgreSQL (Neon). 21 model, 6 enum, 19 migration.
 
 ## Enum'lar
 
@@ -13,7 +13,8 @@ PostgreSQL (Neon). 19 model, 5 enum, 18 migration.
 | `SplitType` | EQUAL, EXACT, PERCENTAGE |
 | `ExpenseCategory` | FOOD, TRANSPORT, ACCOMMODATION, SHOPPING, BILLS, ENTERTAINMENT, OTHER |
 | `ExpenseEditAction` | UPDATE, DELETE, RESTORE |
-| `NotificationType` | EXPENSE_ADDED, EXPENSE_UPDATED, EXPENSE_DELETED, SETTLEMENT_RECORDED, SETTLEMENT_CANCELLED, EXPENSE_COMMENTED, PAYMENT_REMINDED, MEMBER_JOINED |
+| `RecurrenceInterval` | WEEKLY, MONTHLY |
+| `NotificationType` | EXPENSE_ADDED, EXPENSE_UPDATED, EXPENSE_DELETED, SETTLEMENT_RECORDED, SETTLEMENT_CANCELLED, EXPENSE_COMMENTED, PAYMENT_REMINDED, EXPENSE_RECURRED, RECURRING_PAUSED, MEMBER_JOINED |
 
 ## Modeller
 
@@ -139,6 +140,32 @@ gönderilenler) — yorum (ADR-049) ve fiş (ADR-046) ile aynı aile.
 İki elle yazılmış kısıt: `CHECK (amount > 0)` ve
 `CHECK (fromUserId <> toUserId)`.
 
+### RecurringExpense / RecurringExpenseShare
+Tekrarlayan harcamanın **şablonu** (ADR-051). **Bir harcama değil, bir
+takvim:** hiçbir bakiyeye girmez. Bakiyeye giren şey, günlük bir zamanlanmış
+işin bu şablondan **ürettiği** `Expense` satırlarıdır.
+
+`nextRunOn` yalnızca "sıradaki dönem" değil, aynı zamanda **çift üretim
+kilidi**: üretim, `nextRunOn` hâlâ beklenen değerdeyse ilerletiliyor
+(compare-and-set). İki koşu aynı dönemi alamıyor.
+
+`startsOn` **çıpa**: aylık dönemde ayın günü buradan okunuyor. 31 Ocak'ta
+başlayan bir şablon Şubat'ta 28'e kırpılır ama Mart'ta **31'e döner**.
+
+`RecurringExpenseShare` paylara **hesaplanmış** olarak taşıyor (girdi değil
+sonuç) ve toplamı bir tetikleyici bekliyor —
+`trg_recurring_share_sum_check`, `ExpenseParticipant`'takinin aynısı,
+`DEFERRABLE INITIALLY DEFERRED`. Ayrıca bir para birimi tetikleyicisi var
+(`trg_recurring_currency_check`), `Expense` ve `Settlement`'takiyle aynı.
+
+`Expense.recurringExpenseId` (yeni sütun) üretilen satırı şablona bağlıyor ve
+`onDelete: Restrict` taşıyor — yani **şablon fiziksel olarak silinemiyor**.
+"Şablonu sildim ama geçmiş harcamalarım durdu" davranışını şemanın kendisi
+garanti ediyor.
+
+`RecurringExpenseShare` → `RecurringExpense` bağı **Cascade**: bu satırlar
+finansal kayıt değil, şablonun parçası.
+
 ### Session / Account / Verification
 Better Auth'un yönettiği üç tablo (Faz 25.1). **Şemayı biz yazmıyoruz** —
 alanların kanonik listesi kütüphanenin `getAuthTables()` çağrısından gelir ve
@@ -255,6 +282,7 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260908112508_add_expense_receipt` | `ExpenseReceipt` — fiş fotoğrafının depo anahtarı; baytlar R2'de (ADR-046) |
 | `20260910070000_add_expense_comment` | `ExpenseComment` + `NotificationType.EXPENSE_COMMENTED`. Yorum finansal kayıt değil (ADR-049): silme yumuşak, hesap silmede **fiziksel** |
 | `20260910130000_add_payment_reminder` | `PaymentReminder` + `NotificationType.PAYMENT_REMINDED`. Soğuma penceresi (24 saat) bu tablo olmadan uygulanamazdı (ADR-050) |
+| `20260910180000_add_recurring_expense` | `RecurringExpense` + `RecurringExpenseShare` + `RecurrenceInterval` + `Expense.recurringExpenseId`. Şablon bir harcama değil bir takvim (ADR-051); pay toplamı ve para birimi için iki tetikleyici |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 [DECISIONS.md](DECISIONS.md) ADR-012.

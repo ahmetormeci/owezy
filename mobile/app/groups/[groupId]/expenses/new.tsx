@@ -103,6 +103,17 @@ export default function NewExpenseScreen() {
    * hizli ekleyicideki gibi.
    */
   const [category, setCategory] = useState<keyof typeof EXPENSE_CATEGORY_CODES | null>(null);
+  /**
+   * TEKRARLAMA (ADR-051). Web'deki ile ayni yerde duran ayni anahtar:
+   * tekrarlayan bir harcama, bir harcamanin TA KENDISI arti bir donem -
+   * ayri bir form ayni alanlari ikinci kez yazmak olurdu.
+   *
+   * BASLANGIC HEP BUGUN: bu formda tarih alani yok (hizli giris icin
+   * bilerek), yani sablonun ilk donemi de bugun. Gecmise donuk bir sablon
+   * kurmak web'de mumkun.
+   */
+  const [repeats, setRepeats] = useState(false);
+  const [interval, setInterval] = useState<"WEEKLY" | "MONTHLY">("MONTHLY");
   const { getToken } = useSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -274,6 +285,36 @@ export default function NewExpenseScreen() {
     // Harcama zaten kaydedildi, yalnizca fis kalmisti: tekrar YARATMIYORUZ.
     if (savedExpenseId) {
       if (await sendReceipt(savedExpenseId)) router.back();
+      return;
+    }
+
+    /**
+     * TEKRARLAYAN OLARAK KAYDEDILIYORSA BASKA BIR UCA GIDIYOR ve donen sey
+     * bir harcama degil bir SABLON - yani baglanacak bir fis kimligi de yok.
+     * Fis satiri bu dalda zaten cizilmiyor.
+     */
+    if (repeats) {
+      setBusy(true);
+      const created = await post(`/api/v1/groups/${groupId}/recurring-expenses`, {
+        description: description.trim(),
+        amount,
+        paidById: payer,
+        splitType,
+        ...(category ? { category } : {}),
+        ...body,
+        interval,
+        // Bugun. toISOString'in ilk on karakteri "YYYY-MM-DD" ve sunucu
+        // bunu UTC gece yarisi olarak okuyor - tarih kolonlarinin her
+        // yerdeki kurali (expenses.ts monthKeyToRange).
+        startsOn: new Date().toISOString().slice(0, 10),
+      });
+      setBusy(false);
+
+      if (!created.ok) {
+        setError(t(created.code, created.params));
+        return;
+      }
+      router.back();
       return;
     }
 
@@ -573,13 +614,59 @@ export default function NewExpenseScreen() {
             </View>
           </View>
 
+          {/*
+            TEKRARLAMA (ADR-051). Bolusumun ALTINDA: once "kim ne oder",
+            sonra "her donem tekrarlansin mi". Fisin USTUNDE cunku fis bu
+            dalda hic cizilmiyor.
+          */}
+          <View style={s.repeatBlock}>
+            <Pressable
+              style={s.repeatRow}
+              onPress={() => setRepeats((current) => !current)}
+              disabled={busy}
+            >
+              <View style={[s.box, repeats && s.boxOn]}>
+                {repeats ? <Text style={s.tick}>✓</Text> : null}
+              </View>
+              <Text style={s.repeatLabel}>{t("ui.repeat_this")}</Text>
+            </Pressable>
+
+            {repeats ? (
+              <>
+                <Text style={s.repeatHint}>{t("ui.repeat_hint")}</Text>
+                {/* IKI ESIT SEGMENT - bolusum turuyle ayni desen: secenek
+                    sayisi sabit ve birbirini disliyorlar. */}
+                <View style={s.segments}>
+                  {(["WEEKLY", "MONTHLY"] as const).map((value) => {
+                    const active = interval === value;
+                    return (
+                      <Pressable
+                        key={value}
+                        style={[s.segment, active && s.segmentOn]}
+                        onPress={() => setInterval(value)}
+                        disabled={busy}
+                      >
+                        <Text style={[s.segmentText, active && s.segmentTextOn]}>
+                          {t(value === "WEEKLY" ? "ui.repeat_weekly" : "ui.repeat_monthly")}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </>
+            ) : null}
+          </View>
+
           {error ? <Text style={s.error}>{error}</Text> : null}
 
           {/*
             FIS EN ALTTA. Fotograf SIMDI YUKLENMIYOR, cihazda BEKLIYOR:
             baglanacagi harcama henuz yok. Kayit basarili olunca gonderiliyor.
+
+            TEKRARLAYANDA HIC CIZILMIYOR: sablonun fotografi olmaz - bagli
+            oldugu bir harcama yok, uretilenler ise her donem ayri kayitlar.
           */}
-          {receiptUri ? (
+          {repeats ? null : receiptUri ? (
             <View style={s.receiptRow}>
               <Image source={{ uri: receiptUri }} style={s.receiptThumb} />
               <View style={s.receiptText}>
@@ -618,6 +705,10 @@ function createStyles(theme: Theme) {
       backgroundColor: theme.background,
     },
     scroll: { paddingBottom: 40 },
+    repeatBlock: { paddingHorizontal: 20, paddingTop: 20, gap: 10 },
+    repeatRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    repeatLabel: { fontFamily: fonts.body, fontSize: 15, color: theme.foreground },
+    repeatHint: { fontFamily: fonts.body, fontSize: 12, color: theme.muted, lineHeight: 17 },
 
     /**
      * BASLIK CUBUGU. Uc parca: vazgec / baslik / kaydet. Yerlesik cubuk

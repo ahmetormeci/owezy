@@ -64,6 +64,8 @@ const TITLE_CODES: Record<NotificationType, MessageCode> = {
   MEMBER_JOINED: "ui.notif_member_joined",
   EXPENSE_COMMENTED: "ui.notif_expense_commented",
   PAYMENT_REMINDED: "ui.notif_payment_reminded",
+  EXPENSE_RECURRED: "ui.notif_expense_recurred",
+  RECURRING_PAUSED: "ui.notif_recurring_paused",
 };
 
 export function describeNotification(

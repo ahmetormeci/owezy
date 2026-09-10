@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { deleteReceiptsUploadedBy } from "@/lib/receipts";
 import { deleteCommentsWrittenBy } from "@/lib/comments";
 import { deleteRemindersInvolving } from "@/lib/reminders";
+import { deactivateRecurringFor } from "@/lib/recurring";
 import { deleteObject } from "@/lib/storage";
 import { NotFoundError } from "@/lib/errors";
 
@@ -171,6 +172,23 @@ export async function deleteAccount(userId: string) {
      * adi hala bir satirin ucunda dururdu.
      */
     await deleteRemindersInvolving(tx, userId);
+
+    /**
+     * TEKRARLAYAN HARCAMA SABLONLARI - ADR-051. Burada silinen sey KISISEL
+     * VERI DEGIL, calisan bir TAKVIM: kullanicinin kurdugu, odedigi ya da
+     * icinde oldugu her sablon durduruluyor.
+     *
+     * NEDEN ZATEN GEREKLI: hesap silinince uyelikler kapaniyor, yani o
+     * sablonlar uretemez hale geliyor. Burada durdurmasaydik calistirici
+     * onlari tek tek "katilimci ayrildi" diye duraklatir ve grupta kalan
+     * kisilere sirayla bildirim gonderirdi - silinen hesabin ardindan gelen
+     * bir bildirim yagmuru.
+     *
+     * YUMUSAK SILME, cunku fiziksel silme ZATEN IMKANSIZ: uretilmis
+     * harcamalar sablona isaret ediyor (onDelete: Restrict). Gecmis
+     * harcamalar duruyor, bakiyeler etkilenmiyor.
+     */
+    await deactivateRecurringFor(tx, userId);
 
     await tx.user.update({
       where: { id: userId },

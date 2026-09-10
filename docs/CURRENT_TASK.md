@@ -44,15 +44,32 @@ Current task:
 
   DURUM:
     Faz 43  odeme hatirlatmasi   BITTI  (ADR-050)
-    Faz 44  tekrarlayan harcama  SIRADA
+    Faz 44  tekrarlayan harcama  BITTI  (ADR-051)
     Faz 45  kalem kalem bolusum  SIRADA
 
-  FAZ 44 ICIN AKILDA TUTULACAK TEK SEY: vercel.json HALA YOK ve tekrarlayan
-  harcama GERCEKTEN bir cron istiyor (odeme hatirlatmasi istemedi - ADR-050
-  o ihtiyaci bir kararla ortadan kaldirdi). Cron'un yetkisi CRON_SECRET
-  ortam degiskenine bagli olacak ve O DEGISKENI KULLANICI VERCEL'DE ELLE
-  EKLEMELI - eklenene kadar uc 503 donuyor ve hicbir sey uretilmiyor.
-  Bu, oturum sonunda kullaniciya ACIKCA soylenmeli.
+  >>> KULLANICININ YAPMASI GEREKEN TEK SEY - BASKA KIMSE YAPAMAZ <<<
+
+  VERCEL'DE "CRON_SECRET" ORTAM DEGISKENI TANIMLANMALI.
+
+    Nerede: vercel.com -> owezy projesi -> Settings -> Environment Variables
+    Ad    : CRON_SECRET
+    Deger : uzun ve rastgele bir metin (orn. `openssl rand -hex 32` ciktisi)
+    Ortam : Production (Preview de isaretlenebilir, zarari yok)
+    Sonra : yeni bir deploy gerekiyor - degiskeni ekledikten sonra
+            Deployments -> son deploy -> Redeploy
+
+  NEDEN: /api/cron/recurring, CRON_SECRET tanimli DEGILSE 503 donuyor ve
+  HICBIR SEY URETMIYOR (ADR-051). Bu bilincli - o uc finansal kayit
+  uretiyor ve acik kapi birakilamaz. Vercel, degisken tanimliysa gunluk
+  cagriya "Authorization: Bearer <deger>" basligini KENDISI ekliyor.
+
+  BU YAPILANA KADAR: tekrarlayan harcama kurulabiliyor, listede gorunuyor,
+  duraklatilabiliyor - ama HICBIR HARCAMA URETILMIYOR. Ozellik canlida
+  sessizce bekliyor.
+
+  ELLE DOGRULAMA (degiskeni ekledikten sonra):
+    curl -s -o /dev/null -w '%{http_code}\n' https://owezy.net/api/cron/recurring
+    401 bekleniyor. 503 gorurseniz degisken hala yok ya da deploy edilmedi.
 
   YORUM - NE YAPILDI: ExpenseComment tablosu, uc uc (listele/yaz/sil),
   EXPENSE_COMMENTED bildirimi, web'de satirdan acilan diyalog, mobilde detay
@@ -581,9 +598,14 @@ AKILDA TUTULACAKLAR:
   dokunan her betik once OKUYUP saymali, sonra yazmali.
 
 TESTLER - NE NEREDE (10 Eylul'de kosuldu):
-  KOK      npm test                  653 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      86 vitest + 58 jest
-  E2E      npm run test:e2e           59 test, ~13 dk
+  KOK      npm test                  696 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      86 vitest + 71 jest
+  E2E      npm run test:e2e           60 test, ~14 dk
+
+  E2E SUNUCUSUNUN KENDI CRON_SECRET'I VAR: playwright.config.ts'te
+  webServer.env icinde ("e2e-cron-secret"). .env.local'a KONMADI - o dosyayi
+  yalnizca kullanici duzenliyor ve bu deger yalnizca test sunucusunu
+  ilgilendiriyor.
 
   MOBILDE IKI KOSUCU VAR ve sinir DIZINE gore (ADR-042, ADR-043):
     lib/**                    -> vitest   (react-native'e dokunmuyor)

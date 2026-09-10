@@ -186,6 +186,21 @@ export function ExpenseForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   /**
+   * TEKRARLAMA (ADR-051).
+   *
+   * AYRI BIR FORM ACILMADI ve bu bilincli: tekrarlayan bir harcama, bir
+   * harcamanin TA KENDISI artı bir donem. Ayri bir form, ayni yedi alani
+   * ikinci kez yazmak ve ikisinin zamanla ayrismasi demekti - biri yeni bir
+   * bolusum turunu tanirken digerinin tanimamasi gibi.
+   *
+   * DUZENLEMEDE HIC GORUNMUYOR: sablon duzenlenmiyor (kapsam karari) ve
+   * var olan bir harcamayi "artik tekrarlansin" yapmak, o harcamayi baska
+   * bir seye donusturmek olurdu.
+   */
+  const [repeats, setRepeats] = useState(false);
+  const [interval, setInterval] = useState<"WEEKLY" | "MONTHLY">("MONTHLY");
+
+  /**
    * Optimistic locking (ADR-032) icin iki parca durum.
    *
    * `baseline`: ekrana YUKLENEN harcamanin sunucudaki hali. Cakisma sonrasi
@@ -331,16 +346,37 @@ export function ExpenseForm({
     setIsSubmitting(true);
     setConflict(null);
     try {
-      const url = isEditing
-        ? `/api/v1/groups/${groupId}/expenses/${initialValues!.id}`
-        : `/api/v1/groups/${groupId}/expenses`;
+      const isRecurring = repeats && !isEditing;
+      /**
+       * TEKRARLAYAN OLARAK KAYDEDILIYORSA BASKA BIR UCA GIDIYOR.
+       *
+       * Ayni uca "tekrarla" bayragiyla gitmek de mumkundu ama harcama ucunun
+       * anlamini bulandirirdi: o uc BIR harcama yaziyor, burasi bir TAKVIM
+       * kuruyor. Ilk donem de o takvimden cikiyor - yani "kaydet"e basinca
+       * bugunun harcamasi calistiricinin ilk kosusunda beliriyor.
+       */
+      const url = isRecurring
+        ? `/api/v1/groups/${groupId}/recurring-expenses`
+        : isEditing
+          ? `/api/v1/groups/${groupId}/expenses/${initialValues!.id}`
+          : `/api/v1/groups/${groupId}/expenses`;
 
       await apiRequest(url, {
-        method: isEditing ? "PUT" : "POST",
-        body: JSON.stringify(buildRequestBody()),
+        method: isEditing && !isRecurring ? "PUT" : "POST",
+        body: JSON.stringify(
+          isRecurring
+            ? { ...buildRequestBody(), interval, startsOn: expenseDate }
+            : buildRequestBody(),
+        ),
       });
 
-      toast.success(isEditing ? t("ui.expense_updated") : t("ui.expense_added"));
+      toast.success(
+        isRecurring
+          ? t("ui.recurring_saved")
+          : isEditing
+            ? t("ui.expense_updated")
+            : t("ui.expense_added"),
+      );
       // Harcamanin AYINA donuyoruz, grubun varsayilan ayina degil (Faz 16.2).
       // Fiste yalnizca acik ay tam gorunuyor; gecmis bir aya harcama ekleyip
       // varsayilan aya donseydik kullanici kaydettigi satiri goremezdi ve
@@ -568,6 +604,48 @@ export function ExpenseForm({
         </div>
       </div>
 
+      {/*
+        TEKRARLAMA (ADR-051). Bolusumun USTUNDE, tarihin hemen ALTINDA:
+        "ne zaman" sorusunun devami. Bolusumun altina koysaydik, formun en
+        uzun bolumunun ardinda kalir ve kimse gormezdi.
+
+        DUZENLEMEDE HIC CIZILMIYOR: var olan bir harcamayi tekrarlayana
+        cevirmek, onu baska bir seye donusturmek olurdu.
+      */}
+      {!isEditing ? (
+        <div className="flex flex-col gap-3 border-t border-line-soft pt-4">
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 accent-primary"
+              checked={repeats}
+              onChange={() => setRepeats((current) => !current)}
+            />
+            {t("ui.repeat_this")}
+          </label>
+
+          {repeats ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-muted-foreground">{t("ui.repeat_hint")}</p>
+              <div className="flex flex-col gap-2 sm:max-w-xs">
+                <Label htmlFor="interval">{t("ui.how_often")}</Label>
+                <select
+                  id="interval"
+                  className={selectClassName}
+                  value={interval}
+                  onChange={(event) =>
+                    setInterval(event.target.value as "WEEKLY" | "MONTHLY")
+                  }
+                >
+                  <option value="WEEKLY">{t("ui.repeat_weekly")}</option>
+                  <option value="MONTHLY">{t("ui.repeat_monthly")}</option>
+                </select>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-3">
         <Label>{t("ui.participants")}</Label>
         <div className="flex flex-col gap-2">
@@ -690,7 +768,9 @@ export function ExpenseForm({
             ? t("ui.saving")
             : isEditing
               ? t("ui.save_changes")
-              : t("ui.save_expense")}
+              : repeats
+                ? t("ui.save_recurring")
+                : t("ui.save_expense")}
         </Button>
         <Button
           type="button"

@@ -8,20 +8,20 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 43 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
+**Özet:** 44 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
 yayında** (mağazada 1.0.2, 8 Eylül 2026) — web zaten canlıydı, artık iki
 istemci de kullanıcıya açık. Faz 41'in kağıt & petrol tasarım yönü iki
 istemcide de uygulandı ama **henüz kullanıcıya ulaşmadı**: mağazadaki 1.0.2 de
 incelemedeki 1.0.3 de eski görünümü taşıyor — **Faz 42 (yorum) ve Faz 43
-(ödeme hatırlatması) de aynı kuyrukta**. `main`'e giden her değişiklik
+(ödeme hatırlatması) ve Faz 44 (tekrarlayan harcama) de aynı kuyrukta**. `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim — kök (Vitest) | 653 | ✅ tümü geçiyor |
+| Birim — kök (Vitest) | 696 | ✅ tümü geçiyor |
 | Birim — mobil (Vitest) | 86 | ✅ tümü geçiyor |
-| Ekran — mobil (jest-expo) | 58 | ✅ tümü geçiyor |
-| E2E (Playwright) | 59 | ✅ tümü geçiyor |
+| Ekran — mobil (jest-expo) | 71 | ✅ tümü geçiyor |
+| E2E (Playwright) | 60 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
 | `npm run lint` | — | ✅ temiz (kök + mobil) |
 
@@ -2364,6 +2364,48 @@ düştü, geri alınınca yeniden geçti.
 
 ---
 
+## Faz 44 — Tekrarlayan harcama · **BİTTİ, MOBİLİ YAYINLANMADI**
+
+Kira, abonelik, aidat. Kullanıcının seçtiği dört maddeden üçüncüsü.
+
+| | |
+|---|---|
+| Veri | `RecurringExpense` + `RecurringExpenseShare`, `RecurrenceInterval` enum'u, `Expense.recurringExpenseId` |
+| Bildirim | `EXPENSE_RECURRED`, `RECURRING_PAUSED` |
+| Uçlar | kur · listele · duraklat/devam (PATCH) · sil — artı `/api/cron/recurring` |
+| Web | harcama formunda "Bunu tekrarla" anahtarı; kâğıdın altında bölüm |
+| Mobil | aynı anahtar, aynı bölüm |
+| Zamanlama | `vercel.json`, her gün 06:00 UTC |
+
+**Şablon bir harcama değil, bir takvim** (ADR-051): hiçbir bakiyeye girmiyor.
+Bakiyeye giren şey ondan üretilen `Expense` satırları. Arayüzde de bu yüzden
+fişin **dışında** duruyor.
+
+**Ayrı bir form yok:** tekrarlayan bir harcama, bir harcamanın ta kendisi artı
+bir dönem. Şema tarafında da şablon gövdesi harcama gövdesinin kendisini
+kullanıyor.
+
+**Katılımcı gruptan ayrılırsa şablon duruyor** — o kişiyi bölüşümden çıkarmak,
+parayı kimseye sormadan yeniden dağıtmak olurdu.
+
+**Çift üretim koruması compare-and-set.** Aylık dönemde ayın günü
+başlangıçtan okunuyor: 31 Oca → 28 Şub → **31 Mar**.
+
+**`CRON_SECRET` yoksa uç 503 dönüyor** ve hiçbir şey üretmiyor. Kullanıcının
+Vercel'de bu değişkeni tanımlaması gerekiyor — tanımlanana kadar özellik
+canlıda sessizce beklemede.
+
+**Dört negatif kontrol + cron ucunun güvenlik testi koşuldu.**
+
+**Yol boyunca iki kusur bulundu, ikisi de tekrarlamayla ilgisizdi:** liste
+beklemediği bir gövdede bütün grup ekranını çökertiyordu; ve mobilde bölüm
+boş grupta gizleniyordu — yani şablonunu yeni kuran kullanıcı onu göremezdi.
+
+**Test:** 696 kök birim (+43), 71 mobil ekran (+13), E2E (+1).
+**Commit:** `<COMMIT>`
+
+---
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
@@ -2372,11 +2414,14 @@ karar vermemiştir.
 | Aday | Neden önemli |
 |---|---|
 | **Fiş OCR** | Fotoğraf zaten var. Dış servis = **ücretli** + gizlilik/App Privacy yeniden |
-| **Tekrarlayan harcama** | Kira, abonelik. **Cron gerekiyor** (`vercel.json` yok) — ödeme hatırlatması bu ihtiyacı paylaşmıyordu, ADR-050 onu cron'suz çözdü |
 | **Kalem kalem bölüşüm** | En pahalısı: küsurat değişmezi **iki katmanda** korunmalı |
 | **Profil fotoğrafı** | Fiş fotoğrafıyla aynı depo ve arayüz; uç henüz yok |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
+> **Tekrarlayan harcama listeden çıktı (10 Eylül, Faz 44)** — ve cron
+> gerçekten gerekti: `vercel.json` artık **var**, her gün 06:00 UTC.
+> Çalışması için Vercel'de `CRON_SECRET` tanımlanmalı.
+>
 > **Ödeme hatırlatması listeden çıktı (10 Eylül, Faz 43)** — ve listedeki
 > "cron gerekiyor" notu **yanlış çıktı**: özellik cron'suz yapıldı, çünkü
 > otomatik hatırlatma bir karar olarak reddedildi (ADR-050).

@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ForbiddenError } from "@/lib/errors";
+import type { MessageCode } from "@/lib/messages";
 
 // Grup icindeki kayitlara erisim kurallari. Harcamalar ve odeme kayitlari ayni
 // kurallari paylastigi icin buradan tek noktadan yonetiliyor - yetkilendirme
@@ -20,6 +21,19 @@ export async function assertActiveMemberOfGroup(groupId: string, userId: string)
 }
 
 /**
+ * Kayit turune gore "yalnizca olusturan" mesaji.
+ *
+ * Record<> ile yaziliyor cunku bir tur eklenip buraya yazilmazsa DERLEME
+ * HATASI aliniyor. Onceden ic ice ucluydu ("expense" degilse settlement) ve
+ * ucuncu tur eklendiginde sessizce yanlis cumleyi verirdi.
+ */
+const CREATOR_ONLY_CODES = {
+  expense: "access.expense_creator_only",
+  settlement: "access.settlement_creator_only",
+  recurring: "access.recurring_creator_only",
+} as const satisfies Record<string, MessageCode>;
+
+/**
  * Degistirme islemleri (update / delete / restore / cancel) icin:
  *
  *   1. Kaydi olusturan kisi (createdById) - grubun aktif uyesi olmak sartiyla.
@@ -35,7 +49,7 @@ export async function assertCanModifyRecord(
   userId: string,
   // Eskiden Turkce bir etiketti ("harcama"). Metin parametresi cevrilemez;
   // kayit TURUNU geciyoruz, metni sozluk uretiyor.
-  recordKind: "expense" | "settlement",
+  recordKind: "expense" | "settlement" | "recurring",
 ) {
   const callerMembership = await tx.groupMember.findFirst({
     where: { groupId, userId, leftAt: null },
@@ -52,11 +66,7 @@ export async function assertCanModifyRecord(
     where: { groupId, userId: record.createdById, leftAt: null },
   });
   if (creatorMembership) {
-    throw new ForbiddenError(
-      recordKind === "expense"
-        ? "access.expense_creator_only"
-        : "access.settlement_creator_only",
-    );
+    throw new ForbiddenError(CREATOR_ONLY_CODES[recordKind]);
   }
 
   if (callerMembership.role !== "OWNER") {

@@ -37,6 +37,18 @@ enum SplitType {
   PERCENTAGE
 }
 
+/// Tekrarlayan harcamanin donem araligi (ADR-051).
+///
+/// YALNIZCA IKI DEGER. "Gunluk" bir harcama uygulamasinda gercek bir ihtiyac
+/// degil (kira, abonelik, aidat aylik; temizlik/yemek haftalik); "yillik" ise
+/// bir yil boyunca bekleyen bir satir demek ve o sure icinde grubun uyeleri
+/// degisir. Ikisi de eklenebilir - eklenmemis olmasi bir eksik degil, bir
+/// karar.
+enum RecurrenceInterval {
+  WEEKLY
+  MONTHLY
+}
+
 enum ExpenseCategory {
   FOOD
   TRANSPORT
@@ -64,6 +76,13 @@ enum NotificationType {
   // alacakli birine "borcun var" diye dokunuyor. Otomatik degil - gonderen
   // her zaman bir insan.
   PAYMENT_REMINDED
+  /// Tekrarlayan bir sablondan URETILEN harcama (ADR-051). EXPENSE_ADDED'dan
+  /// AYRI cunku cumlesi farkli: kimse bugun bir sey yapmadi, tarih geldi.
+  EXPENSE_RECURRED
+  /// Tekrarlayan bir sablon SISTEM tarafindan duraklatildi - katilimcilardan
+  /// biri gruptan ayrildigi icin. Sessizce bolusum degistirmek yerine durup
+  /// haber veriyoruz.
+  RECURRING_PAUSED
   // Eskiden GROUP_INVITE idi. Bizim davetler link tabanli oldugu icin
   // "davet edildin" diye bir alici yok; anlamli olan olay katilimin kendisi.
   MEMBER_JOINED
@@ -158,14 +177,17 @@ model User {
   accounts   Account[]
   twoFactors TwoFactor[]
 
-  expenseEdits      ExpenseEdit[]     @relation("changedBy")
-  groupInvites      GroupInvite[]     @relation("invitedBy")
+  expenseEdits      ExpenseEdit[]           @relation("changedBy")
+  groupInvites      GroupInvite[]           @relation("invitedBy")
   notifications     Notification[]
   pushTokens        PushToken[]
-  receipts          ExpenseReceipt[]  @relation("receiptUploadedBy")
-  comments          ExpenseComment[]  @relation("commentAuthor")
-  remindersSent     PaymentReminder[] @relation("reminderFrom")
-  remindersReceived PaymentReminder[] @relation("reminderTo")
+  receipts          ExpenseReceipt[]        @relation("receiptUploadedBy")
+  comments          ExpenseComment[]        @relation("commentAuthor")
+  remindersSent     PaymentReminder[]       @relation("reminderFrom")
+  remindersReceived PaymentReminder[]       @relation("reminderTo")
+  recurringCreated  RecurringExpense[]      @relation("recurringCreatedBy")
+  recurringPaid     RecurringExpense[]      @relation("recurringPaidBy")
+  recurringShares   RecurringExpenseShare[] @relation("recurringShareUser")
 
   @@index([email])
 }
@@ -180,12 +202,13 @@ model Group {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  createdBy   User              @relation("GroupCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdBy   User               @relation("GroupCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   members     GroupMember[]
   expenses    Expense[]
   settlements Settlement[]
   invites     GroupInvite[]
   reminders   PaymentReminder[]
+  recurring   RecurringExpense[]
 
   @@index([createdById])
   @@index([deletedAt])
@@ -251,6 +274,15 @@ model Expense {
   // yuvarlaniyor, veritabaninda mikrosaniye duruyor. Sayac ikisini de bilmez.
   version Int @default(1)
 
+  /// Bu harcama bir SABLONDAN uretildiyse onun kimligi (ADR-051). Elle
+  /// girilen harcamalarda null.
+  ///
+  /// NEDEN DURUYOR: uretilmis bir satirin nereden geldigini soylemek,
+  /// kullanicinin "bunu ben girmedim" sorusunun tek cevabi. Ayrica sablon
+  /// silinirken uretilmislerin KALDIGINI garanti eden sey de bu bag
+  /// (onDelete: Restrict) - sablon fiziksel olarak silinemiyor.
+  recurringExpenseId String? @db.Uuid
+
   group        Group                @relation(fields: [groupId], references: [id], onDelete: Restrict)
   paidBy       User                 @relation("paidBy", fields: [paidById], references: [id], onDelete: Restrict)
   createdBy    User                 @relation("createdBy", fields: [createdById], references: [id], onDelete: Restrict)
@@ -259,6 +291,7 @@ model Expense {
   edits        ExpenseEdit[]
   receipt      ExpenseReceipt?
   comments     ExpenseComment[]
+  recurring    RecurringExpense?    @relation("generatedFrom", fields: [recurringExpenseId], references: [id], onDelete: Restrict)
 
   // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
   //   CHECK (amount > 0)
@@ -269,6 +302,7 @@ model Expense {
   @@index([groupId, deletedAt])
   @@index([expenseDate])
   @@index([paidById])
+  @@index([recurringExpenseId])
 }
 
 model ExpenseParticipant {
@@ -724,4 +758,93 @@ model PaymentReminder {
   /// Hesap silmede "bu kisiye gonderilenler" sorgusu icin. Gonderilenler
   /// yukaridaki indeksin ilk sutunlariyla zaten bulunuyor.
   @@index([toUserId])
+}
+
+/// TEKRARLAYAN HARCAMA SABLONU (ADR-051).
+///
+/// KENDISI BIR HARCAMA DEGIL: hicbir bakiyeye girmiyor. Bakiyeye giren sey,
+/// bu sablondan URETILEN Expense satirlari. Ayrimi korumak sart - sablon
+/// bakiyeye girseydi "gelecekte olacak" bir borc bugunku hesaba karisirdi.
+///
+/// PAYLAR HESAPLANMIS OLARAK SAKLANIYOR (girdi degil sonuc). Tutar sabit
+/// oldugu icin uc bolusum turunun de sonucu sabit; uretim aninda yeniden
+/// hesaplamak, sablonda GORULEN ile uretilen arasinda bir ayrisma ihtimali
+/// acardi.
+model RecurringExpense {
+  id String @id @default(uuid()) @db.Uuid
+
+  groupId     String @db.Uuid
+  /// Sablonu kuran kisi. Uretilen harcamalarin createdById'si de bu -
+  /// yani duzenleme yetkisi (ADR-009) uretilen kayitta da ayni kiside.
+  createdById String @db.Uuid
+  paidById    String @db.Uuid
+
+  description String          @db.Text
+  amount      Int
+  currency    String          @db.Char(3)
+  category    ExpenseCategory @default(OTHER)
+  splitType   SplitType
+
+  interval RecurrenceInterval
+
+  /// Ilk donemin tarihi. AYLIK ilerlemede ayin gunu BURADAN okunuyor:
+  /// 31 Ocak -> 28 Subat -> 31 Mart. nextRunOn'un gununu kullansaydik bir kez
+  /// kirpilan gun KALICI olarak kaybolurdu.
+  startsOn DateTime @db.Date
+
+  /// Bir sonraki uretimin tarihi. CIFT URETIM KORUMASI DA BU SUTUN:
+  /// uretim, "nextRunOn hala bekledigim deger mi" kosuluyla ilerletiliyor
+  /// (compare-and-set, ADR-032'nin sayaciyla ayni fikir).
+  nextRunOn DateTime @db.Date
+
+  /// Duraklatildi mi. Kullanici duraklatabiliyor; ayrica bir katilimci
+  /// gruptan ayrilirsa SISTEM duraklatiyor (sessizce bolusum degistirmek
+  /// yerine).
+  pausedAt DateTime?
+
+  /// En son ne zaman uretim yapildi. Yalnizca gosterim icin.
+  lastRunAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  createdBy User  @relation("recurringCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  paidBy    User  @relation("recurringPaidBy", fields: [paidById], references: [id], onDelete: Restrict)
+
+  shares    RecurringExpenseShare[]
+  /// Bu sablondan uretilmis harcamalar.
+  generated Expense[]               @relation("generatedFrom")
+
+  // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
+  //   CHECK (amount > 0)
+  // NOT (coklu satir toplami -> trigger):
+  //   SUM(RecurringExpenseShare.shareAmount) = RecurringExpense.amount
+
+  /// Cron'un sorgusu: "vadesi gelmis, duraklatilmamis, silinmemis".
+  @@index([nextRunOn, pausedAt, deletedAt])
+  @@index([groupId, deletedAt])
+}
+
+/// Sablonun pay satiri. ExpenseParticipant'in sablon karsiligi.
+model RecurringExpenseShare {
+  id String @id @default(uuid()) @db.Uuid
+
+  recurringExpenseId String @db.Uuid
+  userId             String @db.Uuid
+  shareAmount        Int
+  /// Yalnizca PERCENTAGE sablonlarinda dolu - ExpenseParticipant ile ayni
+  /// gerekce: "kim yuzde kac dedi" ile "kim ne kadar oder" ayri iki bilgi.
+  basisPoints        Int?
+
+  recurring RecurringExpense @relation(fields: [recurringExpenseId], references: [id], onDelete: Cascade)
+  user      User             @relation("recurringShareUser", fields: [userId], references: [id], onDelete: Restrict)
+
+  // NOT: Cascade BILEREK. Bunlar finansal kayit DEGIL - sablonun parcasi.
+  // Sablon silinince paylari da gitmeli; uretilmis harcamalar zaten kendi
+  // ExpenseParticipant satirlarini tasiyor ve onlara dokunulmuyor.
+
+  @@unique([recurringExpenseId, userId])
+  @@index([userId])
 }

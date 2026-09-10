@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { findCurrentUser } from "@/lib/auth";
 import { getGroupBalances } from "@/lib/balances";
 import { listRecentReminders } from "@/lib/reminders";
+import { listRecurringExpenses } from "@/lib/recurring";
 import { getGroupForUser, listGroupMembers } from "@/lib/groups";
 import { listExpenses } from "@/lib/expenses";
 import { listSettlements } from "@/lib/settlements";
@@ -22,6 +23,7 @@ import { GroupSummary } from "@/components/group-summary";
 import { Receipt, ReceiptLine } from "@/components/receipt";
 import { ExpenseComposer } from "@/components/expense-composer";
 import { RemindButton } from "@/components/remind-button";
+import { RecurringList } from "@/components/recurring-list";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
 
 // Renkler artik dogrudan yazilmiyor (eskiden "text-emerald-600
@@ -138,12 +140,14 @@ export default async function GroupDetailPage({
   let settlementData: Awaited<ReturnType<typeof listSettlements>>;
   let summary: Awaited<ReturnType<typeof getGroupSummary>>;
   let reminders: Awaited<ReturnType<typeof listRecentReminders>>;
+  let recurring: Awaited<ReturnType<typeof listRecurringExpenses>>;
   let openMonth: string | null;
   try {
     // getGroupSummary ve getGroupBalances ayni kisi-basi toplamlari istiyor;
     // ikisi de loadGroupTotals'i cagiriyor ve cache() sayesinde bu istekte
     // veritabanina TEK kez gidiliyor.
-    [group, balanceData, members, settlementData, summary, reminders] = await Promise.all([
+    [group, balanceData, members, settlementData, summary, reminders, recurring] =
+      await Promise.all([
       getGroupForUser(user.id, groupId),
       getGroupBalances(user.id, groupId),
       listGroupMembers(user.id, groupId),
@@ -154,6 +158,9 @@ export default async function GroupDetailPage({
       // ANDA cizilmesi gerekiyor - sonradan gelseydi dugme bir an acik
       // gorunup kapanirdi.
       listRecentReminders(user.id, groupId),
+      // Tekrarlayan harcamalar (ADR-051). Ayni paralel demette: kagidin
+      // altindaki bolumlerden biri ve fisle birlikte cizilmesi gerekiyor.
+      listRecurringExpenses(user.id, groupId),
     ]);
 
     // HARCAMALAR AYRI VE SONRA CEKILIYOR (Faz 16.2), cunku hangi ayin
@@ -523,6 +530,26 @@ export default async function GroupDetailPage({
             ))}
           </ul>
         </section>
+
+        {/* TEKRARLAYAN HARCAMALAR - kagidin altinda, fisin ICINDE DEGIL.
+            Fis olmus islerin kaydi; burasi OLACAK bir sey. Fisin icine
+            koysaydik henuz gerceklesmemis bir satir gerceklesmisler
+            arasinda dururdu ve bakiyeye girdigi sanilirdi (girmiyor). */}
+        <RecurringList
+          groupId={groupId}
+          currency={currency}
+          currentUserId={user.id}
+          initialRows={recurring.map((row) => ({
+            id: row.id,
+            description: row.description,
+            amount: row.amount,
+            interval: row.interval,
+            startsOn: row.startsOn.toISOString(),
+            nextRunOn: row.nextRunOn.toISOString(),
+            pausedAt: row.pausedAt ? row.pausedAt.toISOString() : null,
+            createdById: row.createdById,
+          }))}
+        />
 
         <section className="min-w-0">
           <SectionHead title={t("ui.settlements")} />

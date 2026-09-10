@@ -37,6 +37,7 @@ import { useSession } from "../../../lib/auth";
 import { CsvExport } from "../../../components/csv-export";
 import { ReceiptViewer } from "../../../components/receipt-viewer";
 import { ExpenseComposer } from "../../../components/expense-composer";
+import { RecurringList } from "../../../components/recurring-list";
 import {
   Receipt,
   ReceiptDoubleRule,
@@ -1303,6 +1304,19 @@ export default function GroupScreen() {
             </View>
           </View>
         ) : null}
+
+        {/* TEKRARLAYAN HARCAMALAR - kagidin altinda, fisin ICINDE DEGIL
+            (ADR-051). Fis olmus islerin kaydi; burasi OLACAK bir sey ve
+            hicbir bakiyeye girmiyor. Web'de de ayni yerde duruyor. */}
+        {/* isEmpty ILE GIZLENMIYOR ve bu bir duzeltme: bir sablon
+            kurulabilir ama grupta HENUZ harcama olmayabilir - ilk donem
+            daha uretilmemistir. Gizleseydik kullanici az once kurdugu
+            takvimi hicbir yerde goremezdi. */}
+        <RecurringList
+          groupId={groupId}
+          currency={currency}
+          currentUserId={currentUserId}
+        />
 
         {/* UYELER VE BAKIYELER. Bu da web'de fisin altinda duruyordu ve
             mobilde yoktu; veri /balances ile zaten geliyordu. Ayri bir

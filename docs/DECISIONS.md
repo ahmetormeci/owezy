@@ -530,6 +530,115 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-051 — Tekrarlayan harcama: şablon bir harcama değildir, bir takvimdir
+**Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
+
+**Karar:** Bir harcama haftalık ya da aylık tekrarlanacak şekilde kurulabilir.
+Kurulan şey bir **şablondur** — `RecurringExpense` — ve **hiçbir bakiyeye
+girmez**. Bakiyeye giren şey, günlük bir zamanlanmış işin bu şablondan
+**ürettiği** `Expense` satırlarıdır.
+
+Ayrımı korumak şart: şablon bakiyeye girseydi *gelecekte olacak* bir borç
+bugünkü hesaba karışırdı. Arayüzde de bu yüzden **fişin dışında**, kâğıdın
+altında duruyor — fiş olmuş işlerin kaydı.
+
+### Ayrı bir form yok: aynı formun bir anahtarı
+
+Tekrarlayan bir harcama, bir harcamanın **ta kendisi** artı bir dönem. Ayrı
+bir form, aynı yedi alanı ikinci kez yazmak ve ikisinin zamanla ayrışması
+demekti — biri yeni bir bölüşüm türünü tanırken diğerinin tanımaması gibi.
+Şema tarafında da aynısı: `createRecurringSchema`, `expenseBodySchema`'nın
+kendisini kullanıyor.
+
+**Düzenlemede hiç görünmüyor:** var olan bir harcamayı "artık tekrarlansın"
+yapmak, onu başka bir şeye dönüştürmek olurdu.
+
+### Paylar hesaplanmış olarak saklanıyor
+
+Şablon, girdiyi (yüzde / kesin tutar / katılımcı listesi) değil **sonucu**
+saklıyor. Tutar sabit olduğu için üç bölüşüm türünün de sonucu sabit; üretim
+anında yeniden hesaplamak, şablonda **görülen** ile üretilen arasında bir
+ayrışma ihtimali açardı. `basisPoints` yine de saklanıyor —
+`ExpenseParticipant` ile aynı gerekçe: "kim yüzde kaç dedi" ile "kim ne kadar
+öder" ayrı iki bilgi.
+
+Toplamı bir **veritabanı tetikleyicisi** bekliyor
+(`trg_recurring_share_sum_check`, `DEFERRABLE INITIALLY DEFERRED`) —
+`ExpenseParticipant`'takinin aynısı. Uygulama katmanı zaten `split.ts`'ten
+geçiyor; kısıt o kuruluşun **bozulduğunu** yakalamak için.
+
+### Katılımcılardan biri gruptan ayrıldıysa şablon DURUR
+
+Alternatif o kişiyi bölüşümden çıkarmaktı ve kabul edilemez: **parayı kimseye
+sormadan yeniden dağıtmak** demek. Ayrılan kişinin payı kalanların üzerine
+binerdi ve bunu ancak bakiyeye bakan biri fark ederdi.
+
+Şablon `pausedAt` ile duruyor ve **kuran kişiye bildirim gidiyor**. Cümlenin
+bir öznesi var: *"Ayşe gruptan ayrıldığı için tekrarlayan bir harcama
+duraklatıldı."* Sessizce durmak, bir ay sonra "kira neden girmemiş" sorusunu
+doğururdu.
+
+### Çift üretim koruması bir compare-and-set
+
+İki koşu aynı dönemi alırsa grup aynı kirayı iki kez öder. Koruma JS'te bir
+`if` değil: `nextRunOn`, **"hâlâ beklediğim değer mi"** koşuluyla
+ilerletiliyor (`updateMany` sıfır satır dönerse dönem başkası tarafından
+alınmış demektir ve transaction geri alınıyor). ADR-032'nin sürüm sayacıyla
+aynı fikir — kilidi Postgres'e yaptırıyoruz.
+
+### Yakalama: kaçırılan dönemler üretiliyor, ama sınırlı
+
+Cron bir süre çalışmadıysa `nextRunOn` birkaç dönem geride kalır. Kaçırılan
+her dönem üretiliyor — üretilen harcamanın tarihi **dönemin tarihi**, bugün
+değil, yani geçmiş dönemler doğru aya düşüyor. Çağrı başına en fazla **12**
+dönem: kendini onaran, ama tek seferde patlamayan.
+
+### Aylık dönemde ayın günü `startsOn`dan okunuyor
+
+31 Ocak'ta başlayan bir şablon Şubat'ta 28'e **kırpılıyor**. Günü bir önceki
+dönemden alsaydık Mart da 28 olurdu ve kırpılan gün **kalıcı** olarak
+kaybolurdu — "kira ayın 31'inde" diyen kullanıcının şablonu sessizce ayın
+28'ine taşınmış olurdu. Çıpa başlangıçta duruyor: 31 Oca → 28 Şub → **31
+Mar**.
+
+### Zamanlanmış iş: CRON_SECRET yoksa ÇALIŞMIYOR
+
+`/api/cron/recurring`, `CRON_SECRET` tanımlı değilse **503** dönüyor ve
+hiçbir şey üretmiyor. "Yapılandırılmamışsa serbest bırak" demek, adresi bilen
+herkesin finansal kayıt ürettirebilmesi demekti — güvenliği sonraya bırakmakla
+aynı şey (AGENTS.md, değiştirilemez kural). Sır karşılaştırması sabit sürede
+(`timingSafeEqual`).
+
+Uç **`/api/v1` altında değil**: v1 istemcilerin sözleşmesi, her ucu bir oturum
+taşıyor. Burası makineden makineye bir tetikleyici; aynı ağaçta durması, bir
+gün v1'e uygulanacak bir kuralın buraya da uygulanması anlamına gelirdi.
+
+**Bunun bir bedeli var ve açıkça yazılıyor:** `CRON_SECRET` Vercel'de
+tanımlanana kadar üretim yapılmaz. Kullanıcının yapması gereken tek şey bu.
+
+### Silme yumuşak — ve başka türlüsü mümkün değil
+
+Üretilmiş `Expense` satırları şablona işaret ediyor
+(`Expense.recurringExpenseId`, `onDelete: Restrict`). Yani "şablonu sildim ama
+geçmiş harcamalarım durdu" davranışını **şemanın kendisi** garanti ediyor.
+
+### Kapsam dışı bırakılanlar (bilinçli, geri alınabilir)
+
+| Bırakılan | Neden |
+|---|---|
+| `endsOn` (bitiş tarihi) | Duraklat + sil kapsıyor. Formu iki istemcide de küçük tutmak, mobil tarafta gerçek bir maliyet farkı |
+| Şablon düzenleme | Sil + yeniden kur. Düzenleme, "hangi dönemler eski hâliyle üretildi" sorusunu ve bir geçmiş kaydını beraberinde getirirdi |
+| Günlük / yıllık dönem | Günlük bir harcama uygulamasında gerçek bir ihtiyaç değil; yıllık ise bir yıl boyunca bekleyen bir satır demek ve o sürede grubun üyeleri değişir |
+| Şablona fiş fotoğrafı | Şablonun fotoğrafı olmaz — bağlı olduğu bir harcama yok, üretilenler ise her dönem ayrı kayıtlar |
+
+**Alternatifler:** üretimi **okuma sırasında** yapmak (bildirim temizliğinde
+kullanılan desen) — cron'suz çalışırdı ama `/balances`, `/summary` ve
+`/expenses` paralel çağrıldığı için bir isteğin ürettiğini diğeri görmeyebilir
+ve ekran bir an tutarsız kalırdı; kuruluşta ilk dönemi hemen üretmek —
+üretimin iki ayrı yolu olurdu ve ikisi zamanla ayrışırdı.
+
+---
+
 ## ADR-050 — Ödeme hatırlatması: otomatik değil, bir insanın gönderdiği bir dürtme
 **Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
 

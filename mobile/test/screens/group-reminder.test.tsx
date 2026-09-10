@@ -93,10 +93,17 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockTransfers = [{ fromUserId: DEBTOR, toUserId: ME, amount: 25000 }];
   mockReminders = [];
-  mockGet.mockResolvedValue({
-    ok: true,
-    data: { expenses: [], nextCursor: null, matches: null },
-  });
+  /**
+   * GET yola gore cevap veriyor. Tek bir govde donduren bir taklit,
+   * ekrandaki BASKA bir bolumu (tekrarlayan harcamalar) beklemedigi bir
+   * sekille besliyor ve o bolum cokuyordu - bu test dosyasi tam olarak
+   * bunu ortaya cikardi.
+   */
+  mockGet.mockImplementation(async (path: string) =>
+    path.includes("/recurring-expenses")
+      ? { ok: true, data: { recurring: [] } }
+      : { ok: true, data: { expenses: [], nextCursor: null, matches: null } },
+  );
   mockPost.mockResolvedValue({ ok: true, data: { reminder: { toUserId: DEBTOR } } });
 });
 

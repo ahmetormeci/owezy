@@ -59,6 +59,13 @@ const BODY_CODES: Record<NotificationType, MessageCode> = {
    * cevabi da yok; o kural zaten butun turler icin gecerli.
    */
   PAYMENT_REMINDED: "push.payment_reminded",
+  /**
+   * TUTAR VE ACIKLAMA YOK - butun turlerde oldugu gibi (ADR-047). Uretilen
+   * harcamanin aciklamasi kullanicinin yazdigi serbest metin; kilit
+   * ekraninda ne yazacagini kimse onceden bilemez.
+   */
+  EXPENSE_RECURRED: "push.expense_recurred",
+  RECURRING_PAUSED: "push.recurring_paused",
 };
 
 export type PendingPush = {

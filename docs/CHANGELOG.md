@@ -21,6 +21,61 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-10 — Tekrarlayan harcama
+
+Kira, abonelik, aidat: bir harcama artık haftalık ya da aylık tekrarlanacak
+şekilde kurulabiliyor. Kurulan şey bir **şablon** ve **hiçbir bakiyeye
+girmiyor** — bakiyeye giren şey günlük bir zamanlanmış işin ondan **ürettiği**
+harcamalar (ADR-051).
+
+**Ayrı bir form yok, harcama formunun bir anahtarı var.** Tekrarlayan bir
+harcama, bir harcamanın ta kendisi artı bir dönem; ayrı bir form aynı yedi
+alanı ikinci kez yazmak ve ikisinin zamanla ayrışması demekti. Şema tarafında
+da aynısı: şablon gövdesi harcama gövdesinin kendisini kullanıyor.
+
+**Katılımcılardan biri gruptan ayrılırsa şablon duruyor** ve kuran kişiye
+haber gidiyor. Alternatif o kişiyi bölüşümden çıkarmaktı — parayı kimseye
+sormadan yeniden dağıtmak demek; ayrılan kişinin payı kalanların üzerine
+binerdi ve bunu ancak bakiyeye bakan biri fark ederdi.
+
+**Çift üretim koruması bir compare-and-set**, JS'te bir `if` değil:
+`nextRunOn` "hâlâ beklediğim değer mi" koşuluyla ilerletiliyor. İki koşu aynı
+dönemi alırsa grup aynı kirayı iki kez öderdi.
+
+**Kaçırılan dönemler yakalanıyor** ve üretilen harcamanın tarihi **dönemin
+tarihi**, bugün değil — geçmiş dönemler doğru aya düşsün diye. Çağrı başına en
+fazla 12 dönem: kendini onaran ama patlamayan.
+
+**Aylık dönemde ayın günü başlangıçtan okunuyor.** 31 Ocak'ta başlayan bir
+şablon Şubat'ta 28'e kırpılıyor ama **Mart'ta 31'e dönüyor**. Günü bir önceki
+dönemden alsaydık kırpılan gün kalıcı olarak kaybolurdu.
+
+**Zamanlanmış iş, `CRON_SECRET` yoksa çalışmıyor** (503) — o uç finansal kayıt
+üretiyor ve açık kapı bırakılamaz. Karşılaştırma sabit sürede. Uç `/api/v1`
+altında değil: v1 istemcilerin sözleşmesi, burası makineden makineye bir
+tetikleyici.
+
+> **KULLANICININ YAPMASI GEREKEN TEK ŞEY:** Vercel'de `CRON_SECRET` ortam
+> değişkenini tanımlamak. Tanımlanana kadar üretim yapılmaz.
+
+**Silme yumuşak ve başka türlüsü mümkün değil:** üretilmiş harcamalar şablona
+işaret ediyor (`onDelete: Restrict`), yani "şablonu sildim ama geçmiş
+harcamalarım durdu" davranışını şemanın kendisi garanti ediyor.
+
+**Dört negatif kontrol koşuldu:** compare-and-set kaldırıldığında, ayrılan üye
+kontrolü kaldırıldığında, yakalama sınırı kaldırıldığında ve üretilen
+harcamaya bugünün tarihi yazıldığında ilgili testler düştü; geri alınınca
+yeniden geçti. Cron ucunun "sır yoksa serbest bırak" hâli de ayrıca sınandı.
+
+**Yol boyunca bulunan bir kırılganlık — testle ilgisi yoktu:** tekrarlayan
+harcama listesi, beklemediği bir yanıt gövdesi geldiğinde `rows.length`
+üzerinde patlıyor ve **bütün grup ekranını** çökertiyordu. Bir testin uydurma
+cevabı ortaya çıkardı; kusur uydurma değildi.
+
+**İkinci bulgu:** mobilde bölüm `isEmpty` ile gizleniyordu — yani şablonunu az
+önce kuran ama henüz harcaması olmayan kullanıcı, kurduğu takvimi hiçbir yerde
+göremezdi.
+
 ## 2026-09-10 — Ödeme hatırlatması
 
 Alacaklı, ödeşme planında kendisine ödemesi gereken kişiye **"Hatırlat"**

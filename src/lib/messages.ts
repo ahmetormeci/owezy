@@ -89,6 +89,19 @@ export const MESSAGES_TR = {
   "reminder.no_debt": "Bu kişinin sana ödemesi gereken bir tutar görünmüyor",
   "reminder.too_soon": "Aynı kişiye {hours} saatte bir hatırlatabilirsin",
 
+  // Tekrarlayan harcama (ADR-051)
+  "recurring.not_found": "Tekrarlayan harcama bulunamadı",
+  "recurring.already_paused": "Bu tekrarlayan harcama zaten duraklatılmış",
+  "recurring.not_paused": "Bu tekrarlayan harcama zaten çalışıyor",
+  "access.recurring_creator_only":
+    "Bu tekrarlayan harcamayı yalnızca kuran kişi değiştirebilir",
+  /**
+   * KULLANICI BUNU HIC GORMEZ - zamanlanmis is bir insana degil Vercel'e
+   * cevap veriyor. Sozlukte olmasinin sebebi: butun hata kodlari ayni yerden
+   * geciyor ve tipi MessageCode; buraya yazilmayan bir kod DERLENMIYOR.
+   */
+  "cron.not_configured": "Zamanlanmış iş yapılandırılmamış",
+
   // Arayuz
   "ui.receipt": "Fiş",
   "ui.comments": "Yorumlar",
@@ -480,6 +493,33 @@ export const MESSAGES_TR = {
   "ui.reminded": "Hatırlatıldı",
   "ui.reminder_sent": "Hatırlatma gönderildi",
   "ui.reminder_failed": "Hatırlatma gönderilemedi",
+
+  // --- Tekrarlayan harcama (ADR-051) ---
+  "ui.recurring": "Tekrarlayan harcamalar",
+  "ui.repeat_this": "Bunu tekrarla",
+  "ui.how_often": "Ne sıklıkla",
+  "ui.save_recurring": "Tekrarlayan olarak kaydet",
+  /**
+   * FORMDAKI ACIKLAMA. Tekrarlayan bir harcama kurmak, GELECEKTEKI kayitlara
+   * onay vermek demek - ne olacagini onceden yazmak sart.
+   */
+  "ui.repeat_hint":
+    "Aynı harcama seçtiğin aralıkla kendiliğinden eklenir. Bölüşüm ve ödeyen aynı kalır; istediğin zaman duraklatabilir ya da silebilirsin.",
+  "ui.repeat_weekly": "Haftalık",
+  "ui.repeat_monthly": "Aylık",
+  "ui.repeat_starts": "Başlangıç",
+  "ui.repeat_next": "Sonraki",
+  "ui.repeat_paused": "Duraklatıldı",
+  "ui.pause": "Duraklat",
+  "ui.resume": "Devam ettir",
+  "ui.recurring_delete_question": "Bu tekrarlayan harcama silinsin mi?",
+  "ui.recurring_delete_hint":
+    "Şimdiye kadar üretilmiş harcamalar grupta kalır. Yalnızca tekrar durur.",
+  "ui.recurring_saved": "Tekrarlayan harcama kuruldu",
+  "ui.recurring_failed": "Tekrarlayan harcama kurulamadı",
+  "ui.recurring_changed": "Tekrarlayan harcama güncellendi",
+  "ui.recurring_deleted": "Tekrarlayan harcama silindi",
+  "ui.no_recurring": "Henüz tekrarlayan bir harcama yok.",
   "ui.members_and_balances": "Üyeler ve bakiyeler",
   "ui.manage_members": "Üyeleri yönet",
 
@@ -759,6 +799,14 @@ export const MESSAGES_TR = {
   "ui.notif_member_joined": "{actor} gruba katıldı",
   "ui.notif_expense_commented": "{actor} bir harcamaya yorum yaptı",
   "ui.notif_payment_reminded": "{actor} ödemeni hatırlattı",
+  /**
+   * {actor} YOK ve bu bilincli: bugun kimse bir sey yapmadi, TARIH GELDI.
+   * "Ali yeni bir harcama ekledi" demek, Ali uyurken olan bir sey icin onu
+   * fail gostermek olurdu.
+   */
+  "ui.notif_expense_recurred": "Tekrarlayan bir harcama eklendi",
+  "ui.notif_recurring_paused":
+    "{actor} gruptan ayrıldığı için tekrarlayan bir harcama duraklatıldı",
 
   /**
    * TELEFONA GIDEN bildirimin metni. Ustteki "ui.notif_*" ile AYNI OLAY,
@@ -792,6 +840,8 @@ export const MESSAGES_TR = {
    * duran bir cumle olurdu.
    */
   "push.payment_reminded": "Bir ödeme hatırlatması var",
+  "push.expense_recurred": "Tekrarlayan bir harcama eklendi",
+  "push.recurring_paused": "Tekrarlayan bir harcama duraklatıldı",
 
   // Bildirimler ekranindaki izin satiri.
   "ui.appearance": "Görünüm",
@@ -887,6 +937,13 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "reminder.self": "You cannot remind yourself",
   "reminder.no_debt": "This person does not appear to owe you anything",
   "reminder.too_soon": "You can remind the same person once every {hours} hours",
+
+  "recurring.not_found": "This recurring expense could not be found",
+  "recurring.already_paused": "This recurring expense is already paused",
+  "recurring.not_paused": "This recurring expense is already running",
+  "access.recurring_creator_only":
+    "Only the person who set up this recurring expense can change it",
+  "cron.not_configured": "The scheduled job is not configured",
 
   "ui.receipt": "Receipt",
   "ui.comments": "Comments",
@@ -1168,6 +1225,28 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.reminded": "Reminded",
   "ui.reminder_sent": "Reminder sent",
   "ui.reminder_failed": "The reminder could not be sent",
+
+  "ui.recurring": "Recurring expenses",
+  "ui.repeat_this": "Repeat this",
+  "ui.how_often": "How often",
+  "ui.save_recurring": "Save as recurring",
+  "ui.repeat_hint":
+    "The same expense is added again on the interval you choose. The split and the payer stay the same; you can pause or delete it whenever you like.",
+  "ui.repeat_weekly": "Weekly",
+  "ui.repeat_monthly": "Monthly",
+  "ui.repeat_starts": "Starts",
+  "ui.repeat_next": "Next",
+  "ui.repeat_paused": "Paused",
+  "ui.pause": "Pause",
+  "ui.resume": "Resume",
+  "ui.recurring_delete_question": "Delete this recurring expense?",
+  "ui.recurring_delete_hint":
+    "Expenses already created stay in the group. Only the repetition stops.",
+  "ui.recurring_saved": "Recurring expense set up",
+  "ui.recurring_failed": "The recurring expense could not be set up",
+  "ui.recurring_changed": "Recurring expense updated",
+  "ui.recurring_deleted": "Recurring expense deleted",
+  "ui.no_recurring": "No recurring expenses yet.",
   "ui.summary_total": "Total",
   "ui.summary_your_share": "Your share",
   "ui.summary_expense_count": "Expenses",
@@ -1404,6 +1483,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.notif_member_joined": "{actor} joined the group",
   "ui.notif_expense_commented": "{actor} commented on an expense",
   "ui.notif_payment_reminded": "{actor} reminded you about a payment",
+  "ui.notif_expense_recurred": "A recurring expense was added",
+  "ui.notif_recurring_paused":
+    "A recurring expense was paused because {actor} left the group",
 
   "push.expense_added": "A new expense was added",
   "push.expense_updated": "An expense was updated",
@@ -1413,6 +1495,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "push.member_joined": "Someone joined the group",
   "push.expense_commented": "Someone commented on an expense",
   "push.payment_reminded": "There is a payment reminder",
+  "push.expense_recurred": "A recurring expense was added",
+  "push.recurring_paused": "A recurring expense was paused",
 
   "ui.appearance": "Appearance",
   "ui.theme_system": "System",

@@ -104,6 +104,23 @@ export default defineConfig({
        * geciliyor.
        */
       RESEND_API_KEY: "",
+      /**
+       * ZAMANLANMIS ISIN SIRRI - E2E'YE OZGU BIR DEGER (ADR-051).
+       *
+       * NEDEN BURADA: /api/cron/recurring, CRON_SECRET tanimli DEGILSE
+       * calismayi REDDEDIYOR (503) ve bu bilincli - o uc finansal kayit
+       * uretiyor, acik kapi birakilamaz. Testin uretimi gorebilmesi icin
+       * sunucunun bir sirri olmali.
+       *
+       * .env.local'a KONMADI: o dosyayi yalnizca kullanici duzenliyor ve
+       * bu deger yalnizca test sunucusunu ilgilendiriyor. Uretimdeki deger
+       * Vercel'de duruyor; ikisinin ayni olmasi gerekmiyor, olmamali da.
+       *
+       * DEGERIN GIZLI OLMASI GEREKMIYOR: bu sunucu yalnizca test kosusu
+       * boyunca ve yalnizca localhost'ta yasiyor. Onemli olan VARLIGI -
+       * testler yetki yolunun kendisini de geciyor.
+       */
+      CRON_SECRET: "e2e-cron-secret",
     },
   },
 });
