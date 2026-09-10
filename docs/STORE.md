@@ -250,6 +250,7 @@ Aynı gönderimde açıklamaya girmesi gerekenler:
 - tekrarlayan harcama (kira, abonelik)
 - harcamaya yorum
 - fiş fotoğrafı — 1.0.3'te geldi, açıklamada **hiç geçmiyor**
+- fişten tutar okuma (cihazda; fotoğraf hiçbir yere gitmiyor)
 
 **Açıklamada bildirimle ilgili yanlış bir cümle YOK** — ölçüldü, push
 metinde hiç geçmiyor. Yani destek sayfasındaki tuzağın eşi burada

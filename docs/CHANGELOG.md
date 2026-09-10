@@ -21,6 +21,61 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-10 — Fiş fotoğrafından tutar okuma
+
+Fiş fotoğrafı eklendiğinde tutar alanı kendiliğinden doluyor. Okuma
+**cihaz üzerinde** yapılıyor — iOS'ta Apple Vision, Android'de ML Kit;
+fotoğraf OCR için hiçbir yere gönderilmiyor (ADR-053).
+
+**Bu madde aynı gün "yapılmayacak" diye kapatılmıştı.** Gerekçe "ücretli
+dış servis + yeni gizlilik beyanı + elimizde olmayan bir anahtar"dı ve
+yalnızca bulut çözümü düşünüldüğü için doğru görünüyordu. Ölçünce
+gerekçenin üç maddesi birden düştü: cihazda çalışan, MIT lisanslı, güncel
+bir Expo modülü var. **Gizlilik politikası ve App Privacy beyanı aynı
+kaldı** — yeni bir veri işleyici yok.
+
+Ders OCR'dan bağımsız: bir madde "pahalı" diye listeden düşerken, pahalı
+olanın madde mi yoksa aklımızdaki tek çözüm mü olduğu sorulmalı.
+
+**Asıl iş metni tanımak değil, anlamak.** Bir fişin üzerinde tutar
+görünümlü on tane sayı var: ara toplam, KDV, nakit, para üstü, indirim,
+tarih, saat, vergi numarası, fiş no, adet. Mantık bu yüzden saf bir modülde
+(`src/lib/receipt-amount.ts`) duruyor ve native derlemeye hiç dokunmadan,
+gerçek fiş metinleriyle sonuna kadar sınandı.
+
+**"ARA TOPLAM" en tehlikelisi:** içinde "TOPLAM" geçtiği için etiket
+eşleşmesini geçiyor. Eleme listesi olmasa her fişte vergiden önceki tutar
+yazılırdı — sessizce, hep eksik. Negatif kontrolde tam olarak bu oldu:
+gerçek market fişinde `366,68` yerine `400,00` (nakit) seçildi.
+
+**Yedek yolda kuruş zorunlu.** Etiket bulunamazsa kuruşu yazan en büyük
+sayı alınıyor; şart olmasa yıl (2026), vergi numarası ve adet seçilirdi.
+
+**Float'a hiç dönülmüyor:** tam sayı ve kuruş parçaları metin olarak
+ayrılıp `tamsayı × 100 + kuruş` diye kuruluyor.
+
+**Kullanıcının yazdığını asla ezmiyor.** Okuma yalnızca alan boşken
+konuşuyor — kategori tahmininin kuralının aynısı (ADR-028). Okuma birkaç
+saniye sürüyor ve kullanıcı o sırada yazmış olabilir, bu yüzden kapanışta
+bir ref okunuyor; yoksa yazdığı sessizce ezilirdi.
+
+**Okunduğu söyleniyor, ve iki okuma ayrı cümlelerle:** "Fişteki toplamdan
+okundu" ile "Fişten okundu — kontrol et". Zayıf tahmini güçlü gibi
+göstermek, kontrol etmeden kaydetmeye davet olurdu.
+
+**Tam parite bu maddede bilerek bozuldu:** web'de fiş okuma yok. Karşılığı,
+fişi üçüncü bir tarafa hiç göndermemek — fişin üzerinde isim, adres, kartın
+son haneleri olabilir.
+
+**Altı negatif kontrol koşuldu:** eleme listesi, üç-basamak-binlik kuralı,
+yedek yoldaki kuruş şartı, etiket sıralaması, yazılanı ezme koruması ve
+"okundu" ipucu — her biri kırıldığında ilgili test düştü, geri alınınca
+geçti.
+
+**Not:** modül native, yani Expo Go'da çalışmıyor. Gerçek cihazda ilk kez
+bir sonraki build'de görülecek; o güne kadar doğrulanan şey mantığın
+kendisi ve ekranın davranışı.
+
 ## 2026-09-10 — Kalem kalem bölüşüm
 
 Restoran hesabı gibi harcamalar artık kalem kalem bölüşülebiliyor: kalemleri

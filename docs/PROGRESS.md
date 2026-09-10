@@ -8,7 +8,7 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 45 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
+**Özet:** 46 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
 yayında** (mağazada 1.0.2, 8 Eylül 2026) — web zaten canlıydı, artık iki
 istemci de kullanıcıya açık. Faz 41'in kağıt & petrol tasarım yönü iki
 istemcide de uygulandı ama **henüz kullanıcıya ulaşmadı**: mağazadaki 1.0.2 de
@@ -18,9 +18,9 @@ CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim — kök (Vitest) | 716 | ✅ tümü geçiyor |
+| Birim — kök (Vitest) | 742 | ✅ tümü geçiyor |
 | Birim — mobil (Vitest) | 86 | ✅ tümü geçiyor |
-| Ekran — mobil (jest-expo) | 77 | ✅ tümü geçiyor |
+| Ekran — mobil (jest-expo) | 83 | ✅ tümü geçiyor |
 | E2E (Playwright) | 61 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
 | `npm run lint` | — | ✅ temiz (kök + mobil) |
@@ -2453,6 +2453,47 @@ kurulup düzenlendi ve kalemlerin düzenlemeden sonra da durduğu doğrulandı.
 
 ---
 
+## Faz 46 — Fişten tutar okuma · **BİTTİ, HİÇBİR CİHAZDA GÖRÜLMEDİ**
+
+Fiş fotoğrafı eklenince tutar alanı kendiliğinden doluyor. Dört maddenin
+**atlanmış olanı** — ve atlanma gerekçesi aynı gün ölçülüp çürütüldü.
+
+| | |
+|---|---|
+| Nerede çalışıyor | **Cihaz üzerinde** — iOS Apple Vision, Android ML Kit |
+| Paket | `expo-text-extractor` 2.0.0, MIT |
+| Mantık | `src/lib/receipt-amount.ts` — saf, native derleme gerektirmeden sınanıyor |
+| Arayüz | Yalnızca mobil, harcama ekleme ekranı |
+| Gizlilik | Politika ve App Privacy **değişmedi** — yeni veri işleyici yok |
+
+**Sabah "yapılmayacak" denmişti** ve gerekçe ("ücretli servis + yeni beyan
++ anahtar yok") yalnızca **bulut** çözümü düşünüldüğü için doğru
+görünüyordu. Cihaz üzerinde çalışan bir yol bulununca üç maddesi birden
+düştü. Ders OCR'dan bağımsız ve ADR-053'te yazılı.
+
+**Asıl iş tanımak değil anlamak:** bir fişte tutar görünümlü on sayı var.
+"ARA TOPLAM" en tehlikelisi — içinde "TOPLAM" geçtiği için etiket
+eşleşmesini geçiyor; eleme listesi olmasa her fişte vergiden önceki tutar
+yazılırdı.
+
+**Kullanıcının yazdığını asla ezmiyor** (ADR-028'in kuralı) ve okunduğunu
+söylüyor — zayıf tahmin için **ayrı bir cümle** kuruyor.
+
+**Tam parite bu maddede bilerek bozuldu:** web'de yok. Karşılığı fişi
+üçüncü bir tarafa hiç göndermemek.
+
+**Altı negatif kontrol koşuldu**, hepsi düştü ve geri alınca geçti.
+
+**AÇIK KALAN TEK ŞEY:** modül native, Expo Go'da çalışmıyor. Gerçek cihazda
+ilk kez bir sonraki build'de görülecek — SDK 57 ile derlenip derlenmediği
+o zaman belli olacak. Bugüne kadar doğrulanan şey mantık ve ekran
+davranışı.
+
+**Test:** 742 kök birim (+26), 83 mobil ekran (+6).
+**Commit:** `<COMMIT>`
+
+---
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
@@ -2460,10 +2501,14 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Fiş OCR** | Fotoğraf zaten var. Dış servis = **ücretli** + gizlilik/App Privacy yeniden. **10 Eylül'de kullanıcı bunu bilerek ATLADI**: anahtar olmadan gerçek istek/cevap bir kez bile ölçülemez, yani doğrulanmamış kod yazılmış olurdu |
 | **Profil fotoğrafı** | Fiş fotoğrafıyla aynı depo ve arayüz; uç henüz yok |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
+> **Fiş OCR listeden çıktı (10 Eylül, Faz 46)** — ve listedeki gerekçe
+> **çürüdü**: "ücretli dış servis + yeni beyan" yalnızca bulut çözümü
+> düşünüldüğü için doğruydu. Cihaz üzerinde çalışan bir yol bulununca üç
+> maddesi birden düştü (ADR-053). Aynı gün hem atlandı hem yapıldı.
+>
 > **Kalem kalem bölüşüm listeden çıktı (10 Eylül, Faz 45)** — ve "küsurat
 > değişmezi iki katmanda korunmalı" notu doğru çıktı: hesap iki katmanlı ve
 > her iki katman da tam (ADR-052).

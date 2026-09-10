@@ -125,6 +125,17 @@ export const MESSAGES_TR = {
   "ui.no_receipt": "Bu harcamaya fiş eklenmemiş.",
   "ui.add_receipt": "Fiş ekle",
   "ui.replace_receipt": "Değiştir",
+  // Fisten tutar okuma (ADR-053). Okuma CIHAZDA yapiliyor; fotograf
+  // hicbir yere gitmiyor.
+  "ui.reading_receipt": "Fiş okunuyor…",
+  /**
+   * IKI AYRI CUMLE, cunku iki okuma AYNI GUCTE DEGIL. Etiketli olan
+   * fisin "TOPLAM" satirindan geliyor; digeri yalnizca en buyuk kuruslu
+   * sayi. Ikisini tek cumleyle anlatmak, zayif tahmini guclu gibi
+   * gostermek olurdu.
+   */
+  "ui.amount_from_total": "Fişteki toplamdan okundu",
+  "ui.amount_from_receipt": "Fişten okundu — kontrol et",
   "ui.remove_receipt": "Fişi kaldır",
   "ui.remove_receipt_question": "Fiş kaldırılsın mı?",
   "ui.take_photo": "Fotoğraf çek",
@@ -986,6 +997,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.no_receipt": "No receipt is attached to this expense.",
   "ui.add_receipt": "Add a receipt",
   "ui.replace_receipt": "Replace",
+  "ui.reading_receipt": "Reading the receipt…",
+  "ui.amount_from_total": "Read from the receipt total",
+  "ui.amount_from_receipt": "Read from the receipt — check it",
   "ui.remove_receipt": "Remove receipt",
   "ui.remove_receipt_question": "Remove the receipt?",
   "ui.take_photo": "Take a photo",

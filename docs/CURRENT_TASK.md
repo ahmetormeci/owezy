@@ -44,6 +44,11 @@ Current task:
     Faz 43  odeme hatirlatmasi   BITTI  (ADR-050)  cbfb887  CI yesil
     Faz 44  tekrarlayan harcama  BITTI  (ADR-051)  503ad2e  CI yesil
     Faz 45  kalem kalem bolusum  BITTI  (ADR-052)  b271e56
+    Faz 46  fisten tutar okuma   BITTI  (ADR-053)  <bu commit>
+
+  FIS OCR SONRADAN YAPILDI - sabah atlanmisti. Gerekce ("ucretli servis")
+  YALNIZCA BULUT cozumu dusunuldugu icin dogruydu; cihaz uzerinde calisan
+  bir yol bulununca uc maddesi birden dustu. Ayrintisi ADR-053.
 
   IKI YENI MOBIL EKRAN SIMULATORDE GORULDU (10 Eylul, acik ve koyu tema):
     - grup ekranindaki "Tekrarlayan harcamalar" bolumu
@@ -56,7 +61,26 @@ Current task:
   (belirtec expo-secure-store'da). Kalmasaydi bakilamazdi - tek seferlik
   kod bir kimlik dogrulama kodudur ve forma yazilmasi yasak.
 
-  >>> BU MADDE KAPANDI (10 Eylul). Asagisi NASIL KAPANDIGININ kaydi. <<<
+  >>> BU COMMIT'TE YARIM KALAN TEK SEY: TAM E2E KOSUSU <<<
+
+  Faz 46 commit'lenirken tam E2E kosusu ARKA PLANDA SURUYORDU (16/62'de
+  birakildi, hepsi yesildi). Sonucu OKUNMADI.
+
+  NEDEN MUHTEMELEN YESIL: web tarafinda HICBIR dosya degismedi.
+  src/lib/receipt-amount.ts YENI ve web onu import ETMIYOR (olculdu);
+  src/lib/messages.ts 14 EKLEME 0 SILME. Yani E2E'nin gordugu web
+  davranisi bir onceki yesil kosuyla ayni.
+
+  YINE DE KOSULACAK - bu proje "supheliyse tam kosu" diyor ve iddiayi
+  olcmeden kabul etmek tam da bugun iki kez hataya goturen sey oldu:
+      npm run test:e2e
+  Beklenen: 61 passed (+1 bilerek atlanan).
+
+  BU COMMIT PUSH EDILMEDI. Kod commit'i ve kullanicinin bu faz icin push
+  izni YOK - uc maddelik serinin izni Faz 43-45'e aitti. E2E yesilse ve
+  kullanici isterse push edilecek.
+
+  >>> CRON_SECRET MADDESI KAPANDI (10 Eylul). Asagisi kaydi. <<<
 
   VERCEL'DE "CRON_SECRET" ORTAM DEGISKENI TANIMLANDI VE DOGRULANDI.
 
@@ -109,6 +133,13 @@ Current task:
   route.ts sonunda "[cron/recurring] {...}" satiri. Icinde KISISEL VERI YOK,
   yalnizca uc sayi - push'a koymadigimizi (ADR-047) loga da koymuyoruz.
   Oncesinde basarili bir kosu arkasinda hicbir kayit birakmiyordu.
+
+  FIS OCR ICIN ACIK KALAN: modul NATIVE, Expo Go'da CALISMIYOR. Gercek
+  cihazda ilk kez bir sonraki build'de gorulecek; SDK 57 ile derlenip
+  derlenmedigi o zaman belli olacak. Bugune kadar dogrulanan sey mantik
+  (saf modul, 26 test) ve ekranin davranisi (6 ekran testi).
+  expo-doctor: 21 kontrolun 20'si gecti, dusen tek kontrol bilinen
+  CocoaPods maddesi - yeni paket bir sey bozmadi.
 
   BEKLEYEN TEK SEY KALDI: gercek bir sablonun gercekten uretim yaptigini
   gormek. Iki dakikalik yolu: web'de "Bunu tekrarla" ile bir harcama kur
@@ -673,8 +704,8 @@ AKILDA TUTULACAKLAR:
   dokunan her betik once OKUYUP saymali, sonra yazmali.
 
 TESTLER - NE NEREDE (10 Eylul'de kosuldu):
-  KOK      npm test                  716 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      86 vitest + 77 jest
+  KOK      npm test                  742 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      86 vitest + 83 jest
   E2E      npm run test:e2e           61 test, ~15 dk  (+1 BILEREK atlanan:
            two-factor.spec.ts'teki 2FA kopru testi, oteden beri skip)
 

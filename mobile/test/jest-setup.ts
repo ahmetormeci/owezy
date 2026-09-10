@@ -17,6 +17,24 @@ jest.mock("expo-secure-store", () =>
 );
 
 /**
+ * expo-text-extractor NATIVE: Node'da yuklenemiyor ("Cannot find native
+ * module 'ExpoTextExtractor'") - expo-secure-store ile ayni sebep.
+ *
+ * TAKLIDIN VARSAYILANI BOS DIZI: yani "fiste okunacak bir sey bulunamadi".
+ * Boylece fisle ilgili MEVCUT testler OCR'dan hic etkilenmiyor; okumayi
+ * sinamak isteyen test mockExtractTextFromImage'i kendisi dolduruyor.
+ *
+ * Adi "mock" ile basliyor cunku jest.mock fabrikasi disaridaki
+ * degiskenlere ancak bu on ekle erisebiliyor.
+ */
+export const mockExtractTextFromImage = jest.fn(async (_uri: string): Promise<string[]> => []);
+
+jest.mock("expo-text-extractor", () => ({
+  isSupported: true,
+  extractTextFromImage: (uri: string) => mockExtractTextFromImage(uri),
+}));
+
+/**
  * expo-router'in yonlendirmesi. Testler "hangi adrese gidildi" sorusunu
  * sormak istiyor; gercek router bir navigasyon agaci kurmayi bekliyor ve o
  * agac bu testlerin konusu degil.

@@ -530,6 +530,103 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-053 — Fiş OCR cihazda yapılır; bulut, ödemediğimiz bir bedel değil, ödemeyi seçmediğimiz bir bedeldi
+**Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
+
+**Karar:** Fişten tutar okuma **cihaz üzerinde** yapılıyor
+(`expo-text-extractor` → iOS'ta Apple Vision, Android'de ML Kit).
+Fotoğraf OCR için **hiçbir yere gönderilmiyor**.
+
+### Bu karar bir kez ters yönde verilmişti
+
+10 Eylül sabahı fiş OCR, "ücretli dış servis + yeni gizlilik/App Privacy
+beyanı + elimde olmayan bir API anahtarı" gerekçesiyle **atlandı** — ve o
+gerekçe, **yalnızca bulut çözümü düşünüldüğü için** doğru görünüyordu. Aynı
+gün ölçüldü: cihaz üzerinde çalışan, MIT lisanslı, güncel bir Expo modülü
+var. Onunla birlikte gerekçenin üç maddesinden **üçü birden düşüyor**.
+
+Ders, OCR'dan bağımsız: *"pahalı"* bir maddeyi listeden düşürmeden önce,
+pahalı olanın **madde mi yoksa aklımızdaki tek çözüm mü** olduğu
+sorulmalıydı.
+
+### Cihazda olmasının bedeli sıfır değil — ama ödediği yer başka
+
+| | Bulut | Cihaz |
+|---|---|---|
+| Ücret | aylık fatura | yok |
+| Yeni veri işleyici | **var** → gizlilik politikası + App Privacy değişir | **yok**, ikisi de aynı kalır |
+| Doğruluk | yüksek, yapılandırılmış alan döner | düşük, düz metin |
+| Web | çalışır | **çalışmaz** |
+| Doğrulanabilirlik | anahtar bizde olmadığı için gerçek istek/cevap **ölçülemez** | mantığı saf fonksiyonda, sonuna kadar ölçülür |
+
+**Tam parite bu maddede bilerek bozuldu.** Web'de fiş okuma yok. Karşılığı,
+kullanıcının fişini üçüncü bir tarafa hiç göndermemek — fişin üzerinde isim,
+adres, kartın son haneleri olabilir ve mağaza açıklaması bugün *"Owezy
+hesabındaki verileri yalnızca uygulamayı çalıştırmak için kullanır"* diyor.
+O cümleyi korumak, web'de bir kolaylıktan değerliydi.
+
+### Asıl iş tanımak değil, ANLAMAK
+
+Modül düz metin döndürüyor. Zor olan kısım, bir fişin üzerindeki **on tane
+tutar görünümlü sayıdan** doğru olanı seçmek: ara toplam, KDV, nakit, para
+üstü, indirim, tarih, saat, vergi numarası, fiş no, adet.
+
+Bu yüzden mantık `src/lib/receipt-amount.ts`'te **saf bir modül** olarak
+duruyor: girdisi metin satırları, çıktısı kuruş. Native derleme olmadan
+sonuna kadar sınanabiliyor — nitekim native tarafa dokunulmadan önce
+sınandı.
+
+**İki yol, ve aralarındaki fark bilinçli:**
+
+1. **Etiketli.** "TOPLAM 342,50" gibi bir satır. Kuruş **zorunlu değil**.
+2. **Yedek.** Etiket yoksa, **kuruşu yazan** en büyük sayı. Kuruş şartı
+   burada zorunlu ve eleyici gücü yüksek: yıl, vergi numarası, adet, saat
+   ve barkod böyle eleniyor. Fiş toplamı neredeyse her zaman kuruşuyla
+   basılıyor.
+
+**"ARA TOPLAM" listenin en önemli maddesi:** içinde "TOPLAM" geçtiği için
+etiket eşleşmesini geçiyor. Eleme listesi olmasa her fişte vergiden önceki
+tutar yazılırdı — sessizce, hep eksik. Aynı liste "NAKİT"i de eliyor; o,
+müşterinin verdiği para ve toplamdan **büyük** olabilir.
+
+**Float'a hiç dönülmüyor.** Tam sayı ve kuruş parçaları metin olarak
+ayrılıp `tamsayı × 100 + kuruş` diye kuruluyor — "para kuruş cinsinden tam
+sayıdır" kuralı (AGENTS.md) burada da geçerli.
+
+**Ayırıcı belirsizliği** son ayırıcıdan sonraki basamak sayısıyla çözülüyor:
+3 basamak binlik (`1.234` = 1234), 1–2 basamak ondalık, diğeri reddediliyor.
+`10.09.2026` bu kuralla tarih olarak eleniyor.
+
+### Yazılanı asla ezmiyor
+
+Okuma yalnızca tutar alanı **boşken** konuşuyor — kategori tahmininin
+(ADR-028) kuralının aynısı. Okuma birkaç saniye sürüyor ve kullanıcı o
+sırada yazmış olabilir; bu yüzden kapanışta `amountText` değil bir **ref**
+okunuyor. Aksi hâlde kullanıcının yazdığı tutar sessizce ezilirdi ve
+kullanıcı kendi yazdığını gördüğünü sandığı için fark etmezdi.
+
+**Okunduğu söyleniyor**, ve iki okuma **ayrı cümlelerle**: etiketli olan
+"Fişteki toplamdan okundu", yedek olan "Fişten okundu — kontrol et".
+Zayıf tahmini güçlü gibi göstermek, kontrol etmeden kaydetmeye davet olurdu.
+
+**Hiçbir hata yukarı çıkmıyor.** OCR bir kolaylık: desteklenmiyorsa,
+okunamıyorsa ya da modül patlarsa kullanıcı tutarı elle yazmaya devam
+ediyor. Hata göstermek, olmayan bir arızayı varmış gibi sunmak olurdu.
+
+### Kapsam dışı (bilinçli)
+
+| Bırakılan | Neden |
+|---|---|
+| Tarih, satıcı adı, kalemler | Kullanıcının OCR'dan beklediği tek şey tutarı tekrar yazmamak. Fazlası, doğruluğu düşük ve kontrol ettirilmesi gereken daha çok alan |
+| Web'de OCR | Cihaz üzerinde çalışan bir şeyin sunucuda karşılığı yok; bulut demek, kaçındığımız bedeli ödemek demekti |
+| Fiş ekranından okuma | Var olan bir harcamaya fiş eklerken tutar zaten girilmiş |
+
+**Alternatifler:** bulut OCR (yukarıdaki tablo); hiç yapmamak — değeri "üç
+saniyelik yazmayı kaldırmak" olduğu için savunulabilirdi, ama cihazda
+maliyeti yalnızca bir modül olunca denge değişti.
+
+---
+
 ## ADR-052 — Kalem kalem bölüşüm: kalemler bir GİRDİ katmanıdır, bakiyeye giren şey yine paylar
 **Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
 

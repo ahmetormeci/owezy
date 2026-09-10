@@ -1,6 +1,6 @@
 import { fonts } from "../../../../lib/fonts";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -21,9 +21,11 @@ import {
   EXPENSE_SPLIT_TYPE_SHORT_CODES,
 } from "@/lib/expense-labels";
 import { guessCategory } from "@/lib/expense-category-guess";
+import { guessReceiptAmount } from "@/lib/receipt-amount";
+import { extractTextFromImage, isSupported as ocrSupported } from "expo-text-extractor";
 import { splitEqually } from "@/lib/split";
 import { Field, SelectField } from "../../../../components/field";
-import { formatMoney, parseMoney } from "@/lib/money";
+import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
 import { useTheme, type Theme } from "../../../../lib/theme";
@@ -143,6 +145,13 @@ export default function NewExpenseScreen() {
    */
   const [savedExpenseId, setSavedExpenseId] = useState<string | null>(null);
 
+  /**
+   * FISTEN OKUNAN TUTARIN NEREDEN GELDIGI (ADR-053). null ise okuma
+   * yapilmadi ya da bir sey bulunamadi.
+   */
+  const [readFrom, setReadFrom] = useState<"labelled" | "largest" | null>(null);
+  const [reading, setReading] = useState(false);
+
   async function chooseReceipt(source: "camera" | "library") {
     const picked = await pickReceipt(source);
     if (picked.kind === "cancelled") return;
@@ -152,6 +161,45 @@ export default function NewExpenseScreen() {
     }
     setError(null);
     setReceiptUri(picked.uri);
+    void readAmountFromReceipt(picked.uri);
+  }
+
+  /**
+   * Fisi CIHAZDA okur ve tutar alanini doldurur (ADR-053).
+   *
+   * FOTOGRAF HICBIR YERE GITMIYOR: expo-text-extractor iOS'ta Apple
+   * Vision, Android'de ML Kit kullaniyor ve ikisi de cihaz uzerinde
+   * calisiyor. Bu yuzden yeni bir veri isleyici yok - gizlilik politikasi
+   * ve App Privacy beyani AYNI kaliyor.
+   *
+   * YAZILANI ASLA EZMIYOR. Kategori tahmininin (ADR-028) kuralinin
+   * aynisi: tahmin ancak alan BOSKEN konusuyor. Kullanici tutari yazip
+   * sonra fis eklerse yazdigi kalir - eziliyor olsaydi bu, sessizce
+   * yanlis bir harcama demekti.
+   *
+   * HICBIR HATA YUKARI CIKMIYOR. OCR bir kolaylik; desteklenmiyorsa,
+   * fotograf okunamiyorsa ya da modul patlarsa kullanici tutari elle
+   * yazmaya devam ediyor. Bunun icin bir hata gostermek, olmayan bir
+   * arizayi varmis gibi sunmak olurdu.
+   */
+  async function readAmountFromReceipt(uri: string) {
+    if (!ocrSupported) return;
+    if (amountText.trim() !== "") return;
+
+    setReading(true);
+    try {
+      const lines = await extractTextFromImage(uri);
+      const guess = guessReceiptAmount(lines);
+      // Okuma sirasinda kullanici yazmis olabilir - o zaman susuyoruz.
+      if (guess && amountTextRef.current.trim() === "") {
+        setAmountText(formatMoneyForInput(guess.amount, locale));
+        setReadFrom(guess.source);
+      }
+    } catch {
+      // Yukaridaki gerekce.
+    } finally {
+      setReading(false);
+    }
   }
 
   /**
@@ -194,6 +242,16 @@ export default function NewExpenseScreen() {
   // hizli ekleyicide degistiremiyordu ve bu ekranin varlik sebeplerinden biri o.
   const payer = paidById ?? currentUserId;
   const amount = parseMoney(amountText);
+
+  /**
+   * TUTAR ALANININ GUNCEL HALI, REF'TE. Fis okuma birkac saniye suruyor
+   * ve o sirada kullanici tutari yazmis olabilir; kapanista okunan
+   * amountText O ANIN degeri olurdu ve yazdigini ezerdik.
+   */
+  const amountTextRef = useRef(amountText);
+  useEffect(() => {
+    amountTextRef.current = amountText;
+  });
   // Tahmin BURADA DA hesaplaniyor ama GONDERILMIYOR - yalnizca ipucu satiri
   // icin. Karari sunucu veriyor; ekranda gorunen ile kaydedilen ayrismasin
   // diye ikisi ayni saf fonksiyondan geciyor (hizli ekleyiciyle ayni desen).
@@ -501,6 +559,18 @@ export default function NewExpenseScreen() {
             {/* Para birimi degistirilemez - degistirilemez kural (ADR-008).
                 Ekranda yazmasi, olmayan bir denetimi aramayi onluyor. */}
             <Text style={s.amountNote}>{t("ui.currency_from_group")}</Text>
+            {/* FISTEN OKUNDUYSA SOYLE (ADR-053). Sessizce doldurmak,
+                kullaniciya kendi yazmadigi bir tutari kendi yazmis gibi
+                gostermek olurdu - ve o tutar kontrol edilmeden kaydedilirdi.
+                Etiketli okuma ile yedek yol AYRI cumleler: ikincisi daha
+                zayif ve bunu saklamiyoruz. */}
+            {reading ? (
+              <Text style={s.amountNote}>{t("ui.reading_receipt")}</Text>
+            ) : readFrom ? (
+              <Text style={s.amountRead}>
+                {t(readFrom === "labelled" ? "ui.amount_from_total" : "ui.amount_from_receipt")}
+              </Text>
+            ) : null}
           </View>
 
           <View style={s.fields}>
@@ -984,6 +1054,8 @@ function createStyles(theme: Theme) {
     },
     amountCurrency: { fontFamily: fonts.body, fontSize: 18, color: theme.copperText },
     amountNote: { fontFamily: fonts.body, fontSize: 11.5, color: theme.muted },
+    /** Bakir: sayfanin vurgu rengi, bir DURUM degil (ADR-021). */
+    amountRead: { fontFamily: fonts.body, fontSize: 11.5, color: theme.brand },
 
     fields: { paddingHorizontal: 20, paddingTop: 18, gap: 16 },
     fieldInput: { fontFamily: fonts.body, fontSize: 16, color: theme.foreground, padding: 0 },
