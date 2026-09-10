@@ -62,13 +62,21 @@ Current task:
 
     Nerede: vercel.com -> owezy projesi -> Settings -> Environment Variables
     Ad    : CRON_SECRET
-    Deger : uzun ve rastgele bir metin (orn. `openssl rand -hex 32` ciktisi)
+    Deger : 64 karakterlik RASTGELE bir metin. Uretmek icin KENDI
+            terminalinde su komutu calistir ve CIKTIYI yapistir:
+
+                openssl rand -hex 32
+
+            DIKKAT - BU SATIR BIR KOMUT, DEGERIN KENDISI DEGIL. 10 Eylul'de
+            komutun METNI dogrudan degere yazildi ve uc calisti (401 dondu),
+            ama sir TAHMIN EDILEBILIR olmustu: bu depo HERKESE ACIK ve o
+            metin tam da burada yaziyor. Ifade bu yuzden degistirildi.
     Ortam : Production (Preview de isaretlenebilir, zarari yok)
     Sonra : Deployments -> son deploy -> Redeploy
 
-  OLCULDU (10 Eylul): https://owezy.net/api/cron/recurring -> 503
-  Yani uc CANLIDA ve kapali; degisken tanimlanip yeniden deploy edilince
-  401 donmeye baslamali (kimliksiz cagri reddediliyor demektir).
+  OLCULDU (10 Eylul): once 503, degisken tanimlandiktan sonra -> 401.
+  Yani degisken KAYITLI ve deploy oldu. 503 gorulurse degisken yok ya da
+  deploy edilmedi; 401 "kimliksiz cagri reddediliyor" demektir.
 
   BU YAPILANA KADAR: tekrarlayan harcama kurulabiliyor, listede gorunuyor,
   duraklatilabiliyor - ama HICBIR HARCAMA URETILMIYOR. Ozellik canlida
