@@ -152,23 +152,39 @@ metinde hiç geçmiyor. Yani destek sayfasındaki tuzağın eşi burada
 
 ## App Privacy — beyan edilenler
 
-App Store Connect → App Privacy. **Buraya yalnızca hesabın sahibi
-girebiliyor**; aşağıdaki tablo neyin doğru olduğunu söylüyor, girmiyor.
+**ÖLÇÜLDÜ (10 Eylül), App Store Connect'e bakılarak değil.** Apple bu
+beyanı herkese açık ürün sayfasında gösteriyor, yani dışarıdan
+doğrulanabiliyor:
 
-| Satır | Ne zaman | Linked to You | Tracking | Amaç |
-|---|---|---|---|---|
-| Identifiers → **Device ID** | 8 Eylül, push ile | **Evet** | Hayır | App Functionality |
-| User Content → **Photos or Videos** | 8 Eylül, fiş ile | Evet | Hayır | App Functionality |
+```
+curl -s https://apps.apple.com/tr/app/owezy-split-expenses/id6805650395 \
+  | grep -o 'aria-label="Data [^"]*"'
+```
 
-**"Linked to You" neden EVET — ve neden yanlış işaretlemesi kolay:**
-bildirim adresi cihazda üretiliyor ve kimlik içermiyor, bu yüzden
-"kimliksiz" sanmak doğal. Ama biz onu `PushToken.userId` ile **hesaba
-bağlı** saklıyoruz: çıkışta siliniyor, hesap silmede siliniyor. Bağlı
-olduğu için beyanı da bağlı olmalı.
+O anda dönen:
 
-**"Tracking" neden HAYIR:** adres üçüncü taraf veriyle eşleştirilmiyor,
-reklam yok, veri simsarı yok. Gizlilik politikası bunu açıkça yazıyor ve
-IDFA'dan ayırıyor (`src/content/legal/privacy.ts`).
+| Kart | İçindekiler |
+|---|---|
+| **Data Linked to You** | Financial Info · User Content · **Identifiers** |
+| Data Not Linked to You | Diagnostics |
+
+Üçü de doğru:
+
+- **Identifiers → Linked.** Bildirim adresi (`PushToken`) hesaba bağlı
+  saklanıyor: çıkışta siliniyor, hesap silmede siliniyor. Adres cihazda
+  üretiliyor ve kimlik içermiyor — bu yüzden "bağlı değil" demek doğal
+  gelir, ama bağlı. Beyan doğru tarafta.
+- **User Content → Linked.** Fiş fotoğrafı ve yorumlar.
+- **Diagnostics → Not Linked.** Sentry; PII kapalı, IP saklanmıyor.
+  Gizlilik politikası da bunu yazıyor.
+
+**"LINKED TO YOU" DİYE BİR KUTU YOK — bu başlık türetilmiş.** 10 Eylül'de
+kullanıcıya "o kutuyu işaretle" denildi ve kullanıcı haklı olarak
+bulamadı. App Store Connect'te veri türünü eklerken kimliğe bağlı olup
+olmadığı **soruluyor**; Apple cevaplardan bu iki kartı üretiyor ve o adlar
+yalnızca ürün sayfasında görünüyor. Bir daha kontrol gerekirse **ASC'de
+arama, yukarıdaki komutu çalıştır** — hem daha hızlı hem de yayında olanı
+gösteriyor.
 
 Kurulum tarafı (kayıt): APNs anahtarı Portal ID `47KL3BM87C`, App ID'de
 Push Notifications yetkisi işaretli, push gerçek telefonda doğrulandı —
