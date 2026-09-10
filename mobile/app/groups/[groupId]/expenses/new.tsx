@@ -22,7 +22,6 @@ import {
 } from "@/lib/expense-labels";
 import { guessCategory } from "@/lib/expense-category-guess";
 import { guessReceiptAmount } from "@/lib/receipt-amount";
-import { extractTextFromImage, isSupported as ocrSupported } from "expo-text-extractor";
 import { splitEqually } from "@/lib/split";
 import { Field, SelectField } from "../../../../components/field";
 import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
@@ -33,6 +32,47 @@ import { Cap } from "../../../../components/receipt";
 import { apiBaseUrl } from "../../../../lib/api";
 import { useSession } from "../../../../lib/auth";
 import { pickReceipt, receiptEndpoint, uploadReceipt } from "../../../../lib/receipt-file";
+
+/**
+ * OCR MODULU TEMBEL VE KORUMALI YUKLENIYOR - sebebi olculdu, tahmin degil.
+ *
+ * expo-text-extractor NATIVE bir modul ve requireNativeModule MODUL GOVDESI
+ * CALISIRKEN firliyor, cagrildiginda degil. Statik "import ... from
+ * expo-text-extractor" yazildiginda Expo Go'da BUTUN UYGULAMA aciliyordu:
+ * expo-router rota agacini kurarken bu dosyayi da yukluyor, yukleme
+ * firlatiyor ve ekranda "Cannot find native module 'ExpoTextExtractor'"
+ * kaliyor. Dusen sey OCR degil, HARCAMA EKLEMENIN KENDISIYDI - ve onunla
+ * birlikte uygulamanin tamami.
+ *
+ * isSupported BUNU YAKALAYAMAZ ve asagidaki "if (!ocrSupported) return"
+ * satiri bu yuzden olu bir korumaydi: isSupported "cihaz metin okuyabiliyor
+ * mu" sorusunun cevabi. "Modul bagli mi" BASKA bir soru ve cevabi ancak
+ * yuklemeyi DENEYEREK aliniyor.
+ *
+ * URETIM BUILD'INI ETKILEMIYORDU - orada modul bagli. Bu yuzden testler
+ * (modulu taklit ediyorlar) ve EAS build'i sorunu goremedi; yalnizca
+ * simulatorde Expo Go ile acinca cikti.
+ */
+type TextExtractor = {
+  isSupported: boolean;
+  extractTextFromImage: (uri: string) => Promise<string[]>;
+};
+
+let extractorResolved = false;
+let extractor: TextExtractor | null = null;
+
+function textExtractor(): TextExtractor | null {
+  if (!extractorResolved) {
+    extractorResolved = true;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      extractor = require("expo-text-extractor") as TextExtractor;
+    } catch {
+      extractor = null;
+    }
+  }
+  return extractor;
+}
 
 /**
  * Harcama ekleme ekrani. MOBILDE BOYLE BIR EKRAN YOKTU.
@@ -183,12 +223,13 @@ export default function NewExpenseScreen() {
    * arizayi varmis gibi sunmak olurdu.
    */
   async function readAmountFromReceipt(uri: string) {
-    if (!ocrSupported) return;
+    const ocr = textExtractor();
+    if (!ocr?.isSupported) return;
     if (amountText.trim() !== "") return;
 
     setReading(true);
     try {
-      const lines = await extractTextFromImage(uri);
+      const lines = await ocr.extractTextFromImage(uri);
       const guess = guessReceiptAmount(lines);
       // Okuma sirasinda kullanici yazmis olabilir - o zaman susuyoruz.
       if (guess && amountTextRef.current.trim() === "") {
