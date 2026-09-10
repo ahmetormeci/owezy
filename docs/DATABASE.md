@@ -3,7 +3,7 @@
 > Kaynak: `prisma/schema.prisma` + `prisma/migrations/`. Bu dosya onların
 > özetidir; çelişki halinde **şema ve migration'lar doğrudur**.
 
-PostgreSQL (Neon). 18 model, 5 enum, 17 migration.
+PostgreSQL (Neon). 19 model, 5 enum, 18 migration.
 
 ## Enum'lar
 
@@ -13,7 +13,7 @@ PostgreSQL (Neon). 18 model, 5 enum, 17 migration.
 | `SplitType` | EQUAL, EXACT, PERCENTAGE |
 | `ExpenseCategory` | FOOD, TRANSPORT, ACCOMMODATION, SHOPPING, BILLS, ENTERTAINMENT, OTHER |
 | `ExpenseEditAction` | UPDATE, DELETE, RESTORE |
-| `NotificationType` | EXPENSE_ADDED, EXPENSE_UPDATED, EXPENSE_DELETED, SETTLEMENT_RECORDED, SETTLEMENT_CANCELLED, MEMBER_JOINED |
+| `NotificationType` | EXPENSE_ADDED, EXPENSE_UPDATED, EXPENSE_DELETED, SETTLEMENT_RECORDED, SETTLEMENT_CANCELLED, EXPENSE_COMMENTED, PAYMENT_REMINDED, MEMBER_JOINED |
 
 ## Modeller
 
@@ -118,6 +118,26 @@ saklanmaz**, kullanıcıya bir kez gösterilir. `maxUses` / `useCount` / `expire
 ### Notification
 `payload` JsonB — anlık görüntü (grup adı, işlemi yapanın adı, tutar).
 Tutar burada da **kuruş cinsinden tam sayıdır**.
+
+### PaymentReminder
+Bir alacaklının bir borçluya gönderdiği ödeme hatırlatması (ADR-050).
+
+**Neden bir tablo, sadece bir bildirim değil:** "aynı kişiye 24 saatte bir"
+kuralı ancak son gönderimin ne zaman olduğu yazılıysa uygulanabilir.
+`Notification` satırına bakmak yetmezdi — bildirimler 60 gün sonra siliniyor
+ve **alıcı** kendi bildirimini silebiliyor, yani gönderenin sınırını alıcının
+davranışı belirlerdi.
+
+`amount` / `currency` bir **anlık görüntüdür**, canlı bir bağlantı değil —
+`Notification.payload` ile aynı gerekçe. Tutar burada da **kuruş cinsinden
+tam sayıdır**.
+
+Hatırlatma **finansal kayıt değildir**: hiçbir bakiyeye girmez. Hesap
+silinince **iki yönü de** fiziksel olarak gider (gönderdikleri ve kendisine
+gönderilenler) — yorum (ADR-049) ve fiş (ADR-046) ile aynı aile.
+
+İki elle yazılmış kısıt: `CHECK (amount > 0)` ve
+`CHECK (fromUserId <> toUserId)`.
 
 ### Session / Account / Verification
 Better Auth'un yönettiği üç tablo (Faz 25.1). **Şemayı biz yazmıyoruz** —
@@ -234,6 +254,7 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260908060830_add_push_token` | `PushToken` — cihazın Expo adresi. İçinde kullanıcı verisi yok (ADR-047) |
 | `20260908112508_add_expense_receipt` | `ExpenseReceipt` — fiş fotoğrafının depo anahtarı; baytlar R2'de (ADR-046) |
 | `20260910070000_add_expense_comment` | `ExpenseComment` + `NotificationType.EXPENSE_COMMENTED`. Yorum finansal kayıt değil (ADR-049): silme yumuşak, hesap silmede **fiziksel** |
+| `20260910130000_add_payment_reminder` | `PaymentReminder` + `NotificationType.PAYMENT_REMINDED`. Soğuma penceresi (24 saat) bu tablo olmadan uygulanamazdı (ADR-050) |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 [DECISIONS.md](DECISIONS.md) ADR-012.

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findCurrentUser } from "@/lib/auth";
 import { getGroupBalances } from "@/lib/balances";
+import { listRecentReminders } from "@/lib/reminders";
 import { handleApiError } from "@/lib/api";
 
 export async function GET(
@@ -14,9 +15,30 @@ export async function GET(
     }
 
     const { groupId } = await params;
-    const { currency, balances, suggestedTransfers } = await getGroupBalances(user.id, groupId);
 
-    return NextResponse.json({ ok: true, currency, balances, suggestedTransfers });
+    /**
+     * HATIRLATMALAR BURADAN GELIYOR, AYRI BIR UCTAN DEGIL (ADR-050).
+     *
+     * Odesme plani ile "kime hatirlattim" ayni ekranin ayni satirinda
+     * bulusuyor; ikinci bir istek, telefonun her grup acilisinda bir
+     * gidis-donus daha yapmasi demekti. Sirali degil PARALEL: ikisi
+     * birbirini beklemiyor.
+     *
+     * BALANCES.TS'E KOYULMADI: orasi para hesabinin yeri ve saf kalmali.
+     * Iki servis burada, rota katmaninda birlestiriliyor.
+     */
+    const [{ currency, balances, suggestedTransfers }, reminders] = await Promise.all([
+      getGroupBalances(user.id, groupId),
+      listRecentReminders(user.id, groupId),
+    ]);
+
+    return NextResponse.json({
+      ok: true,
+      currency,
+      balances,
+      suggestedTransfers,
+      reminders,
+    });
   } catch (error) {
     return handleApiError(error);
   }

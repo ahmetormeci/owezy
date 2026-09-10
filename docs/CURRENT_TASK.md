@@ -28,14 +28,31 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-10
 
 Current task:
-  YOK. Son is HARCAMAYA YORUM idi ve bitti (Faz 42, ADR-049).
+  UC MADDELIK BIR SERI SURUYOR. Kullanici 10 Eylul'de bilgisayar basindan
+  ayrilirken "geri kalan 4 maddeyi tamamlamaya calis" dedi ve ayrilmadan
+  once UC SORUYA CEVAP VERDI. O cevaplar bu serinin sozlesmesi:
 
-  SIRADA NE VAR: kullanici "diger dordune baslayacagiz" dedi (10 Eylul) -
-  odeme hatirlatmasi, tekrarlayan harcama, fis OCR, kalem kalem bolusum.
-  AMA HANGISINDEN BASLANACAGI SECILMEDI. AGENTS.md gorev verilmeden
-  baslamayi yasakliyor; bir sonraki oturum HANGISI diye SORMALI.
-  Ikisi cron paylasiyor (odeme hatirlatmasi + tekrarlayan harcama) ve
-  vercel.json HALA YOK - o ikisi birlikte dusunulmeli.
+    1. FIS OCR ATLANDI (kullanici secti). Gerekcesi: ucretli bir dis servis
+       + yeni bir "veri isleyici" beyani (gizlilik politikasi, App Privacy)
+       + bir API anahtari gerekiyor. Anahtar olmadan gercek istek/cevap bir
+       kez bile olculemez, yani dogrulanmamis kod yazilmis olurdu.
+       KALAN UC MADDE tam yapiliyor.
+    2. PUSH: "her ozellik yesilken push et" (kullanici secti). Yani bu
+       seride kod commit'leri de push ediliyor - AGENTS.md'nin "sormadan
+       atma" kurali bu seri icin ACIKCA kaldirildi.
+    3. KAPSAM: web + mobil TAM PARITE (kullanici secti).
+
+  DURUM:
+    Faz 43  odeme hatirlatmasi   BITTI  (ADR-050)
+    Faz 44  tekrarlayan harcama  SIRADA
+    Faz 45  kalem kalem bolusum  SIRADA
+
+  FAZ 44 ICIN AKILDA TUTULACAK TEK SEY: vercel.json HALA YOK ve tekrarlayan
+  harcama GERCEKTEN bir cron istiyor (odeme hatirlatmasi istemedi - ADR-050
+  o ihtiyaci bir kararla ortadan kaldirdi). Cron'un yetkisi CRON_SECRET
+  ortam degiskenine bagli olacak ve O DEGISKENI KULLANICI VERCEL'DE ELLE
+  EKLEMELI - eklenene kadar uc 503 donuyor ve hicbir sey uretilmiyor.
+  Bu, oturum sonunda kullaniciya ACIKCA soylenmeli.
 
   YORUM - NE YAPILDI: ExpenseComment tablosu, uc uc (listele/yaz/sil),
   EXPENSE_COMMENTED bildirimi, web'de satirdan acilan diyalog, mobilde detay
@@ -564,14 +581,39 @@ AKILDA TUTULACAKLAR:
   dokunan her betik once OKUYUP saymali, sonra yazmali.
 
 TESTLER - NE NEREDE (10 Eylul'de kosuldu):
-  KOK      npm test                  635 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      86 vitest + 50 jest
-  E2E      npm run test:e2e           58 test, ~10 dk
+  KOK      npm test                  653 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      86 vitest + 58 jest
+  E2E      npm run test:e2e           59 test, ~13 dk
 
   MOBILDE IKI KOSUCU VAR ve sinir DIZINE gore (ADR-042, ADR-043):
     lib/**                    -> vitest   (react-native'e dokunmuyor)
     components/**, test/screens/** -> jest (dokunuyor)
   Mobil testler KOKTEN kosmuyor: agacta iki ayri React kopyasi var.
+
+E2E - getByRole'un ADI TURKCEDE ALT DIZIYE TAKILIYOR (10 Eylul, olculdu):
+
+  getByRole("button", { name: "Hatirlat" }) BASLIKTAKI GRUP ADI dugmesini
+  buldu ve "borclu hatirlat gormuyor" testi bu yuzden dustu - kodda bir
+  kusur yoktu.
+
+  SEBEP playwright-core'da OLCULDU (matchesAttributePart): name
+  karsilastirmasi buyuk/kucuk harf duyarsizligini toUpperCase() ile yapiyor
+  ve exact verilmediginde ALT DIZI ariyor ("*="). Turkcede noktali i ile
+  noktasiz i BUYUK HARFTE ayni harfe cikiyor:
+
+      "Hatirlat".toUpperCase()   -> "HATIRLAT"
+      "hatirlatma".toUpperCase() -> "HATIRLATMA"   <- ilkini ICERIYOR
+
+  Grup adi "[e2e] hatirlatma <zaman>" idi ve basliktaki grup degistirici
+  dugmesinin ERISILEBILIR ADI o metin.
+
+  KURAL: bu uygulamada baslik KULLANICININ YAZDIGI grup adini bir DUGME
+  olarak tasiyor. Sayfa geneline yapilan her getByRole("button", {name})
+  o adla carpisabilir. Turkce etiketlerde exact: true KULLAN - ya da
+  aramayi main'e daralt.
+
+  AYNI TUZAGIN IKINCI YUZU: "Hatirlatildi" metni "Hatirlat" ile BASLIYOR.
+  Alt dizi aramasi ikisini ayirt etmiyor.
 
 E2E - NASIL CALISIYOR:
 

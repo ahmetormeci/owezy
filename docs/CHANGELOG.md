@@ -21,6 +21,51 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-10 — Ödeme hatırlatması
+
+Alacaklı, ödeşme planında kendisine ödemesi gereken kişiye **"Hatırlat"**
+diyebiliyor. Alıcıya bir bildirim ve (izin verdiyse) bir push gidiyor; aynı
+kişiye **24 saatte bir** hatırlatılabiliyor (ADR-050).
+
+**Zamanlanmış bir iş (cron) yapılmadı ve bu bir kapsam kısması değil, bir
+karar.** Aday listesi bu maddeyi "cron gerekiyor" diye kaydetmişti. Uygulanırken
+şu görüldü: bir hatırlatma **sosyal bir eylemdir**, teknik bir olay değil. "Üç
+gün geçti, borçlusun" diyen bir zamanlanmış iş, grubun kendi anlaşmasını
+bilmeden kullanıcı adına karar verir — ailesiyle tatile çıkan biriyle yol
+arkadaşı olan yabancılar aynı gruba benzemiyor. Üstelik "sistem hatırlattı"
+cümlesinin muhatabı yok; "Ali hatırlattı" cevap verilebilir bir cümle.
+
+**Kime hatırlatılabileceğini sunucu belirliyor ve ölçüt ödeşme planı**, ham
+bakiye değil. "Negatif bakiyesi olan herkes" deseydik, parayı başkasına ödemesi
+gereken birine yanlış bilgi giderdi. **Tutar istemciden alınmıyor** —
+`currency` kuralının (ADR-006) aynısı.
+
+**Gruptan ayrılmış birine de hatırlatılabiliyor.** Ayrılmak borcu kapatmıyor ve
+bakiye listesi bu kişileri zaten bilerek tutuyor; özelliğin en çok işe yaradığı
+durum bu.
+
+**Neden bir tablo, sadece bir bildirim değil:** soğuma kuralı ancak son
+gönderimin ne zaman olduğu yazılıysa uygulanabilir. Bildirim satırına bakmak
+yetmezdi — bildirimler 60 gün sonra siliniyor ve **alıcı** kendi bildirimini
+silebiliyor, yani gönderenin sınırını alıcının davranışı belirlerdi.
+
+**Push'ta tutar yok** ve kural burada en çok işe yarıyor: hatırlatmanın tamamı
+bir tutar hakkında, metne konsaydı kilit ekranında *"sana 1.250 TL borcun var"*
+yazardı (ADR-047).
+
+**Hatırlatma finansal kayıt değil** — yorum (ADR-049) ve fiş (ADR-046) ile aynı
+aile. Hesap silinince **iki yön de** fiziksel olarak gidiyor: gönderdikleri ve
+kendisine gönderilenler.
+
+**409 da düğmeyi kapatıyor.** Sunucu "çok erken" diyorsa gönderilmiş bir
+hatırlatma var — başka bir cihazdan. Düğmeyi açık bırakmak kullanıcıyı aynı
+duvara tekrar sürmek olurdu. Düğmenin başlangıç durumu **sunucudan** geliyor;
+istemci kendi gönderdiğini hatırlasaydı sayfa yenilenince düğme açılırdı.
+
+**Üç negatif kontrol koşuldu:** yön kontrolü gevşetildiğinde, soğuma kaldırıldığında
+ve bildirim fazladan bir alıcıya gönderildiğinde ilgili test düştü; geri
+alınınca yeniden geçti.
+
 ## 2026-09-10 — Harcamaya yorum
 
 Bir harcamanın altına not düşülebiliyor artık. Grubun her aktif üyesi

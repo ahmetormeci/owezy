@@ -79,6 +79,16 @@ export const MESSAGES_TR = {
   "validation.comment_required": "Yorum boş olamaz",
   "validation.comment_too_long": "Yorum en fazla 500 karakter olabilir",
 
+  // Odeme hatirlatmasi (ADR-050)
+  "reminder.self": "Kendine hatırlatma gönderemezsin",
+  /**
+   * OLCUT ODESME PLANI, ham bakiye degil - cumle bunu soyluyor. "Borcu yok"
+   * deseydi yanlis olurdu: kisinin gruba borcu olabilir ama sadelestirilmis
+   * planda o borcu BASKA birine odemesi gerekiyor olabilir.
+   */
+  "reminder.no_debt": "Bu kişinin sana ödemesi gereken bir tutar görünmüyor",
+  "reminder.too_soon": "Aynı kişiye {hours} saatte bir hatırlatabilirsin",
+
   // Arayuz
   "ui.receipt": "Fiş",
   "ui.comments": "Yorumlar",
@@ -460,6 +470,16 @@ export const MESSAGES_TR = {
   "ui.will_be_paid_to_you": "Sana ödenecekler",
   "ui.other_suggested_payments": "Grubun geri kalanı",
   "ui.everyone_settled": "Herkes ödeşmiş durumda, yapılacak bir ödeme yok.",
+  /**
+   * FIIL, SATIRIN KENDISINDE - "{isim}'e hatirlat" degil. Ayni Turkce eki
+   * sorunu (ek son harfe gore degisiyor) SuggestionGroup'un basliktaki fiil
+   * kuralini doguran seydi; burada fiil zaten isimsiz.
+   */
+  "ui.remind": "Hatırlat",
+  "ui.reminding": "Gönderiliyor…",
+  "ui.reminded": "Hatırlatıldı",
+  "ui.reminder_sent": "Hatırlatma gönderildi",
+  "ui.reminder_failed": "Hatırlatma gönderilemedi",
   "ui.members_and_balances": "Üyeler ve bakiyeler",
   "ui.manage_members": "Üyeleri yönet",
 
@@ -738,6 +758,7 @@ export const MESSAGES_TR = {
   "ui.notif_settlement_cancelled": "{actor} bir ödeme kaydını iptal etti",
   "ui.notif_member_joined": "{actor} gruba katıldı",
   "ui.notif_expense_commented": "{actor} bir harcamaya yorum yaptı",
+  "ui.notif_payment_reminded": "{actor} ödemeni hatırlattı",
 
   /**
    * TELEFONA GIDEN bildirimin metni. Ustteki "ui.notif_*" ile AYNI OLAY,
@@ -765,6 +786,12 @@ export const MESSAGES_TR = {
    * onceden bilemez, kilit ekranindaki herkes okur (ADR-049).
    */
   "push.expense_commented": "Bir harcamaya yorum yapıldı",
+  /**
+   * TUTAR YOK, KIM OLDUGU YOK - butun turlerde oldugu gibi (ADR-047). Burada
+   * ozellikle onemli: "Ali sana 1.250 TL borcunu hatirlatti" kilit ekraninda
+   * duran bir cumle olurdu.
+   */
+  "push.payment_reminded": "Bir ödeme hatırlatması var",
 
   // Bildirimler ekranindaki izin satiri.
   "ui.appearance": "Görünüm",
@@ -856,6 +883,10 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "comment.expense_deleted": "A deleted expense cannot be commented on",
   "validation.comment_required": "A comment cannot be empty",
   "validation.comment_too_long": "A comment can be at most 500 characters",
+
+  "reminder.self": "You cannot remind yourself",
+  "reminder.no_debt": "This person does not appear to owe you anything",
+  "reminder.too_soon": "You can remind the same person once every {hours} hours",
 
   "ui.receipt": "Receipt",
   "ui.comments": "Comments",
@@ -1132,6 +1163,11 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.will_be_paid_to_you": "Owed to you",
   "ui.other_suggested_payments": "Rest of the group",
   "ui.everyone_settled": "Everyone is settled up, there is nothing to pay.",
+  "ui.remind": "Remind",
+  "ui.reminding": "Sending…",
+  "ui.reminded": "Reminded",
+  "ui.reminder_sent": "Reminder sent",
+  "ui.reminder_failed": "The reminder could not be sent",
   "ui.summary_total": "Total",
   "ui.summary_your_share": "Your share",
   "ui.summary_expense_count": "Expenses",
@@ -1367,6 +1403,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.notif_settlement_cancelled": "{actor} cancelled a settlement",
   "ui.notif_member_joined": "{actor} joined the group",
   "ui.notif_expense_commented": "{actor} commented on an expense",
+  "ui.notif_payment_reminded": "{actor} reminded you about a payment",
 
   "push.expense_added": "A new expense was added",
   "push.expense_updated": "An expense was updated",
@@ -1375,6 +1412,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "push.settlement_cancelled": "A settlement was cancelled",
   "push.member_joined": "Someone joined the group",
   "push.expense_commented": "Someone commented on an expense",
+  "push.payment_reminded": "There is a payment reminder",
 
   "ui.appearance": "Appearance",
   "ui.theme_system": "System",

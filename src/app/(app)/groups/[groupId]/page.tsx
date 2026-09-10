@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { findCurrentUser } from "@/lib/auth";
 import { getGroupBalances } from "@/lib/balances";
+import { listRecentReminders } from "@/lib/reminders";
 import { getGroupForUser, listGroupMembers } from "@/lib/groups";
 import { listExpenses } from "@/lib/expenses";
 import { listSettlements } from "@/lib/settlements";
@@ -20,6 +21,7 @@ import { PersonAvatar } from "@/components/person-avatar";
 import { GroupSummary } from "@/components/group-summary";
 import { Receipt, ReceiptLine } from "@/components/receipt";
 import { ExpenseComposer } from "@/components/expense-composer";
+import { RemindButton } from "@/components/remind-button";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
 
 // Renkler artik dogrudan yazilmiyor (eskiden "text-emerald-600
@@ -59,6 +61,7 @@ function SuggestionGroup({
   currency,
   locale,
   fallbackName,
+  action,
 }: {
   title: string;
   transfers: SuggestedTransfer[];
@@ -66,6 +69,13 @@ function SuggestionGroup({
   currency: string;
   locale: Locale;
   fallbackName: string;
+  /**
+   * Satirin sonuna eklenen eylem. YALNIZCA "sana odenecekler" listesinde
+   * dolu (hatirlatma, ADR-050) - odemesi gereken kisiyi kendine hatirlatmak
+   * diye bir sey yok. Render prop cunku eylem bir istemci bileseni ve bu
+   * fonksiyon bir sunucu bileseninin icinde.
+   */
+  action?: (transfer: SuggestedTransfer) => React.ReactNode;
 }) {
   if (transfers.length === 0) {
     return null;
@@ -93,6 +103,7 @@ function SuggestionGroup({
               <span className="money shrink-0 font-medium">
                 {formatMoney(transfer.amount, currency, locale)}
               </span>
+              {action?.(transfer)}
             </li>
           );
         })}
@@ -126,17 +137,23 @@ export default async function GroupDetailPage({
   let expenseData: Awaited<ReturnType<typeof listExpenses>>;
   let settlementData: Awaited<ReturnType<typeof listSettlements>>;
   let summary: Awaited<ReturnType<typeof getGroupSummary>>;
+  let reminders: Awaited<ReturnType<typeof listRecentReminders>>;
   let openMonth: string | null;
   try {
     // getGroupSummary ve getGroupBalances ayni kisi-basi toplamlari istiyor;
     // ikisi de loadGroupTotals'i cagiriyor ve cache() sayesinde bu istekte
     // veritabanina TEK kez gidiliyor.
-    [group, balanceData, members, settlementData, summary] = await Promise.all([
+    [group, balanceData, members, settlementData, summary, reminders] = await Promise.all([
       getGroupForUser(user.id, groupId),
       getGroupBalances(user.id, groupId),
       listGroupMembers(user.id, groupId),
       listSettlements(user.id, groupId, { limit: 20 }),
       getGroupSummary(user.id, groupId),
+      // Hatirlatmalar (ADR-050). Ayni paralel demette: "Hatirlat" dugmesinin
+      // acik mi kapali mi gelecegini bu belirliyor ve odesme planiyla AYNI
+      // ANDA cizilmesi gerekiyor - sonradan gelseydi dugme bir an acik
+      // gorunup kapanirdi.
+      listRecentReminders(user.id, groupId),
     ]);
 
     // HARCAMALAR AYRI VE SONRA CEKILIYOR (Faz 16.2), cunku hangi ayin
@@ -174,6 +191,12 @@ export default async function GroupDetailPage({
         hasImage: balance.hasImage,
       },
     ]),
+  );
+
+  // "Bu kisiye en son ne zaman hatirlattim". Soguma penceresi disindakiler
+  // sunucuda zaten elenmis oldugu icin buradaki her kayit "hala erken" demek.
+  const remindedAtByUserId = new Map(
+    reminders.map((reminder) => [reminder.toUserId, reminder.sentAt.toISOString()]),
   );
 
   const myBalance = balances.find((balance) => balance.userId === user.id);
@@ -361,6 +384,16 @@ export default async function GroupDetailPage({
               currency={currency}
               locale={locale}
               fallbackName={t("ui.unknown_user")}
+              /* Hatirlatma YALNIZCA BURADA (ADR-050): yon sabit, alacakli
+                 borcluya dokunuyor. "Odemen gerekenler" listesinde karsiligi
+                 yok ve "grubun geri kalani" zaten dokunulabilir degil. */
+              action={(transfer) => (
+                <RemindButton
+                  groupId={groupId}
+                  toUserId={transfer.fromUserId}
+                  alreadySentAt={remindedAtByUserId.get(transfer.fromUserId) ?? null}
+                />
+              )}
             />
             {/* Beni ilgilendirmeyen transferler. Ayni blokta ama en altta ve
                 soluk: grubun takas plani dogru bir bilgi, ama benim isim

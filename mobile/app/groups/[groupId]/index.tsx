@@ -140,9 +140,17 @@ type MemberBalance = {
   displayName: string;
   hasLeft: boolean;
 };
+/**
+ * Cagiranin bu grupta SOGUMA PENCERESI ICINDE gonderdigi hatirlatmalar
+ * (ADR-050). Balances ucundan geliyor cunku odesme planiyla ayni satirda
+ * cizilyor; ayri bir istek, her grup acilisinda fazladan bir gidis-donus
+ * olurdu. Opsiyonel: eski bir sunucu cevabinda alan hic olmayabilir.
+ */
+type SentReminder = { toUserId: string; amount: number; sentAt: string };
 type BalancesResponse = {
   suggestedTransfers: SuggestedTransfer[];
   balances: MemberBalance[];
+  reminders?: SentReminder[];
 };
 type ExpensesResponse = {
   expenses: ExpenseItem[];
@@ -403,6 +411,23 @@ export default function GroupScreen() {
   }, [getToken]);
   const [restoring, setRestoring] = useState<string | null>(null);
 
+  /**
+   * ODEME HATIRLATMASI (ADR-050).
+   *
+   * IKI DURUM AYRI TUTULUYOR: "su an gonderiliyor" (reminding) ve
+   * "gonderildi" (remindedLocally). Sunucudan gelen liste baslangic degeri,
+   * tek kaynak degil - gonderdikten sonra butun ekrani yeniden cekmek
+   * (balances.reload) tek bir satirin durumu icin fazla olurdu.
+   */
+  const [reminding, setReminding] = useState<string | null>(null);
+  const [remindedLocally, setRemindedLocally] = useState<string[]>([]);
+  /**
+   * Hata KARTIN ICINDE, Alert DEGIL - bu ekranin kurali (expense-composer.tsx
+   * ve disa aktarma hatasi da boyle). Hatirlatma satirinin hemen altinda
+   * duruyor, yani kullanici hangi satir icin okudugunu biliyor.
+   */
+  const [remindError, setRemindError] = useState<string | null>(null);
+
   // showDeleted de bir FILTRE: gosterilen kumeyi degistiriyor, yani ay
   // katlamasi kalkmali ve sonuc sayisi yazilmali.
   const isFiltered =
@@ -615,6 +640,43 @@ export default function GroupScreen() {
    * rakam zaten yonu soyluyor.
    */
   const myTransfers = [...iPay, ...iReceive];
+
+  /**
+   * KIME HATIRLATILDI. Sunucudan gelenle bu oturumda gonderilenlerin
+   * birlesimi: sunucu listesi sayfa acilisindaki dogruyu, yerel liste az
+   * once yapilani tasiyor.
+   */
+  const remindedUserIds = new Set([
+    ...(balances.state.kind === "ok"
+      ? (balances.state.data.reminders ?? []).map((reminder) => reminder.toUserId)
+      : []),
+    ...remindedLocally,
+  ]);
+
+  /**
+   * Hatirlatmayi gonderir (ADR-050).
+   *
+   * 409 DA "GONDERILDI" SAYILIYOR: sunucu "cok erken" diyorsa gonderilmis
+   * bir hatirlatma VAR demektir - baska bir cihazdan ya da web'den. Satiri
+   * acik birakmak kullaniciyi ayni duvara tekrar surerdi. Web'deki dugme de
+   * ayni sekilde davraniyor.
+   */
+  async function sendReminder(toUserId: string) {
+    if (reminding) return;
+    setReminding(toUserId);
+    setRemindError(null);
+    const result = await post(`/api/v1/groups/${groupId}/reminders`, { toUserId });
+    setReminding(null);
+
+    if (!result.ok) {
+      if (result.status === 409) {
+        setRemindedLocally((current) => [...current, toUserId]);
+      }
+      setRemindError(t(result.code, result.params));
+      return;
+    }
+    setRemindedLocally((current) => [...current, toUserId]);
+  }
 
   /**
    * BASLIKTAKI AVATARLAR. Dorde kadar cizilip gerisi bir cipte toplaniyor:
@@ -880,6 +942,7 @@ export default function GroupScreen() {
                   {myTransfers.map((transfer) => {
                     const iOwe = transfer.fromUserId === currentUserId;
                     const otherId = iOwe ? transfer.toUserId : transfer.fromUserId;
+                    const reminded = remindedUserIds.has(otherId);
                     return (
                       <Pressable
                         key={`${transfer.fromUserId}-${transfer.toUserId}`}
@@ -899,10 +962,40 @@ export default function GroupScreen() {
                         <Text style={s.balanceRowAmount}>
                           {formatMoney(transfer.amount, currency, locale)}
                         </Text>
+                        {/*
+                          HATIRLATMA YALNIZCA BANA ODENECEK SATIRLARDA
+                          (ADR-050): yon sabit, alacakli borcluya dokunuyor.
+                          Kendi odemem gereken satirda karsiligi yok.
+
+                          IC ICE PRESSABLE: disttaki satir odesme ekranini
+                          aciyor, icteki dokunusu kendi ustune aliyor. Ayri
+                          bir satira koysaydik ayni kisi kartta iki kez
+                          gorunurdu.
+                        */}
+                        {!iOwe ? (
+                          reminded ? (
+                            <Text style={s.remindDone}>{t("ui.reminded")}</Text>
+                          ) : (
+                            <Pressable
+                              onPress={() => void sendReminder(otherId)}
+                              disabled={reminding !== null}
+                              hitSlop={10}
+                            >
+                              <Text style={s.remindAction}>
+                                {reminding === otherId
+                                  ? t("ui.reminding")
+                                  : t("ui.remind")}
+                              </Text>
+                            </Pressable>
+                          )
+                        ) : null}
                       </Pressable>
                     );
                   })}
                 </View>
+                {remindError ? (
+                  <Text style={s.remindError}>{remindError}</Text>
+                ) : null}
               </>
             ) : null}
           </View>
@@ -1543,6 +1636,31 @@ function createStyles(theme: Theme) {
       fontSize: 14,
       color: "#ffffff",
       fontVariant: ["tabular-nums"],
+    },
+    /**
+     * HATIRLATMA SATIR ICINDE, tutardan sonra. Renkler kartin kendi
+     * paletinden: kart iki temada da koyu petrol, o yuzden temaya bagli
+     * tokenlar burada okunmazdi (balanceDivider ile ayni gerekce).
+     * Eylem bakir, sonucu ise solmus - ADR-021'e gore renk DURUM tasiyor
+     * ve "hatirlatildi" artik bir eylem degil.
+     */
+    remindAction: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: theme.copperOnCard,
+      marginLeft: 12,
+    },
+    remindDone: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: "#8fae9f",
+      marginLeft: 12,
+    },
+    remindError: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: "#f0b7a8",
+      marginTop: 8,
     },
     othersBlock: { gap: 4, marginBottom: 20 },
 

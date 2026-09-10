@@ -52,6 +52,13 @@ const BODY_CODES: Record<NotificationType, MessageCode> = {
    * gecerli.
    */
   EXPENSE_COMMENTED: "push.expense_commented",
+  /**
+   * TUTAR YOK - ve burada kural en cok ise yariyor: hatirlatmanin TAMAMI bir
+   * tutar hakkinda, yani metne konsaydi kilit ekraninda "sana 1.250 TL
+   * borcun var" yazardi (ADR-047 + ADR-050). Kim hatirlatti sorusunun
+   * cevabi da yok; o kural zaten butun turler icin gecerli.
+   */
+  PAYMENT_REMINDED: "push.payment_reminded",
 };
 
 export type PendingPush = {

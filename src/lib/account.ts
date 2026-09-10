@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { deleteReceiptsUploadedBy } from "@/lib/receipts";
 import { deleteCommentsWrittenBy } from "@/lib/comments";
+import { deleteRemindersInvolving } from "@/lib/reminders";
 import { deleteObject } from "@/lib/storage";
 import { NotFoundError } from "@/lib/errors";
 
@@ -162,6 +163,14 @@ export async function deleteAccount(userId: string) {
      * hesaba girmedigi zaten tablonun varlik sebebi.
      */
     await deleteCommentsWrittenBy(tx, userId);
+
+    /**
+     * ODEME HATIRLATMALARI - ADR-050. Ayni aile: hatirlatma finansal kayit
+     * degil, iki kisi arasindaki bir TEMAS kaydi. Iki yon de gidiyor
+     * (gonderdikleri ve kendisine gonderilenler), yoksa silinmis bir hesabin
+     * adi hala bir satirin ucunda dururdu.
+     */
+    await deleteRemindersInvolving(tx, userId);
 
     await tx.user.update({
       where: { id: userId },

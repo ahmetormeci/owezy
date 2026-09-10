@@ -8,19 +8,20 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 42 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
+**Özet:** 43 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
 yayında** (mağazada 1.0.2, 8 Eylül 2026) — web zaten canlıydı, artık iki
 istemci de kullanıcıya açık. Faz 41'in kağıt & petrol tasarım yönü iki
 istemcide de uygulandı ama **henüz kullanıcıya ulaşmadı**: mağazadaki 1.0.2 de
-incelemedeki 1.0.3 de eski görünümü taşıyor. `main`'e giden her değişiklik
+incelemedeki 1.0.3 de eski görünümü taşıyor — **Faz 42 (yorum) ve Faz 43
+(ödeme hatırlatması) de aynı kuyrukta**. `main`'e giden her değişiklik
 CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim — kök (Vitest) | 635 | ✅ tümü geçiyor |
+| Birim — kök (Vitest) | 653 | ✅ tümü geçiyor |
 | Birim — mobil (Vitest) | 86 | ✅ tümü geçiyor |
-| Ekran — mobil (jest-expo) | 50 | ✅ tümü geçiyor |
-| E2E (Playwright) | 58 | ✅ tümü geçiyor |
+| Ekran — mobil (jest-expo) | 58 | ✅ tümü geçiyor |
+| E2E (Playwright) | 59 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
 | `npm run lint` | — | ✅ temiz (kök + mobil) |
 
@@ -2323,6 +2324,46 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 
 ---
 
+## Faz 43 — Ödeme hatırlatması · **BİTTİ, MOBİLİ YAYINLANMADI**
+
+Alacaklı, ödeşme planında kendisine ödemesi gereken kişiye "Hatırlat"
+diyebiliyor. Kullanıcının seçtiği dört maddeden ikincisi.
+
+| | |
+|---|---|
+| Veri | `PaymentReminder` tablosu, `NotificationType.PAYMENT_REMINDED` |
+| Uçlar | gönder (`POST .../reminders`); liste `/balances` yanıtına eklendi |
+| Web | ödeşme planındaki "Sana ödenecekler" satırının sonunda |
+| Mobil | bakiye kartındaki aynı satırın sonunda |
+| Bildirim | uygulama içi (tutarlı) + push (tutarsız) |
+| Sınır | aynı kişiye **24 saatte bir** |
+
+**Cron yapılmadı ve bu bir kapsam kısması değil, bir karar** (ADR-050). Aday
+listesi bu maddeyi "cron gerekiyor" diye kaydetmişti; uygulanırken görüldü ki
+otomatik bir hatırlatma, grubun kendi anlaşmasını bilmeden kullanıcı adına
+karar verir. `vercel.json` bu iş için gerekmedi.
+
+**Kime hatırlatılabileceğini ödeşme planı belirliyor**, ham bakiye değil:
+sadeleştirilmiş planda borçlu parayı başkasına ödüyor olabilir. Tutar da
+plandan okunuyor — istemci gönderemiyor (`currency` kuralının aynısı).
+
+**Neden bir tablo:** soğuma kuralı ancak son gönderim yazılıysa uygulanabilir.
+Bildirim satırına bakmak yetmezdi — bildirimler 60 gün sonra siliniyor ve
+alıcı kendi bildirimini silebiliyor, yani gönderenin sınırını **alıcı**
+belirlerdi.
+
+**Hatırlatma finansal kayıt değil** — yorum (ADR-049) ve fiş (ADR-046) ile
+aynı aile; hesap silinince iki yön de fiziksel olarak gidiyor.
+
+**Üç negatif kontrol koşuldu:** yön kontrolü gevşetildiğinde, soğuma
+kaldırıldığında ve bildirime fazladan bir alıcı eklendiğinde ilgili test
+düştü, geri alınınca yeniden geçti.
+
+**Test:** 653 kök birim (+17), 58 mobil ekran (+8), E2E (+1).
+**Commit:** `<COMMIT>`
+
+---
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
@@ -2330,13 +2371,16 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Ödeme hatırlatması** | Push altyapısı hazır; **cron** gerekiyor (`vercel.json` yok) |
 | **Fiş OCR** | Fotoğraf zaten var. Dış servis = **ücretli** + gizlilik/App Privacy yeniden |
-| **Tekrarlayan harcama** | Kira, abonelik. Cron'u ödeme hatırlatmasıyla **paylaşıyor** |
+| **Tekrarlayan harcama** | Kira, abonelik. **Cron gerekiyor** (`vercel.json` yok) — ödeme hatırlatması bu ihtiyacı paylaşmıyordu, ADR-050 onu cron'suz çözdü |
 | **Kalem kalem bölüşüm** | En pahalısı: küsurat değişmezi **iki katmanda** korunmalı |
 | **Profil fotoğrafı** | Fiş fotoğrafıyla aynı depo ve arayüz; uç henüz yok |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
+> **Ödeme hatırlatması listeden çıktı (10 Eylül, Faz 43)** — ve listedeki
+> "cron gerekiyor" notu **yanlış çıktı**: özellik cron'suz yapıldı, çünkü
+> otomatik hatırlatma bir karar olarak reddedildi (ADR-050).
+>
 > **İki madde listeden çıktı (10 Eylül):** *harcamaya yorum* yapıldı (Faz 42);
 > *web'in kalan kapları* da yapıldı (Faz 41'in son adımı, 9 Eylül akşamı) ama
 > listeden düşürülmesi unutulmuştu.

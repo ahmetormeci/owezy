@@ -60,6 +60,10 @@ enum NotificationType {
   SETTLEMENT_RECORDED
   SETTLEMENT_CANCELLED
   EXPENSE_COMMENTED
+  // Odeme hatirlatmasi (ADR-050). Bir OLAYIN degil, bir KISININ bildirimi:
+  // alacakli birine "borcun var" diye dokunuyor. Otomatik degil - gonderen
+  // her zaman bir insan.
+  PAYMENT_REMINDED
   // Eskiden GROUP_INVITE idi. Bizim davetler link tabanli oldugu icin
   // "davet edildin" diye bir alici yok; anlamli olan olay katilimin kendisi.
   MEMBER_JOINED
@@ -70,7 +74,7 @@ enum NotificationType {
 // ============================================================
 
 model User {
-  id          String    @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
   // @unique (Faz 25.1). Better Auth kimligi e-postadan cozuyor; kisit olmadan
   // ayni adrese birden fazla satir dusebiliyor - nitekim DUSMUSTU: E2E
@@ -78,7 +82,7 @@ model User {
   // Clerk'e ozguydu: orada kullanici yeniden yaratilinca clerkId degisiyor
   // ve "clerkId ile ara, yoksa olustur" ikinci bir satir aciyordu. O sutun
   // 25.7'de dustu ama kisit KALICI - e-posta kimligin kendisi.
-  email       String    @unique
+  email String @unique
 
   // Better Auth'un cekirdek alani. Faz 25 oncesinde karsiligi yoktu cunku
   // dogrulamayi Clerk yapiyordu ve biz sonucunu hic saklamiyorduk.
@@ -150,16 +154,18 @@ model User {
   // kayit degil, oturum artifaktlari - "finansal kayitlar fiziksel olarak
   // silinmez" kurali onlari baglamiyor. Zaten hesap silme SOFT delete
   // (deletedAt) oldugu icin bu cascade pratikte hic tetiklenmiyor.
-  sessions Session[]
-  accounts Account[]
+  sessions   Session[]
+  accounts   Account[]
   twoFactors TwoFactor[]
 
-  expenseEdits  ExpenseEdit[]  @relation("changedBy")
-  groupInvites  GroupInvite[]  @relation("invitedBy")
-  notifications Notification[]
-  pushTokens    PushToken[]
-  receipts      ExpenseReceipt[] @relation("receiptUploadedBy")
-  comments      ExpenseComment[] @relation("commentAuthor")
+  expenseEdits      ExpenseEdit[]     @relation("changedBy")
+  groupInvites      GroupInvite[]     @relation("invitedBy")
+  notifications     Notification[]
+  pushTokens        PushToken[]
+  receipts          ExpenseReceipt[]  @relation("receiptUploadedBy")
+  comments          ExpenseComment[]  @relation("commentAuthor")
+  remindersSent     PaymentReminder[] @relation("reminderFrom")
+  remindersReceived PaymentReminder[] @relation("reminderTo")
 
   @@index([email])
 }
@@ -174,11 +180,12 @@ model Group {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  createdBy   User          @relation("GroupCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdBy   User              @relation("GroupCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   members     GroupMember[]
   expenses    Expense[]
   settlements Settlement[]
   invites     GroupInvite[]
+  reminders   PaymentReminder[]
 
   @@index([createdById])
   @@index([deletedAt])
@@ -208,12 +215,12 @@ model GroupMember {
 }
 
 model Expense {
-  id          String          @id @default(uuid()) @db.Uuid
-  groupId     String          @db.Uuid
-  paidById    String          @db.Uuid
-  createdById String          @db.Uuid
-  deletedById String?         @db.Uuid
-  description String          @db.Text
+  id              String          @id @default(uuid()) @db.Uuid
+  groupId         String          @db.Uuid
+  paidById        String          @db.Uuid
+  createdById     String          @db.Uuid
+  deletedById     String?         @db.Uuid
+  description     String          @db.Text
   // Aramada karsilastirilan katlanmis bicim: Turkce harfler ASCII karsiligina
   // iner ve metin kucultulur ("Isik" -> "isik", "ışık" -> "isik").
   //
@@ -223,15 +230,15 @@ model Expense {
   // gondermedigi surece degeri Postgres uretiyor. Bu yuzden NULLABLE -
   // zorunlu olsaydi Prisma create'te deger isterdi ve uretilmis kolona
   // yazmaya calismak hata verirdi.
-  descriptionFold String?     @db.Text
-  amount      Int
-  currency    String          @db.Char(3)
-  category    ExpenseCategory @default(OTHER)
-  splitType   SplitType
-  expenseDate DateTime        @db.Date
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  deletedAt   DateTime?
+  descriptionFold String?         @db.Text
+  amount          Int
+  currency        String          @db.Char(3)
+  category        ExpenseCategory @default(OTHER)
+  splitType       SplitType
+  expenseDate     DateTime        @db.Date
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
 
   // Optimistic locking sayaci (ADR-032). Okuyan istemci bu degeri de alir ve
   // yazarken geri gonderir; sunucu "WHERE id = ? AND version = ?" ile yazar.
@@ -242,7 +249,7 @@ model Expense {
   // uygulama sunucusunun saati. Vercel'de istekler farkli ornekler uzerinden
   // gectigi icin saat geri gidebilir. Ayrica JSON'a cikarken milisaniyeye
   // yuvarlaniyor, veritabaninda mikrosaniye duruyor. Sayac ikisini de bilmez.
-  version     Int             @default(1)
+  version Int @default(1)
 
   group        Group                @relation(fields: [groupId], references: [id], onDelete: Restrict)
   paidBy       User                 @relation("paidBy", fields: [paidById], references: [id], onDelete: Restrict)
@@ -458,11 +465,11 @@ model ExpenseReceipt {
   createdAt DateTime @default(now())
 
   /// Restrict - harcama zaten FIZIKSEL olarak silinmiyor (soft delete).
-  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  expense    Expense @relation(fields: [expenseId], references: [id], onDelete: Restrict)
   /// Restrict: hesap silme YUMUSAK, yani cascade hic tetiklenmezdi. Silme
   /// ELLE yapiliyor (account.ts) ve once referans, sonra nesne - tersi,
   /// depoda olmayan bir nesneye isaret eden kayit birakirdi.
-  uploadedBy User @relation("receiptUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
+  uploadedBy User    @relation("receiptUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
 
   /// Hesap silmede "bu kullanicinin butun fisleri" sorgusu icin.
   @@index([uploadedById])
@@ -502,7 +509,7 @@ model ExpenseComment {
   /// Restrict: hesap silme yumusak, cascade tetiklenmezdi. Silme ELLE
   /// yapiliyor (account.ts) - hesabini silen kisinin yorumlari da gidiyor,
   /// fis fotograflariyla ayni gerekce (ADR-046).
-  user User @relation("commentAuthor", fields: [userId], references: [id], onDelete: Restrict)
+  user    User    @relation("commentAuthor", fields: [userId], references: [id], onDelete: Restrict)
 
   /// Bir harcamanin yorumlarini eskiden yeniye okumak icin.
   @@index([expenseId, createdAt])
@@ -535,7 +542,7 @@ model Session {
 }
 
 model Account {
-  id                    String    @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
   // Kimligi VEREN taraf ("local:credential", ya da sosyal saglayicilarda
   // saglayicinin adresi). Better Auth bunu ZORUNLU yaziyor.
@@ -549,7 +556,7 @@ model Account {
   // DOGRU KAYNAK CALISMA ZAMANI: @better-auth/core'daki getAuthTables()
   // kendi ayarlarimizla cagrilip dort modelin tamami karsilastirildi.
   // Eksik olan yalnizca buydu.
-  issuer                String
+  issuer String
 
   accountId             String
   providerId            String
@@ -574,23 +581,19 @@ model Account {
 
 /**
  * Hiz siniri sayaclari. Better Auth yonetiyor, biz hic yazmiyoruz.
- *
  * NEDEN VERITABANI, VARSAYILAN "memory" DEGIL: Vercel'de her serverless
  * ornegi kendi bellegini tasiyor ve ornekler kisa omurlu. Bellekteki sayac
  * her yeni ornekte sifirdan basliyor, yani "10 saniyede 3 giris denemesi"
  * kurali pratikte cok daha fazlasina izin veriyordu. Kural degil, SAYDIGI
  * YER yanlisti.
- *
  * ALANLAR CALISMA ZAMANINDAN ALINDI - @better-auth/core'daki getAuthTables()
  * kendi ayarlarimizla cagrilip liste karsilastirildi. 25.4'te sema bir CLI
  * surumunden uretilmisti ve Account.issuer atlanmisti; ayni hataya iki kez
  * dusulmedi.
- *
  * lastRequest BigInt VE BU ZORUNLU: deger Date.now(), yani milisaniye
  * (~1,77 x 10^12). Prisma'nin Int'i 32 bit INTEGER'dir ve bu sayi ORAYA
  * SIGMAZ. Kutuphanenin kendi kodundaki "typeof data.lastRequest === bigint"
  * kontrolu de bunu soyluyor.
- *
  * Kullaniciya BAGLI DEGIL: anahtar "IP + yol" ve limit henuz kimligi
  * bilinmeyen isteklere de uygulanmali - zaten korumaya calistigi sey giris
  * denemesi.
@@ -598,20 +601,17 @@ model Account {
 /**
  * /api/v1 YAZMA uclarinin hiz siniri sayaclari. Better Auth'un RateLimit
  * tablosundan AYRI ve bu ayrilik zorunlu, tercih degil.
- *
  * NEDEN AYNI TABLOYA YAZILAMIYOR: Better Auth kendi tablosunu buduyor
  * (rate-limiter/index.mjs, deleteExpiredRows) ve budama esigini YALNIZCA
  * KENDI kurallarindan hesapliyor:
- *     const cutoff = now - longestObservedWindow * 1000;
- *     db.deleteMany({ model, where: [{ field: "lastRequest", op: "lt", ... }] })
+ * const cutoff = now - longestObservedWindow * 1000;
+ * db.deleteMany({ model, where: [{ field: "lastRequest", op: "lt", ... }] })
  * Bizim penceremiz onunkilerden uzun oldugu icin satirlarimiz sessizce
  * silinirdi - yani sinir zaman zaman hic uygulanmazdi. Bulunmasi en zor
  * hata turu.
- *
  * BUDAMAYA GEREK YOK: anahtar kullaniciya bagli, yani satir sayisi kullanici
  * sayisiyla sinirli. Better Auth'unki "IP + yol" oldugu icin sinirsiz
  * buyuyebiliyor ve budamak zorunda.
- *
  * SABIT PENCERE, kayan degil: pencere dolunca sayac sifirlaniyor. Kayan
  * pencere daha adil ama daha fazla satir ve daha karmasik sorgu demek;
  * amacimiz kacak bir istemciyi durdurmak, adaleti gram gram olcmek degil.
@@ -632,22 +632,17 @@ model RateLimit {
 
 /**
  * Iki adimli dogrulama (TOTP) kayitlari. Better Auth yonetiyor.
- *
  * ALANLAR CALISMA ZAMANINDAN ALINDI: @better-auth/core'daki getAuthTables()
  * kendi ayarlarimizla cagrilip liste karsilastirildi. 25.4'te sema bir CLI
  * surumunden uretilmisti ve Account.issuer atlanmisti; ayni hataya bir daha
  * dusulmedi.
- *
  * secret INDEXLI ve bu kutuphanenin istegi - biz eklemedik.
- *
  * backupCodes tek bir metin sutunu: Better Auth kodlari SIFRELEYIP birlikte
  * sakliyor. Ayri satirlara bolmek bizim isimiz degil, onun ic bicimi.
- *
  * failedVerificationCount + lockedUntil: hesap bazinda kilitleme. Ardarda
  * yanlis kod girilirse hesap bir sure kilitleniyor (NIST SP 800-63B 5.2.2).
  * Sayaç BASARILI dogrulamada sifirlaniyor, yani yalnizca ARDISIK hatalari
  * sayiyor.
- *
  * CASCADE: Session ve Account ile ayni gerekce - bu bir finansal kayit degil.
  */
 model TwoFactor {
@@ -677,4 +672,56 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
+}
+
+/// Bir alacaklinin bir borcluya gonderdigi ODEME HATIRLATMASI (ADR-050).
+///
+/// NEDEN BIR TABLO, sadece bir bildirim degil: hatirlatmanin SINIRLANMASI
+/// gerekiyor. "Ayni kisiye 24 saatte bir" kurali ancak son gonderimin ne
+/// zaman oldugu YAZILIYSA uygulanabilir. Bildirim satirina bakmak yetmezdi -
+/// bildirimler 60 gun sonra siliniyor (NOTIFICATION_RETENTION_DAYS) ve alici
+/// kendi bildirimini okuyup silebiliyor, yani gonderenin sinirini ALICININ
+/// davranisi belirlerdi.
+///
+/// HATIRLATMA FINANSAL KAYIT DEGIL: hicbir bakiyeye girmiyor, hicbir
+/// hesaplamayi degistirmiyor. Yorum (ADR-049) ve fis (ADR-046) ile ayni
+/// aile - o yuzden hesap silinince FIZIKSEL olarak gidiyor.
+model PaymentReminder {
+  id String @id @default(uuid()) @db.Uuid
+
+  groupId String @db.Uuid
+
+  /// Hatirlatan: ALACAKLI. Yon burada sabit ve tersi anlamsiz - borclunun
+  /// alacakliya hatirlatmasi diye bir sey yok.
+  fromUserId String @db.Uuid
+
+  /// Hatirlatilan: BORCLU. Gruptan AYRILMIS olabilir; ayrilmak borcu
+  /// kapatmiyor ve balances.ts bu kisileri bilerek listede tutuyor.
+  toUserId String @db.Uuid
+
+  /// Hatirlatma anindaki onerilen transfer tutari (kurus).
+  ///
+  /// BIR ANLIK GORUNTU, canli bir baglanti degil - Notification.payload ile
+  /// ayni gerekce: "12 Eylul'de 250 TL icin hatirlattin" cumlesi, borc
+  /// sonradan degisse bile dogru kalmali.
+  amount   Int
+  currency String @db.Char(3)
+
+  createdAt DateTime @default(now())
+
+  group    Group @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  fromUser User  @relation("reminderFrom", fields: [fromUserId], references: [id], onDelete: Restrict)
+  toUser   User  @relation("reminderTo", fields: [toUserId], references: [id], onDelete: Restrict)
+
+  // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
+  //   CHECK (amount > 0)
+  //   CHECK (fromUserId <> toUserId)
+
+  /// Soguma penceresi sorgusu: "bu grupta, ben, bu kisiye, son 24 saatte".
+  /// Dort alan da tek indekste ve createdAt SONDA - esitlik kosullarindan
+  /// sonra araliga bakiliyor.
+  @@index([groupId, fromUserId, toUserId, createdAt])
+  /// Hesap silmede "bu kisiye gonderilenler" sorgusu icin. Gonderilenler
+  /// yukaridaki indeksin ilk sutunlariyla zaten bulunuyor.
+  @@index([toUserId])
 }

@@ -530,6 +530,108 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-050 — Ödeme hatırlatması: otomatik değil, bir insanın gönderdiği bir dürtme
+**Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
+
+**Karar:** Bir alacaklı, ödeşme planında kendisine ödemesi gereken kişiye
+**"Hatırlat"** diyebilir. Alıcıya bir bildirim ve (izin verdiyse) bir push
+gider. Aynı kişiye **24 saatte bir** hatırlatılabilir.
+
+### Neden zamanlanmış bir iş (cron) DEĞİL
+
+PROGRESS.md'deki aday listesi bu maddeyi "cron gerekiyor" diye kaydetmişti;
+uygulanırken karar **değişti** ve gerekçesi şu:
+
+- **Bir hatırlatma sosyal bir eylemdir, teknik bir olay değil.** "Üç gün
+  geçti, borçlusun" diyen bir zamanlanmış iş, grubun kendi anlaşmasını
+  bilmeden kullanıcı adına karar verir. Ailesiyle tatile çıkan biriyle yol
+  arkadaşı olan yabancılar aynı gruba benzemiyor; uygulamanın ikisini
+  ayırt edecek hiçbir bilgisi yok.
+- **"Sistem hatırlattı" cümlesinin muhatabı yok.** "Ali hatırlattı" cevap
+  verilebilir bir cümle; kullanıcı ne olduğunu ve kime söyleyeceğini bilir.
+- **Kimsenin istemediği bildirim, izni geri aldırır.** Push izni bir kez
+  kapatıldığında bütün bildirimler susuyor — hatırlatma yüzünden harcama
+  bildirimini de kaybetmek kötü bir takas.
+
+Sonuç: `vercel.json` bu iş için **gerekmedi**. (Tekrarlayan harcama için hâlâ
+gerekiyor — ADR-051.)
+
+### Kime hatırlatılabilir: ölçüt ödeşme planı, ham bakiye değil
+
+Sunucu, alıcıyı `getGroupBalances`'ın döndürdüğü `suggestedTransfers`
+listesinden doğruluyor: yalnızca **"bu kişi sana X ödemeli"** diyen bir satır
+varsa hatırlatma gidiyor.
+
+"Negatif bakiyesi olan herkes" demek yetmezdi: sadeleştirilmiş planda borçlu
+parayı **başka birine** ödüyor olabilir ve olmayan bir borç için gönderilen
+hatırlatma yanlış bilgi taşırdı. Bu ölçütün ikinci faydası: hatırlatma,
+kullanıcının **ekranda gördüğü satırdan** üretiliyor.
+
+**Tutar istemciden alınmıyor** — `currency` kuralının (ADR-006) aynısı.
+İstemci tutarı gönderseydi "sana 9.999 TL borcun var" diyen bir hatırlatma
+kurulabilirdi.
+
+**Alıcının aktif üye olması aranmıyor.** Gruptan ayrılmak borcu kapatmıyor ve
+`balances.ts` bu kişileri bilerek listede tutuyor (yoksa para "kaybolmuş"
+görünürdü). Ayrılmış birine borcunu hatırlatmak, özelliğin en çok işe yaradığı
+durum.
+
+### Neden bir tablo, sadece bir bildirim değil
+
+Soğuma kuralı ("aynı kişiye 24 saatte bir") ancak **son gönderimin ne zaman
+olduğu yazılıysa** uygulanabilir. Bildirim satırına bakmak yetmezdi:
+bildirimler 60 gün sonra siliniyor (`NOTIFICATION_RETENTION_DAYS`) ve alıcı
+kendi bildirimini okuyup silebiliyor — yani **gönderenin sınırını alıcının
+davranışı belirlerdi**.
+
+Soğuma kontrolü transaction içinde. Mutlak bir garanti değil: Postgres'in
+varsayılan yalıtımında eş zamanlı iki istek aynı boşluktan geçebilir. O
+durumda kaybedilen şey **bir fazla bildirim**, para değil — ve üstteki
+`enforceWriteLimit` her kullanıcıyı zaten sınırlıyor.
+
+### Hatırlatma finansal kayıt değil
+
+Yorum (ADR-049) ve fiş (ADR-046) ile **aynı aile**: hiçbir bakiyeye girmiyor,
+hiçbir hesaplamayı değiştirmiyor. Bu yüzden hesap silinince **fiziksel olarak**
+gidiyor — hem gönderdikleri hem kendisine gönderilenler. Yalnızca biri
+silinseydi, silinmiş bir hesabın adı hâlâ bir satırın ucunda dururdu ve
+*"hesabını silersen yüklediğin her şey gider"* cümlesi yarım kalırdı.
+
+**Bedeli açıkça yazılıyor:** karşı taraf için soğuma penceresi sıfırlanır.
+Kişisel verinin kalmasından iyi bir takas.
+
+Tablodaki `amount` bir **anlık görüntü**, canlı bir bağlantı değil —
+`Notification.payload` ile aynı gerekçe: "12 Eylül'de 250 TL için
+hatırlattın" cümlesi, borç sonradan değişse bile doğru kalmalı.
+
+### Push'ta tutar yok — ve kural burada en çok işe yarıyor
+
+ADR-047 push'tan tutarı ve kişi adını çıkarmıştı. Hatırlatmanın **tamamı** bir
+tutar hakkında, yani metne konsaydı kilit ekranında *"sana 1.250 TL borcun
+var"* yazardı. Push yalnızca grup adını ve olayın türünü taşıyor: **"Bir ödeme
+hatırlatması var"**. Uygulama içi bildirim tutarı gösteriyor.
+
+### İki istemci, aynı yer
+
+Web'de ödeşme planının **"Sana ödenecekler"** listesinde satırın sonunda;
+telefonda bakiye kartındaki aynı satırın sonunda. İkisi de "ödemem gerekenler"
+tarafında **yok** — yön sabit. Gönderildikten sonra satır kapanıyor ve
+**409 da kapatıyor**: sunucu "çok erken" diyorsa gönderilmiş bir hatırlatma
+var (başka bir cihazdan); satırı açık bırakmak kullanıcıyı aynı duvara tekrar
+sürerdi.
+
+Düğmenin başlangıç durumu **sunucudan** geliyor (`/balances` yanıtındaki
+`reminders`). İstemci kendi gönderdiğini hatırlamaya çalışsaydı sayfa
+yenilendiğinde ya da ikinci bir cihazda düğme yeniden açılırdı.
+
+**Alternatifler:** otomatik cron (yukarıda); grup içindeki herkese görünen bir
+"hatırlattı" kaydı (özelliği bir dürtmeden bir teşhire çevirirdi); soğuma
+yerine tamamen serbest bırakmak (taciz aracı olurdu); hatırlatmaya serbest
+metin eklemek (push'a giremezdi, uygulama içinde de yeni bir moderasyon
+sorusu açardı).
+
+---
+
 ## ADR-049 — Harcamaya yorum: finansal kayıt değil, bu yüzden kuralları ayrı
 **Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
 
