@@ -2494,6 +2494,53 @@ davranışı.
 
 ---
 
+## Faz 47 — Profil fotoğrafı · **BİTTİ, HİÇBİR CİHAZDA GÖRÜLMEDİ**
+
+Kullanıcı kendi fotoğrafını yükleyebiliyor; fotoğraf R2'de duruyor ve
+**kendi ucumuzdan** servis ediliyor.
+
+| | |
+|---|---|
+| Yetki | Kendin + seninle **en az bir aktif grup paylaşan** |
+| Depo | R2, `avatars/<userId>/<uuid>.<ext>` |
+| Uçlar | `PUT`/`DELETE /api/v1/me/avatar` · `GET /api/v1/users/<id>/avatar` |
+| Şema | Tek kolon: `avatarStorageKey` (`avatarUrl` ve `hasImage` zaten vardı) |
+| CSP | **Değişmedi** — görüntü kendi alan adımızdan geliyor |
+| Arayüz | Web (kullanıcı menüsü) + mobil (hesap ekranı) |
+
+**Aday listesindeki gerekçe çürüktü.** Fiş ile profil fotoğrafı "tek aday"
+sayılıyordu çünkü ikisi de depo + yükleme arayüzü + beyan güncellemesi
+istiyordu. Fiş 1.0.3'te çıkınca o bedelin **üçte ikisi ödenmişti**; not
+güncellenmediği için aday olduğundan pahalı görünmeye devam etti.
+ADR-053'ün dersinin aynısı.
+
+**"Uzak depo seçilirse CSP de değişmeli" notu da gereksiz çıktı.** Fişler
+o soruyu çoktan çözmüştü: görüntü kendi ucumuzdan çıkıyor.
+
+**Kırık görselin bir geçmişi var:** Clerk devrinde `avatarUrl` uzak bir
+adres taşıyordu, CSP geçirmiyordu, kullanıcı kendi hesabında kırık bir
+kutu görüyordu. E2E bu yüzden `naturalWidth > 0` soruyor; negatif kontrol
+uç 404 dönünce **tam o satırda** düştü, `toBeVisible` geçmeye devam etti.
+
+**Mobilde bir sunum bileşeni oturuma bağımlı hale geldi ve testler
+yakaladı.** `MemberAvatar` `useSession()` çağırınca fotoğrafı **olmayan**
+birinin baş harfleri bile oturum istedi. `useOptionalSession()` o yüzden
+var.
+
+**Bir test yanlış sebepten geçiyordu:** "dış adres çizilmiyor" testi
+oturumsuz dosyadaydı ve orada belirteç zaten `null` olduğu için koruma
+kaldırılsa bile geçerdi. Belirteç taşıyan ayrı dosyaya taşındı.
+
+**AÇIK KALAN:** 1.0.4 **gönderildikten sonra** yazıldı, yani o sürümde
+yok. Telefonda ilk kez bir sonraki build'de görülecek.
+
+**Yedi negatif kontrol koşuldu** (4 servis + 1 E2E + 2 mobil), hepsi düştü
+ve geri alınca geçti.
+
+**Test:** 757 kök birim (+15), 91 mobil jest (+6), 2 E2E.
+
+---
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
@@ -2501,9 +2548,16 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Profil fotoğrafı** | Fiş fotoğrafıyla aynı depo ve arayüz; uç henüz yok |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
+> **Profil fotoğrafı listeden çıktı (10 Eylül, Faz 47)** — ve listedeki
+> gerekçe **çürüdü**: "fiş fotoğrafıyla aynı depo ve arayüz" doğruydu ama
+> sonucu yanlış okunmuştu. Fiş 1.0.3'te çıkınca depo, yükleme arayüzü,
+> izin metinleri ve gizlilik cümlesi **zaten ödenmişti**; aday olduğundan
+> pahalı görünmeye devam etti çünkü not güncellenmedi. CSP'ye de
+> dokunulmadı — "uzak depo seçilirse değişmeli" notu, fişlerin çoktan
+> çözdüğü bir soruyu açık sanıyordu (ADR-054).
+>
 > **Fiş OCR listeden çıktı (10 Eylül, Faz 46)** — ve listedeki gerekçe
 > **çürüdü**: "ücretli dış servis + yeni beyan" yalnızca bulut çözümü
 > düşünüldüğü için doğruydu. Cihaz üzerinde çalışan bir yol bulununca üç
@@ -2532,7 +2586,7 @@ karar vermemiştir.
 > fotoğrafı. Aday listesi bir plan değil seçenek listesidir; biteni taşımak
 > onu yanıltıcı yapıyordu.
 
-### Aday ayrıntısı — fiş / fatura VE profil fotoğrafı
+### Aday ayrıntısı — fiş / fatura VE profil fotoğrafı (İKİSİ DE BİTTİ)
 
 **İkisi tek aday**, çünkü ikisi de aynı üç şeyi gerektiriyor: bir nesne
 deposu, bir yükleme arayüzü, ve gizlilik/mağaza beyanlarının güncellenmesi.
@@ -2570,11 +2624,10 @@ Cloudflare'de, ADR-026; çıkış trafiği ücretsiz).
   çiğnenmiyor — giden şey kaydın kendisi değil ekli görsel.
 - **Mobilde yeni bağımlılık** (`expo-image-picker`) ve yeni bir native izin.
 
-**Kod tarafında hazır olan:** `User.avatarUrl` ve `User.hasImage` sütunları
-duruyor (Clerk devrinden), `PersonAvatar` da `hasImage` ayrımını taşıyor.
-Yani profil fotoğrafı geldiğinde yazacak yer hazır — ama `canRenderAvatar`
-bugün yalnızca aynı kökenden gelen adresleri geçiriyor, uzak depo seçilirse
-o da CSP ile birlikte değişmeli.
+**BU BÖLÜM ARTIK BİR KAYIT (10 Eylül, Faz 47).** Sütunlar hazırdı,
+yazan geldi. `canRenderAvatar` hakkındaki uyarı **gereksiz çıktı**: uzak
+depo seçilmedi, görüntü kendi ucumuzdan servis ediliyor ve CSP olduğu gibi
+kaldı (ADR-054).
 
 ## Bilinen teknik borç
 

@@ -530,6 +530,81 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-054 — Profil fotoğrafı: kendi ucumuzdan servis edilen, ortak gruba bağlı bir görsel
+**Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
+
+**Karar:** Kullanıcı kendi profil fotoğrafını yükleyebiliyor. Fotoğraf
+R2'de duruyor ve **kendi ucumuzdan** servis ediliyor
+(`GET /api/v1/users/<id>/avatar`); depo adresi istemciye **hiç açılmıyor**.
+
+### Listedeki gerekçe çürümüştü
+
+`PROGRESS.md` fiş fotoğrafı ile profil fotoğrafını **tek aday** sayıyordu:
+*"ikisi de aynı üç şeyi gerektiriyor: bir nesne deposu, bir yükleme
+arayüzü, ve gizlilik/mağaza beyanlarının güncellenmesi. Ayrı ayrı
+yapılırsa aynı bedel iki kez ödenir."*
+
+Fiş fotoğrafı 1.0.3'te çıkınca **o bedelin üçte ikisi zaten ödenmişti**:
+`lib/storage.ts` fişe özel hiçbir şey içermiyor (`putObject(key)` /
+`getObject` / `deleteObject`), mobil fotoğraf seçici ve Info.plist izin
+metinleri yerinde, gizlilik politikası fotoğrafları anlatıyor. Not
+güncellenmediği için aday, olduğundan pahalı görünmeye devam etti.
+
+**ADR-053'ün dersinin aynısı:** bir gerekçe tek bir çözümün özelliğiyse,
+o gerekçe değil o çözümdür.
+
+### CSP'ye dokunulmadı — ve bu ölçüldü
+
+Aynı not *"uzak depo seçilirse CSP de değişmeli"* diyordu. Değişmedi:
+görüntü kendi alan adımızdan çıktığı için `img-src 'self' data: blob:`
+olduğu gibi duruyor. Fişler bu soruyu zaten çözmüştü.
+
+**Bunun bir geçmişi var.** Clerk devrinde `avatarUrl` **uzak** bir adres
+taşıyordu, `img-src` onu geçirmiyordu ve kullanıcı kendi hesabında **kırık
+bir kutu** görüyordu. E2E testi bu yüzden `img` etiketinin varlığını değil
+`naturalWidth > 0`'ı soruyor — etiket kırık bir görselde de durur.
+
+### Yetki: ortak grup
+
+Fotoğrafı **kendin** ve **seninle en az bir aktif grup paylaşan** görebilir.
+
+- Yalnızca sahibi görseydi avatarın hiçbir işlevi kalmazdı — varlık sebebi
+  bir listede insanları ayırmak.
+- Herkes görseydi, elinde bir kullanıcı kimliği olan herkes bir yüze
+  ulaşırdı.
+
+Fiş "bir gruba" ait; avatar bir **kişiye** ait, o yüzden en yakın karşılık
+"ortak grup" oldu. Adres tahmin edilebilir (`/users/<id>/avatar`) ve bu
+bilinçli: güvenlik adresin gizliliğinde değil, **her istekte** sorulan
+üyelik kontrolünde.
+
+### Her yükleme yeni bir anahtar
+
+Üzerine yazılmıyor. Adres sabit kalsaydı tarayıcıdaki eski fotoğraf
+önbellekten gelmeye devam ederdi (`private, max-age=300`) ve kullanıcı
+fotoğrafını değiştirdikten sonra beş dakika eskisini görürdü. Yeni anahtar
+→ yeni adres → önbellek kendiliğinden boşa düşer.
+
+### Şemaya tek kolon eklendi
+
+`avatarStorageKey`. `avatarUrl` ve `hasImage` Clerk devrinden **zaten
+duruyordu**; eksik olan tek şey nesnenin depodaki adresiydi. `avatarUrl`
+onu taşıyamaz çünkü o arayüzde `<img src>` olarak basılan bir **adres**.
+İçerik türü ayrı bir kolonda tutulmuyor: uzantıyı bu kod üretiyor ve tür
+baytlardan koklanarak seçiliyor — kapalı bir döngü.
+
+### MemberAvatar bir sunum bileşeni ve öyle kalmalı
+
+Mobilde fotoğraf desteği eklenirken `MemberAvatar` `useSession()` çağırmaya
+başladı; o kanca `<SessionProvider>` dışında **bilerek fırlatıyor**. Bir
+anda fotoğrafı **olmayan** birinin baş harflerini çizmek bile oturum
+gerektirdi ve iki ekran testi anında düştü.
+
+`useOptionalSession()` bu yüzden var: ekranlar için sert kural yerinde
+duruyor, sunum bileşenleri ise oturum yoksa sessizce baş harfe düşüyor.
+
+---
+
 ## ADR-053 — Fiş OCR cihazda yapılır; bulut, ödemediğimiz bir bedel değil, ödemeyi seçmediğimiz bir bedeldi
 **Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
 

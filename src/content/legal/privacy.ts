@@ -75,7 +75,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             items: [
               "E-posta adresin",
               "Görünen adın",
-              "Profil fotoğrafının adresi (varsa) ve gerçekten bir fotoğraf yükleyip yüklemediğin",
+              "Profil fotoğrafın (yüklediysen): fotoğrafın kendisi, adresi ve gerçekten bir fotoğraf yükleyip yüklemediğin. Fotoğrafını yalnızca seninle ortak bir grubu olanlar görebilir; herkese açık bir adresi yoktur.",
               "Arayüz dili tercihin",
               "Parola belirlediysen: parolanın geri döndürülemez özeti (hash). " +
                 "Parolanın kendisi hiçbir yerde saklanmaz.",
@@ -164,7 +164,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Neon — veritabanı",
               "Resend — giriş kodu e-postalarının gönderimi (e-posta adresin bu hizmete iletilir)",
               "Vercel — uygulamanın barındırılması",
-              "Cloudflare — alan adı yönlendirmesi ve fiş fotoğraflarının saklandığı yer (R2)",
+              "Cloudflare — alan adı yönlendirmesi ve fotoğrafların saklandığı yer: fişler ve profil fotoğrafları (R2)",
               "Expo — telefona bildirim gönderimi. Bildirimin metni bu hizmetten " +
                 "geçer: yalnızca grubun adı ve ne olduğu (\"bir harcama eklendi\" gibi). " +
                 "Tutarlar ve kişi adları bildirime hiç konmaz.",
@@ -354,7 +354,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             items: [
               "Your email address",
               "Your display name",
-              "Your profile picture URL, if any, and whether you actually uploaded one",
+              "Your profile photo, if you uploaded one: the photo itself, its address, and whether you actually uploaded one. Only people who share a group with you can see it; it has no public address.",
               "Your interface language preference",
               "If you set a password: an irreversible digest (hash) of it. The password " +
                 "itself is stored nowhere.",
@@ -441,7 +441,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Neon — database",
               "Resend — delivery of sign-in code emails (your email address is passed to this service)",
               "Vercel — hosting",
-              "Cloudflare — domain routing, and where receipt photos are stored (R2)",
+              "Cloudflare — domain routing, and where photos are stored: receipts and profile photos (R2)",
               "Expo — delivering notifications to your phone. The notification text " +
                 "passes through it: only the group's name and what happened (\"an expense " +
                 "was added\"). Amounts and names are never put in a notification.",

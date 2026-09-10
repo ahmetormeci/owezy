@@ -181,6 +181,8 @@ export function ExpenseComments({
                   name={comment.author.displayName}
                   me={comment.author.userId === currentUserId}
                   size={28}
+                  avatarUrl={comment.author.avatarUrl}
+                  hasImage={comment.author.hasImage}
                 />
                 <View style={s.rowBody}>
                   <View style={s.rowHead}>

@@ -1,6 +1,8 @@
 import { fonts } from "../lib/fonts";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
+import { apiBaseUrl } from "../lib/api";
+import { useAuthToken } from "../lib/auth-token";
 import { useLocale } from "../lib/i18n";
 import { useTheme, type Theme } from "../lib/theme";
 
@@ -242,23 +244,70 @@ export function SectionRule({ label, value }: { label: string; value?: string })
 /**
  * Uyenin bas harfleri.
  *
- * NEDEN FOTOGRAF DEGIL: liste ucu fotograf adresi dondurmuyor ve her satira
- * bir indirme koymak, ataç yerine kucuk resim koymayi reddettigimiz gerekcenin
- * aynisi. Bas harf ayni soruyu ("kim") ag turu olmadan cevapliyor.
+ * FOTOGRAF ARTIK VAR (ADR-054). Bu yorumda uzun sure "liste ucu fotograf
+ * adresi dondurmuyor" yaziyordu; DOGRU DEGIL - uc avatarUrl ve hasImage'i
+ * BASTAN BERI donduruyordu (lib/balances.ts, lib/groups.ts), yazan kimse
+ * yoktu. Yazan gelince gerekce de dustu.
+ *
+ * BAS HARF KAYBOLMADI, YEDEK OLDU: fotografi olmayan, belirteci henuz
+ * gelmemis ya da adresi bize ait olmayan her durumda yine bas harf
+ * ciziliyor. hasImage'in avatarUrl'den ayri durmasinin sebebi de bu ayrim
+ * (bkz. prisma/schema.prisma).
  *
  * KENDI SATIRIN BAKIR CERCEVELI: dort kisilik bir listede "hangisi benim"
  * sorusu her seferinde okumakla cevaplanmamali.
  */
-export function MemberAvatar({ name, me = false, size = 48 }: {
+export function MemberAvatar({
+  name,
+  me = false,
+  size = 48,
+  avatarUrl,
+  hasImage,
+}: {
   name: string;
   me?: boolean;
   size?: number;
+  avatarUrl?: string | null;
+  hasImage?: boolean | null;
 }) {
   const theme = useTheme();
   const s = styles(theme);
   const locale = useLocale();
+  const token = useAuthToken();
   // toLocaleUpperCase(locale) SART: Turkce'de "i" -> "I" degil "İ".
   const initials = name.trim().slice(0, 2).toLocaleUpperCase(locale);
+
+  /**
+   * YALNIZCA KENDI ADRESIMIZ. avatarUrl bir gun disaridan gelen bir adres
+   * tasirsa (Clerk devrinde tam bu oldu), onu cizmek istemiyoruz: baslikta
+   * oturum belirtecimiz var ve o baslik yabanci bir sunucuya gitmemeli.
+   * "//ornek.com/a.png" de "/" ile basliyor ama ayni koken DEGIL - web'deki
+   * canRenderAvatar da tam bu tuzagi ayikliyor.
+   */
+  const ownUrl = Boolean(avatarUrl && avatarUrl.startsWith("/") && !avatarUrl.startsWith("//"));
+
+  if (hasImage && avatarUrl && ownUrl && token) {
+    return (
+      <Image
+        source={{
+          uri: `${apiBaseUrl()}${avatarUrl}`,
+          // Adres yetkisiz calismiyor: basliksiz istek 401 doner ve gorsel
+          // hic cizilmez (api/v1/users/[userId]/avatar).
+          headers: { Authorization: `Bearer ${token}` },
+        }}
+        style={[
+          s.avatar,
+          { width: size, height: size, borderRadius: size / 2 },
+          me && s.avatarMe,
+        ]}
+        accessibilityIgnoresInvertColors
+        // Testin fotograf dalini bas harf dalindan ayirabilmesi icin. Ekranda
+        // hicbir karsiligi yok; goruntu zaten dekoratif (ad yaninda yaziyor).
+        testID="avatar-image"
+      />
+    );
+  }
+
   return (
     <View
       style={[

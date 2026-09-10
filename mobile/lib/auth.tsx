@@ -78,6 +78,26 @@ export function useSession(): Session {
 }
 
 /**
+ * Oturum VARSA dondurur, yoksa null - FIRLATMIYOR.
+ *
+ * NEDEN IKI TANE VAR: yukaridaki firlatma bilincli ve yerinde - bir EKRAN
+ * oturum olmadan calisamaz, sessizce "cikis yapilmis" gibi davranmak sebebi
+ * gizlerdi.
+ *
+ * AMA SUNUM BILESENLERI BASKA. MemberAvatar profil fotografini cizebilmek
+ * icin belirtece ihtiyac duyuyor (ADR-054) ve useSession'i cagirinca
+ * saglayiciyi kuran her yere BAGIMLI hale geldi: fotografi olmayan birinin
+ * bas harflerini cizmek icin bile oturum sart oldu ve iki ekran testi
+ * ANINDA patladi. Bir avatarin bas harf cizmek icin oturuma ihtiyaci yok.
+ *
+ * null = "belirtec yok ya da henuz bilinmiyor" -> fotograf cizilmez, bas
+ * harfe dusulur. Sessiz ve dogru davranis.
+ */
+export function useOptionalSession(): Session | null {
+  return useContext(SessionContext);
+}
+
+/**
  * Better Auth'a POST atar ve yanitin `set-auth-token` basligini dondurur.
  *
  * credentials: "omit" ZORUNLU VE OLCULDU. React Native'in fetch'i varsayilan

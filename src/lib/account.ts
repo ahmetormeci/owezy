@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { takeAvatarKeyForDeletion } from "@/lib/avatars";
 import { deleteReceiptsUploadedBy } from "@/lib/receipts";
 import { deleteCommentsWrittenBy } from "@/lib/comments";
 import { deleteRemindersInvolving } from "@/lib/reminders";
@@ -63,6 +64,7 @@ const DELETED_DISPLAY_NAME = "Silinmiş kullanıcı";
 export async function deleteAccount(userId: string) {
   // Transaction'in DISINDA duruyor: commit'ten sonra depoya gidecek.
   let receiptKeys: string[] = [];
+  let avatarKey: string | null = null;
 
   const result = await prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
@@ -152,6 +154,16 @@ export async function deleteAccount(userId: string) {
     receiptKeys = await deleteReceiptsUploadedBy(tx, userId);
 
     /**
+     * PROFIL FOTOGRAFI - ADR-054, fisle AYNI aile. Kullanicinin yukledigi
+     * bir gorsel; "hesabini silersen yukledigin her sey gider" cumlesi
+     * onu da kapsamak zorunda.
+     *
+     * ANAHTAR DISARI TASINIYOR, ayni gerekceyle: depodan silme bir AG
+     * ISTEGI ve bu transaction'in icinde durmamali.
+     */
+    avatarKey = await takeAvatarKeyForDeletion(tx, userId);
+
+    /**
      * YORUMLAR - ADR-049, fis fotografiyla AYNI gerekce (ADR-046). Yorum
      * kullanicinin YAZDIGI serbest metin, yani kisisel veri; gizlilik
      * hikayesi tek cumleyle anlatilabilmeli: "hesabini silersen yukledigin
@@ -215,8 +227,10 @@ export async function deleteAccount(userId: string) {
    * hesap silmeyi zorunlu tutuyor (5.1.1(v)) ve bir depo hatasinin o kapiyi
    * kapatmasi kabul edilemez.
    */
+  const objectKeys = avatarKey ? [...receiptKeys, avatarKey] : receiptKeys;
+
   await Promise.all(
-    receiptKeys.map((key) =>
+    objectKeys.map((key) =>
       /**
        * BURADA DA YAKALANIYOR - deleteObject zaten kendi icinde yakaliyor
        * olsa bile. Ona guvenmek GORUNMEZ bir bagimlilik olurdu: storage.ts'te

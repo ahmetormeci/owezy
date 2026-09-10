@@ -51,9 +51,17 @@ varlığına bakıp fotoğraf basmak, fotoğrafı olanları gerçek yüzle,
 olmayanları **Clerk'in tasarımıyla** gösterirdi — aynı listede iki ayrı
 görsel sistem. `null` = "bilmiyorum"; arayüzde `false` gibi davranıyor.
 
-**Faz 25.7 sonrası ikisini de yazan yok:** Clerk gitti, yeni kayıt akışı
-fotoğraf sormuyor. Sütunlar duruyor — eski satırlarda değer var ve bir profil
-fotoğrafı özelliği geldiğinde aynı ayrım yine gerekecek.
+**ARTIK İKİSİNİ DE YAZAN VAR (10 Eylül, ADR-054):** profil fotoğrafı
+özelliği geldi. Faz 25.7 ile 47 arasında sütunlar boş durdu çünkü Clerk
+gitmiş, yeni kayıt akışı fotoğraf sormuyordu — ve o aralıkta `hasImage`
+ayrımının gerekeceği tahmini **doğru çıktı**: fotoğrafı olmayan kullanıcı
+baş harfe düşüyor.
+
+`avatarStorageKey` — fotoğrafın **depodaki** adresi (R2). `avatarUrl` bunu
+taşıyamaz çünkü o arayüzde `<img src>` olarak basılan bir adres, dosya yolu
+değil. `ExpenseReceipt.storageKey` ile aynı rol. İçerik türü ayrı bir kolonda
+tutulmuyor: anahtarın uzantısını (`.jpg` / `.png`) bu kodun kendisi üretiyor
+ve tür baytlardan koklanarak seçiliyor — kapalı bir döngü.
 
 `locale` kolonu `String`, enum değil — dil listesi büyüdüğünde migration
 gerektirmesin.

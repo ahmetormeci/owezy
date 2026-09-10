@@ -28,62 +28,40 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-10
 
 Current task:
-  YOK. 1.0.4 INCELEMEYE GONDERILDI (10 Eylul) - Apple'in cevabi bekleniyor.
+  YOK. Faz 47 (profil fotografi) BITTI - ADR-054.
 
-  BUILD e5371f69 · surum 1.0.4 · build no 21 · SDK 57
-  submission f42d4c04 · IPA ve loglar expo.dev'de
+  1.0.4 APPLE'DA, incelemede. Build e5371f69 · surum 1.0.4 · build no 21.
+  DIKKAT: PROFIL FOTOGRAFI O BUILD'DE YOK. 1.0.4 gonderildikten SONRA
+  yazildi; telefona ulasmasi icin yeni bir build gerekiyor.
 
-  BU SURUM ALTI SEYI BIRDEN TASIYOR - hicbiri 1.0.3'te yok:
-    1. kagit & petrol tasarimi   (Faz 41)
-    2. harcamaya yorum           (Faz 42)
-    3. odeme hatirlatmasi        (Faz 43)
-    4. tekrarlayan harcama       (Faz 44)
-    5. kalem kalem bolusum       (Faz 45)
-    6. fisten tutar okuma        (Faz 46)
+  FAZ 47 - NE YAPILDI:
+    - avatarStorageKey kolonu (migration 20260910220000), iki veritabanina
+      da uygulandi
+    - src/lib/avatars.ts: setAvatar / readAvatar / removeAvatar /
+      takeAvatarKeyForDeletion
+    - PUT+DELETE /api/v1/me/avatar · GET /api/v1/users/[userId]/avatar
+    - hesap silmede fotograf da gidiyor (account.ts, fisle ayni desen)
+    - web: kullanici menusunde ekle/degistir/kaldir
+    - mobil: hesap ekraninda ayni ucu; MemberAvatar artik fotograf ciziyor
+      ve butun cagri yerlerine avatarUrl/hasImage geciriliyor
+    - gizlilik politikasi iki dilde genisletildi (R2 artik iki tur fotograf
+      tasiyor; toplanan veri listesinde fotografin KENDISI yaziyor)
 
-  GONDERIMDE DEGISEN MAGAZA ALANLARI (hepsi docs/STORE.md'de):
-    - TURKCE AD: "Owezy" -> "Owezy: Masraf Paylasimi". Ad BOLGEYE DEGIL
-      DILE gore seciliyor (olculdu), yani eski Turkce ad hicbir Turkce
-      arama karsilamiyordu.
-    - aciklama iki dilde yenilendi (dort bolusum turu, fis, OCR,
-      tekrarlayan, yorum)
-    - surum notu iki dilde yazildi
-    - anahtar kelimeler yeniden kuruldu (EN 97/100, TR 100/100)
-    - tanitim metni artik BOS DEGIL - surume bagli olmayan tek alan
-    - EKRAN GORUNTULERI: 20 dosya, iki dil x iki olcu
-      ~/Desktop/owezy-1.0.4-ekran-goruntuleri/
+  TESTLER: kok 757 · mobil 7 vitest + 91 jest · TAM E2E 64 GECTI (14.0 dk,
+  1 bilerek atlanan) - iki avatar testi de yesil, sonuc OKUNDU.
+  NEGATIF KONTROLLER: 4 servis (ortak grup, yazma sirasi, silme sirasi,
+  tur koklama) + 1 E2E (uc 404 dondurunce naturalWidth dustu, toBeVisible
+  GECMEYE DEVAM ETTI) + 2 mobil (dis adres korumasi, useOptionalSession).
 
-  APPREVIEW@ KONTROLU KULLANICI TARAFINDAN YAPILDI. Gecen sefer atlandigi
-  icin 2.1 reti gelmisti; bu sefer atlanmadi.
-
-  UC ACIK MADDE VAR VE UCU DE KULLANICI TARAFINDAN ERTELENDI (10 Eylul).
-  KENDILIGINDEN BASLAMA, GUNDEME GETIRME - sirasi geldiginde kullanici
-  soyleyecek.
-
-    1. AB TUCCAR BEYANI - "simdilik yapmayacagim". Uygulama 27 AB
-       magazasinda YOK ve oyle kalacak. Gerekcesi ve tiklama yolu
-       asagida duruyor; bedeli bireysel hesapta adres/telefon/e-postanin
-       AB urun sayfasinda HERKESE ACIK yayimlanmasi. Bu bir zevk degil
-       maliyet karari - kullanici verdi.
-
-    2. CRON DOGRULAMASI - "surum kabul olunca". Gercek bir tekrarlayan
-       sablonun canlida gercekten harcama urettigi HALA gorulmedi.
-       Teknik olarak 1.0.4'u BEKLEMIYOR (web'de zaten yayinda), ama
-       kullanici ikisini birlikte yapmayi secti. Yolu: web'de bir sablon
-       kur (baslangic BUGUN), sonra Vercel -> Cron Jobs -> Run.
-
-    3. OCR'IN GERCEK BIR FISI DOGRU OKUDUGU - "surum kabul olunca".
-       Modulun SDK 57 ile DERLENDIGINI build kanitladi; DOGRU OKUDUGU
-       ayri bir iddia ve hala olculmedi. 1.0.4 telefona indikten sonra
-       gercek bir markette denenecek.
-
-  BU OTURUMDA CIKAN VE DUZELTILEN KUSUR (95b8f62): expo-text-extractor
-  STATIK import ediliyordu ve requireNativeModule MODUL GOVDESI
-  CALISIRKEN firlatiyor. Expo Go'da modul olmadigi icin UYGULAMANIN
-  TAMAMI aciliyordu - OCR degil. isSupported bunu yakalayamaz; o "cihaz
-  yapabiliyor mu" sorusunun cevabi, "modul bagli mi" sorusunun degil.
-  Testler modulu taklit ettigi, EAS build'i de icine koydugu icin
-  ikisi de goremezdi. GONDERILEN BUILD ETKILENMIYOR - orada modul bagli.
+  BU FAZDA OGRENILEN IKI SEY - IKISI DE TEKRARLANABILIR:
+    1. ADAY LISTESINDEKI GEREKCE BAYATLAYABILIR. "Fis ile profil fotografi
+       tek aday, ayri yapilirsa bedel iki kez odenir" dogruydu; fis 1.0.3'te
+       cikinca bedelin ucte ikisi ZATEN odenmisti ve not guncellenmedigi
+       icin aday oldugundan pahali gorunmeye devam etti. ADR-053'un
+       dersinin aynisi.
+    2. BIR SUNUM BILESENINE OTURUM BAGIMLILIGI EKLEMEK SESSIZ DEGIL.
+       MemberAvatar useSession() cagirinca fotografi OLMAYAN birinin bas
+       harfleri bile oturum istedi. useOptionalSession o yuzden var.
 
 >>> AB MAGAZALARINDA UYGULAMA YOK - 10 EYLUL'DE OLCULDU <<<
 

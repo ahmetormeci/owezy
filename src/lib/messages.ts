@@ -72,6 +72,19 @@ export const MESSAGES_TR = {
   "receipt.permission_denied":
     "İzin verilmedi. Ayarlar → Owezy'den fotoğraf ya da kamera erişimini açabilirsin.",
 
+  // Profil fotografi (ADR-054)
+  "avatar.not_found": "Bu hesabın profil fotoğrafı yok",
+  "avatar.empty": "Dosya boş",
+  "avatar.too_large": "Fotoğraf çok büyük. En fazla 2 MB olabilir.",
+  "avatar.unsupported_type": "Yalnızca JPEG ve PNG fotoğraflar yüklenebilir",
+  /**
+   * FISTEKININ AYNISI DEGIL. Fiste "izin verilmedi" cihazin fotograf
+   * iznini anlatiyor; burada sunucunun verdigi cevap: senin gormeye
+   * hakkin yok. Ayni cumleyi kullanmak, iki ayri sorunu tek cumleye
+   * sikistirmak olurdu.
+   */
+  "avatar.permission_denied": "Bu fotoğrafı görebilmen için ortak bir grubunuz olmalı",
+
   // Yorumlar (ADR-049)
   "comment.not_found": "Bu yorum bulunamadı",
   "comment.author_only": "Bir yorumu yalnızca yazan kişi silebilir",
@@ -292,6 +305,14 @@ export const MESSAGES_TR = {
   // --- Kayit / giris sayfalari (Faz 25.4) ---
   "ui.display_name": "Adın",
   "ui.name_saved": "Adın güncellendi",
+
+  // Profil fotografi (ADR-054)
+  "ui.add_photo": "Fotoğraf ekle",
+  "ui.change_photo": "Fotoğrafı değiştir",
+  "ui.remove_photo": "Fotoğrafı kaldır",
+  "ui.photo_saved": "Fotoğrafın güncellendi",
+  "ui.photo_removed": "Fotoğrafın kaldırıldı",
+  "ui.uploading_photo": "Yükleniyor...",
   // KURGUSAL BIR ISIM OLMALI. Bir sure burada uygulamanin sahibinin
   // GERCEK adi yaziyordu: kaydolan herkes ornek olarak onu goruyordu.
   // Ingilizcesi bastan beri "Alex Doe" - yani kurgusal oldugu belli.
@@ -961,6 +982,13 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "receipt.permission_denied":
     "Permission was not granted. You can allow photo or camera access in Settings → Owezy.",
 
+  // Profile photo (ADR-054)
+  "avatar.not_found": "This account has no profile photo",
+  "avatar.empty": "The file is empty",
+  "avatar.too_large": "The photo is too large. It can be at most 2 MB.",
+  "avatar.unsupported_type": "Only JPEG and PNG photos can be uploaded",
+  "avatar.permission_denied": "You need a group in common to see this photo",
+
   // Comments (ADR-049)
   "comment.not_found": "This comment could not be found",
   "comment.author_only": "Only the person who wrote a comment can delete it",
@@ -1124,6 +1152,14 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.sign_in_with_code": "Sign in with a code",
   "ui.display_name": "Your name",
   "ui.name_saved": "Your name has been updated",
+
+  // Profile photo (ADR-054)
+  "ui.add_photo": "Add a photo",
+  "ui.change_photo": "Change photo",
+  "ui.remove_photo": "Remove photo",
+  "ui.photo_saved": "Your photo has been updated",
+  "ui.photo_removed": "Your photo has been removed",
+  "ui.uploading_photo": "Uploading...",
   "ui.display_name_placeholder": "Alex Doe",
   "ui.no_account_yet": "Don't have an account?",
   "ui.already_have_account": "Already have an account?",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -74,6 +74,7 @@ export function UserMenu({
   const [securityOpen, setSecurityOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [name, setName] = useState(displayName);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
 
   function stopEditing() {
@@ -118,6 +119,55 @@ export function UserMenu({
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t("server.unexpected"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * FOTOGRAF YUKLEME (ADR-054).
+   *
+   * GOVDE HAM BAYTLAR, FormData DEGIL: gonderilen tek sey bir fotograf ve
+   * uc de oyle bekliyor (api/v1/me/avatar). Content-Type basligini
+   * yaziyoruz ama SUNUCU ONA BAKMIYOR - turu baytlardan kokluyor. Baslik
+   * yalnizca vekillerin icerigi bozmamasi icin.
+   */
+  async function uploadPhoto(file: File) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const bytes = await file.arrayBuffer();
+      await apiRequest("/api/v1/me/avatar", {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: bytes,
+      });
+      toast.success(t("ui.photo_saved"));
+      /**
+       * TAM TAZELEME: fotograf yalnizca bu menude degil, uye listesinde,
+       * bakiye satirlarinda ve grup basliginda da gorunuyor - adin
+       * degismesindekiyle ayni gerekce.
+       */
+      router.refresh();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("server.unexpected"));
+    } finally {
+      setBusy(false);
+      // Ayni dosya ikinci kez secilebilsin diye alan sifirlaniyor: onChange
+      // deger DEGISMEDIGI surece tekrar tetiklenmiyor.
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function removePhoto() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await apiRequest("/api/v1/me/avatar", { method: "DELETE" });
+      toast.success(t("ui.photo_removed"));
+      router.refresh();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("server.unexpected"));
     } finally {
       setBusy(false);
     }
@@ -246,6 +296,49 @@ export function UserMenu({
             >
               {t("ui.edit")}
             </Button>
+            {/*
+              FOTOGRAF SATIRI. Alan gizli, dugme onu tetikliyor - duz bir
+              <input type="file"> tarayicinin kendi dugmesini basar ve o
+              dugme ne bu menunun diliyle ne de olcusuyle uyusur.
+
+              ACCEPT YALNIZCA JPEG VE PNG: sunucu zaten baytlardan
+              kokluyor ve baskasini reddediyor; buradaki liste kullaniciyi
+              reddedilecek bir dosyayi SECMEDEN once uyariyor.
+            */}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void uploadPhoto(file);
+              }}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-start"
+              disabled={busy}
+              onClick={() => fileRef.current?.click()}
+            >
+              {busy
+                ? t("ui.uploading_photo")
+                : hasImage
+                  ? t("ui.change_photo")
+                  : t("ui.add_photo")}
+            </Button>
+            {hasImage ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full justify-start"
+                disabled={busy}
+                onClick={() => void removePhoto()}
+              >
+                {t("ui.remove_photo")}
+              </Button>
+            ) : null}
             {/*
               DURUM SATIRIN UZERINDE YAZIYOR ("Kapali" / "Acik"). Yalnizca
               baslik olsaydi kullanici, iki adimli dogrulamanin acik olup

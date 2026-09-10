@@ -21,6 +21,61 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-10 — Profil fotoğrafı
+
+Kullanıcı kendi fotoğrafını yükleyebiliyor. Fotoğraf R2'de duruyor ve
+**kendi ucumuzdan** servis ediliyor; depo adresi istemciye hiç açılmıyor.
+
+**Yetki: ortak grup.** Fotoğrafı kendin ve seninle en az bir aktif grup
+paylaşan görebilir. Yalnızca sahibi görseydi avatarın hiçbir işlevi
+kalmazdı — varlık sebebi bir listede insanları ayırmak; herkes görseydi
+elinde bir kullanıcı kimliği olan herkes bir yüze ulaşırdı.
+
+**Aday listesindeki gerekçe çürüktü.** `PROGRESS.md` fiş fotoğrafı ile
+profil fotoğrafını "tek aday" sayıyordu çünkü ikisi de depo + yükleme
+arayüzü + beyan güncellemesi istiyordu. Fiş 1.0.3'te çıkınca o bedelin
+üçte ikisi ödenmişti — `lib/storage.ts` fişe özel hiçbir şey içermiyor,
+mobil seçici ve izin metinleri yerinde. Not güncellenmediği için aday
+olduğundan pahalı görünmeye devam etti. ADR-053'ün dersinin aynısı.
+
+**CSP'ye dokunulmadı** — aynı not "uzak depo seçilirse CSP de değişmeli"
+diyordu. Görüntü kendi alan adımızdan çıktığı için `img-src 'self'`
+olduğu gibi kaldı. Fişler bu soruyu zaten çözmüştü.
+
+**Bunun bir geçmişi var:** Clerk devrinde `avatarUrl` uzak bir adres
+taşıyordu, CSP geçirmiyordu ve kullanıcı kendi hesabında **kırık bir
+kutu** görüyordu. E2E testi bu yüzden `img` etiketinin varlığını değil
+`naturalWidth > 0`'ı soruyor — etiket kırık bir görselde de durur.
+Negatif kontrol koşuldu: uç 404 dönünce test tam o satırda düştü,
+`toBeVisible` ise geçmeye devam etti.
+
+**Her yükleme yeni bir anahtar alıyor**, üzerine yazmıyor. Adres sabit
+kalsaydı tarayıcıdaki eski fotoğraf beş dakika önbellekten gelmeye devam
+ederdi ve kullanıcı "yüklenmedi" sanırdı.
+
+**Şemaya tek kolon eklendi:** `avatarStorageKey`. `avatarUrl` ve
+`hasImage` Clerk devrinden zaten duruyordu; eksik olan nesnenin depodaki
+adresiydi.
+
+### Mobilde bir sunum bileşeni oturuma bağımlı hale geldi ve testler yakaladı
+
+`MemberAvatar` fotoğraf desteği alınca `useSession()` çağırmaya başladı; o
+kanca `<SessionProvider>` dışında **bilerek fırlatıyor**. Bir anda
+fotoğrafı **olmayan** birinin baş harflerini çizmek bile oturum gerektirdi
+ve iki ekran testi anında düştü.
+
+Kusur testlerde değildi: `MemberAvatar` her yerde kullanılan bir sunum
+bileşeni. `useOptionalSession()` eklendi — ekranlar için sert kural
+yerinde, sunum bileşenleri oturum yoksa sessizce baş harfe düşüyor.
+
+**Bir test yanlış sebepten geçiyordu ve ayrıldı.** "Dış adres çizilmiyor"
+testi oturumsuz dosyadaydı; orada belirteç zaten `null` olduğu için
+görsel dalı hiç çalışmıyordu, yani koruma kaldırılsa bile geçerdi.
+Belirteç taşıyan ayrı bir dosyaya taşındı ve negatif kontrolle
+doğrulandı.
+
+---
+
 ## 2026-09-10 — Grup sayfası tek sütun oldu
 
 Bakiye kartı ile fiş aynı sütunda **farklı genişlikteydi**; kullanıcı

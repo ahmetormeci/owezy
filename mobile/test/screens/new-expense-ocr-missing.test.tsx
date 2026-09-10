@@ -34,6 +34,8 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("../../lib/auth", () => ({
+  // MemberAvatar bunu cagiriyor (ADR-054). null = belirtec yok -> bas harf.
+  useOptionalSession: () => null,
   useSession: () => ({ getToken: async () => "tok" }),
 }));
 

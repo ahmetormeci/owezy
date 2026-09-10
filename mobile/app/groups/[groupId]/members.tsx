@@ -30,7 +30,14 @@ import { SelectField } from "../../../components/field";
  * vardi ve yalnizca web kullaniyordu.
  */
 type MembersResponse = {
-  members: { userId: string; displayName: string; role: "OWNER" | "MEMBER" }[];
+  members: {
+    userId: string;
+    displayName: string;
+    role: "OWNER" | "MEMBER";
+    // Profil fotografi (ADR-054). Opsiyonel: eski bir cevapta alan olmayabilir.
+    avatarUrl?: string | null;
+    hasImage?: boolean | null;
+  }[];
 };
 type InviteResponse = { invite: { token: string } };
 /**
@@ -262,6 +269,8 @@ export default function MembersScreen() {
                   name={member.displayName}
                   me={member.userId === currentUserId}
                   size={36}
+                  avatarUrl={member.avatarUrl}
+                  hasImage={member.hasImage}
                 />
                 <View style={s.rowText}>
                   <Text style={s.name} numberOfLines={1}>

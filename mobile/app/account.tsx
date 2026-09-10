@@ -1,12 +1,14 @@
 import { fonts } from "../lib/fonts";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SUPPORTED_LOCALES, type Locale } from "@/lib/locale";
 import { useSession } from "../lib/auth";
 import { disablePush } from "../lib/push";
 import { useLocale, useSetLocale, useTranslate } from "../lib/i18n";
+import { apiBaseUrl } from "../lib/api";
+import { pickReceipt, uploadReceipt } from "../lib/receipt-file";
 import { useApiClient, useApiGet } from "../lib/use-api";
 import { useTheme, useThemeChoice, type Theme } from "../lib/theme";
 import { SectionRule, MemberAvatar } from "../components/receipt";
@@ -24,7 +26,15 @@ import { SectionRule, MemberAvatar } from "../components/receipt";
  * CIKIS YAPMA HALA GRUPLAR EKRANINDA DA DURUYOR. Buraya tasiyip oradan
  * kaldirmak, en sik kullanilan islemi bir dokunus derine gomerdi.
  */
-type Me = { user: { displayName: string; email: string } };
+type Me = {
+  user: {
+    displayName: string;
+    email: string;
+    // Profil fotografi (ADR-054).
+    avatarUrl?: string | null;
+    hasImage?: boolean | null;
+  };
+};
 
 /**
  * Diller KENDI dillerinde yaziliyor, cevrilmiyor.
@@ -44,11 +54,75 @@ export default function AccountScreen() {
   const { choice: themeChoice, setChoice: setThemeChoice } = useThemeChoice();
   const { remove } = useApiClient();
 
-  const { state } = useApiGet<Me>("/api/v1/me");
+  const { state, reload } = useApiGet<Me>("/api/v1/me");
   const locale = useLocale();
   const setLocale = useSetLocale();
   const { patch } = useApiClient();
   const [localeBusy, setLocaleBusy] = useState<Locale | null>(null);
+
+  const [photoBusy, setPhotoBusy] = useState(false);
+
+  /**
+   * PROFIL FOTOGRAFI (ADR-054).
+   *
+   * FISIN SECICISI VE YUKLEYICISI AYNEN KULLANILIYOR. Adlari "receipt" ile
+   * basliyor ama ikisi de bir fise ozel HICBIR SEY yapmiyor: biri izin
+   * isteyip fotograf sectirip kucultuyor, oteki dosyayi verilen adrese
+   * akitiyor. Yeniden adlandirmak alti dosyaya dokunurdu; ayni isi ikinci
+   * kez yazmak ise kucultme ve HEIC->JPEG adimlarini ikiye bolerdi - ki o
+   * adimlar suslemeden ibaret degil (bkz. lib/receipt-file.ts).
+   */
+  async function choosePhoto(source: "camera" | "library") {
+    if (photoBusy) return;
+    setPhotoBusy(true);
+    setError(null);
+    try {
+      const picked = await pickReceipt(source);
+      if (picked.kind === "cancelled") return;
+      if (picked.kind === "error") {
+        setError(t(picked.code));
+        return;
+      }
+      const result = await uploadReceipt(
+        picked.uri,
+        `${apiBaseUrl()}/api/v1/me/avatar`,
+        await getToken(),
+      );
+      if (!result.ok) {
+        setError(t(result.code));
+        return;
+      }
+      reload();
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  /** Kamera mi galeri mi - fisle ayni soru, ayni sirada. */
+  function askPhotoSource() {
+    if (photoBusy) return;
+    Alert.alert(t("ui.add_photo"), undefined, [
+      { text: t("ui.take_photo"), onPress: () => void choosePhoto("camera") },
+      { text: t("ui.choose_from_library"), onPress: () => void choosePhoto("library") },
+      { text: t("ui.cancel"), style: "cancel" },
+    ]);
+  }
+
+  async function removePhoto() {
+    if (photoBusy) return;
+    setPhotoBusy(true);
+    setError(null);
+    try {
+      const result = await remove("/api/v1/me/avatar");
+      if (!result.ok) {
+        setError(t(result.code));
+        return;
+      }
+      reload();
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   /**
    * Dil secimi.
@@ -139,7 +213,13 @@ export default function AccountScreen() {
           // Grup ekranindaki baslik blogunun karsiligi: bas harfler solda,
           // kimlik saginda.
           <View style={s.identity}>
-            <MemberAvatar name={state.data.user.displayName} me size={48} />
+            <MemberAvatar
+              name={state.data.user.displayName}
+              me
+              size={48}
+              avatarUrl={state.data.user.avatarUrl}
+              hasImage={state.data.user.hasImage}
+            />
             <View style={s.identityText}>
               <Text style={s.name} numberOfLines={1}>
                 {state.data.user.displayName}
@@ -147,6 +227,26 @@ export default function AccountScreen() {
               <Text style={s.muted} numberOfLines={1}>
                 {state.data.user.email}
               </Text>
+              {/* FOTOGRAF EYLEMLERI ADIN ALTINDA, ayri bir bolum degil:
+                  ikisi de "sen kimsin" sorusunun parcasi ve araya bakir
+                  bir bolum cizgisi koymak onlari ayri isler gibi
+                  gosterirdi. */}
+              <View style={s.photoActions}>
+                <Pressable onPress={askPhotoSource} disabled={photoBusy}>
+                  <Text style={s.photoAction}>
+                    {photoBusy
+                      ? t("ui.uploading_photo")
+                      : state.data.user.hasImage
+                        ? t("ui.change_photo")
+                        : t("ui.add_photo")}
+                  </Text>
+                </Pressable>
+                {state.data.user.hasImage ? (
+                  <Pressable onPress={() => void removePhoto()} disabled={photoBusy}>
+                    <Text style={s.photoAction}>{t("ui.remove_photo")}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
           </View>
         )}
@@ -278,6 +378,12 @@ function createStyles(theme: Theme) {
 
     identity: { flexDirection: "row", alignItems: "center", gap: 12 },
     identityText: { flex: 1, gap: 2 },
+    photoActions: { flexDirection: "row", gap: 16, marginTop: 4 },
+    photoAction: {
+      fontFamily: fonts.medium,
+      fontSize: 13,
+      color: theme.brand,
+    },
     name: { fontSize: 17, fontFamily: fonts.medium, color: theme.foreground },
     muted: { fontFamily: fonts.body, fontSize: 13.5, color: theme.muted },
 

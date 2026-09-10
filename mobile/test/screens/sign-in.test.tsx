@@ -41,6 +41,8 @@ const mockVerifySecondFactor = jest.fn();
 const mockForgetChallenge = jest.fn();
 
 jest.mock("../../lib/auth", () => ({
+  // MemberAvatar bunu cagiriyor (ADR-054). null = belirtec yok -> bas harf.
+  useOptionalSession: () => null,
   useSession: () => ({
     status: "signed-out",
     getToken: async () => null,

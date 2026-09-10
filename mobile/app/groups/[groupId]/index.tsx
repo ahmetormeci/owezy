@@ -126,7 +126,9 @@ type SummaryResponse = {
   expenseCount: number;
   byMonth: MonthSlice[];
 };
-type MembersResponse = { members: { userId: string; displayName: string }[] };
+type MembersResponse = {
+  members: { userId: string; displayName: string; avatarUrl?: string | null; hasImage?: boolean | null }[];
+};
 type MeResponse = { user: { id: string } };
 type SuggestedTransfer = { fromUserId: string; toUserId: string; amount: number };
 /**
@@ -140,6 +142,10 @@ type MemberBalance = {
   amount: number;
   displayName: string;
   hasLeft: boolean;
+  // Profil fotografi (ADR-054). Opsiyonel: eski bir sunucu cevabinda alan
+  // hic olmayabilir.
+  avatarUrl?: string | null;
+  hasImage?: boolean | null;
 };
 /**
  * Cagiranin bu grupta SOGUMA PENCERESI ICINDE gonderdigi hatirlatmalar
@@ -874,6 +880,8 @@ export default function GroupScreen() {
                   name={member.displayName}
                   me={member.userId === currentUserId}
                   size={30}
+                  avatarUrl={member.avatarUrl}
+                  hasImage={member.hasImage}
                 />
               </View>
             ))}
@@ -1341,6 +1349,8 @@ export default function GroupScreen() {
                 <MemberAvatar
                   name={member.displayName}
                   me={member.userId === currentUserId}
+                  avatarUrl={member.avatarUrl}
+                  hasImage={member.hasImage}
                 />
                 <View style={s.memberNames}>
                   <Text style={s.memberName} numberOfLines={1}>

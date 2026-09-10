@@ -146,6 +146,16 @@ model User {
   // (bas harf gosteriliyor).
   hasImage Boolean?
 
+  // Fotografin DEPODAKI adresi (R2). Degistirmek ve silmek eski anahtari
+  // bilmeyi gerektiriyor; avatarUrl bunu tasiyamaz cunku o arayuzde
+  // <img src> olarak basilan bir ADRES, dosya yolu degil (ADR-054).
+  //
+  // Icerik turu AYRI BIR KOLONDA TUTULMUYOR: anahtarin uzantisini bu kodun
+  // kendisi uretiyor (.jpg / .png) ve tur baytlardan koklanarak secildi -
+  // yani uzanti ile tur arasindaki bag bizim kapali dongumuz. Fiste tur
+  // ayri duruyor cunku orada kayit ile nesne bagimsiz yasayabiliyor.
+  avatarStorageKey String?
+
   // Bu kullanicinin olusturdugu gruplar
   createdGroups Group[] @relation("GroupCreatedBy")
 

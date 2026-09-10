@@ -1,0 +1,13 @@
+-- PROFIL FOTOGRAFI (ADR-054).
+--
+-- avatarUrl ve hasImage ZATEN VARDI (Clerk devrinden) ve yazacak yer olarak
+-- duruyorlardi. Eksik olan tek sey nesnenin DEPODAKI adresi: silmek ve
+-- degistirmek icin eski anahtarin bilinmesi gerekiyor.
+--
+-- NEDEN AYRI BIR KOLON, avatarUrl'e sigdirmak yerine: avatarUrl arayuzde
+-- <img src> olarak basiliyor, yani bir ADRES. Depo anahtari ise bir dosya
+-- yolu ve disariya hic cikmiyor. Ikisini tek alanda tasimak, birini
+-- otekinin yerine basma kazasina acik kapi birakirdi.
+--
+-- ExpenseReceipt.storageKey ile ayni rol, ayni ad.
+ALTER TABLE "User" ADD COLUMN "avatarStorageKey" TEXT;

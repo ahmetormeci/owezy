@@ -505,6 +505,24 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
+## BİR SONRAKİ GÖNDERİM (1.0.5) — ŞİMDİDEN BİRİKEN
+
+**Profil fotoğrafı** (Faz 47, ADR-054) 1.0.4 **gönderildikten sonra**
+yazıldı, yani o sürümde yok. Bir sonraki build'e binecek ve o gönderimde:
+
+- Açıklamaya girmesi gerekiyor mu? **Muhtemelen hayır** — profil fotoğrafı
+  bir özellik değil, bir alışkanlık; açıklama zaten uzun. Karar
+  gönderimde verilecek.
+- **App Privacy ANKETİ KONTROL EDİLMELİ.** Fişler için "User Content →
+  Photos" zaten beyan edilmişti; profil fotoğrafı **aynı kategoriye**
+  düşüyor, yani beyan muhtemelen olduğu gibi doğru. Ama *muhtemelen*
+  yetmez — panelde bakılacak.
+- **Gizlilik politikası ZATEN GÜNCELLENDİ** (iki dilde): R2 artık iki tür
+  fotoğraf taşıyor ve toplanan veri listesinde fotoğrafın *kendisi*
+  yazıyor. Web'de yayında olduğu için gönderimi beklemiyor.
+
+---
+
 ---
 
 ## App Privacy — beyan edilenler

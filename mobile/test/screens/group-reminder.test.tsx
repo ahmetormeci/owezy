@@ -45,6 +45,8 @@ jest.mock("../../lib/use-api", () => ({
 }));
 
 jest.mock("../../lib/auth", () => ({
+  // MemberAvatar bunu cagiriyor (ADR-054). null = belirtec yok -> bas harf.
+  useOptionalSession: () => null,
   useSession: () => ({ getToken: async () => "token", signOut: jest.fn() }),
 }));
 
