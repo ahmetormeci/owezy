@@ -76,24 +76,77 @@ Owezy uses the data in your account only to run the app.
 Privacy policy: https://owezy.net/privacy
 ```
 
-## Açıklama — Türkçe
+## Açıklama — Türkçe (yayında)
 
-> **BOŞ.** Lookup ucu Türkçe yerelleştirmeyi döndürmüyor. App Store
-> Connect → App Store → Turkish → Description'dan yapıştır.
+> Kullanıcı App Store Connect'ten yapıştırdı (10 Eylül). Lookup ucu
+> Türkçe yerelleştirmeyi döndürmüyor, yani bu metnin tek kaynağı ASC.
 
 ```
-(App Store Connect'ten yapıştırılacak)
+Owezy, ortak masrafları paylaşan insanlar için basit bir hesap defteri.
+Ev arkadaşları, yol arkadaşları, bir akşam yemeği ya da uzun bir tatil —
+kim ne ödedi, kim kime ne kadar borçlu, tek bakışta görünür.
+
+NASIL ÇALIŞIR
+• Bir grup oluştur, arkadaşlarını bir bağlantıyla davet et.
+• Harcamayı gir: kim ödedi, kimler paylaşacak.
+• Bakiyeler kendiliğinden hesaplanır.
+• Borçlar sadeleştirilir: üç kişi birbirine para göndermek yerine
+  en az sayıda ödemeyle ödeşir.
+• Ödemeyi kaydet, hesap kapansın.
+
+BÖLÜŞÜM, GERÇEK HAYATA UYAR
+• Eşit — herkes aynı payı öder.
+• Tutarla — kimin ne kadar ödeyeceğini tek tek yaz.
+• Yüzdeyle — paylar oranlı olsun.
+Küsuratlar kaybolmaz; kalan kuruşlar adilce dağıtılır.
+
+AYRICA
+• Türkçe ve İngilizce.
+• Açık ve koyu tema.
+• İki adımlı doğrulama (kimlik doğrulayıcı uygulama + yedek kodlar).
+• Reklam yok, uygulama içi satın alma yok, takip yok.
+
+Owezy hesabındaki verileri yalnızca uygulamayı çalıştırmak için kullanır.
+Gizlilik politikası: https://owezy.net/privacy
 ```
 
 ## Altyazı · anahtar kelimeler · tanıtım metni
 
-> **BOŞ.** Üçü de lookup ucunda yok; ASC'den yapıştırılacak.
+Üçü de lookup ucunda yok; kullanıcı ASC'den yapıştırdı (10 Eylül).
 
 | Alan | EN | TR |
 |---|---|---|
-| Subtitle | | |
-| Keywords | | |
-| Promotional text | | |
+| Subtitle | `Group bills, settled fast` | `Grup hesabı, kolay ödeşme` |
+| Keywords | `expenses,split,share,bills,roommate,debt,travel,group,settle,tab,budget,flatmate` | `masraf,paylaşım,hesap,borç,ev arkadaşı,tatil,bölüşme,ödeşme,grup,fatura,harcama` |
+| Promotional text | *(bilerek boş)* | *(bilerek boş)* |
+
+**ÖLÇÜLDÜ — alan sınırları rahat:**
+
+| | EN | TR | Sınır |
+|---|---|---|---|
+| Altyazı | 25 | 25 | 30 |
+| Anahtar kelime | 80 | 79 | 100 |
+
+**Ölçümün gösterdiği ikinci şey — bir SORUN DEĞİL, bir fırsat.** Anahtar
+kelimelerin bir kısmı uygulamanın **adında ya da altyazısında** zaten
+geçiyor:
+
+| | Tekrar edenler | Yer |
+|---|---|---|
+| EN | `expenses`, `split` | ad: *Owezy: Split Expenses* |
+| EN | `bills`, `group` | altyazı: *Group bills, settled fast* |
+| TR | `ödeşme`, `grup` | altyazı: *Grup hesabı, kolay ödeşme* |
+
+Ad, altyazı ve anahtar kelimeler ASC'de **ayrı alanlar**. Yaygın kanı,
+Apple'ın üçünü de arama için okuduğu ve aynı kelimeyi ikinci kez yazmanın
+100 karakterden yer harcadığı yönünde — EN'de ~27, TR'de ~12 karakter. Bu
+**doğrulayamadığım bir varsayım**: Apple algoritmasını yayımlamıyor ve
+ölçebildiğim tek şey karakter sayısı. Yine de boşta ~20 karakter var ve
+tekrarları çıkarmak yerine yeni kelime koymak denenebilir (örn. EN'de
+`receipt`, `recurring`, `itemized`; TR'de `fiş`, `tekrarlayan`).
+
+**Bu bir sonraki gönderimin işi**, çünkü bu alanlar sürümle birlikte
+değişiyor.
 
 ---
 
@@ -120,9 +173,31 @@ things the web app already had to the phone.
 
 ### 1.0.3 — incelemeden çıktı (10 Eylül)
 
-> Notu ASC'den yapıştır. İçeriği: push bildirim, üye çıkarma + davet
-> iptali, grup eylemleri fişin üstünde, başlıktaki hesap simgesi, tema
-> seçimi, fiş fotoğrafı.
+```
+• You can attach a receipt photo to an expense. Take it with the camera or
+  pick it from your library. Expenses with a receipt are marked in the list,
+  and tapping the mark opens the photo full screen. Only the members of that
+  group can see it, and it has no public address. Deleting your account
+  deletes the receipts you uploaded.
+• Your phone can receive notifications. You hear about activity in your
+  groups even when the app is closed. Amounts and names are never in the
+  notification — only the group's name and what happened.
+• A group's owner can remove a member and cancel an invite link.
+• Adding an expense, settling up and editing the group are now at the top of
+  the group page. They used to sit below the list, so in a long group a
+  single action meant scrolling to the very bottom.
+• Your account is now reachable from every screen, from the icon at the top.
+• You can choose the appearance: System, Light or Dark.
+• Fixed an error message that left out the amount when removing a member who
+  still has an open balance.
+```
+
+> **TÜRKÇESİ ELDE YOK.** Kullanıcı yalnızca İngilizcesini yapıştırdı;
+> ASC'de Türkçe bir sürüm notu var mı bilinmiyor. Yoksa Türkçe mağaza
+> sayfasında İngilizce not görünür — 1.0.2'nin son maddesi tam da
+> *"mağaza sayfası artık iki dilde olduğunu söylüyor"* diyor, yani bu
+> ayrım bu projede bir kez konu olmuş. **Bir sonraki gönderimde kontrol
+> edilecek.**
 
 ---
 
@@ -136,6 +211,10 @@ Bugün metin **doğru**, çünkü mağazadaki sürümde o özellik yok. **1.0.4
 yayına çıktığı an eksik olacak** — destek sayfasındaki cümlenin başına
 gelenin aynısı, sadece ters yönde: orada olmayan bir şey vaat ediliyordu,
 burada olan bir şey saklanacak.
+
+**Türkçe açıklama AYNI İKİ BOŞLUĞU taşıyor:** "BÖLÜŞÜM, GERÇEK HAYATA
+UYAR" da üç madde sayıyor (Eşit / Tutarla / Yüzdeyle) ve fiş fotoğrafı
+orada da geçmiyor. İki dilde birden düzeltilecek.
 
 Aynı gönderimde açıklamaya girmesi gerekenler:
 

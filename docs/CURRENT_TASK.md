@@ -408,10 +408,17 @@ MAGAZA METNI ARTIK REPODA: docs/STORE.md (10 Eylul).
   Altyazi, anahtar kelimeler, tanitim metni ve TURKCE yerelestirme o uctan
   GELMIYOR - ASC'den yapistirilacak, dosyada bos duruyor.
 
-  ORADA BEKLEYEN BIR IS VAR: aciklamadaki "SPLITS THAT MATCH REAL LIFE"
-  listesi UC madde sayiyor; kalem kalem bolusum dordunculer. Bugun DOGRU
-  (magazadaki surumde yok), 1.0.4 ciktigi an EKSIK olur. Fis fotografi da
-  aciklamada hic gecmiyor. Ayrintisi docs/STORE.md'de.
+  DOSYA TAM: aciklama (EN + TR), 1.0.2 ve 1.0.3 surum notlari, altyazi,
+  anahtar kelimeler. Tanitim metni iki dilde de BILEREK bos.
+
+  BIR SONRAKI GONDERIMDE UC IS VAR (ayrintisi docs/STORE.md'de):
+    1. Aciklamadaki bolusum listesi IKI DILDE de UC madde sayiyor; kalem
+       kalem dordunculer. Fis fotografi da hic gecmiyor - oysa 1.0.3'te
+       geldi. Bugun ikisi de DOGRU (magazadaki surumde yoklar), 1.0.4
+       ciktigi an EKSIK olurlar.
+    2. 1.0.3'un TURKCE surum notu elde yok; ASC'de var mi bilinmiyor.
+    3. Anahtar kelimelerde ~20 karakter bos ve bir kismi ad/altyazi ile
+       tekrar ediyor (olculdu). Yeni kelimeye yer var.
 
 PRODUCTION'DAKI DEMO HESAPLAR - DIKKAT:
   appreview@owezy.net  inceleme hesabi. SILME, PAROLASINI DEGISTIRME -
