@@ -72,13 +72,23 @@ Current task:
   "supheliyse tam kosu" diyor - ve olcmeden kabul etmek bugun uc kez
   hataya goturdu.
 
-  BU IKI COMMIT PUSH EDILMEDI (fb12a8a + hash commit'i). Kod commit'i ve
-  kullanicinin bu faz icin push izni YOK - uc maddelik serinin izni
-  Faz 43-45'e aitti. Testler yesil; push KULLANICI ISTEYINCE.
+  PUSH EDILDI (10 Eylul, kullanici izin verdi): fb12a8a + 293df19 + be7c486
+  origin/main'e gitti. Dal temiz, ileride commit yok.
 
-  DIKKAT: bu dosyaya yapilacak DOKUMAN commit'i otomatik push ediliyor
-  (AGENTS.md) ve o push ALTTAKI KOD COMMIT'INI DE goturur. Bugun tam
-  boyle bir kaza oldu. Kullanici izin verene kadar bu dala push YAPMA.
+  URETIME NE GITTI: pratikte hicbir sey. Web'in gordugu tek degisiklik
+  src/lib/messages.ts'e eklenen uc anahtar (ui.reading_receipt,
+  ui.amount_from_total, ui.amount_from_receipt) ve HICBIRINI web ekrani
+  cagirmiyor - ucu de mobil icin. src/lib/receipt-amount.ts saf modul ve
+  onu YALNIZCA mobile/app/groups/[groupId]/expenses/new.tsx import ediyor
+  (olculdu: grep -rn "receipt-amount" src/ mobile/ e2e/). Yani Vercel
+  deploy'u calisti ama kullanicinin gordugu arayuz ayni kaldi; OCR
+  telefonda ve 1.0.4 build'i ile gelecek.
+
+  DIKKAT (kural olarak duruyor): bu dosyaya yapilacak DOKUMAN commit'i
+  otomatik push ediliyor (AGENTS.md) ve o push ALTINDA BEKLEYEN BIR KOD
+  COMMIT'I VARSA ONU DA goturur. 10 Eylul'de tam boyle bir kaza oldu.
+  Push edilmemis kod commiti varken dokuman commiti atmadan once
+  git log --oneline origin/main..HEAD ile bak.
 
   >>> CRON_SECRET MADDESI KAPANDI (10 Eylul). Asagisi kaydi. <<<
 
