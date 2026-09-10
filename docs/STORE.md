@@ -229,32 +229,182 @@ gerekirse oradan bakılmalı.
 
 ---
 
-## BİR SONRAKİ GÖNDERİMDEN ÖNCE — açıklamada DEĞİŞMESİ GEREKEN yer
+## 1.0.4 GÖNDERİMİ — ASC'YE YAPIŞTIRILACAK METİNLER
 
-**"SPLITS THAT MATCH REAL LIFE" listesi ÜÇ madde sayıyor** (equally / by
-amount / by percentage). Faz 45'te **dördüncüsü** geldi: kalem kalem
-bölüşüm (ADR-052).
+Bu bölüm **hazır metin**, tartışma değil. Kaynağı aşağıdaki iki ölçüm:
 
-Bugün metin **doğru**, çünkü mağazadaki sürümde o özellik yok. **1.0.4
-yayına çıktığı an eksik olacak** — destek sayfasındaki cümlenin başına
-gelenin aynısı, sadece ters yönde: orada olmayan bir şey vaat ediliyordu,
-burada olan bir şey saklanacak.
+**NEDEN AÇIKLAMA DEĞİŞMEK ZORUNDA.** Yayındaki açıklama iki dilde de
+bölüşümü **üç** madde sayıyor (Eşit / Tutarla / Yüzdeyle). Faz 45'te
+**dördüncüsü** geldi (kalem kalem, ADR-052). Ayrıca fiş fotoğrafı
+1.0.3'te çıktı ve açıklamada **hiç geçmiyor**; tekrarlayan harcama,
+yorum, hatırlatma ve fişten tutar okuma 1.0.4'le geliyor.
 
-**Türkçe açıklama AYNI İKİ BOŞLUĞU taşıyor:** "BÖLÜŞÜM, GERÇEK HAYATA
-UYAR" da üç madde sayıyor (Eşit / Tutarla / Yüzdeyle) ve fiş fotoğrafı
-orada da geçmiyor. İki dilde birden düzeltilecek.
+Bugüne kadar metin **doğruydu** — mağazadaki sürümde o özellikler yoktu.
+1.0.4 yayına çıktığı an eksik olur. Destek sayfasındaki tuzağın tersi:
+orada olmayan bir şey vaat edilmişti, burada olan bir şey saklanacak.
 
-Aynı gönderimde açıklamaya girmesi gerekenler:
+**Bildirimle ilgili yanlış bir cümle YOK** — ölçüldü, push açıklamada hiç
+geçmiyor. Yani destek sayfasındaki hatanın eşi burada çıkmadı.
 
-- kalem kalem bölüşüm (dördüncü madde)
-- tekrarlayan harcama (kira, abonelik)
-- harcamaya yorum
-- fiş fotoğrafı — 1.0.3'te geldi, açıklamada **hiç geçmiyor**
-- fişten tutar okuma (cihazda; fotoğraf hiçbir yere gitmiyor)
+### Açıklama — İngilizce (1.0.4)
 
-**Açıklamada bildirimle ilgili yanlış bir cümle YOK** — ölçüldü, push
-metinde hiç geçmiyor. Yani destek sayfasındaki tuzağın eşi burada
-çıkmadı.
+```
+Owezy is a simple ledger for people who share costs. Flatmates, road
+trips, one dinner or a long holiday — who paid what, and who owes whom,
+visible at a glance.
+
+HOW IT WORKS
+• Create a group and invite people with a link.
+• Add an expense: who paid, and who shares it.
+• Balances update themselves.
+• Debts are simplified, so three people settle up in the fewest
+  payments instead of sending money in circles.
+• Record the payment and the account closes.
+
+SPLITS THAT MATCH REAL LIFE
+• Equally — everyone pays the same share.
+• By amount — write exactly what each person owes.
+• By percentage — shares in proportion.
+• Item by item — go down the receipt line by line and give each item
+  to the people who actually had it.
+Fractions are never lost; leftover cents are handed out fairly.
+
+RECEIPTS
+• Attach a photo of the receipt to an expense, from the camera or your
+  library.
+• Your phone reads the total off the photo and fills the amount in for
+  you. The reading happens on the device — the photo is not sent
+  anywhere for it — and an amount you typed yourself is never
+  overwritten.
+• Only the members of that group can see the photo.
+
+THE ONES THAT COME BACK EVERY MONTH
+• Rent, a subscription, the shared bill: set it up once and the expense
+  appears on its own — weekly, monthly or yearly.
+• Pause it or stop it whenever you like.
+
+WHEN THE NUMBER IS NOT THE WHOLE STORY
+• Leave a comment on any expense — what it covered, who is still
+  missing, whatever the amount alone does not say.
+• Send a reminder to someone who owes you. The reminder never carries
+  the amount.
+
+ALSO
+• Turkish and English.
+• Light and dark themes.
+• Two-step verification (authenticator app + backup codes).
+• No ads, no in-app purchases, no tracking.
+
+Owezy uses the data in your account only to run the app.
+Privacy policy: https://owezy.net/privacy
+```
+
+### Açıklama — Türkçe (1.0.4)
+
+```
+Owezy, ortak masrafları paylaşan insanlar için basit bir hesap defteri.
+Ev arkadaşları, yol arkadaşları, bir akşam yemeği ya da uzun bir tatil —
+kim ne ödedi, kim kime ne kadar borçlu, tek bakışta görünür.
+
+NASIL ÇALIŞIR
+• Bir grup oluştur, arkadaşlarını bir bağlantıyla davet et.
+• Harcamayı gir: kim ödedi, kimler paylaşacak.
+• Bakiyeler kendiliğinden hesaplanır.
+• Borçlar sadeleştirilir: üç kişi birbirine para göndermek yerine
+  en az sayıda ödemeyle ödeşir.
+• Ödemeyi kaydet, hesap kapansın.
+
+BÖLÜŞÜM, GERÇEK HAYATA UYAR
+• Eşit — herkes aynı payı öder.
+• Tutarla — kimin ne kadar ödeyeceğini tek tek yaz.
+• Yüzdeyle — paylar oranlı olsun.
+• Kalem kalem — fişi satır satır geç, her kalemi gerçekten onu alanlara
+  yaz.
+Küsuratlar kaybolmaz; kalan kuruşlar adilce dağıtılır.
+
+FİŞLER
+• Harcamaya fişin fotoğrafını ekle: kamerayla çek ya da galerinden seç.
+• Telefonun fotoğraftaki toplamı okuyup tutarı senin yerine yazar. Okuma
+  cihazın üzerinde olur — fotoğraf bunun için hiçbir yere gönderilmez —
+  ve kendi yazdığın tutarın üstüne asla yazılmaz.
+• Fotoğrafı yalnızca o grubun üyeleri görür.
+
+HER AY GERİ GELENLER
+• Kira, bir abonelik, ortak fatura: bir kez kur, harcama kendiliğinden
+  düşsün — haftalık, aylık ya da yıllık.
+• İstediğin zaman duraklat ya da bitir.
+
+RAKAMIN ANLATMADIĞI YER
+• Harcamaya yorum bırak — neyi kapsadığı, kimin eksik kaldığı, tutarın
+  tek başına söylemediği ne varsa.
+• Sana borcu olana hatırlatma gönder. Hatırlatmada tutar yazmaz.
+
+AYRICA
+• Türkçe ve İngilizce.
+• Açık ve koyu tema.
+• İki adımlı doğrulama (kimlik doğrulayıcı uygulama + yedek kodlar).
+• Reklam yok, uygulama içi satın alma yok, takip yok.
+
+Owezy hesabındaki verileri yalnızca uygulamayı çalıştırmak için kullanır.
+Gizlilik politikası: https://owezy.net/privacy
+```
+
+### Sürüm notu — 1.0.4 İngilizce
+
+```
+• The app has a new look, from the first screen to the last. Lines
+  instead of boxes, more room to read, and colour used only where it
+  carries meaning.
+• You can split an expense item by item. Go down the receipt line by
+  line, give each item to the people who actually had it, and the
+  shares are worked out for you.
+• Your phone can read the total off a receipt photo and fill in the
+  amount. The reading happens on the device, so the photo is not sent
+  anywhere for it, and an amount you typed yourself is never
+  overwritten.
+• Expenses that come back — rent, a subscription, the shared bill — are
+  set up once and appear on their own. Weekly, monthly or yearly, and
+  you can pause or stop them whenever you like.
+• You can say something about an expense. Every expense now has its own
+  comments, and the list shows how many there are.
+• You can send a reminder to someone who owes you. The reminder never
+  carries the amount.
+```
+
+### Sürüm notu — 1.0.4 Türkçe
+
+```
+• Uygulamanın görünümü baştan sona yenilendi. Kutular yerine çizgiler,
+  okumak için daha çok yer, ve renk yalnızca bir anlam taşıdığı yerde.
+• Bir harcamayı kalem kalem bölüşebiliyorsun. Fişi satır satır geç, her
+  kalemi gerçekten onu alanlara yaz; paylar senin yerine hesaplanır.
+• Telefonun fişin fotoğrafındaki toplamı okuyup tutarı yazabiliyor.
+  Okuma cihazın üzerinde olduğu için fotoğraf bunun için hiçbir yere
+  gönderilmiyor, ve kendi yazdığın tutarın üstüne asla yazılmıyor.
+• Geri gelen harcamalar — kira, abonelik, ortak fatura — bir kez
+  kurulup kendiliğinden düşüyor. Haftalık, aylık ya da yıllık; istediğin
+  zaman duraklatabilir ya da bitirebilirsin.
+• Harcamaya bir şey söyleyebiliyorsun. Artık her harcamanın kendi
+  yorumları var, listede kaç tane olduğu görünüyor.
+• Sana borcu olana hatırlatma gönderebiliyorsun. Hatırlatmada tutar
+  yazmaz.
+```
+
+### Anahtar kelimeler — 1.0.4
+
+Boşta ~20 karakter vardı (EN 80/100, TR 79/100). **Önerilen: yalnızca
+EKLEME.** Hiçbir kelime çıkarılmıyor, yani "adda geçen kelimeyi
+anahtar kelimeye ikinci kez yazmak yer harcar" varsayımına bahis
+oynanmıyor — o varsayım STORE.md'de zaten "doğrulayamadığım" diye
+işaretli ve Apple algoritmayı yayımlamıyor.
+
+| | Metin | Uzunluk |
+|---|---|---|
+| EN | `expenses,split,share,bills,roommate,debt,travel,group,settle,tab,budget,flatmate,receipt,recurring` | 98/100 |
+| TR | `masraf,paylaşım,hesap,borç,ev arkadaşı,tatil,bölüşme,ödeşme,grup,fatura,harcama,fiş,tekrarlayan` | 95/100 |
+
+**Altyazı ve tanıtım metni DEĞİŞMİYOR** — altyazı hâlâ doğru, tanıtım
+metni bilerek boş.
 
 ---
 

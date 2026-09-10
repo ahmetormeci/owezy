@@ -28,17 +28,77 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-10
 
 Current task:
-  YOK. UC MADDELIK SERI BITTI.
+  1.0.4 GONDERIMI. Build ALINDI, geri kalani App Store Connect isi.
 
-  Kullanici 10 Eylul'de bilgisayar basindan ayrilirken "geri kalan 4 maddeyi
-  tamamlamaya calis" dedi ve ayrilmadan once UC SORUYA CEVAP VERDI. O cevaplar
-  bu serinin sozlesmesiydi:
+  EAS BUILD e5371f69 - iOS, production profili -> BITTI, BASARILI
+    surum 1.0.4 · build no 21 · SDK 57
+    IPA: https://expo.dev/artifacts/eas/OixP4zAbA8Mykcp-v8xnfXStfVZ0481SFTxULKlSDXM.ipa
+    log: https://expo.dev/accounts/denendi/projects/owezy/builds/e5371f69-6008-4949-a9fe-daa16ec3d3ef
 
-    1. FIS OCR ATLANDI (kullanici secti) - ucretli dis servis + yeni veri
-       isleyici beyani + API anahtari gerekiyor. Anahtar olmadan gercek
-       istek/cevap bir kez bile olculemez.
-    2. PUSH: "her ozellik yesilken push et" (kullanici secti).
-    3. KAPSAM: web + mobil TAM PARITE (kullanici secti).
+  BU BUILD BIR SORUYU DA CEVAPLADI: expo-text-extractor (fis OCR'in native
+  modulu) SDK 57 ile DERLENDI. Bugune kadar dogrulanan sey yalnizca mantik
+  (26 saf test) ve ekran davranisiydi; modul Expo Go'da hic calismamisti.
+  Derlenmesi ayri, CIHAZDA DOGRU OKUMASI ayri - ikincisi hala olculmedi.
+
+  BU BUILD ALTI SEYI BIRDEN TASIYOR - hicbiri 1.0.3'te yok:
+    1. kagit & petrol tasarimi   (Faz 41)
+    2. harcamaya yorum           (Faz 42)
+    3. odeme hatirlatmasi        (Faz 43)
+    4. tekrarlayan harcama       (Faz 44)
+    5. kalem kalem bolusum       (Faz 45)
+    6. fisten tutar okuma        (Faz 46)
+
+  BUILD'DEN SONRA SIRA (sirasi onemli, ayrintisi asagida):
+    1. build biter  -> IPA hazir
+    2. push         -> destek sayfasi metni ancak build gonderildikten
+                       sonra dogru olur
+    3. eas submit
+    4. ASC'de metinler: aciklama (2 dil), surum notu (2 dil), anahtar
+       kelimeler. HEPSI HAZIR - docs/STORE.md "1.0.4 GONDERIMI" bolumu.
+    5. EKRAN GORUNTULERI: magazadaki uc gorsel ESKI tasarimi gosteriyor.
+       Bu build yeni tasarimi getiriyor, yani gorseller yanlis hale
+       geliyor. Tasarim handoff'unun 6b maddesi tam olarak buydu ve
+       gercek bir build bekledigi icin bugune kadar yapilamadi.
+    6. appreview@ ile PAROLAYLA GIRIS KONTROLU - ajan yapamaz, kullanici
+       yapar. Gecen sefer atlandigi icin 2.1 reti geldi.
+    7. ASC'de surumu yayina alma
+
+>>> AB MAGAZALARINDA UYGULAMA YOK - 10 EYLUL'DE OLCULDU <<<
+
+  OLCUM (itunes.apple.com/lookup?id=6805650395&country=XX):
+    AB      at be dk fi fr de gr ie it nl pl pt es se  -> 14/14 SONUC YOK
+    AB disi us gb tr ca au jp ch no br in mx kr sg     -> 13/13 1.0.3 var
+
+  BELIRLEYICI AYRINTI NORVEC VE ISVICRE: ikisi de Avrupa ama AB uyesi
+  DEGIL, ikisinde de uygulama duruyor. Yani sinir "Avrupa" degil tam
+  olarak AB - bu bir ulke secimi hatasiyla olusmaz.
+
+  SEBEBI: DSA (Dijital Hizmetler Yasasi) TUCCAR BEYANI. Apple 17 Subat
+  2025'ten beri AB magazalarinda dagitilan her uygulamada dogrulanmis
+  tuccar bilgisi istiyor; olmayanlar 27 AB magazasindan KALDIRILIYOR.
+  Kullanici bir sey degistirmedi - Apple'in son tarihi isledi.
+  Kaynak: developer.apple.com/news/?id=einwn76m
+
+  NEREDE DUZELTILIR (Apple'in kendi yardim sayfasindan):
+    hesap duzeyi : App Store Connect -> Business -> Agreements sekmesi
+                   -> Compliance bolumu -> Digital Services Act yanindaki
+                   "Complete Compliance Requirements"
+    uygulama     : Apps -> Owezy -> App Information -> "App Store
+                   Regulations and Permits" -> Digital Services Act -> Edit
+    rol          : Account Holder ya da Admin
+    kaynak       : developer.apple.com/help/app-store-connect/
+                   manage-compliance-information/
+                   manage-european-union-digital-services-act-trader-requirements/
+
+  BIREYSEL HESAP ICIN BEDELI VAR - KARAR KULLANICININ. Hesap
+  "AHMET ORMECI (Individual)" (EAS ciktisindan olculdu). Apple bireysel
+  tuccarlardan ADRES (ya da posta kutusu), TELEFON ve E-POSTA istiyor ve
+  bunlari AB urun sayfasinda HERKESE ACIK yayimliyor. Yani AB'ye donmenin
+  bedeli ev adresinin magazada gorunmesi. Bir posta kutusu bu yuzden var.
+
+  OLCULEMEYEN: dogrulama bittikten sonra uygulama AB'ye KENDILIGINDEN mi
+  doner yoksa yeni bir gonderim mi gerekir - Apple'in yardim sayfasi bunu
+  YAZMIYOR. Varsayma; panelde gorulecek.
 
   YAPILANLAR:
     Faz 43  odeme hatirlatmasi   BITTI  (ADR-050)  cbfb887  CI yesil
@@ -159,15 +219,8 @@ Current task:
   SIRADAKI ADAYLAR: PROGRESS.md'deki liste. Fis OCR orada duruyor ve
   ATLANMA GEREKCESI yazili - yeniden gundeme gelirse once o okunmali.
 
-  TELEFONDA ARTIK DORT SEY BIRIKTI ve hicbiri kullaniciya ulasmadi:
-    1. kagit & petrol tasarimi   (Faz 41)
-    2. harcamaya yorum           (Faz 42)
-    3. tekrarlayan harcama       (Faz 44)
-    4. kalem kalem bolusum       (Faz 45)
-  Hepsi 1.0.3 GONDERILDIKTEN SONRA girdi. app.json HALA 1.0.3 diyor ve
-  BILEREK artirilmadi: 1.0.3'un sonucu belli degil ve EAS build kotasi
-  icin kullanicidan izin alinmasi gerekiyor (AGENTS.md). Sonraki build
-  dorde birden tasiyacak - yani gonderim basina dusen deger yuksek.
+  TELEFONDA BIRIKEN ALTI SEYIN LISTESI EN USTTE. Hepsi 1.0.3
+  GONDERILDIKTEN SONRA girdi ve hepsi 46ffb9f ile 1.0.4'e bindi.
 
   YORUM - NE YAPILDI: ExpenseComment tablosu, uc uc (listele/yaz/sil),
   EXPENSE_COMMENTED bildirimi, web'de satirdan acilan diyalog, mobilde detay
@@ -216,17 +269,12 @@ TASARIM YONU - NE YAPILDI (ADR-048)
   BUTUN MOBIL EKRANLAR SIMULATORDE ACIK VE KOYU TEMADA GORULDU.
   Web'in kimlikli sayfalari Playwright ile goruldu (yol asagida).
 
-TELEFONDA BIRIKEN IKI SEY - HICBIRI KULLANICIYA ULASMADI:
-  1. KAGIT & PETROL TASARIMI (Faz 41) - butun mobil ekranlar
-  2. HARCAMAYA YORUM (Faz 42)
-  Ikisi de 1.0.3 GONDERILDIKTEN SONRA girdi. Bir sonraki build ikisini
-  birden tasiyacak; yani gonderim basina dusen deger yuksek, acele yok.
-  app.json HALA 1.0.3 diyor - sonraki build oncesi surum artirilmali.
-
-BEKLEYEN TEK IS: MAGAZA EKRAN GORUNTULERI
-  Iki sebeple bekliyor: (a) gercek bir build ister - Expo Go yetmez,
-  (b) 1.0.3'un sonucu belli olmadan uretmenin anlami yok, cunku o surum
-  ESKI tasarimi tasiyor.
+MAGAZA EKRAN GORUNTULERI - ARTIK ENGELI KALMADI
+  Iki sebeple bekliyordu: (a) gercek bir build ister, Expo Go yetmez,
+  (b) 1.0.3 ESKI tasarimi tasidigi icin oncesinde uretmenin anlami yoktu.
+  1.0.4 build'i (e5371f69) IKISINI DE kaldiriyor: yeni tasarimi tasiyan
+  gercek bir IPA var. Magazadaki UC gorsel hala eski tasarimi gosteriyor
+  ve 1.0.4 yayina cikinca YANLIS hale gelecek.
 
 BU OTURUMDA OGRENILEN - TEKRAR ARAMA:
 
@@ -413,22 +461,24 @@ EAS BUILD KOTASI - UCRETSIZ PLANDA AYDA 15 iOS BUILD.
   8 Eylul: 12 kullanildi, besi tek oturumda. BUILD ALMADAN ONCE SOR;
   degisiklikleri biriktirip tek build almak dogrusu.
 
-SIRADAKI IS - SECILMEDI AMA KULLANICI NIYETINI SOYLEDI (10 Eylul):
-  "diger dordune baslayacagiz" - odeme hatirlatmasi, tekrarlayan harcama,
-  fis OCR, kalem kalem bolusum. HANGISI oldugu SECILMEDI; sor.
+DORT MADDENIN HEPSI BITTI (10 Eylul) - bu blok artik bir KAYIT:
+  odeme hatirlatmasi (Faz 43) · tekrarlayan harcama (Faz 44) ·
+  kalem kalem bolusum (Faz 45) · fis OCR (Faz 46). Dordu de kodda,
+  testleri yesil, 1.0.4 build'inde.
 
-  ODEME HATIRLATMASI + TEKRARLAYAN HARCAMA CRON PAYLASIYOR ve vercel.json
-  HALA YOK. Ikisini ayri ayri yapmak ayni bedeli iki kez odemek olur -
-  birini secerken otekini de dusun.
+  CRON PAYLASIMI DOGRU CIKTI: hatirlatma ile tekrarlayan harcama ayni
+  altyapiyi kullaniyor ve vercel.json ARTIK VAR (0 6 * * *).
 
-  FIS OCR dis servis demek: UCRETLI, ve gizlilik politikasi ile App Privacy
-  anketi YENIDEN degisir. Fotograf zaten var, eksik olan okuma.
-
-  KALEM KALEM BOLUSUM en pahalisi: kusurat degismezi IKI KATMANDA korunmali
-  (kalemler kendi icinde, sonra kalemlerin toplami harcamanin toplamiyla).
+  FIS OCR HAKKINDAKI TAHMIN YANLIS CIKTI: "dis servis demek, ucretli, ve
+  gizlilik politikasi ile App Privacy anketi yeniden degisir" diye
+  yazilmisti. Cihaz uzerinde calisan MIT lisansli bir modul bulununca uc
+  gerekcenin ucu de dustu; ne politika ne anket degisti (ADR-053).
+  Ders: gerekce tek bir cozumun ozelligiyse, gerekce degil o cozumdur.
 
   Destek sayfasindaki "bugunku sinirlar" listesi (src/content/legal/support.ts)
-  bunlarla ORTAK. Bir madde bitince ORASI DA GUNCELLENMELI.
+  KONTROL EDILDI: dort maddenin hicbiri o listeyi yanlis hale getirmiyor.
+  EXACT bolusumun tutari mobilde HALA degistirilemiyor (isExact ->
+  canEditAmount false), yani o madde dogru duruyor.
 
 LISTEDEN DUSEN IKI MADDE - BIR DAHA "mobilde eksik" DIYE YAZILMASINLAR:
   odesme duzenleme    -> HICBIR YERDE UC YOK. Web de yalnizca iptal
@@ -452,13 +502,12 @@ MAGAZA METNI ARTIK REPODA: docs/STORE.md (10 Eylul).
   DOSYA TAM: aciklama (EN + TR), 1.0.2 ve 1.0.3 surum notlari, altyazi,
   anahtar kelimeler. Tanitim metni iki dilde de BILEREK bos.
 
-  BIR SONRAKI GONDERIMDE IKI IS VAR (ayrintisi docs/STORE.md'de):
-    1. Aciklamadaki bolusum listesi IKI DILDE de UC madde sayiyor; kalem
-       kalem dordunculer. Fis fotografi da hic gecmiyor - oysa 1.0.3'te
-       geldi. Bugun ikisi de DOGRU (magazadaki surumde yoklar), 1.0.4
-       ciktigi an EKSIK olurlar.
-    2. Anahtar kelimelerde ~20 karakter bos ve bir kismi ad/altyazi ile
-       tekrar ediyor (olculdu). Yeni kelimeye yer var.
+  1.0.4 METINLERI HAZIR - docs/STORE.md "1.0.4 GONDERIMI" bolumu.
+  Iceride: aciklama (EN + TR), surum notu (EN + TR), anahtar kelimeler.
+  Dordu de 4000 karakter sinirinin cok altinda (en uzunu 1844).
+  Anahtar kelimelerde ONERI SADECE EKLEME: EN 98/100, TR 95/100 - hicbir
+  kelime cikarilmiyor, cunku "adda gecen kelimeyi tekrar yazmak yer
+  harcar" varsayimi DOGRULANAMIYOR (Apple algoritmayi yayimlamiyor).
 
 PRODUCTION'DAKI DEMO HESAPLAR - DIKKAT:
   appreview@owezy.net  inceleme hesabi. SILME, PAROLASINI DEGISTIRME -
