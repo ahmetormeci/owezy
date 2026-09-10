@@ -66,6 +66,27 @@ export async function GET(request: NextRequest) {
     }
 
     const report = await runDueRecurringExpenses();
+
+    /**
+     * KOSUNUN NE YAPTIGI LOGA YAZILIYOR.
+     *
+     * NEDEN GEREKTI - OLCULDU (10 Eylul): cevabin GOVDESI hicbir yerde
+     * gorunmuyor. Vercel'in Cron Jobs sekmesi yalnizca DURUM KODUNU
+     * gosteriyor, Runtime Logs'a da bir sey dusmuyor cunku uc cevabi
+     * donduruyor ama yazmiyordu. Yani basarili bir kosu arkasinda hicbir
+     * kayit birakmiyordu: "bugun kac sablon islendi" sorusunun cevabi yoktu.
+     *
+     * Sonuclar dolayli gorunuyor (harcama beliriyor, bildirim gidiyor,
+     * hata olursa 500) - ama dolayli gorunmek, bir zamanlanmis is icin
+     * gorunmemekle ayni kapiya cikiyor: kimse bakmiyor.
+     *
+     * ICINDE KISISEL VERI YOK, yalnizca UC SAYI. Grup adi, kisi adi, tutar
+     * hicbiri girmiyor - push'a koymadigimiz seyi (ADR-047) loga da
+     * koymuyoruz. Log satirlari Vercel'de saklaniyor ve gizlilik
+     * politikasinin anlattigi sinirlarin disina cikmamali.
+     */
+    console.log("[cron/recurring]", JSON.stringify(report));
+
     return NextResponse.json({ ok: true, ...report });
   } catch (error) {
     return handleApiError(error);

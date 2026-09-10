@@ -100,9 +100,10 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Bildirimler uygulamanın içinde listeleniyor, ama telefona " +
-                "bildirim GÖNDERİLMİYOR: uygulama kapalıyken bir şey olduğunu " +
-                "haber alamazsın.",
+              "Telefona bildirim, uygulamanın 1.0.3 ve sonraki sürümlerinde " +
+                "geliyor — ama önce Bildirimler ekranından izin vermen " +
+                "gerekiyor. Daha eski bir sürümdeysen bildirimler yalnızca " +
+                "uygulamanın içinde listelenir.",
               "Payları tek tek girilmiş (tutar yazılmış) bir harcamanın " +
                 "TUTARI telefondan değiştirilemiyor — toplamı bozardı. " +
                 "Açıklaması düzenlenebiliyor; yüzdeli bölüşümlerde tutar da " +
@@ -218,9 +219,10 @@ export const SUPPORT_PAGE: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Notifications are listed inside the app, but the phone does not " +
-                "receive push notifications: while the app is closed you will not " +
-                "be told that something happened.",
+              "Push notifications reach the phone from version 1.0.3 onward — " +
+                "but you have to allow them first, on the Notifications screen. " +
+                "On an older version, notifications are only listed inside the " +
+                "app.",
               "The AMOUNT of an expense whose shares were typed in one by one cannot be " +
                 "changed on the phone — it would break the total. Its description can be " +
                 "edited, and for percentage splits the amount can be changed too.",

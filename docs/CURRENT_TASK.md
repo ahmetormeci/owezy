@@ -105,11 +105,10 @@ Current task:
   Cron Jobs sekmesi yalnizca DURUM KODUNU gosteriyor. Runtime Logs'ta da
   cikmiyor, cunku uc cevabi donduruyor ama loga yazmiyor.
 
-  KOSUNUN NE YAPTIGI SU AN HICBIR YERE YAZILMIYOR. Sonuclar dolayli
-  gorunuyor (harcama beliriyor, bildirim gidiyor, hata olursa Cron Jobs'ta
-  500 cikiyor) ama "bugun kac sablon islendi" sorusunun cevabi yok. Tek
-  satirlik bir console.log bunu Vercel loglarinda gorunur kilar ve icinde
-  kisisel veri olmaz - yalnizca uc sayi. KULLANICIYA SORULDU, karar bekliyor.
+  KOSUNUN NE YAPTIGI ARTIK LOGA YAZILIYOR (10 Eylul, eklendi):
+  route.ts sonunda "[cron/recurring] {...}" satiri. Icinde KISISEL VERI YOK,
+  yalnizca uc sayi - push'a koymadigimizi (ADR-047) loga da koymuyoruz.
+  Oncesinde basarili bir kosu arkasinda hicbir kayit birakmiyordu.
 
   BEKLEYEN TEK SEY KALDI: gercek bir sablonun gercekten uretim yaptigini
   gormek. Iki dakikalik yolu: web'de "Bunu tekrarla" ile bir harcama kur
@@ -284,12 +283,14 @@ DIS DUNYA - 10 EYLUL OLCUMU (bu dosya her yazildiginda TEKRAR olculecek):
     1.0.2  MAGAZADA CANLI (8 Eylul, telefonda guncelleme alinarak dogrulandi).
     1.0.1  build 11, TestFlight'ta KULLANILMADAN duruyor. ATLANDI.
 
-  1.0.3 ONAYLANINCA IKI IS TETIKLENIYOR:
-    1. DESTEK SAYFASI (src/content/legal/support.ts) - "bildirimler telefona
-       GONDERILMIYOR" maddesi kalkacak. Su an DOGRU, yayinlandigi gun yanlis
-       olacak. Bu tuzak bu projede iki kez yasandi.
+  1.0.3 ONAYLANINCA IKI IS TETIKLENIYORDU:
+    1. DESTEK SAYFASI - YAPILDI (10 Eylul). Madde SILINMEDI, SURUME GORE
+       YENIDEN YAZILDI: 1.0.3 ve sonrasinda push geliyor (izin verilirse),
+       daha eski surumde gelmiyor. Silmek yanlis olurdu - magazadaki 1.0.2'yi
+       kullananda push GERCEKTEN yok, yani cumle onlar icin hala dogru.
+       Iki dilde de degisti.
     2. KOPRU KALDIRILABILIR HALE GELIR - ama surum YAYGINLASINCA.
-       Silinecekler "KOPRU" basliginda.
+       Silinecekler "KOPRU" basliginda. HENUZ DEGIL.
 
   RET GELDI VE GEREKCESI OKUNDU - yukaridaki gorev ondan cikti.
 
