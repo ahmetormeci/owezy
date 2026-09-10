@@ -44,7 +44,7 @@ Current task:
     Faz 43  odeme hatirlatmasi   BITTI  (ADR-050)  cbfb887  CI yesil
     Faz 44  tekrarlayan harcama  BITTI  (ADR-051)  503ad2e  CI yesil
     Faz 45  kalem kalem bolusum  BITTI  (ADR-052)  b271e56
-    Faz 46  fisten tutar okuma   BITTI  (ADR-053)  <bu commit>
+    Faz 46  fisten tutar okuma   BITTI  (ADR-053)  fb12a8a
 
   FIS OCR SONRADAN YAPILDI - sabah atlanmisti. Gerekce ("ucretli servis")
   YALNIZCA BULUT cozumu dusunuldugu icin dogruydu; cihaz uzerinde calisan

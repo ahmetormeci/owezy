@@ -2490,7 +2490,7 @@ o zaman belli olacak. Bugüne kadar doğrulanan şey mantık ve ekran
 davranışı.
 
 **Test:** 742 kök birim (+26), 83 mobil ekran (+6).
-**Commit:** `<COMMIT>`
+**Commit:** `fb12a8a`
 
 ---
 
