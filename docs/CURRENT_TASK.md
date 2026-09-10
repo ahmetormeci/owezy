@@ -28,19 +28,12 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-10
 
 Current task:
-  1.0.4 GONDERIMI. Build ALINDI, geri kalani App Store Connect isi.
+  YOK. 1.0.4 INCELEMEYE GONDERILDI (10 Eylul) - Apple'in cevabi bekleniyor.
 
-  EAS BUILD e5371f69 - iOS, production profili -> BITTI, BASARILI
-    surum 1.0.4 · build no 21 · SDK 57
-    IPA: https://expo.dev/artifacts/eas/OixP4zAbA8Mykcp-v8xnfXStfVZ0481SFTxULKlSDXM.ipa
-    log: https://expo.dev/accounts/denendi/projects/owezy/builds/e5371f69-6008-4949-a9fe-daa16ec3d3ef
+  BUILD e5371f69 · surum 1.0.4 · build no 21 · SDK 57
+  submission f42d4c04 · IPA ve loglar expo.dev'de
 
-  BU BUILD BIR SORUYU DA CEVAPLADI: expo-text-extractor (fis OCR'in native
-  modulu) SDK 57 ile DERLENDI. Bugune kadar dogrulanan sey yalnizca mantik
-  (26 saf test) ve ekran davranisiydi; modul Expo Go'da hic calismamisti.
-  Derlenmesi ayri, CIHAZDA DOGRU OKUMASI ayri - ikincisi hala olculmedi.
-
-  BU BUILD ALTI SEYI BIRDEN TASIYOR - hicbiri 1.0.3'te yok:
+  BU SURUM ALTI SEYI BIRDEN TASIYOR - hicbiri 1.0.3'te yok:
     1. kagit & petrol tasarimi   (Faz 41)
     2. harcamaya yorum           (Faz 42)
     3. odeme hatirlatmasi        (Faz 43)
@@ -48,35 +41,37 @@ Current task:
     5. kalem kalem bolusum       (Faz 45)
     6. fisten tutar okuma        (Faz 46)
 
-  GONDERILDI (10 Eylul): eas submit -> ASC'ye yuklendi.
-    submission f42d4c04-e579-4d9d-a17d-3fc4be59544b
-    https://expo.dev/accounts/denendi/projects/owezy/submissions/f42d4c04-e579-4d9d-a17d-3fc4be59544b
-    Apple islemesi 5-10 dk; bitince TestFlight'ta gorunur:
-    https://appstoreconnect.apple.com/apps/6805650395/testflight/ios
+  GONDERIMDE DEGISEN MAGAZA ALANLARI (hepsi docs/STORE.md'de):
+    - TURKCE AD: "Owezy" -> "Owezy: Masraf Paylasimi". Ad BOLGEYE DEGIL
+      DILE gore seciliyor (olculdu), yani eski Turkce ad hicbir Turkce
+      arama karsilamiyordu.
+    - aciklama iki dilde yenilendi (dort bolusum turu, fis, OCR,
+      tekrarlayan, yorum)
+    - surum notu iki dilde yazildi
+    - anahtar kelimeler yeniden kuruldu (EN 97/100, TR 100/100)
+    - tanitim metni artik BOS DEGIL - surume bagli olmayan tek alan
+    - EKRAN GORUNTULERI: 20 dosya, iki dil x iki olcu
+      ~/Desktop/owezy-1.0.4-ekran-goruntuleri/
 
-  PAROLA GEREKMEDI: ASC API anahtari EAS sunucularinda kayitli
-  ("[Expo] EAS Submit VhqPnYrLc_", Key ID H456J9AW2F). Bir sonraki
-  gonderimde de sorulmayacak - ajan parola yazamadigi icin bu onemli.
+  APPREVIEW@ KONTROLU KULLANICI TARAFINDAN YAPILDI. Gecen sefer atlandigi
+  icin 2.1 reti gelmisti; bu sefer atlanmadi.
 
-  KULLANICI ICIN ADIM ADIM SAYFA (10 Eylul, yayimlandi):
-    https://claude.ai/code/artifact/da5e4bbb-5c2d-435a-b5cf-8c57e442706e
-    Yedi adim + yapistirmalik alti metin bloku (kopyala dugmeleriyle) +
-    AB tuccar beyani. Metinler docs/STORE.md'den BIREBIR uretildi, yani
-    STORE.md degisirse sayfa da yeniden uretilmeli.
+  BEKLEYENLER (Apple'in cevabindan bagimsiz):
+    1. AB TUCCAR BEYANI - asagida. Uygulama 27 AB magazasinda YOK.
+    2. CRON DOGRULAMASI - gercek bir tekrarlayan sablonun canlida
+       gercekten harcama urettigi HALA gorulmedi. Web'de yayinda, build'i
+       beklemiyor: bir sablon kur, sonra Vercel -> Cron Jobs -> Run.
+    3. OCR'IN CIHAZDA GERCEKTEN OKUDUGU gorulmedi. Modul SDK 57 ile
+       DERLENDI (build bunu kanitladi) ama gercek bir fisi dogru okumasi
+       ayri bir sey. 1.0.4 telefona indiginde bakilmali.
 
-  BUILD'DEN SONRA SIRA (sirasi onemli, ayrintisi asagida):
-    1. build biter  -> IPA hazir                             BITTI
-    2. push                                                  BITTI
-    3. eas submit                                            BITTI
-    4. ASC'de metinler: aciklama (2 dil), surum notu (2 dil), anahtar
-       kelimeler. HEPSI HAZIR - docs/STORE.md "1.0.4 GONDERIMI" bolumu.
-    5. EKRAN GORUNTULERI: URETILDI (10 Eylul). Bes gorsel, iki olcude:
-       ~/Desktop/owezy-1.0.4-ekran-goruntuleri/
-       Ayrintisi ve olcu tuzagi docs/STORE.md'de. Tasarim handoff'unun
-       6b maddesi BITTI.
-    6. appreview@ ile PAROLAYLA GIRIS KONTROLU - ajan yapamaz, kullanici
-       yapar. Gecen sefer atlandigi icin 2.1 reti geldi.
-    7. ASC'de surumu yayina alma
+  BU OTURUMDA CIKAN VE DUZELTILEN KUSUR (95b8f62): expo-text-extractor
+  STATIK import ediliyordu ve requireNativeModule MODUL GOVDESI
+  CALISIRKEN firlatiyor. Expo Go'da modul olmadigi icin UYGULAMANIN
+  TAMAMI aciliyordu - OCR degil. isSupported bunu yakalayamaz; o "cihaz
+  yapabiliyor mu" sorusunun cevabi, "modul bagli mi" sorusunun degil.
+  Testler modulu taklit ettigi, EAS build'i de icine koydugu icin
+  ikisi de goremezdi. GONDERILEN BUILD ETKILENMIYOR - orada modul bagli.
 
 >>> AB MAGAZALARINDA UYGULAMA YOK - 10 EYLUL'DE OLCULDU <<<
 
