@@ -56,9 +56,9 @@ Current task:
   (belirtec expo-secure-store'da). Kalmasaydi bakilamazdi - tek seferlik
   kod bir kimlik dogrulama kodudur ve forma yazilmasi yasak.
 
-  >>> KULLANICININ YAPMASI GEREKEN TEK SEY - BASKA KIMSE YAPAMAZ <<<
+  >>> BU MADDE KAPANDI (10 Eylul). Asagisi NASIL KAPANDIGININ kaydi. <<<
 
-  VERCEL'DE "CRON_SECRET" ORTAM DEGISKENI TANIMLANMALI.
+  VERCEL'DE "CRON_SECRET" ORTAM DEGISKENI TANIMLANDI VE DOGRULANDI.
 
     Nerede: vercel.com -> owezy projesi -> Settings -> Environment Variables
     Ad    : CRON_SECRET
@@ -74,14 +74,34 @@ Current task:
     Ortam : Production (Preview de isaretlenebilir, zarari yok)
     Sonra : Deployments -> son deploy -> Redeploy
 
-  OLCULDU (10 Eylul): once 503, degisken tanimlandiktan sonra -> 401.
-  Yani degisken KAYITLI ve deploy oldu. 503 gorulurse degisken yok ya da
-  deploy edilmedi; 401 "kimliksiz cagri reddediliyor" demektir.
+  NASIL GITTI - UC OLCUM, UCU DE GEREKLIYDI:
 
-  BU YAPILANA KADAR: tekrarlayan harcama kurulabiliyor, listede gorunuyor,
-  duraklatilabiliyor - ama HICBIR HARCAMA URETILMIYOR. Ozellik canlida
-  sessizce bekliyor. Kullanici verisi bakimindan tehlikesiz: uretim
-  yapilmadigi icin yanlis bir bakiye de olusmuyor.
+    1. Basta          -> 503   (degisken hic yok, uc kapali)
+    2. Ilk tanimlama  -> 401   ama DEGER KOMUTUN METNIYDI ("openssl rand
+                               -hex 32" birebir yazilmisti). Uc calisiyordu
+                               ama sir TAHMIN EDILEBILIRDI: bu depo HERKESE
+                               ACIK ve o metin bu dosyada yaziyordu.
+    3. Rotasyondan sonra -> ESKI deger 401 doniyor.
+
+  TEK GECERLI OLCUT BU UCUNCUSU: "401 doniyor" tek basina YETMEZ, cunku
+  yanlis bir sirla da 401 donuyor. Sorulmasi gereken soru "eski deger hala
+  geciyor mu".
+
+    curl -s -o /dev/null -w '%{http_code}\n' \
+      -H 'Authorization: Bearer <eski deger>' \
+      https://owezy.net/api/cron/recurring
+
+  ARADA BIR TUZAK CIKTI: degisken duzenlenip kaydedildigi halde eski deger
+  gecmeye devam etti. Vercel'de ortam degiskeni degisikligi CALISAN deploy'a
+  uygulanmiyor; degisken SILINIP yeniden eklenip REDEPLOY yapilinca gecti.
+
+  DOGRULANAMAYAN TEK SEY - VE DOGRULANMAMALI: yeni degerin DOGRU oldugu.
+  Sir bize gonderilmedi, gonderilmemeli de. Onun kaniti ilk cron kosusunda:
+  Vercel -> Cron Jobs sekmesinde her gun 06:00 UTC'deki cagrinin sonucu
+  gorunuyor; 200 ise zincir tamam.
+
+  BEKLEYEN TEK SEY KALDI: gunluk kosunun gercekten calistigini gormek.
+  Ilk tekrarlayan harcama kuruldugunda ertesi gun uretilmis olmali.
 
   SIRADAKI ADAYLAR: PROGRESS.md'deki liste. Fis OCR orada duruyor ve
   ATLANMA GEREKCESI yazili - yeniden gundeme gelirse once o okunmali.
