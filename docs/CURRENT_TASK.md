@@ -56,14 +56,26 @@ Current task:
   APPREVIEW@ KONTROLU KULLANICI TARAFINDAN YAPILDI. Gecen sefer atlandigi
   icin 2.1 reti gelmisti; bu sefer atlanmadi.
 
-  BEKLEYENLER (Apple'in cevabindan bagimsiz):
-    1. AB TUCCAR BEYANI - asagida. Uygulama 27 AB magazasinda YOK.
-    2. CRON DOGRULAMASI - gercek bir tekrarlayan sablonun canlida
-       gercekten harcama urettigi HALA gorulmedi. Web'de yayinda, build'i
-       beklemiyor: bir sablon kur, sonra Vercel -> Cron Jobs -> Run.
-    3. OCR'IN CIHAZDA GERCEKTEN OKUDUGU gorulmedi. Modul SDK 57 ile
-       DERLENDI (build bunu kanitladi) ama gercek bir fisi dogru okumasi
-       ayri bir sey. 1.0.4 telefona indiginde bakilmali.
+  UC ACIK MADDE VAR VE UCU DE KULLANICI TARAFINDAN ERTELENDI (10 Eylul).
+  KENDILIGINDEN BASLAMA, GUNDEME GETIRME - sirasi geldiginde kullanici
+  soyleyecek.
+
+    1. AB TUCCAR BEYANI - "simdilik yapmayacagim". Uygulama 27 AB
+       magazasinda YOK ve oyle kalacak. Gerekcesi ve tiklama yolu
+       asagida duruyor; bedeli bireysel hesapta adres/telefon/e-postanin
+       AB urun sayfasinda HERKESE ACIK yayimlanmasi. Bu bir zevk degil
+       maliyet karari - kullanici verdi.
+
+    2. CRON DOGRULAMASI - "surum kabul olunca". Gercek bir tekrarlayan
+       sablonun canlida gercekten harcama urettigi HALA gorulmedi.
+       Teknik olarak 1.0.4'u BEKLEMIYOR (web'de zaten yayinda), ama
+       kullanici ikisini birlikte yapmayi secti. Yolu: web'de bir sablon
+       kur (baslangic BUGUN), sonra Vercel -> Cron Jobs -> Run.
+
+    3. OCR'IN GERCEK BIR FISI DOGRU OKUDUGU - "surum kabul olunca".
+       Modulun SDK 57 ile DERLENDIGINI build kanitladi; DOGRU OKUDUGU
+       ayri bir iddia ve hala olculmedi. 1.0.4 telefona indikten sonra
+       gercek bir markette denenecek.
 
   BU OTURUMDA CIKAN VE DUZELTILEN KUSUR (95b8f62): expo-text-extractor
   STATIK import ediliyordu ve requireNativeModule MODUL GOVDESI
