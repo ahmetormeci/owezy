@@ -45,6 +45,17 @@ Current task:
     Faz 44  tekrarlayan harcama  BITTI  (ADR-051)  503ad2e  CI yesil
     Faz 45  kalem kalem bolusum  BITTI  (ADR-052)  b271e56
 
+  IKI YENI MOBIL EKRAN SIMULATORDE GORULDU (10 Eylul, acik ve koyu tema):
+    - grup ekranindaki "Tekrarlayan harcamalar" bolumu
+    - harcama ekleme ekranindaki DORT segment + kalem editoru
+  Kalem kalem bir harcama telefondan KURULDU, DUZENLENDI ve kalemlerin
+  duzenlemeden sonra da durdugu goruldu; sonra silindi (dev veritabani
+  temiz birakildi).
+
+  BUNU MUMKUN KILAN SEY: Expo Go'daki oturum onceki oturumdan KALMISTI
+  (belirtec expo-secure-store'da). Kalmasaydi bakilamazdi - tek seferlik
+  kod bir kimlik dogrulama kodudur ve forma yazilmasi yasak.
+
   >>> KULLANICININ YAPMASI GEREKEN TEK SEY - BASKA KIMSE YAPAMAZ <<<
 
   VERCEL'DE "CRON_SECRET" ORTAM DEGISKENI TANIMLANMALI.
@@ -66,6 +77,16 @@ Current task:
 
   SIRADAKI ADAYLAR: PROGRESS.md'deki liste. Fis OCR orada duruyor ve
   ATLANMA GEREKCESI yazili - yeniden gundeme gelirse once o okunmali.
+
+  TELEFONDA ARTIK DORT SEY BIRIKTI ve hicbiri kullaniciya ulasmadi:
+    1. kagit & petrol tasarimi   (Faz 41)
+    2. harcamaya yorum           (Faz 42)
+    3. tekrarlayan harcama       (Faz 44)
+    4. kalem kalem bolusum       (Faz 45)
+  Hepsi 1.0.3 GONDERILDIKTEN SONRA girdi. app.json HALA 1.0.3 diyor ve
+  BILEREK artirilmadi: 1.0.3'un sonucu belli degil ve EAS build kotasi
+  icin kullanicidan izin alinmasi gerekiyor (AGENTS.md). Sonraki build
+  dorde birden tasiyacak - yani gonderim basina dusen deger yuksek.
 
   YORUM - NE YAPILDI: ExpenseComment tablosu, uc uc (listele/yaz/sil),
   EXPENSE_COMMENTED bildirimi, web'de satirdan acilan diyalog, mobilde detay
