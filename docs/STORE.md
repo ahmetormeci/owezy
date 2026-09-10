@@ -421,23 +421,26 @@ geçiyor; reddedilirse eskiye dönülebilir.
 Ad değiştiği için hesap yeniden yapıldı. **Ad ve altyazıda TAM olarak
 geçen** kelimeler çıkarıldı, yerlerine yenileri kondu:
 
-| Durum | Kelime | Nerede |
-|---|---|---|
-| **çıkarıldı** | `masraf` | ad: *Owezy: **Masraf** Paylaşımı* |
-| **çıkarıldı** | `grup`, `ödeşme` | altyazı: ***Grup*** *hesabı, kolay **ödeşme*** |
-| **çıkarıldı** | `expenses`, `split` | ad: *Owezy: **Split Expenses*** |
-| **çıkarıldı** | `bills`, `group` | altyazı: ***Group bills**, settled fast* |
-| **KALDI** | `paylaşım` | ad **çekimli**: "Paylaşım**ı**" — birebir aynı değil |
-| **KALDI** | `hesap` | altyazı **çekimli**: "hesab**ı**" — birebir aynı değil |
+**ÖLÇÜT: kelime, ad ya da altyazının içinde BIREBIR geçiyor mu.** Türkçe
+çekim bunu her zaman bozmuyor — ve bozup bozmadığı kelimeye göre değişiyor:
 
-Türkçe çekim yüzünden ikisi bırakıldı: Apple'ın Türkçe için gövdeleme
-yapıp yapmadığı **doğrulanamıyor**, ve "Paylaşımı" ile "paylaşım"
-birebir aynı dizge değil. Çıkarmanın bedeli, kazancından büyük olabilirdi.
+| Alandaki metin | Kelime | İçinde geçiyor mu | Karar |
+|---|---|---|---|
+| Owezy: Masraf **Paylaşımı** | `masraf` | evet | **çıktı** |
+| Owezy: Masraf **Paylaşımı** | `paylaşım` | **evet** — sonek eklenmiş, gövde bozulmamış | **çıktı** |
+| **Grup** **hesabı**, kolay **ödeşme** | `grup`, `ödeşme` | evet | **çıktı** |
+| Grup **hesabı** | `hesap` | **hayır** — ünsüz yumuşaması, p→b | **KALDI** |
+| Owezy: **Split Expenses** | `expenses`, `split` | evet | **çıktı** |
+| **Group bills**, settled fast | `bills`, `group` | evet | **çıktı** |
+
+`hesap` tek istisna: "hesabı" içinde `hesap` diye bir dizge **yok**.
+Apple'ın Türkçe için gövdeleme yapıp yapmadığı doğrulanamıyor, o yüzden
+gövdesi gerçekten kopan tek kelime bırakıldı.
 
 | | Metin | Uzunluk |
 |---|---|---|
 | EN | `share,roommate,debt,travel,settle,tab,budget,flatmate,receipt,recurring,itemized,rent,dinner,trip` | 97/100 |
-| TR | `paylaşım,hesap,borç,ev arkadaşı,tatil,bölüşme,fatura,harcama,fiş,tekrarlayan,kira,abonelik,yemek` | 96/100 |
+| TR | `hesap,borç,ev arkadaşı,tatil,bölüşme,fatura,harcama,fiş,tekrarlayan,kira,abonelik,yemek,ortak,market` | 100/100 |
 
 ### Tanıtım metni (promotional text) — ARTIK BOŞ DEĞİL
 
@@ -458,38 +461,49 @@ Ev arkadaşlarıyla, yol arkadaşlarıyla ya da tek bir akşam yemeğinde: kim n
 Flatmates, road trips, one dinner: who paid what and who owes whom. Photograph the receipt and let your phone read the total. No ads, no tracking.
 ```
 
-### Ekran görüntüleri — ÜRETİLDİ (10 Eylül)
+### Ekran görüntüleri — ÜRETİLDİ, İKİ DİLDE (10 Eylül)
 
-`~/Desktop/owezy-1.0.4-ekran-goruntuleri/` altında **iki ölçüde**, beşer
-görsel. Simülatörde (iPhone 14 Pro Max, iOS 26.5), Türkçe ve açık temada.
+`~/Desktop/owezy-1.0.4-ekran-goruntuleri/` — **20 dosya**: iki dil × iki
+ölçü × beş görsel. Simülatörde (iPhone 14 Pro Max, iOS 26.5), açık temada.
 
-| Klasör | Ölçü | Nereye |
-|---|---|---|
-| `6.9-inch_1290x2796` | simülatörün yerel çıktısı | 6.9" yuvası |
-| `6.5-inch_1284x2778` | %0,5 küçültülmüş | **mağazadaki mevcut üçünün yeri** |
+```
+tr/6.9-inch_1290x2796/   tr/6.5-inch_1284x2778/
+en/6.9-inch_1290x2796/   en/6.5-inch_1284x2778/
+```
+
+**EKRAN GÖRÜNTÜSÜ DE YERELLEŞTİRME BAŞINA YÜKLENİYOR** — tıpkı açıklama
+gibi. Türkçe vitrine Türkçe set, İngilizce vitrine İngilizce set.
 
 | Dosya | Ne gösteriyor |
 |---|---|
-| `01-grup` | bakiye kartı, üç üye, "Hatırlat", harcama listesi |
-| `02-tekrarlayan-uyeler` | kategori dağılımı, **Kira (aylık)**, üye bakiyeleri |
-| `03-kalem-kalem` | **kalemler**: Pizza / Makarna / Tatlı, kim ne aldı |
-| `04-kalem-fis-yorum` | kalemler + fiş alanı + **yorum**, tek karede |
-| `05-dort-bolusum` | **dört bölüşüm türü**, üç üye, "Bunu tekrarla", "Fiş ekle" |
+| `01-grup` | bakiye kartı, üç üye, "Hatırlat" / "Remind", harcama listesi |
+| `02-tekrarlayan-uyeler` | kategori dağılımı, **Kira / Rent (aylık)**, üye bakiyeleri |
+| `03-kalem-kalem` | **kalemler**: Pizza / Makarna / Tatlı — Pizza / Pasta / Dessert |
+| `04-kalem-fis-yorum` | kalemler + fiş + **yorum**, tek karede |
+| `05-dort-bolusum` | **dört bölüşüm türü**, "Bunu tekrarla", "Fiş ekle" |
 
 **ÖLÇÜ TUZAĞI:** iOS 26.5 runtime'ı iPhone 14 Pro Max'i **1290×2796**
 çiziyor, o cihazın gerçek 1284×2778'ini değil. Apple'ın tablosunda
-1284×2778 **6.5" yuvasına**, 1290×2796 ise **6.9" yuvasına** ait — yani
-ikisi farklı yuva. Mağazadaki üç görsel 1284×2778 olduğu için o set
-küçültülerek üretildi.
+1284×2778 **6.5" yuvasına**, 1290×2796 **6.9" yuvasına** ait — farklı
+yuvalar. Mağazadaki mevcut üç görsel 1284×2778 olduğu için o set
+küçültülerek de üretildi.
 
-**VERİ UYDURMA DEĞİL, KURULDU:** geliştirme veritabanındaki hiçbir grup
+**VERİ UYDURULMADI, KURULDU.** Geliştirme veritabanındaki hiçbir grup
 fotoğraflanabilir değildi (ya tek üyeli, ya boş, ya "Aksa"/"I tell" gibi
-deneme kalıntısı). `Kadıköy evi` grubu bu iş için kuruldu: üç üye
-(Ahmet/Deniz/Selin), dört harcama, bir kalem kalem bölüşüm, bir yorum,
-bir tekrarlayan şablon. Paylar en büyük kalan yöntemiyle yazıldı ve
-veritabanının `SUM(shareAmount) = amount` kısıtı kabul etti.
-`demo@owezy.net`'in görünen adı da `demo@owezy.net`'ten `Ahmet`'e
-çekildi — **yalnızca geliştirme veritabanında**.
+deneme kalıntısı). İki grup kuruldu — her dil kendi içeriğiyle, çünkü
+İngilizce vitrinde "Kadıköy evi" ve "Akşam yemeği" yabancı durur:
+
+| Grup | Para birimi | İçerik |
+|---|---|---|
+| `Kadıköy evi` | TRY | Market · Elektrik faturası · İnternet · Akşam yemeği (Pizza/Makarna/Tatlı) · Kira |
+| `Flat share` | USD | Groceries · Electricity bill · Internet · Dinner (Pizza/Pasta/Dessert) · Rent |
+
+USD kullanıldı çünkü `SUPPORTED_CURRENCIES` ikisini de taşıyor
+(`src/lib/money.ts`). Paylar en büyük kalan yöntemiyle yazıldı ve
+veritabanının `SUM(shareAmount) = amount` kısıtı ikisini de kabul etti —
+yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
+`demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
+veritabanında**, üretime dokunulmadı.
 
 ---
 
