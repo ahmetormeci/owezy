@@ -25,10 +25,17 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-09 (gun sonu)
+Updated: 2026-09-10
 
 Current task:
   YOK. Son is HARCAMAYA YORUM idi ve bitti (Faz 42, ADR-049).
+
+  SIRADA NE VAR: kullanici "diger dordune baslayacagiz" dedi (10 Eylul) -
+  odeme hatirlatmasi, tekrarlayan harcama, fis OCR, kalem kalem bolusum.
+  AMA HANGISINDEN BASLANACAGI SECILMEDI. AGENTS.md gorev verilmeden
+  baslamayi yasakliyor; bir sonraki oturum HANGISI diye SORMALI.
+  Ikisi cron paylasiyor (odeme hatirlatmasi + tekrarlayan harcama) ve
+  vercel.json HALA YOK - o ikisi birlikte dusunulmeli.
 
   YORUM - NE YAPILDI: ExpenseComment tablosu, uc uc (listele/yaz/sil),
   EXPENSE_COMMENTED bildirimi, web'de satirdan acilan diyalog, mobilde detay
@@ -76,6 +83,13 @@ TASARIM YONU - NE YAPILDI (ADR-048)
 
   BUTUN MOBIL EKRANLAR SIMULATORDE ACIK VE KOYU TEMADA GORULDU.
   Web'in kimlikli sayfalari Playwright ile goruldu (yol asagida).
+
+TELEFONDA BIRIKEN IKI SEY - HICBIRI KULLANICIYA ULASMADI:
+  1. KAGIT & PETROL TASARIMI (Faz 41) - butun mobil ekranlar
+  2. HARCAMAYA YORUM (Faz 42)
+  Ikisi de 1.0.3 GONDERILDIKTEN SONRA girdi. Bir sonraki build ikisini
+  birden tasiyacak; yani gonderim basina dusen deger yuksek, acele yok.
+  app.json HALA 1.0.3 diyor - sonraki build oncesi surum artirilmali.
 
 BEKLEYEN TEK IS: MAGAZA EKRAN GORUNTULERI
   Iki sebeple bekliyor: (a) gercek bir build ister - Expo Go yetmez,
@@ -133,19 +147,25 @@ BU OTURUMDA OGRENILEN - TEKRAR ARAMA:
     DEV VERITABANINA BAKMANIN YOLU: npx prisma studio (kendi env'ini kendisi
     okuyor; .env.local'i elle okumaya gerek yok ve zaten engelli).
 
-DIS DUNYA - 9 EYLUL OLCUMU (bu dosya her yazildiginda TEKRAR olculecek):
+DIS DUNYA - 10 EYLUL OLCUMU (bu dosya her yazildiginda TEKRAR olculecek):
   DMARC    v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r
   CANLI    / , /support , /privacy , /.well-known/... -> hepsi 200
   AASA     Apple CDN 200
   ALAN ADI askIda degil
   MAGAZA   1.0.2 | 2026-09-07 | ['EN','TR']
-           NOT: bu sorgu 8 Eylul'de hala "1.0" ve yalnizca ['EN'] diyordu
-           ve "aciklanamadi" diye kaydedilmisti. KENDILIGINDEN duzeldi -
-           itunes lookup yayin anini degil kendi onbelleginin tazelenmesini
-           gosteriyor. Tek basina kanit sayma kurali gecerliligini koruyor.
-  CI       5a4e411 success
-  PANEL    olculemez - App Store Connect'teki inceleme durumu KULLANICIYA
-           SORULACAK. Son bilinen: "Waiting for Review" (9 Eylul).
+           1.0.3 HENUZ YAYINDA DEGIL. Ama bu sorgu tek basina kanit DEGIL -
+           yayin anini degil kendi onbelleginin tazelenmesini gosteriyor
+           (8 Eylul'de hala "1.0" diyordu, kendiliginden duzeldi).
+  CI       86295ae success
+  PANEL    KULLANICIYA SORULDU (10 Eylul): 1.0.3 HALA "Waiting for Review".
+           Bu, olculebilen degil SORULAN bir madde - her oturumda tekrar
+           sorulmali.
+  UCLAR    canlida /api/v1/.../comments -> 401 auth.not_signed_in (GET+POST).
+           404 olsaydi rota yok, 500 olsaydi bir sey kirik demekti.
+           MIGRATION DA GECTI ve kaniti dolayli ama kesin: vercel-build
+           "prisma migrate deploy && prisma generate && next build" -
+           goc dusseydi build tamamlanmaz, gizlilik metnindeki yeni cumle
+           canlida olmazdi. Orada.
 
 1.0.3 (build 20) - INCELEMEYE YENIDEN GONDERILDI (9 Eylul):
   Once Guideline 2.1 ile reddedildi: App Store Connect'teki "User name"
@@ -155,7 +175,7 @@ DIS DUNYA - 9 EYLUL OLCUMU (bu dosya her yazildiginda TEKRAR olculecek):
   Alan appreview@owezy.net yapildi, Notes'a dort adimli giris yolu
   yazildi ("Send code'a basmayin"), ayni build 20 yeniden gonderildi.
   Kullanici gizli pencerede DOGRULADI: parolayla giriyor, 2FA kapali.
-  Su an "Waiting for Review".
+  10 EYLUL: HALA "Waiting for Review" (kullaniciya soruldu).
 
   BU RET ATLANMIS BIR KONTROLDEN CIKTI. CHANGELOG 4 Eylul'de tanimliyor:
   "gonderimden once appreview@ parolayla girebiliyor mu, ikinci adim
@@ -259,8 +279,19 @@ EAS BUILD KOTASI - UCRETSIZ PLANDA AYDA 15 iOS BUILD.
   8 Eylul: 12 kullanildi, besi tek oturumda. BUILD ALMADAN ONCE SOR;
   degisiklikleri biriktirip tek build almak dogrusu.
 
-SIRADAKI IS - SECILMEDI:
-  (secilen dortlu + fis bitti; yeni aday yok)
+SIRADAKI IS - SECILMEDI AMA KULLANICI NIYETINI SOYLEDI (10 Eylul):
+  "diger dordune baslayacagiz" - odeme hatirlatmasi, tekrarlayan harcama,
+  fis OCR, kalem kalem bolusum. HANGISI oldugu SECILMEDI; sor.
+
+  ODEME HATIRLATMASI + TEKRARLAYAN HARCAMA CRON PAYLASIYOR ve vercel.json
+  HALA YOK. Ikisini ayri ayri yapmak ayni bedeli iki kez odemek olur -
+  birini secerken otekini de dusun.
+
+  FIS OCR dis servis demek: UCRETLI, ve gizlilik politikasi ile App Privacy
+  anketi YENIDEN degisir. Fotograf zaten var, eksik olan okuma.
+
+  KALEM KALEM BOLUSUM en pahalisi: kusurat degismezi IKI KATMANDA korunmali
+  (kalemler kendi icinde, sonra kalemlerin toplami harcamanin toplamiyla).
 
   Destek sayfasindaki "bugunku sinirlar" listesi (src/content/legal/support.ts)
   bunlarla ORTAK. Bir madde bitince ORASI DA GUNCELLENMELI.
