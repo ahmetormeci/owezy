@@ -58,6 +58,12 @@ Current task:
   ("[Expo] EAS Submit VhqPnYrLc_", Key ID H456J9AW2F). Bir sonraki
   gonderimde de sorulmayacak - ajan parola yazamadigi icin bu onemli.
 
+  KULLANICI ICIN ADIM ADIM SAYFA (10 Eylul, yayimlandi):
+    https://claude.ai/code/artifact/da5e4bbb-5c2d-435a-b5cf-8c57e442706e
+    Yedi adim + yapistirmalik alti metin bloku (kopyala dugmeleriyle) +
+    AB tuccar beyani. Metinler docs/STORE.md'den BIREBIR uretildi, yani
+    STORE.md degisirse sayfa da yeniden uretilmeli.
+
   BUILD'DEN SONRA SIRA (sirasi onemli, ayrintisi asagida):
     1. build biter  -> IPA hazir                             BITTI
     2. push                                                  BITTI
@@ -364,7 +370,8 @@ DIS DUNYA - 10 EYLUL OLCUMU (bu dosya her yazildiginda TEKRAR olculecek):
   Alan appreview@owezy.net yapildi, Notes'a dort adimli giris yolu
   yazildi ("Send code'a basmayin"), ayni build 20 yeniden gonderildi.
   Kullanici gizli pencerede DOGRULADI: parolayla giriyor, 2FA kapali.
-  10 EYLUL: HALA "Waiting for Review" (kullaniciya soruldu).
+  10 EYLUL: INCELEMEDEN CIKTI VE YAYINLANDI - 06:23'te, olculdu
+  (itunes lookup: us/gb/tr/ca/au/jp hepsi 1.0.3).
 
   BU RET ATLANMIS BIR KONTROLDEN CIKTI. CHANGELOG 4 Eylul'de tanimliyor:
   "gonderimden once appreview@ parolayla girebiliyor mu, ikinci adim
