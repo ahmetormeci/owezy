@@ -48,11 +48,20 @@ Current task:
     5. kalem kalem bolusum       (Faz 45)
     6. fisten tutar okuma        (Faz 46)
 
+  GONDERILDI (10 Eylul): eas submit -> ASC'ye yuklendi.
+    submission f42d4c04-e579-4d9d-a17d-3fc4be59544b
+    https://expo.dev/accounts/denendi/projects/owezy/submissions/f42d4c04-e579-4d9d-a17d-3fc4be59544b
+    Apple islemesi 5-10 dk; bitince TestFlight'ta gorunur:
+    https://appstoreconnect.apple.com/apps/6805650395/testflight/ios
+
+  PAROLA GEREKMEDI: ASC API anahtari EAS sunucularinda kayitli
+  ("[Expo] EAS Submit VhqPnYrLc_", Key ID H456J9AW2F). Bir sonraki
+  gonderimde de sorulmayacak - ajan parola yazamadigi icin bu onemli.
+
   BUILD'DEN SONRA SIRA (sirasi onemli, ayrintisi asagida):
-    1. build biter  -> IPA hazir
-    2. push         -> destek sayfasi metni ancak build gonderildikten
-                       sonra dogru olur
-    3. eas submit
+    1. build biter  -> IPA hazir                             BITTI
+    2. push                                                  BITTI
+    3. eas submit                                            BITTI
     4. ASC'de metinler: aciklama (2 dil), surum notu (2 dil), anahtar
        kelimeler. HEPSI HAZIR - docs/STORE.md "1.0.4 GONDERIMI" bolumu.
     5. EKRAN GORUNTULERI: magazadaki uc gorsel ESKI tasarimi gosteriyor.
