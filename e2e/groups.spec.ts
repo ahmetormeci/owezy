@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { createGroup, openGroup, pageAs, uniqueGroupName } from "./helpers";
+import { addEqualExpense, createGroup, createGroupAndOpen, openGroup, pageAs, uniqueGroupName } from "./helpers";
 
 test.describe("gruplar", () => {
   test("grup olusturulur ve listede gorunur", async ({ browser }) => {
@@ -39,5 +39,36 @@ test.describe("gruplar", () => {
 
     await expect(page.getByRole("heading", { name: updatedName })).toBeVisible();
     await expect(page.getByText("Test aciklamasi")).toBeVisible();
+  });
+
+  /**
+   * SAYFA TEK SUTUN OLMALI - ve bu iddia GORSEL DEGIL, ILISKISEL.
+   *
+   * GERCEKTEN YASANDI (10 Eylul): bakiye karti ile fis ayni sutunda
+   * FARKLI genislikteydi ve kullanici bunu fark etti. Sebep sasirtici
+   * degil: genislik (36.25rem) UC AYRI YERDE tek tek yaziliyordu ve iki
+   * blok o listeden dusmustu - kart ve baslik satiri. Ikisi de kisitsiz
+   * kalinca main'in max-w-4xl'ini aliyorlardi.
+   *
+   * OLCULEN FARK: kart x=208 w=864, fis x=350 w=580. 284 piksel.
+   *
+   * TEST MUTLAK PIKSEL SORMUYOR - "ayni sol kenar, ayni genislik" diyor.
+   * Boylece sutun genisligi ileride degisirse test bozulmuyor; yalnizca
+   * ikisinin BIRBIRINDEN AYRILMASI bozuyor. Kusur tam olarak oydu.
+   */
+  test("bakiye karti ile fis ayni genislikte", async ({ browser }) => {
+    const page = await pageAs(browser, "owner");
+    const name = uniqueGroupName("genislik");
+
+    await createGroupAndOpen(page, name);
+    await addEqualExpense(page, { description: "Market", amount: "1842,60" });
+
+    const card = await page.locator("div.bg-balance-card").first().boundingBox();
+    const paper = await page.locator("div.paper").first().boundingBox();
+
+    expect(card).not.toBeNull();
+    expect(paper).not.toBeNull();
+    expect(Math.round(card!.x)).toBe(Math.round(paper!.x));
+    expect(Math.round(card!.width)).toBe(Math.round(paper!.width));
   });
 });

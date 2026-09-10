@@ -243,7 +243,24 @@ export default async function GroupDetailPage({
           basligin (z-30) altinda. Baska sayfalarin zeminine dokunmuyor. */}
       <div aria-hidden="true" className="fixed inset-0 -z-10 bg-surface" />
 
-      <div className="mx-auto mb-3 flex w-full max-w-[36.25rem] items-center justify-between gap-3">
+      {/*
+        SAYFANIN TEK SUTUNU. Genislik BURADA bir kez tanimlaniyor.
+
+        ONCEDEN HER BLOK KENDI GENISLIGINI TASIYORDU ve ucu tasiyip ikisi
+        tasimayinca sayfa iki genislik arasinda gidip geliyordu: eylem
+        satiri 580, baslik 896, bakiye karti 896, fis 580, alt bolge 580.
+        Kart ile fisin ayni sutunda farkli genislikte durmasi buradan
+        cikiyordu - bir karar degil, listeden dusmus iki bloktu.
+
+        FIS KAZANDI (10 Eylul, kullanici secti): fis fiziksel bir metafor
+        ve genisletmek onu bozar; 896 piksellik koyu petrol kart tek bir
+        sayi icin fazla murekkep; mobilde de her sey tek genislikte.
+
+        Receipt kendi max-w'sini KORUYOR cunku expense-list.tsx de onu
+        kullaniyor. Burada, zaten dar olan bir kabin icinde etkisiz.
+      */}
+      <div className="mx-auto w-full max-w-[36.25rem]">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <Link
           href="/groups"
           className="text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -491,7 +508,7 @@ export default async function GroupDetailPage({
       {/* KAGIDIN ALTI - referans bolgesi.
           Uyeler, odemeler ve dagilim gunluk akisin parcasi degil; fisin
           disinda, tezgahin uzerinde duruyorlar. */}
-      <div className="mx-auto mt-10 flex w-full max-w-[36.25rem] flex-col gap-8">
+      <div className="mt-10 flex flex-col gap-8">
         <GroupSummary summary={summary} currency={currency} />
 
         <section className="min-w-0">
@@ -569,6 +586,7 @@ export default async function GroupDetailPage({
             }))}
           />
         </section>
+      </div>
       </div>
     </>
   );
