@@ -390,21 +390,106 @@ Gizlilik politikası: https://owezy.net/privacy
   yazmaz.
 ```
 
+### Uygulama adı — TÜRKÇEYİ DE İNGİLİZCE GİBİ YAPMA KARARI (10 Eylül)
+
+**Mekanizma ölçüldü:** ad **bölgeye göre değil DİLE göre** seçiliyor. Aynı
+Türkiye mağazasında:
+
+| Sorgu | Dönen ad |
+|---|---|
+| `itunes.apple.com/lookup?id=6805650395&country=tr&lang=tr_tr` | `Owezy` |
+| `...&country=tr&lang=en_us` | `Owezy: Split Expenses` |
+
+Yani telefonun dili Türkçe olan **Owezy** görüyordu, İngilizce olan
+**Owezy: Split Expenses**. Türkçe ad tek başına hiçbir arama karşılamıyordu.
+
+| | Eski | Yeni | Uzunluk |
+|---|---|---|---|
+| Türkçe ad | `Owezy` | `Owezy: Masraf Paylaşımı` | 23/30 |
+| İngilizce ad | `Owezy: Split Expenses` | *(değişmiyor)* | 21/30 |
+
+**"DOKUNMA" NOTU BİLEREK AŞILDI.** `CURRENT_TASK.md` Türkçe ad alanı için
+"bir daha dokunma" diyordu; gerekçesi bu hesabın bir kez **kalıcı olarak**
+isim kaybetmesiydi. O olay isim *değiştirmekten* değil uygulamayı
+*kaldırmaktan* çıkmıştı — Apple'ın cümlesi "If you remove an app, you'll
+lose ownership of the app name". Kullanıcı 10 Eylül'de açıkça değiştirmeye
+karar verdi. Ad değişikliği bir **sürümle birlikte** gidiyor ve incelemeden
+geçiyor; reddedilirse eskiye dönülebilir.
+
 ### Anahtar kelimeler — 1.0.4
 
-Boşta ~20 karakter vardı (EN 80/100, TR 79/100). **Önerilen: yalnızca
-EKLEME.** Hiçbir kelime çıkarılmıyor, yani "adda geçen kelimeyi
-anahtar kelimeye ikinci kez yazmak yer harcar" varsayımına bahis
-oynanmıyor — o varsayım STORE.md'de zaten "doğrulayamadığım" diye
-işaretli ve Apple algoritmayı yayımlamıyor.
+Ad değiştiği için hesap yeniden yapıldı. **Ad ve altyazıda TAM olarak
+geçen** kelimeler çıkarıldı, yerlerine yenileri kondu:
+
+| Durum | Kelime | Nerede |
+|---|---|---|
+| **çıkarıldı** | `masraf` | ad: *Owezy: **Masraf** Paylaşımı* |
+| **çıkarıldı** | `grup`, `ödeşme` | altyazı: ***Grup*** *hesabı, kolay **ödeşme*** |
+| **çıkarıldı** | `expenses`, `split` | ad: *Owezy: **Split Expenses*** |
+| **çıkarıldı** | `bills`, `group` | altyazı: ***Group bills**, settled fast* |
+| **KALDI** | `paylaşım` | ad **çekimli**: "Paylaşım**ı**" — birebir aynı değil |
+| **KALDI** | `hesap` | altyazı **çekimli**: "hesab**ı**" — birebir aynı değil |
+
+Türkçe çekim yüzünden ikisi bırakıldı: Apple'ın Türkçe için gövdeleme
+yapıp yapmadığı **doğrulanamıyor**, ve "Paylaşımı" ile "paylaşım"
+birebir aynı dizge değil. Çıkarmanın bedeli, kazancından büyük olabilirdi.
 
 | | Metin | Uzunluk |
 |---|---|---|
-| EN | `expenses,split,share,bills,roommate,debt,travel,group,settle,tab,budget,flatmate,receipt,recurring` | 98/100 |
-| TR | `masraf,paylaşım,hesap,borç,ev arkadaşı,tatil,bölüşme,ödeşme,grup,fatura,harcama,fiş,tekrarlayan` | 95/100 |
+| EN | `share,roommate,debt,travel,settle,tab,budget,flatmate,receipt,recurring,itemized,rent,dinner,trip` | 97/100 |
+| TR | `paylaşım,hesap,borç,ev arkadaşı,tatil,bölüşme,fatura,harcama,fiş,tekrarlayan,kira,abonelik,yemek` | 96/100 |
 
-**Altyazı ve tanıtım metni DEĞİŞMİYOR** — altyazı hâlâ doğru, tanıtım
-metni bilerek boş.
+### Tanıtım metni (promotional text) — ARTIK BOŞ DEĞİL
+
+Boş bırakılmıştı. **Değişti, çünkü bu alan sürüme bağlı değil:**
+açıklamayı ve sürüm notunu değiştirmek yeni bir gönderim istiyor,
+tanıtım metnini değiştirmek istemiyor. Boş bırakmak, elindeki tek
+esnek alanı hiç kullanmamak demekti. Sınır 170 karakter.
+
+**Türkçe — 150/170**
+
+```
+Ev arkadaşlarıyla, yol arkadaşlarıyla ya da tek bir akşam yemeğinde: kim ne ödedi, kim kime ne kadar borçlu. Fişi fotoğrafla, tutarı telefonun okusun.
+```
+
+**İngilizce — 146/170**
+
+```
+Flatmates, road trips, one dinner: who paid what and who owes whom. Photograph the receipt and let your phone read the total. No ads, no tracking.
+```
+
+### Ekran görüntüleri — ÜRETİLDİ (10 Eylül)
+
+`~/Desktop/owezy-1.0.4-ekran-goruntuleri/` altında **iki ölçüde**, beşer
+görsel. Simülatörde (iPhone 14 Pro Max, iOS 26.5), Türkçe ve açık temada.
+
+| Klasör | Ölçü | Nereye |
+|---|---|---|
+| `6.9-inch_1290x2796` | simülatörün yerel çıktısı | 6.9" yuvası |
+| `6.5-inch_1284x2778` | %0,5 küçültülmüş | **mağazadaki mevcut üçünün yeri** |
+
+| Dosya | Ne gösteriyor |
+|---|---|
+| `01-grup` | bakiye kartı, üç üye, "Hatırlat", harcama listesi |
+| `02-tekrarlayan-uyeler` | kategori dağılımı, **Kira (aylık)**, üye bakiyeleri |
+| `03-kalem-kalem` | **kalemler**: Pizza / Makarna / Tatlı, kim ne aldı |
+| `04-kalem-fis-yorum` | kalemler + fiş alanı + **yorum**, tek karede |
+| `05-dort-bolusum` | **dört bölüşüm türü**, üç üye, "Bunu tekrarla", "Fiş ekle" |
+
+**ÖLÇÜ TUZAĞI:** iOS 26.5 runtime'ı iPhone 14 Pro Max'i **1290×2796**
+çiziyor, o cihazın gerçek 1284×2778'ini değil. Apple'ın tablosunda
+1284×2778 **6.5" yuvasına**, 1290×2796 ise **6.9" yuvasına** ait — yani
+ikisi farklı yuva. Mağazadaki üç görsel 1284×2778 olduğu için o set
+küçültülerek üretildi.
+
+**VERİ UYDURMA DEĞİL, KURULDU:** geliştirme veritabanındaki hiçbir grup
+fotoğraflanabilir değildi (ya tek üyeli, ya boş, ya "Aksa"/"I tell" gibi
+deneme kalıntısı). `Kadıköy evi` grubu bu iş için kuruldu: üç üye
+(Ahmet/Deniz/Selin), dört harcama, bir kalem kalem bölüşüm, bir yorum,
+bir tekrarlayan şablon. Paylar en büyük kalan yöntemiyle yazıldı ve
+veritabanının `SUM(shareAmount) = amount` kısıtı kabul etti.
+`demo@owezy.net`'in görünen adı da `demo@owezy.net`'ten `Ahmet`'e
+çekildi — **yalnızca geliştirme veritabanında**.
 
 ---
 

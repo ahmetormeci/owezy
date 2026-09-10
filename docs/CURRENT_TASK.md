@@ -70,10 +70,10 @@ Current task:
     3. eas submit                                            BITTI
     4. ASC'de metinler: aciklama (2 dil), surum notu (2 dil), anahtar
        kelimeler. HEPSI HAZIR - docs/STORE.md "1.0.4 GONDERIMI" bolumu.
-    5. EKRAN GORUNTULERI: magazadaki uc gorsel ESKI tasarimi gosteriyor.
-       Bu build yeni tasarimi getiriyor, yani gorseller yanlis hale
-       geliyor. Tasarim handoff'unun 6b maddesi tam olarak buydu ve
-       gercek bir build bekledigi icin bugune kadar yapilamadi.
+    5. EKRAN GORUNTULERI: URETILDI (10 Eylul). Bes gorsel, iki olcude:
+       ~/Desktop/owezy-1.0.4-ekran-goruntuleri/
+       Ayrintisi ve olcu tuzagi docs/STORE.md'de. Tasarim handoff'unun
+       6b maddesi BITTI.
     6. appreview@ ile PAROLAYLA GIRIS KONTROLU - ajan yapamaz, kullanici
        yapar. Gecen sefer atlandigi icin 2.1 reti geldi.
     7. ASC'de surumu yayina alma
@@ -563,10 +563,18 @@ BIR SONRAKI GONDERIM ICIN - SIRASI ONEMLI:
   CEVAP VE NOTES METINLERI 4000 KARAKTERLE SINIRLI - IKISI DE.
 
 MAGAZA KIMLIGI - COZULDU, DOKUNMA:
-  TURKCE AD ALANINA BIR DAHA DOKUNMA. Kilit YERELLESTIRME BASINA cikti.
-  Bu hesap bu ismi bir kez KALICI olarak kaybetti (Apple: "If you remove an
-  app, you'll lose ownership of the app name"); birakilirsa geri alinabilecegi
-  garanti DEGIL. Simdi magazada duruyor - riske atilmasin.
+  TURKCE AD 1.0.4'TE DEGISIYOR: "Owezy" -> "Owezy: Masraf Paylasimi".
+  KULLANICI 10 EYLUL'DE ACIKCA KARAR VERDI. Sebep olculdu: ad BOLGEYE
+  DEGIL DILE gore seciliyor (lang=tr_tr -> "Owezy", lang=en_us ->
+  "Owezy: Split Expenses"), yani Turkce ad tek basina hicbir arama
+  karsilamiyordu.
+
+  ESKI "DOKUNMA" NOTUNUN GECERLI OLDUGU YER: bu hesap bir kez KALICI
+  olarak isim kaybetti - ama o olay isim DEGISTIRMEKTEN degil uygulamayi
+  KALDIRMAKTAN cikti (Apple: "If you remove an app, you'll lose ownership
+  of the app name"). Ad degisikligi bir SURUMLE gidiyor ve incelemeden
+  geciyor; reddedilirse eskiye donulebilir. UYGULAMAYI KALDIRMA kurali
+  aynen duruyor.
 
   net.wezy.app SILINEMEZ, silinmeye calisilmasin - build almis bir bundle ID
   ayni organizasyonda bir daha kullanilamiyor (Apple belgeliyor). Zararsiz.
