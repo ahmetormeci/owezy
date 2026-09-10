@@ -95,13 +95,26 @@ Current task:
   gecmeye devam etti. Vercel'de ortam degiskeni degisikligi CALISAN deploy'a
   uygulanmiyor; degisken SILINIP yeniden eklenip REDEPLOY yapilinca gecti.
 
-  DOGRULANAMAYAN TEK SEY - VE DOGRULANMAMALI: yeni degerin DOGRU oldugu.
-  Sir bize gonderilmedi, gonderilmemeli de. Onun kaniti ilk cron kosusunda:
-  Vercel -> Cron Jobs sekmesinde her gun 06:00 UTC'deki cagrinin sonucu
-  gorunuyor; 200 ise zincir tamam.
+  SON HALKA DA KAPANDI (10 Eylul): Vercel -> Cron Jobs -> Run ile elle
+  tetiklendi ve 200 dondu. Yani Vercel'in gonderdigi baslik ile sunucudaki
+  CRON_SECRET birebir uyusuyor. Bunu disaridan olcmek MUMKUN DEGILDI - sir
+  bize gonderilmedi, gonderilmemeli de; dogru sir ile yanlis sir disaridan
+  ayni goruniyor (ikisi de 401).
 
-  BEKLEYEN TEK SEY KALDI: gunluk kosunun gercekten calistigini gormek.
-  Ilk tekrarlayan harcama kuruldugunda ertesi gun uretilmis olmali.
+  CEVABIN GOVDESI HICBIR YERDE GORUNMUYOR ve bu Vercel'in davranisi:
+  Cron Jobs sekmesi yalnizca DURUM KODUNU gosteriyor. Runtime Logs'ta da
+  cikmiyor, cunku uc cevabi donduruyor ama loga yazmiyor.
+
+  KOSUNUN NE YAPTIGI SU AN HICBIR YERE YAZILMIYOR. Sonuclar dolayli
+  gorunuyor (harcama beliriyor, bildirim gidiyor, hata olursa Cron Jobs'ta
+  500 cikiyor) ama "bugun kac sablon islendi" sorusunun cevabi yok. Tek
+  satirlik bir console.log bunu Vercel loglarinda gorunur kilar ve icinde
+  kisisel veri olmaz - yalnizca uc sayi. KULLANICIYA SORULDU, karar bekliyor.
+
+  BEKLEYEN TEK SEY KALDI: gercek bir sablonun gercekten uretim yaptigini
+  gormek. Iki dakikalik yolu: web'de "Bunu tekrarla" ile bir harcama kur
+  (baslangic BUGUN), sonra Cron Jobs -> Run. Ilk donem vadesinde oldugu
+  icin harcama aninda dusmeli.
 
   SIRADAKI ADAYLAR: PROGRESS.md'deki liste. Fis OCR orada duruyor ve
   ATLANMA GEREKCESI yazili - yeniden gundeme gelirse once o okunmali.
