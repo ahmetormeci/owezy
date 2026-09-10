@@ -160,6 +160,10 @@ Current task:
   Push edilmemis kod commiti varken dokuman commiti atmadan once
   git log --oneline origin/main..HEAD ile bak.
 
+  PRE-PUSH KANCASI ONERILDI VE KULLANICI ISTEMEDI (10 Eylul). Bir daha
+  onerme. Cozum kancada degil, yukaridaki tek satirlik kontrolde:
+  dokuman commiti atmadan ONCE origin/main..HEAD'e bakilacak.
+
   >>> CRON_SECRET MADDESI KAPANDI (10 Eylul). Asagisi kaydi. <<<
 
   VERCEL'DE "CRON_SECRET" ORTAM DEGISKENI TANIMLANDI VE DOGRULANDI.
