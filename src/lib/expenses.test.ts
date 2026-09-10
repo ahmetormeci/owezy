@@ -1034,6 +1034,10 @@ describe("listExpenses", () => {
     return Array.from({ length: count }, (_, index) => ({
       id: `expense-${index}`,
       participants: [],
+      // Gercek sorgu her satirda _count donduruyor (yorum sayisi). Sahte
+      // satirda da olmali: servis onu commentCount'a duzlestiriyor ve
+      // eksikligi burada "undefined okunamiyor" olarak patliyordu.
+      _count: { comments: 0 },
     }));
   }
 
@@ -1103,6 +1107,9 @@ describe("listExpenses", () => {
     expect(mockPrisma.expense.findMany.mock.calls[0][0].include).toEqual({
       participants: true,
       receipt: { select: { id: true } },
+      // YORUM: yalnizca SAYISI, ve yalnizca silinmemis olanlar. Metinler
+      // burada tasinsaydi liste her acilista butun sohbetleri indirirdi.
+      _count: { select: { comments: { where: { deletedAt: null } } } },
     });
   });
 

@@ -72,8 +72,33 @@ export const MESSAGES_TR = {
   "receipt.permission_denied":
     "İzin verilmedi. Ayarlar → Owezy'den fotoğraf ya da kamera erişimini açabilirsin.",
 
+  // Yorumlar (ADR-049)
+  "comment.not_found": "Bu yorum bulunamadı",
+  "comment.author_only": "Bir yorumu yalnızca yazan kişi silebilir",
+  "comment.expense_deleted": "Silinmiş bir harcamaya yorum yazılamaz",
+  "validation.comment_required": "Yorum boş olamaz",
+  "validation.comment_too_long": "Yorum en fazla 500 karakter olabilir",
+
   // Arayuz
   "ui.receipt": "Fiş",
+  "ui.comments": "Yorumlar",
+  "ui.comment_count_zero": "Yorum yok",
+  "ui.comment_count_one": "1 yorum",
+  "ui.comment_count_other": "{count} yorum",
+  "ui.add_comment": "Yorum yaz",
+  "ui.comment_placeholder": "Bu harcama hakkında bir not…",
+  "ui.send_comment": "Gönder",
+  "ui.sending_comment": "Gönderiliyor…",
+  "ui.no_comments": "Henüz yorum yok.",
+  "ui.delete_comment": "Sil",
+  "ui.delete_comment_question": "Yorum silinsin mi?",
+  "ui.comment_deleted": "Yorum silindi",
+  /**
+   * SINIRA DAYANILDIGINDA. Sayfalama YOK (ADR-049) - liste kirpiliyor ve bunu
+   * SOYLUYOR. Sessizce kirpmak, eksik veriyi tam gibi gostermek olurdu.
+   */
+  "ui.comments_truncated": "Yalnızca ilk 100 yorum gösteriliyor.",
+  "ui.comments_closed_deleted": "Silinmiş bir harcama; yeni yorum yazılamaz.",
   "ui.no_receipt": "Bu harcamaya fiş eklenmemiş.",
   "ui.add_receipt": "Fiş ekle",
   "ui.replace_receipt": "Değiştir",
@@ -712,6 +737,7 @@ export const MESSAGES_TR = {
   "ui.notif_settlement_recorded": "{actor} bir ödeme kaydetti",
   "ui.notif_settlement_cancelled": "{actor} bir ödeme kaydını iptal etti",
   "ui.notif_member_joined": "{actor} gruba katıldı",
+  "ui.notif_expense_commented": "{actor} bir harcamaya yorum yaptı",
 
   /**
    * TELEFONA GIDEN bildirimin metni. Ustteki "ui.notif_*" ile AYNI OLAY,
@@ -734,6 +760,11 @@ export const MESSAGES_TR = {
   "push.settlement_recorded": "Bir ödeme kaydedildi",
   "push.settlement_cancelled": "Bir ödeme kaydı iptal edildi",
   "push.member_joined": "Gruba yeni biri katıldı",
+  /**
+   * YORUMUN METNI BURADA YOK ve olamaz: serbest metnin ne yazacagini kimse
+   * onceden bilemez, kilit ekranindaki herkes okur (ADR-049).
+   */
+  "push.expense_commented": "Bir harcamaya yorum yapıldı",
 
   // Bildirimler ekranindaki izin satiri.
   "ui.appearance": "Görünüm",
@@ -819,7 +850,28 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "receipt.permission_denied":
     "Permission was not granted. You can allow photo or camera access in Settings → Owezy.",
 
+  // Comments (ADR-049)
+  "comment.not_found": "This comment could not be found",
+  "comment.author_only": "Only the person who wrote a comment can delete it",
+  "comment.expense_deleted": "A deleted expense cannot be commented on",
+  "validation.comment_required": "A comment cannot be empty",
+  "validation.comment_too_long": "A comment can be at most 500 characters",
+
   "ui.receipt": "Receipt",
+  "ui.comments": "Comments",
+  "ui.comment_count_zero": "No comments",
+  "ui.comment_count_one": "1 comment",
+  "ui.comment_count_other": "{count} comments",
+  "ui.add_comment": "Write a comment",
+  "ui.comment_placeholder": "A note about this expense…",
+  "ui.send_comment": "Send",
+  "ui.sending_comment": "Sending…",
+  "ui.no_comments": "No comments yet.",
+  "ui.delete_comment": "Delete",
+  "ui.delete_comment_question": "Delete this comment?",
+  "ui.comment_deleted": "Comment deleted",
+  "ui.comments_truncated": "Only the first 100 comments are shown.",
+  "ui.comments_closed_deleted": "This expense is deleted; no new comments can be written.",
   "ui.no_receipt": "No receipt is attached to this expense.",
   "ui.add_receipt": "Add a receipt",
   "ui.replace_receipt": "Replace",
@@ -1314,6 +1366,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.notif_settlement_recorded": "{actor} recorded a settlement",
   "ui.notif_settlement_cancelled": "{actor} cancelled a settlement",
   "ui.notif_member_joined": "{actor} joined the group",
+  "ui.notif_expense_commented": "{actor} commented on an expense",
 
   "push.expense_added": "A new expense was added",
   "push.expense_updated": "An expense was updated",
@@ -1321,6 +1374,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "push.settlement_recorded": "A settlement was recorded",
   "push.settlement_cancelled": "A settlement was cancelled",
   "push.member_joined": "Someone joined the group",
+  "push.expense_commented": "Someone commented on an expense",
 
   "ui.appearance": "Appearance",
   "ui.theme_system": "System",

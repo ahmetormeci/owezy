@@ -3,7 +3,7 @@
 > Kaynak: `prisma/schema.prisma` + `prisma/migrations/`. Bu dosya onların
 > özetidir; çelişki halinde **şema ve migration'lar doğrudur**.
 
-PostgreSQL (Neon). 9 model, 5 enum, 3 migration.
+PostgreSQL (Neon). 18 model, 5 enum, 17 migration.
 
 ## Enum'lar
 
@@ -228,6 +228,12 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260825170000_add_better_auth` | `Session`, `Account`, `Verification` tabloları; `User.clerkId` nullable oldu, `User.email` UNIQUE oldu, `User.emailVerified` eklendi |
 | `20260825200000_add_account_issuer` | `Account.issuer`. Better Auth hesap satırına zorunlu bir issuer yazıyor (`local:credential`); sütun şemada yoktu çünkü şema eski bir CLI sürümüyle üretilmişti |
 | `20260826020000_drop_clerk_columns` | `User.clerkId` ve `User.clerkUpdatedAt` düştü (Faz 25.7). E-postanın UNIQUE kısıtı kalıyor ve asıl kimlik kısıtı artık o |
+| `20260826040000_add_rate_limit` | `RateLimit` — Better Auth'un kendi hız sınırı tablosu |
+| `20260826060000_add_api_rate_limit` | `ApiRateLimit` — `/api/v1` yazma bütçesi |
+| `20260826090000_add_two_factor` | `TwoFactor` + `User.twoFactorEnabled` |
+| `20260908060830_add_push_token` | `PushToken` — cihazın Expo adresi. İçinde kullanıcı verisi yok (ADR-047) |
+| `20260908112508_add_expense_receipt` | `ExpenseReceipt` — fiş fotoğrafının depo anahtarı; baytlar R2'de (ADR-046) |
+| `20260910070000_add_expense_comment` | `ExpenseComment` + `NotificationType.EXPENSE_COMMENTED`. Yorum finansal kayıt değil (ADR-049): silme yumuşak, hesap silmede **fiziksel** |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 [DECISIONS.md](DECISIONS.md) ADR-012.
@@ -237,8 +243,10 @@ Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 - [ ] **`Notification` için saklama/temizleme politikası yok.** Kayıtlar
       sonsuza kadar birikir. Eski okunmuşları silen bir mekanizma
       tasarlanmadı.
-- [ ] **Hesap silmede bildirimler temizlenmiyor.** `Notification` satırları
-      anonimleştirilmiş kullanıcıya bağlı kalır.
+- [x] ~~**Hesap silmede bildirimler temizlenmiyor.**~~ Temizleniyor
+      (`account.ts`, `tx.notification.deleteMany`). Bu satır bayattı ve
+      gizlilik politikası da aynı bayat iddiayı taşıyordu — ikisi de
+      10 Eylül'de düzeltildi.
 - [ ] **`schema.prisma` başındaki yorum bloğu güncel değil**: "bu dosya henüz
       migration'a dönüştürülmedi" diyor; oysa 8 migration uygulanmış durumda.
       Yalnızca yorum, davranışa etkisi yok.

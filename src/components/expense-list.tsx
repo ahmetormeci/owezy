@@ -32,6 +32,7 @@ import {
 } from "@/lib/expense-list-view";
 import { useLocale, useTranslate } from "@/lib/i18n";
 import { ReceiptLine, ReceiptPerforation } from "@/components/receipt";
+import { ExpenseComments } from "@/components/expense-comments";
 
 export type ExpenseListItem = {
   id: string;
@@ -50,6 +51,15 @@ export type ExpenseListItem = {
    * soyluyor; uc bu alani bastan beri donduruyordu, gosteren yoktu.
    */
   deletedAt?: string | null;
+  /**
+   * Silinmemis yorum sayisi. Satirda yalnizca bir SAYI tasiniyor, metinler
+   * degil: yorumlar ancak diyalog acilinca cekiliyor (ADR-049).
+   *
+   * Opsiyonel cunku istemcide yerel olarak kurulan satirlar (ay acilirken
+   * gelen sayfalar) bu alani uctan aliyor; eski bir cevapta yoksa "yorum yok"
+   * gibi davraniyor.
+   */
+  commentCount?: number;
 };
 
 /** Ozetten gelen ay toplamlari. Grubun TAMAMINI kapsar, ekrandakini degil. */
@@ -641,8 +651,22 @@ export function ExpenseList({
               </>
             ) : null}
           </span>
+          {/* YORUM HER SATIRDA, yetkiden bagimsiz: harcamayi degistirmek
+              yalnizca girene ait ama yorum yazmak grubun her uyesine acik
+              (ADR-049). Duzenle/Sil ile AYNI seride duruyor - hepsi bu
+              satira ait eylemler. */}
+          <span className="ml-auto flex shrink-0 items-baseline gap-3">
+            <ExpenseComments
+              groupId={groupId}
+              expenseId={expense.id}
+              description={expense.description}
+              currentUserId={currentUserId}
+              commentCount={expense.commentCount ?? 0}
+              isDeleted={isDeleted}
+            />
+          </span>
           {canModify ? (
-            <span className="ml-auto flex shrink-0 items-baseline gap-3">
+            <span className="flex shrink-0 items-baseline gap-3">
               {/* SILINMIS SATIRDA DUZENLEME/SILME YOK: ikisi de anlamsiz ve
                   sunucu zaten reddediyor. Yerine tek eylem - geri al. */}
               {isDeleted ? (

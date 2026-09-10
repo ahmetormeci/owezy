@@ -8,7 +8,7 @@
 > numaralarla birebir örtüşmeyebilir — bu eşleşme doğrulanamadığı için
 > numaralar burada yalnızca sıra belirtir.
 
-**Özet:** 41 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
+**Özet:** 42 fazın tamamı bitti. **Faz 35 ile iOS uygulaması App Store'da
 yayında** (mağazada 1.0.2, 8 Eylül 2026) — web zaten canlıydı, artık iki
 istemci de kullanıcıya açık. Faz 41'in kağıt & petrol tasarım yönü iki
 istemcide de uygulandı ama **henüz kullanıcıya ulaşmadı**: mağazadaki 1.0.2 de
@@ -17,10 +17,10 @@ CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim — kök (Vitest) | 617 | ✅ tümü geçiyor |
+| Birim — kök (Vitest) | 635 | ✅ tümü geçiyor |
 | Birim — mobil (Vitest) | 86 | ✅ tümü geçiyor |
-| Ekran — mobil (jest-expo) | 39 | ✅ tümü geçiyor |
-| E2E (Playwright) | 57 | ✅ tümü geçiyor |
+| Ekran — mobil (jest-expo) | 50 | ✅ tümü geçiyor |
+| E2E (Playwright) | 58 | ✅ tümü geçiyor |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
 | `npm run lint` | — | ✅ temiz (kök + mobil) |
 
@@ -1121,6 +1121,57 @@ genişletirse uygulama mağazadan döner ve sebebi hiçbir yerde görünmez.
 Email Routing kuralı var, oraya gelen postalar kullanıcının kendi kutusuna
 yönleniyor. Alan adının MX'i de `route1/2/3.mx.cloudflare.net` — yani
 destek sayfasındaki adres gerçekten çalışıyor.
+
+---
+
+## Faz 42 — Harcamaya yorum · **BİTTİ, MOBİLİ YAYINLANMADI**
+
+Bir harcamanın altına not düşülebiliyor. Kullanıcının daha önce seçtiği beş
+özellikten ilki; en ucuzu olduğu için değil, **tasarım sistemi hazır olduğu
+için** ilk sırada — yeni dil gerçek bir özellikle sınandı.
+
+| | |
+|---|---|
+| Veri | `ExpenseComment` tablosu, `NotificationType.EXPENSE_COMMENTED` |
+| Uçlar | listele · yaz · sil (yumuşak) — üçü de hız sınırından geçiyor |
+| Web | harcama satırından açılan diyalog |
+| Mobil | detay ekranının altında bölüm; listede bakır bir sayı |
+| Bildirim | uygulama içi + push (metinsiz) |
+
+**Bütün kurallar tek bir ayrımdan çıktı: yorum finansal kayıt değil**
+(ADR-049). Hiçbir bakiyeye girmiyor, dolayısıyla "finansal kayıtlar fiziksel
+olarak silinmez" kuralı bu tabloyu bağlamıyor. Silme yumuşak; hesap silinince
+yorumlar **fiziksel** olarak gidiyor — fiş fotoğraflarıyla aynı gerekçe
+(ADR-046), çünkü yorum kullanıcının yazdığı serbest metindir.
+
+**Yorumun metni telefona gitmiyor.** ADR-047 push'tan tutarı ve kişi adını
+çıkarmıştı; serbest metin evleviyetle çıkıyor. Bir test bunu bekçiliyor ve
+negatif kontrolü koşuldu.
+
+**Bildirim alıcıları yeni bir kuraldan geliyor:** harcamalarda kural "yalnızca
+katılımcılar" ve gerekçesi *bakiyesi değişenler*; yorumda kimsenin bakiyesi
+değişmiyor. Yerine katılımcılar + ödeyen + oluşturan + **daha önce yorum
+yapanlar**.
+
+**Yol boyunca bulunan iki şey — ikisi de yorumla ilgisiz:**
+
+- Gizlilik politikası "uygulama içi bildirimlerin anonimleştirilmiş kullanıcıya
+  bağlı kalır" diyordu; hesap silme onları **siliyor**. Politika bugün
+  yanlıştı, düzeltildi.
+- Playwright'ta `getByText` bir `textarea`'nın **değerini** de metin sayıyor.
+  "Yazdığım yorum ekranda mı" diye aramak, gönderim hiç olmasa da geçiyordu.
+
+**Simülatörde iki kusur çıktı** ve ikisi de yalnızca ekranda görülebilirdi:
+bölümün yatay dolgusu yoktu (kenara yapışmış, "Gönder" taşmış), ve "Sil"
+zaman damgasının yanına yapışıyordu — `marginLeft: "auto"` `Text`'e verilmiş,
+oysa hizalanacak kardeşi olmadığı için hiçbir şey yapmıyordu. İkisi de
+düzeltildi ve cihazda uçtan uca yürütüldü (boş hâl → yazma → liste işareti →
+silme onayı → silme), açık ve koyu temada.
+
+**MOBİLİ YAYINLANMADI.** Web push'la canlıya çıkıyor; telefon tarafı yeni bir
+build ve mağaza gönderimi bekliyor — o da 1.0.3'ün arkasında.
+
+**Test:** 18 birim + 11 mobil ekran + 1 E2E.
 
 ---
 
@@ -2279,15 +2330,17 @@ karar vermemiştir.
 
 | Aday | Neden önemli |
 |---|---|
-| **Harcamaya yorum** | En ucuzu. Yorum silinebilir mi — finansal kayıt değil, ayrı karar |
 | **Ödeme hatırlatması** | Push altyapısı hazır; **cron** gerekiyor (`vercel.json` yok) |
 | **Fiş OCR** | Fotoğraf zaten var. Dış servis = **ücretli** + gizlilik/App Privacy yeniden |
 | **Tekrarlayan harcama** | Kira, abonelik. Cron'u ödeme hatırlatmasıyla **paylaşıyor** |
 | **Kalem kalem bölüşüm** | En pahalısı: küsurat değişmezi **iki katmanda** korunmalı |
 | **Profil fotoğrafı** | Fiş fotoğrafıyla aynı depo ve arayüz; uç henüz yok |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
-| **Web'in kalan kapları** | Gruplar listesi, giriş/kayıt (hâlâ `Card` içinde), diyalogların iç yerleşimi |
 
+> **İki madde listeden çıktı (10 Eylül):** *harcamaya yorum* yapıldı (Faz 42);
+> *web'in kalan kapları* da yapıldı (Faz 41'in son adımı, 9 Eylül akşamı) ama
+> listeden düşürülmesi unutulmuştu.
+>
 > **Bitenler listeden çıkarıldı (9 Eylül):** mobil ekran testleri (ADR-043,
 > 39 test), mobil lint (`mobile/eslint.config.js` var ve `--max-warnings 0`
 > koşuyor), silineni geri alma arayüzü (iki istemcide de kullanılıyor),

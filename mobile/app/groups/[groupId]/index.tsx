@@ -93,6 +93,12 @@ type ExpenseItem = {
    * duymamali: kirk harcamalik bir listede kirk fotograf indirmek olurdu.
    */
   receipt?: { id: string } | null;
+  /**
+   * Silinmemis yorum sayisi. Yalnizca bir SAYI: yorumlarin kendisi harcama
+   * detayinda cekiliyor (ADR-049). Opsiyonel - eski bir cevapta yoksa
+   * "yorum yok" gibi davraniyor.
+   */
+  commentCount?: number;
 };
 type MonthSlice = { month: string; amount: number; count: number };
 /**
@@ -714,15 +720,36 @@ export default function GroupScreen() {
          * her satira fotograf koymak listeyi acarken kirk indirme demekti.
          */
         mark={
-          expense.receipt ? (
-            <Pressable
-              hitSlop={12}
-              onPress={() => setViewingReceipt(expense.id)}
-              accessibilityRole="imagebutton"
-              accessibilityLabel={t("ui.receipt")}
-            >
-              <Ionicons name="attach-outline" size={15} color={theme.copper} />
-            </Pressable>
+          expense.receipt || (expense.commentCount ?? 0) > 0 ? (
+            <View style={s.marks}>
+              {expense.receipt ? (
+                <Pressable
+                  hitSlop={12}
+                  onPress={() => setViewingReceipt(expense.id)}
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={t("ui.receipt")}
+                >
+                  <Ionicons name="attach-outline" size={15} color={theme.copper} />
+                </Pressable>
+              ) : null}
+              {/* YORUM ISARETI DOKUNULABILIR DEGIL - ve bu fis atacindan
+                  bilincli olarak farkli. Ataç ayri bir is yapiyor (fotografi
+                  tam ekran acmak); yorumlarin gidecegi yer zaten satirin
+                  kendisinin actigi ekran. Ikinci bir hedef koymak, ayni yere
+                  giden iki dokunus olurdu. */}
+              {(expense.commentCount ?? 0) > 0 ? (
+                <View
+                  style={s.commentMark}
+                  accessibilityLabel={t(
+                    expense.commentCount === 1 ? "ui.comment_count_one" : "ui.comment_count_other",
+                    { count: expense.commentCount ?? 0 },
+                  )}
+                >
+                  <Ionicons name="chatbubble-outline" size={13} color={theme.copper} />
+                  <Text style={s.commentCount}>{expense.commentCount}</Text>
+                </View>
+              ) : null}
+            </View>
           ) : undefined
         }
         action={
@@ -1425,6 +1452,10 @@ function createStyles(theme: Theme) {
     // soyleyen sey bu.
     screen: { flex: 1, backgroundColor: theme.background },
     flex: { flex: 1 },
+    /** Satir basligindaki isaretler: fis ataci ve yorum sayisi. */
+    marks: { flexDirection: "row", alignItems: "center", gap: 8 },
+    commentMark: { flexDirection: "row", alignItems: "center", gap: 3 },
+    commentCount: { fontFamily: fonts.body, fontSize: 11, color: theme.copperText },
     // paddingBottom sabit eylem cubugunun yuksekligini karsiliyor: son
     // satir cubugun altinda kalmamali.
     scroll: { padding: 16, paddingBottom: 130 },

@@ -45,6 +45,13 @@ const BODY_CODES: Record<NotificationType, MessageCode> = {
   SETTLEMENT_RECORDED: "push.settlement_recorded",
   SETTLEMENT_CANCELLED: "push.settlement_cancelled",
   MEMBER_JOINED: "push.member_joined",
+  /**
+   * YORUMUN METNI YOK, olmasi da dusunulmedi: push'a giren her sey kilit
+   * ekraninda duruyor ve serbest metnin ne yazacagini kimse onceden bilemez
+   * (ADR-047 + ADR-049). Kisi adi da yok - o kural zaten butun turler icin
+   * gecerli.
+   */
+  EXPENSE_COMMENTED: "push.expense_commented",
 };
 
 export type PendingPush = {

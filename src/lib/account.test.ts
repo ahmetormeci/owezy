@@ -27,6 +27,7 @@ const { mockTx } = vi.hoisted(() => ({
     notification: { deleteMany: vi.fn() },
     pushToken: { deleteMany: vi.fn() },
     expenseReceipt: { findMany: vi.fn(), deleteMany: vi.fn() },
+    expenseComment: { deleteMany: vi.fn() },
     // Bu ikisi BILEREK var ve BILEREK hic cagrilmamali: testler
     // "dokunulmadi" iddiasini ancak taklit mevcutsa dogrulayabilir.
     expense: { deleteMany: vi.fn(), updateMany: vi.fn() },
@@ -52,6 +53,7 @@ const USER = "11111111-1111-1111-1111-111111111111";
 beforeEach(() => {
   mockTx.expenseReceipt.findMany.mockReset().mockResolvedValue([]);
   mockTx.expenseReceipt.deleteMany.mockReset();
+  mockTx.expenseComment.deleteMany.mockReset().mockResolvedValue({ count: 0 });
   mockDeleteObject.mockReset().mockResolvedValue(true);
   vi.clearAllMocks();
   mockTx.user.findUnique.mockResolvedValue({ id: USER, deletedAt: null });

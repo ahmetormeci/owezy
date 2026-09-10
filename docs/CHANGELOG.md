@@ -21,6 +21,59 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-10 — Harcamaya yorum
+
+Bir harcamanın altına not düşülebiliyor artık. Grubun her aktif üyesi
+yazabiliyor; silmeyi yalnızca yazan yapabiliyor, düzenleme yok (ADR-049).
+
+**Yorum finansal kayıt değil** — hiçbir bakiyeye girmiyor — ve bütün kurallar
+bu tek ayrımdan çıktı: "finansal kayıtlar fiziksel olarak silinmez" kuralı bu
+tabloyu bağlamıyor, silme yumuşak, hesap silinince yorumlar **fiziksel olarak**
+gidiyor (fiş fotoğraflarıyla aynı gerekçe, ADR-046).
+
+**Yorumun metni telefona gitmiyor.** ADR-047 push'tan tutarı ve kişi adını
+çıkarmıştı; serbest metin evleviyetle çıkıyor — ne yazacağını kimse önceden
+bilemez ve push kilit ekranında görünür. Bunu bir test bekçiliyor, negatif
+kontrolüyle.
+
+**Bildirim alıcıları yeni bir kuraldan geliyor.** Harcamalarda kural "yalnızca
+katılımcılar" ve gerekçesi *bakiyesi değişenler*; yorumda kimsenin bakiyesi
+değişmiyor. Yerine: katılımcılar + ödeyen + oluşturan + **daha önce yorum
+yapanlar**.
+
+**İki istemci iki şekil:** web'de diyalog, telefonda detay ekranının altında
+bölüm. Web'de harcamanın detay sayfası yok — harcama bir liste satırı; yorum
+için sayfa açmak önce o sayfayı icat etmek demekti.
+
+**Gizlilik politikasında bugün yanlış olan bir cümle bulundu ve düzeltildi:**
+"uygulama içi bildirimlerin anonimleştirilmiş kullanıcıya bağlı kalır" diyordu,
+oysa hesap silmede bildirimler **siliniyor**. Yorumla ilgisi yok; aynı
+paragrafı okurken çıktı.
+
+**Test tuzağı:** Playwright'ta `getByText`, bir `textarea`'nın DEĞERİNİ de
+metin sayıyor. "Yazdığım yorum ekranda mı" diye aramak, gönderim hiç olmasa da
+geçiyordu — kanıt artık listede çizilmiş satırın kendisi.
+
+**Simülatörde iki kusur çıktı, ikisini de test göremezdi:**
+
+1. Yorum bölümünün **yatay dolgusu yoktu** — bu ekranda her blok kendi
+   `paddingHorizontal`'ini taşıyor ve ScrollView'da yatay dolgu yok. Bölüm
+   ekranın soluna yapışmış, "Gönder" düğmesi sağdan taşmıştı. Sarmalayıcı
+   `ReceiptPhoto`'daki gibi ekrana taşındı.
+2. **"Sil" zaman damgasının yanına yapışıyordu.** `marginLeft: "auto"`
+   `Text`'e verilmişti; hizalanacak kardeşi olmadığı için hiçbir şey
+   yapmıyordu. Yıkıcı bir eylem, kazara dokunulacak yerde duruyordu — artık
+   `Pressable`'da ve sağa yaslı.
+
+Cihazda uçtan uca yürütüldü: boş hâl → yazma (201) → satırın çizilmesi →
+listede bakır işaret → silme onayı → silme (200) → sayının düşmesi. Açık ve
+koyu tema.
+
+Yeni: 18 birim + 11 mobil ekran testi + 1 E2E. Kök **635**, mobil **86 + 50**,
+E2E **58/58**.
+
+---
+
 ## 2026-09-09 (14) — Kapların kendisi: kart arayüzden çıktı
 
 Ekranların içi yeni dile geçmişti, onları **taşıyan yüzeyler** geçmemişti.

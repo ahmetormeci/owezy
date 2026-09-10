@@ -530,6 +530,86 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-049 — Harcamaya yorum: finansal kayıt değil, bu yüzden kuralları ayrı
+**Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
+
+**Karar:** Bir harcamaya, grubun her aktif üyesi yorum yazabilir. Yorum
+**finansal kayıt değildir** — hiçbir bakiyeye girmez, hiçbir hesaplamayı
+değiştirmez — ve "finansal kayıtlar fiziksel olarak silinmez" kuralı
+(AGENTS.md) bu tabloyu bağlamaz. Aşağıdaki her karar bu tek ayrımdan çıkıyor.
+
+### Kim ne yapabilir
+
+| | Kural | Neden |
+|---|---|---|
+| Yazmak | Grubun **aktif üyesi** olan herkes | Harcamayı değiştirme yetkisi (yalnızca giren kişi) aransaydı, özellik tek kişilik bir not defteri olurdu |
+| Silmek | **Yalnızca yazan** | Grup sahibine moderasyon yetkisi verilmedi: bugün böyle bir talep yok ve başkasının sözünü silebilmek, özelliğin sessizce başka bir şeye dönüşmesi olurdu |
+| Düzenlemek | **Yok** | Kısa bir yorumu düzeltmenin yolu silip yeniden yazmak. Düzenleme, "ne zaman değişti" sorusunu ve bir geçmiş kaydını beraberinde getirirdi |
+| Silinmiş harcama | Yorumlar **okunur**, yenisi **yazılamaz** | Fiş fotoğrafıyla aynı karar (ADR-046): silme geri alınabilir ve satır "silinenleri göster" açıkken ekranda. Gizlemek, geri almadan önce neyin konuşulduğunu görmeyi engellerdi |
+
+Silme **yumuşak** (`deletedAt`). Yorum finansal kayıt olmadığı için sert de
+silinebilirdi; bir sütun karşılığında karar geri alınabilir kalıyor. Silinmiş
+yorum arayüzde **hiç** gösterilmiyor — mezar taşı yok.
+
+### Bildirim: alıcı kümesi yeni bir kuraldan geliyor
+
+Harcama bildirimlerinde kural "yalnızca katılımcılar" ve gerekçesi açıkça
+**bakiyesi değişenler** (`expenses.ts`). Yorumda kimsenin bakiyesi
+değişmiyor, yani o gerekçe burada yok. Yerine geçen kural:
+
+> katılımcılar + ödeyen + oluşturan + **daha önce yorum yapanlar**
+
+Son grup önemli: sohbete girmiş birinin cevabı görmemesi özelliği yarım
+bırakırdı. Alıcılar yorum **yazılmadan önce** hesaplanıyor; sonra
+hesaplansaydı yazan kişi de kendi listesine girerdi. `createNotifications`
+işlemi yapanı zaten eliyor — yani bugün sonuç değişmezdi, ama liste yanlış
+olurdu ve yarın başka bir kural eklendiğinde sessizce bozulurdu.
+
+### Yorumun metni telefona GİTMİYOR
+
+ADR-047 push'tan tutarı ve kişi adını çıkarmıştı. Serbest metin **evleviyetle**
+çıkıyor: bir yorumun ne yazacağını kimse önceden bilemez ve push, telefon
+kilitliyken yanındaki herkese görünür. Push yalnızca grup adını ve olayın
+türünü taşıyor ("Bir harcamaya yorum yapıldı"). Uygulama içi bildirim de
+yorumun gövdesini değil **harcamanın açıklamasını** taşıyor: bildirim tarihsel
+bir cümle, yorum sonradan silinirse cümle yanlış olmamalı.
+
+Bunu bir test bekçiliyor (`comments.test.ts`) ve negatif kontrolü koşuldu.
+
+### Hesap silinince yorumlar da siliniyor
+
+Fiş fotoğraflarıyla **aynı gerekçe** (ADR-046): yorum, kullanıcının yazdığı
+serbest metindir — kişisel veri. Gizlilik hikâyesi tek cümleyle
+anlatılabilmeli: *"hesabını silersen yüklediğin her şey gider."* Fiziksel
+silme, `deletedAt` değil: yumuşak silme metni veritabanında bırakırdı ve giden
+şey tam da metnin kendisi. Harcamanın kendisi duruyor, bakiyeler etkilenmiyor.
+
+Gizlilik politikası bu yüzden değişti (`src/content/legal/privacy.ts`).
+
+### Sayfalama yok, sınır var
+
+100 yorumda liste kırpılıyor ve bunu **söylüyor**. Bir harcamanın yorumları bir
+sohbet değil birkaç nottur; sayfalama, olmayan bir sorunun çözümü olurdu.
+Sessizce kırpmak ise eksik veriyi tam gibi göstermek olurdu.
+
+Listede satır başına yalnızca bir **sayı** taşınıyor, metinler değil — fiş
+fotoğrafındaki dersin aynısı: kırk harcamalık bir listede kırk sohbeti
+indirmek.
+
+### İki istemci, iki şekil — ve bu bilinçli
+
+Web'de yorumlar **diyalogda**, telefonda detay ekranının **altında bir
+bölüm**. Fark, iki istemcinin bilgi mimarisinden geliyor: web'de harcamanın
+detay sayfası **yok**, harcama bir liste satırı. Yorum için sayfa açmak, önce
+o sayfayı icat etmek demekti. Telefonda zaten tam bir detay ekranı var.
+
+**Alternatifler:** web'e gerçek bir harcama detay sayfası açmak (bölüşüm
+dökümünü ve fiş fotoğrafını da web'de görünür kılardı — ayrı bir iş olarak
+duruyor); yorumu grup düzeyinde tutmak (hangi harcamadan söz edildiği
+kaybolurdu); düzenlemeye izin vermek (geçmiş kaydı gerektirirdi).
+
+---
+
 ## ADR-048 — Kağıt & petrol yönü: kimlik ile alacak aynı aileden, tutarlar mono değil
 **Tarih:** 2026-09-09 · **Durum:** Kabul edildi · **ADR-015'i ve ADR-021'in 2. ve 6. kuralını DEĞİŞTİRİR**
 

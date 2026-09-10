@@ -97,6 +97,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Grup adları ve açıklamaları",
               "Harcamalar: açıklama, tutar, tarih, kategori, kimin ödediği, kimler arasında bölüşüldüğü",
               "Ödeşme kayıtları: kimin kime ne kadar ödediği ve varsa notu",
+              "Bir harcamaya yazdığın yorumlar. Yorumu yalnızca o grubun üyeleri " +
+                "görür; telefonlara giden bildirimde yorumun METNİ yer almaz.",
               "Davet linkleri ve üyelik kayıtları",
               "Sana gönderilen uygulama içi bildirimler",
               "Harcama düzenleme ve silme geçmişi (denetim kaydı)",
@@ -221,9 +223,10 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             text:
               "Sildiğinde ne olduğunu açıkça yazmak istiyoruz, çünkü beklediğinden farklı " +
               "olabilir. Kişisel bilgilerin — e-posta adresin, adın, profil fotoğrafın — " +
-              "silinir. YÜKLEDİĞİN FİŞ FOTOĞRAFLARI DA SİLİNİR, depodan da. " +
-              "Ancak girdiğin harcama ve ödeşme kayıtları silinmez; " +
-              "anonimleştirilmiş bir kullanıcıya bağlı kalmaya devam eder.",
+              "silinir. YÜKLEDİĞİN FİŞ FOTOĞRAFLARI DA SİLİNİR, depodan da; " +
+              "YAZDIĞIN YORUMLAR DA SİLİNİR. Ancak girdiğin harcama ve ödeşme " +
+              "kayıtları silinmez; anonimleştirilmiş bir kullanıcıya bağlı " +
+              "kalmaya devam eder.",
           },
           {
             kind: "p",
@@ -231,8 +234,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Sebebi şu: Owezy ortak bir defter. Bir kişinin kayıtlarını silmek, aynı " +
               "gruptaki diğer herkesin bakiyesini bozar — kimin kime ne kadar borçlu " +
               "olduğu yanlış hesaplanır. Bu yüzden finansal kayıtlar korunur, kimlik " +
-              "bilgileri kaldırılır. Uygulama içi bildirimlerin de aynı şekilde " +
-              "anonimleştirilmiş kullanıcıya bağlı kalır.",
+              "bilgileri kaldırılır. Sana gelmiş uygulama içi bildirimler ise " +
+              "silinir — onlar bir defter kaydı değil, sana yazılmış cümleler.",
           },
           {
             kind: "p",
@@ -370,6 +373,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Group names and descriptions",
               "Expenses: description, amount, date, category, who paid, and how it was split",
               "Settlements: who paid whom, how much, and an optional note",
+              "Comments you write on an expense. Only members of that group can see " +
+                "them; the TEXT of a comment is never included in the notification " +
+                "sent to phones.",
               "Invite links and membership records",
               "In-app notifications sent to you",
               "A history of expense edits and deletions (audit log)",
@@ -492,8 +498,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "We want to be explicit about what deletion does, because it may not be what " +
               "you expect. Your personal details — email address, name, profile picture — " +
               "are removed. THE RECEIPT PHOTOS YOU UPLOADED ARE DELETED TOO, from storage " +
-              "as well. Your expenses and settlements are not: they stay, attached to " +
-              "an anonymised user.",
+              "as well, AND SO ARE THE COMMENTS YOU WROTE. Your expenses and settlements " +
+              "are not: they stay, attached to an anonymised user.",
           },
           {
             kind: "p",
@@ -501,8 +507,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "The reason is that Owezy is a shared ledger. Deleting one person's records " +
               "corrupts everyone else's balance in the same group — who owes whom would be " +
               "computed wrongly. So financial records are preserved and identifying details " +
-              "are stripped. Your in-app notifications likewise remain attached to the " +
-              "anonymised user.",
+              "are stripped. The in-app notifications you received are deleted, though — " +
+              "they are not ledger entries, they are sentences written to you.",
           },
           {
             kind: "p",

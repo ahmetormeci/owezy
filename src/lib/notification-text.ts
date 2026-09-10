@@ -62,6 +62,7 @@ const TITLE_CODES: Record<NotificationType, MessageCode> = {
   SETTLEMENT_RECORDED: "ui.notif_settlement_recorded",
   SETTLEMENT_CANCELLED: "ui.notif_settlement_cancelled",
   MEMBER_JOINED: "ui.notif_member_joined",
+  EXPENSE_COMMENTED: "ui.notif_expense_commented",
 };
 
 export function describeNotification(

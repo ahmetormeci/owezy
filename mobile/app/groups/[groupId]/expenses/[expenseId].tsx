@@ -24,6 +24,7 @@ import { useTheme, type Theme } from "../../../../lib/theme";
 import { SectionRule } from "../../../../components/receipt";
 import { Field, SelectField } from "../../../../components/field";
 import { ReceiptPhoto } from "../../../../components/receipt-photo";
+import { ExpenseComments } from "../../../../components/expense-comments";
 
 /**
  * Tek harcama: detay ve - izin varsa - duzenleme.
@@ -563,6 +564,18 @@ export default function ExpenseScreen() {
             />
           </View>
 
+          {/* YORUMLAR. Fisin ALTINDA: once harcamanin kendisi, sonra kaniti
+              (fis), sonra hakkinda soylenenler. Yazmak grubun her uyesine
+              acik - fis ekleme gibi canEdit'e bagli DEGIL (ADR-049). */}
+          <View style={s.commentsBlock}>
+            <ExpenseComments
+              groupId={groupId}
+              expenseId={expenseId}
+              currentUserId={currentUserId}
+              isDeleted={gone}
+            />
+          </View>
+
           {/* SILME EN ALTTA VE SESSIZ. Kaydet basliga cikti; silme onun
               yanina konsaydi iki yikici olmayan/olan eylem yan yana dururdu.
               Rengi theme.destructive - theme.debt DEGIL: ADR-015'in
@@ -705,6 +718,7 @@ function createStyles(theme: Theme) {
       paddingTop: 14,
     },
     receiptBlock: { paddingHorizontal: 20, paddingTop: 24 },
+    commentsBlock: { paddingHorizontal: 20, paddingTop: 24 },
 
     deleteRow: { paddingHorizontal: 20, paddingTop: 28 },
     // theme.destructive, theme.debt DEGIL. ADR-015'in yururlukteki yarisi:

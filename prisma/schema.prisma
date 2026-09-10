@@ -59,6 +59,7 @@ enum NotificationType {
   EXPENSE_DELETED
   SETTLEMENT_RECORDED
   SETTLEMENT_CANCELLED
+  EXPENSE_COMMENTED
   // Eskiden GROUP_INVITE idi. Bizim davetler link tabanli oldugu icin
   // "davet edildin" diye bir alici yok; anlamli olan olay katilimin kendisi.
   MEMBER_JOINED
@@ -158,6 +159,7 @@ model User {
   notifications Notification[]
   pushTokens    PushToken[]
   receipts      ExpenseReceipt[] @relation("receiptUploadedBy")
+  comments      ExpenseComment[] @relation("commentAuthor")
 
   @@index([email])
 }
@@ -249,6 +251,7 @@ model Expense {
   participants ExpenseParticipant[]
   edits        ExpenseEdit[]
   receipt      ExpenseReceipt?
+  comments     ExpenseComment[]
 
   // NOT (Prisma'da ifade edilemez -> custom SQL migration gerekir):
   //   CHECK (amount > 0)
@@ -463,6 +466,48 @@ model ExpenseReceipt {
 
   /// Hesap silmede "bu kullanicinin butun fisleri" sorgusu icin.
   @@index([uploadedById])
+}
+
+/// Bir harcamaya yazilmis yorum.
+///
+/// NEDEN FINANSAL KAYIT DEGIL: bir yorum hicbir bakiyeyi degistirmiyor,
+/// hicbir hesaplamaya girmiyor. "Finansal kayitlar fiziksel olarak silinmez"
+/// kurali (AGENTS.md) bu tabloyu BAGLAMIYOR - ve baglamadigi icin silme
+/// kurallari ayri dusunuldu (ADR-049).
+model ExpenseComment {
+  id String @id @default(uuid()) @db.Uuid
+
+  expenseId String @db.Uuid
+
+  /// Yazan. Bir yorum baskasi adina yazilamaz; sunucu her zaman oturumdaki
+  /// kullaniciyi yaziyor, istemciden alinmiyor.
+  userId String @db.Uuid
+
+  /// Serbest metin. Uzunluk sinirini uygulama katmani koyuyor
+  /// (lib/comment-schemas.ts, 500 karakter) - veritabaninda TEXT, cunku
+  /// siniri degistirmek migration gerektirmemeli.
+  ///
+  /// BU METIN PUSH BILDIRIMINE HIC GIRMIYOR (ADR-047 + ADR-049): icinde ne
+  /// yazdigini kimse onceden bilemez ve kilit ekraninda durmamali.
+  body String @db.Text
+
+  createdAt DateTime  @default(now())
+  /// YUMUSAK SILME. Yorum finansal kayit degil, yani sert silinebilirdi -
+  /// ama bir sutun karsiliginda karar geri alinabilir kaliyor. Silinmis
+  /// yorum arayuzde HIC gosterilmiyor; mezar tasi yok (ADR-049).
+  deletedAt DateTime?
+
+  /// Restrict - harcama zaten fiziksel olarak silinmiyor.
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  /// Restrict: hesap silme yumusak, cascade tetiklenmezdi. Silme ELLE
+  /// yapiliyor (account.ts) - hesabini silen kisinin yorumlari da gidiyor,
+  /// fis fotograflariyla ayni gerekce (ADR-046).
+  user User @relation("commentAuthor", fields: [userId], references: [id], onDelete: Restrict)
+
+  /// Bir harcamanin yorumlarini eskiden yeniye okumak icin.
+  @@index([expenseId, createdAt])
+  /// Hesap silmede "bu kullanicinin butun yorumlari" sorgusu icin.
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------

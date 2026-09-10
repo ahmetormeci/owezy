@@ -28,14 +28,29 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-09 (gun sonu)
 
 Current task:
-  YOK. Kagit & petrol tasarim yonu HEM MOBILDE HEM WEB'DE UYGULANDI - artik
-  EKRANLARIN ICI DE ONLARI TASIYAN KAPLAR DA. Sirada bekleyen tek sey 1.0.3'un
-  inceleme sonucu; ona kadar kod tarafinda zorunlu is yok.
+  YOK. Son is HARCAMAYA YORUM idi ve bitti (Faz 42, ADR-049).
 
-  SON IS (9 Eylul, aksam): web'in kalan kaplari. AuthShell, diyalog/onay
-  diyalogu/acilir menu yuzeyleri, rol rozetinin duz metne donmesi ve <Card>'in
-  arayuzden tamamen cikmasi. Ayrinti CHANGELOG (14) ve PROGRESS Faz 41'de.
-  BU COMMIT HENUZ PUSH EDILMEDI - kod commit'i, kullanici soylemeden push yok.
+  YORUM - NE YAPILDI: ExpenseComment tablosu, uc uc (listele/yaz/sil),
+  EXPENSE_COMMENTED bildirimi, web'de satirdan acilan diyalog, mobilde detay
+  ekraninin altinda bolum + listede bakir sayi. Gizlilik politikasi da
+  degisti (yeni veri kategorisi).
+
+  YORUM HAKKINDA AKILDA TUTULACAK TEK SEY: butun kurallar "yorum finansal
+  kayit degil" ayrimindan cikti. Yeni bir kural eklenecekse once ADR-049
+  okunmali - orada hangi kuralin neden gecmedigi tek tek yaziyor.
+
+  MOBIL TARAFI KULLANICIYA ULASMADI: yeni build + magaza gonderimi gerekiyor,
+  o da 1.0.3'un arkasinda. Web push ile canliya cikti.
+
+  SIMULATORDE BAKILDI ve IKI KUSUR CIKTI (ikisi de duzeltildi):
+    1. Bolumun YATAY DOLGUSU YOKTU. Bu ekranda her blok kendi
+       paddingHorizontal'ini tasiyor, ScrollView'da yatay dolgu YOK - bolum
+       ekranin soluna yapisti, "Gonder" sagdan tasti.
+    2. "Sil" zaman damgasinin yanina yapisiyordu: marginLeft:"auto" Text'e
+       verilmisti ve hizalanacak kardesi olmadigi icin hicbir sey
+       yapmiyordu. Pressable'a tasindi.
+  Cihazda uctan uca yurutuldu (bos hal -> yazma 201 -> liste isareti ->
+  silme onayi -> silme 200), acik ve koyu temada.
 
 TASARIM YONU - NE YAPILDI (ADR-048)
 
@@ -96,12 +111,27 @@ BU OTURUMDA OGRENILEN - TEKRAR ARAMA:
   ARKA PLAN KOSUSUNUN "exit code 0"I SARMALAYICI betigin kodu olabilir,
     kosunun degil. Bu oturumda iki kez yasandi (eas build, sonra e2e).
 
+  PLAYWRIGHT'TA getByText, BIR textarea'NIN DEGERINI DE METIN SAYIYOR.
+    "Yazdigim yorum ekranda mi" diye aramak, gonderim HIC olmasa da geciyor -
+    taslak alanda duruyor ve eslesiyor. Kanit, cizilmis satirin kendisinden
+    okunmali (orn. yalnizca yorumda bulunan "Sil" dugmesi). Bu oturumda tam
+    olarak bu yasandi ve yalnizca ekran goruntusu ortaya cikardi.
+
   SOZLUK ANAHTARINI SABLON DIZGIYLE YAZMA: messages.test.ts kaynagi
     TARAYARAK calisiyor; `t(\`ui.x_${...}\`)` kaynakta hic gecmiyor ve o
     kontrol onu goremiyor. Iki kez yasandi (web karsilama, mobil hesap).
 
-  SIMULATORDE OTURUM KAPALI - giris ekranini gormek icin cikildi. Tekrar
-    bakilacaksa once giris yapilmali; AJAN YAPAMAZ.
+  MOBILDE GIRISI AJAN YAPAMAZ - ve sebebi "TextInput odaklanmiyor" DEGIL.
+    Odaklaniyor, yazi da giriyor (10 Eylul'de olculdu; yalnizca iOS otomatik
+    duzeltmesi kelimeyi degistirebiliyor - "Fis" -> "Did"). GERCEK SEBEP:
+    girisin iki yolu da KIMLIK BILGISI istiyor (parola ya da tek seferlik
+    kod) ve ikisini de forma yazmak ajana yasak. Kullanici bir kez girmeli.
+    HANGI HESAP: dev veritabaninda demo@owezy.net'in "Ev" grubu ve bir
+    harcamasi var; ormeciahmet32@gmail.com'a da kod GIDIYOR (RESEND_API_KEY
+    dev'de tanimli). appreview@owezy.net PRODUCTION'da, dev'de YOK - onunla
+    denemek "e-posta ya da parola yanlis" veriyor ve yaniltiyor.
+    DEV VERITABANINA BAKMANIN YOLU: npx prisma studio (kendi env'ini kendisi
+    okuyor; .env.local'i elle okumaya gerek yok ve zaten engelli).
 
 DIS DUNYA - 9 EYLUL OLCUMU (bu dosya her yazildiginda TEKRAR olculecek):
   DMARC    v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r
@@ -502,10 +532,10 @@ AKILDA TUTULACAKLAR:
   yalnizca bizim demo hesaplarimiz oldugu VARSAYILAMAZ. Production'a
   dokunan her betik once OKUYUP saymali, sonra yazmali.
 
-TESTLER - NE NEREDE (9 Eylul'de kosuldu):
-  KOK      npm test                  617 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      86 vitest + 39 jest
-  E2E      npm run test:e2e           57 test, ~10 dk
+TESTLER - NE NEREDE (10 Eylul'de kosuldu):
+  KOK      npm test                  635 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      86 vitest + 50 jest
+  E2E      npm run test:e2e           58 test, ~10 dk
 
   MOBILDE IKI KOSUCU VAR ve sinir DIZINE gore (ADR-042, ADR-043):
     lib/**                    -> vitest   (react-native'e dokunmuyor)

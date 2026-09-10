@@ -414,6 +414,7 @@ export default async function GroupDetailPage({
               shareAmount: participant.shareAmount,
             })),
             version: expense.version,
+            commentCount: expense.commentCount,
           }))}
         />
 

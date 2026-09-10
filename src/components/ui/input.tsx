@@ -48,6 +48,20 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
  * Native <select> shadcn'in Select bilesenine tercih ediliyor: daha az kod
  * ve mobilde isletim sisteminin kendi secicisi aciliyor.
  */
+/**
+ * <textarea> ICIN, Input ile AYNI bicim.
+ *
+ * NEDEN AYRI BIR SABIT VE AYRI BIR BILESEN DEGIL: shadcn'in Textarea'si bu
+ * projede hic kurulmadi ve tek kullanicisi var (yorum yazma alani). Bicimi
+ * Input'un YANINDA tutmak, selectClassName ile ayni gerekce - alt cizgi
+ * kurali degisirse ucu birden ayni dosyada degisir.
+ *
+ * h-9 YOK: yukseklik satir sayisindan geliyor. py-1.5 -> py-2, cunku cok
+ * satirli bir alanda tek satirlik dolgu metni kenara yapistiriyor.
+ */
+export const textareaClassName =
+  "w-full min-w-0 resize-none border-b border-input-line bg-transparent px-0 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-b-2 focus-visible:border-brand focus-visible:pb-[calc(0.5rem-1px)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm";
+
 export const selectClassName =
   "h-9 w-full border-b border-input-line bg-transparent px-0 text-sm outline-none focus-visible:border-b-2 focus-visible:border-brand focus-visible:pb-[calc(0.375rem-1px)]";
 

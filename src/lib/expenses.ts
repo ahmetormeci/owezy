@@ -277,6 +277,14 @@ export async function listExpenses(
          * degil.
          */
         receipt: { select: { id: true } },
+        /**
+         * YORUM SAYISI - metinler DEGIL. Ayni gerekce: satir basina tek bir
+         * sayi. Yorumlarin kendisi ancak diyalog acilinca cekiliyor.
+         *
+         * SILINMISLER SAYILMIYOR: silinmis yorum arayuzde hic gorunmuyor,
+         * sayida gorunmesi "3 yorum" deyip iki tane gostermek olurdu.
+         */
+        _count: { select: { comments: { where: { deletedAt: null } } } },
       },
       // Cursor sayfalamasinin dogru calismasi icin siralama BENZERSIZ olmali.
       // expenseDate tek basina yeterli degil (ayni gune birden fazla harcama
@@ -294,7 +302,20 @@ export async function listExpenses(
   ]);
 
   const hasMore = rows.length > limit;
-  const expenses = hasMore ? rows.slice(0, limit) : rows;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+
+  /**
+   * _count DISARI CIKMIYOR, commentCount cikiyor.
+   *
+   * Ham hali biraksaydik istemci iki farkli sekle bakardi: sunucu bileseninin
+   * elle esledigi "commentCount" ile ucun dondurdugu "_count.comments". Ayni
+   * seyin iki adi, ve ikisinden biri zamanla unutulur. Sekil TEK YERDE
+   * duzlestiriliyor; mobil istemci de ayni ucu cagiriyor.
+   */
+  const expenses = page.map(({ _count, ...expense }) => ({
+    ...expense,
+    commentCount: _count.comments,
+  }));
 
   return {
     expenses,

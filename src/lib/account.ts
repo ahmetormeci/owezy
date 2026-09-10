@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { deleteReceiptsUploadedBy } from "@/lib/receipts";
+import { deleteCommentsWrittenBy } from "@/lib/comments";
 import { deleteObject } from "@/lib/storage";
 import { NotFoundError } from "@/lib/errors";
 
@@ -147,6 +148,20 @@ export async function deleteAccount(userId: string) {
      * commit'ten SONRA siliyor.
      */
     receiptKeys = await deleteReceiptsUploadedBy(tx, userId);
+
+    /**
+     * YORUMLAR - ADR-049, fis fotografiyla AYNI gerekce (ADR-046). Yorum
+     * kullanicinin YAZDIGI serbest metin, yani kisisel veri; gizlilik
+     * hikayesi tek cumleyle anlatilabilmeli: "hesabini silersen yukledigin
+     * her sey gider."
+     *
+     * FIZIKSEL SILME, deletedAt DEGIL: yumusak silme metni veritabaninda
+     * BIRAKIRDI ve giden sey tam da metnin kendisi.
+     *
+     * Harcamanin kendisi duruyor, bakiyeler etkilenmiyor - yorumun hicbir
+     * hesaba girmedigi zaten tablonun varlik sebebi.
+     */
+    await deleteCommentsWrittenBy(tx, userId);
 
     await tx.user.update({
       where: { id: userId },
