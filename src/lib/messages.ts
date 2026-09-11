@@ -149,6 +149,12 @@ export const MESSAGES_TR = {
    */
   "ui.amount_from_total": "Fişteki toplamdan okundu",
   "ui.amount_from_receipt": "Fişten okundu — kontrol et",
+
+  // Fisten cikan kalemler (ADR-055)
+  "ui.items_found": "Fişte {count} kalem bulundu",
+  "ui.use_items": "Seçilen {count} kalemi al",
+  "ui.dismiss_items": "Kalemleri gösterme",
+  "ui.items_vs_receipt": "Seçtiklerin {chosen} · fişin toplamı {receipt}",
   "ui.remove_receipt": "Fişi kaldır",
   "ui.remove_receipt_question": "Fiş kaldırılsın mı?",
   "ui.take_photo": "Fotoğraf çek",
@@ -1028,6 +1034,12 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.reading_receipt": "Reading the receipt…",
   "ui.amount_from_total": "Read from the receipt total",
   "ui.amount_from_receipt": "Read from the receipt — check it",
+
+  // Items read from the receipt (ADR-055)
+  "ui.items_found": "{count} items found on the receipt",
+  "ui.use_items": "Use the {count} selected",
+  "ui.dismiss_items": "Hide the items",
+  "ui.items_vs_receipt": "Your picks {chosen} · receipt total {receipt}",
   "ui.remove_receipt": "Remove receipt",
   "ui.remove_receipt_question": "Remove the receipt?",
   "ui.take_photo": "Take a photo",

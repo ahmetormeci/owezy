@@ -5,12 +5,12 @@ import NewExpenseScreen from "../../app/groups/[groupId]/expenses/new";
 /**
  * BU DOSYA NEYI KORUYOR: OCR MODULU HIC YOKKEN UYGULAMANIN AYAKTA KALMASINI.
  *
- * GERCEKTEN YASANDI (10 Eylul, simulatorde). expo-text-extractor NATIVE bir
+ * GERCEKTEN YASANDI (10 Eylul, simulatorde). modules/receipt-ocr NATIVE bir
  * modul ve requireNativeModule MODUL GOVDESI CALISIRKEN firliyor,
  * cagrildiginda degil. Ekran onu statik "import ... from" ile aliyordu; Expo
  * Go'da modul olmadigi icin expo-router rota agacini kurarken bu dosyayi
  * yukluyor, yukleme firlatiyor ve ekranda kirmizi bir "Cannot find native
- * module 'ExpoTextExtractor'" kaliyordu. Dusen sey OCR degil, UYGULAMANIN
+ * module 'ReceiptOcr'" kaliyordu. Dusen sey OCR degil, UYGULAMANIN
  * TAMAMIYDI.
  *
  * NEDEN HICBIR TEST GORMEDI: jest-setup modulu TAKLIT ediyor, yani testlerde
@@ -20,8 +20,8 @@ import NewExpenseScreen from "../../app/groups/[groupId]/expenses/new";
  * Bu yuzden buradaki taklit modulu bos birakmiyor, YUKLENIRKEN FIRLATIYOR -
  * gercek davranisin ta kendisi.
  */
-jest.mock("expo-text-extractor", () => {
-  throw new Error("Cannot find native module 'ExpoTextExtractor'");
+jest.mock("../../modules/receipt-ocr", () => {
+  throw new Error("Cannot find native module 'ReceiptOcr'");
 });
 
 const mockPost = jest.fn();

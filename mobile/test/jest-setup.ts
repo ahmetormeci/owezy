@@ -17,22 +17,55 @@ jest.mock("expo-secure-store", () =>
 );
 
 /**
- * expo-text-extractor NATIVE: Node'da yuklenemiyor ("Cannot find native
- * module 'ExpoTextExtractor'") - expo-secure-store ile ayni sebep.
+ * modules/receipt-ocr NATIVE: Node'da yuklenemiyor - expo-secure-store ile
+ * ayni sebep.
  *
- * TAKLIDIN VARSAYILANI BOS DIZI: yani "fiste okunacak bir sey bulunamadi".
- * Boylece fisle ilgili MEVCUT testler OCR'dan hic etkilenmiyor; okumayi
- * sinamak isteyen test mockExtractTextFromImage'i kendisi dolduruyor.
+ * ARTIK BLOK DONDURUYOR, duz metin degil (ADR-055): her parcanin KONUMU da
+ * geliyor cunku bir fiste ad solda, tutar sagda duruyor ve Vision ikisini
+ * ayri gozlem olarak veriyor. Testlerin de ayni sekli tasimasi sart -
+ * yoksa sinanan sey uygulamanin gordugu veri olmazdi.
+ *
+ * TAKLIDIN VARSAYILANI BOS DIZI: "fiste okunacak bir sey bulunamadi".
+ * Boylece fisle ilgili MEVCUT testler OCR'dan hic etkilenmiyor.
  *
  * Adi "mock" ile basliyor cunku jest.mock fabrikasi disaridaki
  * degiskenlere ancak bu on ekle erisebiliyor.
  */
-export const mockExtractTextFromImage = jest.fn(async (_uri: string): Promise<string[]> => []);
+type MockBlock = { text: string; x: number; y: number; width: number; height: number };
 
-jest.mock("expo-text-extractor", () => ({
-  isSupported: true,
-  extractTextFromImage: (uri: string) => mockExtractTextFromImage(uri),
+export const mockReadBlocks = jest.fn(async (_uri: string): Promise<MockBlock[]> => []);
+
+jest.mock("../modules/receipt-ocr", () => ({
+  __esModule: true,
+  default: {
+    isSupported: true,
+    readBlocks: (uri: string) => mockReadBlocks(uri),
+  },
 }));
+
+/**
+ * Fis satirlarini test icinde kurmanin kisa yolu: her dizge BIR SATIR,
+ * icindeki parcalar soldan saga.
+ *
+ * y degerleri USTTEN ALTA azaliyor cunku Vision'in orijini SOL ALTTA.
+ * Yukseklikler sabit; gruplama kurali dikey ORTUSMEYE bakiyor ve satirlar
+ * arasindaki mesafe yukseklikten buyuk oldugu surece dogru ayriliyor.
+ */
+export function mockReceiptLines(lines: string[][]): MockBlock[] {
+  const blocks: MockBlock[] = [];
+  lines.forEach((parts, row) => {
+    parts.forEach((text, column) => {
+      blocks.push({
+        text,
+        x: 0.1 + column * 0.25,
+        y: 0.9 - row * 0.05,
+        width: 0.2,
+        height: 0.02,
+      });
+    });
+  });
+  return blocks;
+}
 
 /**
  * expo-router'in yonlendirmesi. Testler "hangi adrese gidildi" sorusunu

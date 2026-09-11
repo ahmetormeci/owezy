@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import NewExpenseScreen from "../../app/groups/[groupId]/expenses/new";
-import { mockExtractTextFromImage } from "../jest-setup";
+import { mockReadBlocks, mockReceiptLines } from "../jest-setup";
 
 /**
  * BU DOSYA NEYI KORUYOR: fişten okunan tutarın KULLANICININ YAZDIĞINI
@@ -68,7 +68,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockPick.mockResolvedValue({ kind: "picked", uri: "file:///fis.jpg" });
   mockPost.mockResolvedValue({ ok: true, data: { expense: { id: "e1" } } });
-  mockExtractTextFromImage.mockResolvedValue([]);
+  mockReadBlocks.mockResolvedValue([]);
 });
 
 /**
@@ -92,11 +92,13 @@ async function attachReceipt() {
 
 describe("fisten tutar okuma", () => {
   it("alan BOSKEN fisteki toplami yaziyor", async () => {
-    mockExtractTextFromImage.mockResolvedValue([
-      "MARKET",
-      "EKMEK 8,50",
-      "TOPLAM 366,68",
-    ]);
+    mockReadBlocks.mockResolvedValue(
+      mockReceiptLines([
+      ["MARKET"],
+      ["EKMEK", "8,50"],
+      ["TOPLAM", "366,68"],
+    ]),
+    );
 
     await render(<NewExpenseScreen />);
     await attachReceipt();
@@ -105,7 +107,11 @@ describe("fisten tutar okuma", () => {
   });
 
   it("OKUNDUGUNU SOYLUYOR - sessizce doldurmuyor", async () => {
-    mockExtractTextFromImage.mockResolvedValue(["TOPLAM 366,68"]);
+    mockReadBlocks.mockResolvedValue(
+      mockReceiptLines([
+      ["TOPLAM", "366,68"],
+    ]),
+    );
 
     await render(<NewExpenseScreen />);
     await attachReceipt();
@@ -116,7 +122,12 @@ describe("fisten tutar okuma", () => {
   it("ZAYIF tahminde AYRI cumle kuruyor", async () => {
     // Etiket yok: yalnizca kuruslu en buyuk sayi secildi. Bunu guclu
     // tahmin gibi gostermek, kontrol etmeden kaydetmeye davet olurdu.
-    mockExtractTextFromImage.mockResolvedValue(["EKMEK 8,50", "PEYNIR 120,40"]);
+    mockReadBlocks.mockResolvedValue(
+      mockReceiptLines([
+      ["EKMEK", "8,50"],
+      ["PEYNIR", "120,40"],
+    ]),
+    );
 
     await render(<NewExpenseScreen />);
     await attachReceipt();
@@ -131,7 +142,11 @@ describe("fisten tutar okuma", () => {
      * NEGATIF KONTROL VE BU DOSYANIN ASIL SEBEBI. Alan doluysa okuma
      * hic konusmuyor - kategori tahmininin (ADR-028) kuralinin aynisi.
      */
-    mockExtractTextFromImage.mockResolvedValue(["TOPLAM 366,68"]);
+    mockReadBlocks.mockResolvedValue(
+      mockReceiptLines([
+      ["TOPLAM", "366,68"],
+    ]),
+    );
 
     await render(<NewExpenseScreen />);
     await fireEvent.changeText(screen.getByTestId("amount"), "120");
@@ -145,7 +160,12 @@ describe("fisten tutar okuma", () => {
   it("hicbir sey bulunamazsa SESSIZ - hata gostermiyor", async () => {
     // OCR bir kolaylik. Okuyamamak bir ariza degil; hata gostermek
     // olmayan bir sorunu varmis gibi sunmak olurdu.
-    mockExtractTextFromImage.mockResolvedValue(["MARKET", "TESEKKURLER"]);
+    mockReadBlocks.mockResolvedValue(
+      mockReceiptLines([
+      ["MARKET"],
+      ["TESEKKURLER"],
+    ]),
+    );
 
     await render(<NewExpenseScreen />);
     await attachReceipt();
@@ -158,7 +178,7 @@ describe("fisten tutar okuma", () => {
   it("OKUMA PATLARSA fis yine de ekleniyor", async () => {
     // Fisin kendisi OCR'dan bagimsiz bir ozellik; biri digerini
     // dusurmemeli.
-    mockExtractTextFromImage.mockRejectedValue(new Error("vision failed"));
+    mockReadBlocks.mockRejectedValue(new Error("vision failed"));
 
     await render(<NewExpenseScreen />);
     await attachReceipt();

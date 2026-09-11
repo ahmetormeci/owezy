@@ -17,7 +17,7 @@ import { MAX_SPLIT_AMOUNT } from "@/lib/split";
  */
 
 /** Toplami isaretleyen etiketler, GUCLUDEN ZAYIFA. Sira onemli. */
-const TOTAL_LABELS: { pattern: RegExp; rank: number }[] = [
+export const TOTAL_LABELS: { pattern: RegExp; rank: number }[] = [
   { pattern: /\bgenel\s*toplam\b/i, rank: 3 },
   { pattern: /\bgrand\s*total\b/i, rank: 3 },
   { pattern: /\btoplam\s*tutar\b/i, rank: 3 },
@@ -43,7 +43,7 @@ const TOTAL_LABELS: { pattern: RegExp; rank: number }[] = [
  * "ARA TOPLAM" ozellikle onemli: icinde "TOPLAM" gectigi icin etiket
  * eslesmesini GECIYOR. Bu liste onu once eliyor.
  */
-const NOT_TOTAL = [
+export const NOT_TOTAL = [
   /\bara\s*toplam\b/i,
   /\bsub\s*-?\s*total\b/i,
   /\bkdv\b/i,
@@ -57,6 +57,10 @@ const NOT_TOTAL = [
   /\bchange\b/i,
   /\bindirim\b/i,
   /\bdiscount\b/i,
+  // Yuvarlama satiri: kurus farkini kapatan teknik bir satir, ne toplam ne
+  // kalem. Gercek bir fiste "Rounding -0.01" olarak cikti (ADR-055).
+  /\byuvarlama\b/i,
+  /\brounding\b/i,
 ];
 
 /** Metindeki sayi gorunumlu parcalar. */

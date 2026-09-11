@@ -11,7 +11,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,8 +21,10 @@ import {
 } from "@/lib/expense-labels";
 import { guessCategory } from "@/lib/expense-category-guess";
 import { guessReceiptAmount } from "@/lib/receipt-amount";
+import { groupIntoLines, type TextBlock } from "@/lib/receipt-blocks";
+import { readReceiptItems, sumItems, type ReceiptItemGuess } from "@/lib/receipt-items";
 import { splitEqually } from "@/lib/split";
-import { Field, SelectField } from "../../../../components/field";
+import { Field, FieldInput, SelectField } from "../../../../components/field";
 import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
@@ -36,12 +37,11 @@ import { pickReceipt, receiptEndpoint, uploadReceipt } from "../../../../lib/rec
 /**
  * OCR MODULU TEMBEL VE KORUMALI YUKLENIYOR - sebebi olculdu, tahmin degil.
  *
- * expo-text-extractor NATIVE bir modul ve requireNativeModule MODUL GOVDESI
- * CALISIRKEN firliyor, cagrildiginda degil. Statik "import ... from
- * expo-text-extractor" yazildiginda Expo Go'da BUTUN UYGULAMA aciliyordu:
+ * modules/receipt-ocr NATIVE bir modul ve requireNativeModule MODUL GOVDESI
+ * CALISIRKEN firliyor, cagrildiginda degil. Statik bir import yazildiginda
+ * Expo Go'da BUTUN UYGULAMA aciliyordu:
  * expo-router rota agacini kurarken bu dosyayi da yukluyor, yukleme
- * firlatiyor ve ekranda "Cannot find native module 'ExpoTextExtractor'"
- * kaliyor. Dusen sey OCR degil, HARCAMA EKLEMENIN KENDISIYDI - ve onunla
+ * firlatiyor ve ekranda "Cannot find native module" kaliyor. Dusen sey OCR degil, HARCAMA EKLEMENIN KENDISIYDI - ve onunla
  * birlikte uygulamanin tamami.
  *
  * isSupported BUNU YAKALAYAMAZ ve asagidaki "if (!ocrSupported) return"
@@ -53,25 +53,25 @@ import { pickReceipt, receiptEndpoint, uploadReceipt } from "../../../../lib/rec
  * (modulu taklit ediyorlar) ve EAS build'i sorunu goremedi; yalnizca
  * simulatorde Expo Go ile acinca cikti.
  */
-type TextExtractor = {
+type ReceiptOcr = {
   isSupported: boolean;
-  extractTextFromImage: (uri: string) => Promise<string[]>;
+  readBlocks: (uri: string) => Promise<TextBlock[]>;
 };
 
-let extractorResolved = false;
-let extractor: TextExtractor | null = null;
+let ocrResolved = false;
+let ocr: ReceiptOcr | null = null;
 
-function textExtractor(): TextExtractor | null {
-  if (!extractorResolved) {
-    extractorResolved = true;
+function receiptOcr(): ReceiptOcr | null {
+  if (!ocrResolved) {
+    ocrResolved = true;
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      extractor = require("expo-text-extractor") as TextExtractor;
+      ocr = require("../../../../modules/receipt-ocr").default as ReceiptOcr;
     } catch {
-      extractor = null;
+      ocr = null;
     }
   }
-  return extractor;
+  return ocr;
 }
 
 /**
@@ -192,6 +192,23 @@ export default function NewExpenseScreen() {
   const [readFrom, setReadFrom] = useState<"labelled" | "largest" | null>(null);
   const [reading, setReading] = useState(false);
 
+  /**
+   * FISTEN CIKAN KALEMLER (ADR-055) ve hangilerinin SECILI oldugu.
+   *
+   * HICBIRI SECILI BASLAMIYOR. Bir fisten cikan liste her zaman biraz
+   * gurultu tasir - kampanya satiri, kur bilgisi, kod. Hepsini isaretli
+   * acmak, kullanicinin bakmadan kaydetmesine davet olurdu; oysa listenin
+   * varlik sebebi tam da BAKIP SECMESI.
+   */
+  const [foundItems, setFoundItems] = useState<ReceiptItemGuess[] | null>(null);
+  const [pickedItems, setPickedItems] = useState<Record<number, boolean>>({});
+  /**
+   * FISIN KENDI TOPLAMI. Secilenlerin toplamiyla KARSILASTIRMAK icin
+   * duruyor: OCR bir satiri okuyamazsa fark buradan gorunur ve kullanici
+   * eksigi fark eder. Yoksa sessizce eksik bir harcama kaydedilirdi.
+   */
+  const [receiptTotal, setReceiptTotal] = useState<number | null>(null);
+
   async function chooseReceipt(source: "camera" | "library") {
     const picked = await pickReceipt(source);
     if (picked.kind === "cancelled") return;
@@ -207,10 +224,9 @@ export default function NewExpenseScreen() {
   /**
    * Fisi CIHAZDA okur ve tutar alanini doldurur (ADR-053).
    *
-   * FOTOGRAF HICBIR YERE GITMIYOR: expo-text-extractor iOS'ta Apple
-   * Vision, Android'de ML Kit kullaniyor ve ikisi de cihaz uzerinde
-   * calisiyor. Bu yuzden yeni bir veri isleyici yok - gizlilik politikasi
-   * ve App Privacy beyani AYNI kaliyor.
+   * FOTOGRAF HICBIR YERE GITMIYOR: modules/receipt-ocr iOS'ta Apple
+   * Vision kullaniyor ve cihaz uzerinde calisiyor. Bu yuzden yeni bir veri
+   * isleyici yok - gizlilik politikasi ve App Privacy beyani AYNI kaliyor.
    *
    * YAZILANI ASLA EZMIYOR. Kategori tahmininin (ADR-028) kuralinin
    * aynisi: tahmin ancak alan BOSKEN konusuyor. Kullanici tutari yazip
@@ -223,24 +239,84 @@ export default function NewExpenseScreen() {
    * arizayi varmis gibi sunmak olurdu.
    */
   async function readAmountFromReceipt(uri: string) {
-    const ocr = textExtractor();
-    if (!ocr?.isSupported) return;
-    if (amountText.trim() !== "") return;
+    const engine = receiptOcr();
+    if (!engine?.isSupported) return;
 
     setReading(true);
     try {
-      const lines = await ocr.extractTextFromImage(uri);
-      const guess = guessReceiptAmount(lines);
-      // Okuma sirasinda kullanici yazmis olabilir - o zaman susuyoruz.
-      if (guess && amountTextRef.current.trim() === "") {
-        setAmountText(formatMoneyForInput(guess.amount, locale));
-        setReadFrom(guess.source);
+      const blocks = await engine.readBlocks(uri);
+      /**
+       * PARCALAR ONCE GORSEL SATIRLARA TOPLANIYOR (ADR-055). Vision fisi
+       * satir satir vermiyor; ad solda, tutar sagda ve ikisi ayri gozlem.
+       * Gruplama olmadan "TOPLAM" etiketi ile tutari bile ayri kaliyor ve
+       * toplam YANLIS okunuyordu.
+       */
+      const lines = groupIntoLines(blocks);
+
+      // Okuma sirasinda kullanici yazmis olabilir - yazdigini EZMIYORUZ.
+      if (amountTextRef.current.trim() === "") {
+        const guess = guessReceiptAmount(lines.map((line) => line.text));
+        if (guess) {
+          setAmountText(formatMoneyForInput(guess.amount, locale));
+          setReadFrom(guess.source);
+          setReceiptTotal(guess.amount);
+        }
       }
+
+      /**
+       * KALEMLER AYRI BIR TEKLIF. Tutardan farkli olarak alana YAZILMIYOR,
+       * kullaniciya LISTE olarak sunuluyor: istedigini birakir, istemedigini
+       * cikarir. Hicbiri secili baslamiyor - bir fisten cikan liste her
+       * zaman biraz gurultu tasiyor ve sessizce hepsini isaretlemek,
+       * kullanicinin bakmadan kaydetmesine davet olurdu.
+       */
+      const found = readReceiptItems(lines);
+      if (found.length > 0) setFoundItems(found);
     } catch {
       // Yukaridaki gerekce.
     } finally {
       setReading(false);
     }
+  }
+
+  /** Secili kalemler, fisteki sirayla. */
+  const chosenItems = (foundItems ?? []).filter((_, index) => pickedItems[index]);
+  const chosenTotal = sumItems(chosenItems);
+
+  /**
+   * SECILEN KALEMLERI FORMA TASIR ve bolusumu KALEM KALEM'e cevirir.
+   *
+   * TUTAR KALEMLERDEN HESAPLANIYOR, fisin toplamindan DEGIL. Ikisi
+   * neredeyse hic tutmaz - poset, indirim, yuvarlama, okunamayan satir.
+   * Fisin toplamini birakip kalemleri de yazmak SUM(kalem) = tutar
+   * degismezini kirardi ve o degismez veritabaninda bir trigger'la
+   * zorunlu (ADR-052): kayit sunucuda reddedilirdi.
+   *
+   * KIMIN PAYLASTIGI BOS BIRAKILIYOR. Fis kimin ne yedigini bilmiyor; onu
+   * doldurmak uydurmak olurdu. Kullanici her kalemde kendisi isaretliyor.
+   */
+  function useChosenItems() {
+    if (chosenItems.length === 0) return;
+    setItems(
+      chosenItems.map((item) => ({
+        description: item.description,
+        amountText: formatMoneyForInput(item.amount, locale),
+        userIds: [],
+      })),
+    );
+    /**
+     * TUTAR ALANI DA GUNCELLENIYOR ve bu sart, susleme degil.
+     *
+     * ITEMIZED'da kaydedilen tutar kalemlerden hesaplaniyor (itemsTotal),
+     * ama ekranin ustundeki alan amountText'i gosteriyor. Guncellenmeseydi
+     * ust tarafta fisin toplami (366,68) durur, kayit ise kalemlerin
+     * toplamiyla (128,90) giderdi - ekranda bir sey gorunup baskasi
+     * kaydedilirdi. Bir ekran testi tam bunu yakaladi.
+     */
+    setAmountText(formatMoneyForInput(chosenTotal, locale));
+    setSplitType("ITEMIZED");
+    setFoundItems(null);
+    setPickedItems({});
   }
 
   /**
@@ -585,14 +661,13 @@ export default function NewExpenseScreen() {
           <View style={s.amountBlock}>
             <Text style={s.fieldLabel}>{t("ui.amount").toLocaleUpperCase(locale)}</Text>
             <View style={s.amountRow}>
-              <TextInput
+              <FieldInput
                 testID="amount"
                 style={s.amountInput}
                 value={amountText}
                 onChangeText={setAmountText}
                 keyboardType="decimal-pad"
                 placeholder={t("ui.amount_placeholder")}
-                placeholderTextColor={theme.inputLine}
                 editable={!busy}
               />
               <Text style={s.amountCurrency}>{currency}</Text>
@@ -616,13 +691,12 @@ export default function NewExpenseScreen() {
 
           <View style={s.fields}>
             <Field label={t("ui.description")}>
-              <TextInput
+              <FieldInput
                 testID="description"
                 style={s.fieldInput}
                 value={description}
                 onChangeText={setDescription}
                 placeholder={t("ui.description_placeholder")}
-                placeholderTextColor={theme.muted}
                 editable={!busy}
               />
             </Field>
@@ -705,23 +779,21 @@ export default function NewExpenseScreen() {
                 {items.map((item, index) => (
                   <View key={index} style={s.itemCard}>
                     <View style={s.itemTop}>
-                      <TextInput
+                      <FieldInput
                         testID={`item-name-${index}`}
                         style={s.itemName}
                         value={item.description}
                         onChangeText={(value) => updateItem(index, { description: value })}
                         placeholder={t("ui.item_description")}
-                        placeholderTextColor={theme.inputLine}
                         editable={!busy}
                       />
-                      <TextInput
+                      <FieldInput
                         testID={`item-amount-${index}`}
                         style={s.itemAmount}
                         value={item.amountText}
                         onChangeText={(value) => updateItem(index, { amountText: value })}
                         keyboardType="decimal-pad"
                         placeholder="0,00"
-                        placeholderTextColor={theme.inputLine}
                         editable={!busy}
                       />
                       {/* TEK KALEM KALDIYSA CIKARMA YOK: bos bir liste,
@@ -850,7 +922,7 @@ export default function NewExpenseScreen() {
                       {member.displayName}
                     </Text>
                     <View style={s.leader} />
-                    <TextInput
+                    <FieldInput
                       style={s.shareInput}
                       value={shareText[member.userId] ?? ""}
                       onChangeText={(value) =>
@@ -858,7 +930,6 @@ export default function NewExpenseScreen() {
                       }
                       keyboardType="decimal-pad"
                       placeholder={splitType === "EXACT" ? "0,00" : "0"}
-                      placeholderTextColor={theme.inputLine}
                       editable={!busy}
                     />
                   </View>
@@ -975,6 +1046,68 @@ export default function NewExpenseScreen() {
               <Text style={s.receiptHint}>{t("ui.add_receipt")}</Text>
             </Pressable>
           )}
+
+          {/*
+            FISTEN CIKAN KALEMLER (ADR-055).
+
+            FISIN ALTINDA cunku fisin bir SONUCU. Ustunde olsaydi,
+            kullanici daha fotografi eklemeden bir liste gormeyi beklerdi.
+
+            HICBIRI SECILI DEGIL: liste her zaman biraz gurultu tasiyor ve
+            hepsini isaretli acmak bakmadan kaydetmeye davet olurdu.
+          */}
+          {foundItems && foundItems.length > 0 ? (
+            <View style={s.itemsFound}>
+              <Cap>{t("ui.items_found", { count: foundItems.length })}</Cap>
+
+              {foundItems.map((item, index) => (
+                <Pressable
+                  key={`${item.description}-${index}`}
+                  style={s.foundRow}
+                  onPress={() =>
+                    setPickedItems((current) => ({ ...current, [index]: !current[index] }))
+                  }
+                  disabled={busy}
+                >
+                  <View style={[s.foundBox, pickedItems[index] && s.foundBoxOn]}>
+                    {pickedItems[index] ? <Text style={s.foundTick}>✓</Text> : null}
+                  </View>
+                  <Text style={s.foundName} numberOfLines={1}>
+                    {item.description}
+                  </Text>
+                  <Text style={s.foundAmount}>
+                    {formatMoney(item.amount, currency, locale)}
+                  </Text>
+                </Pressable>
+              ))}
+
+              {/*
+                FARK SATIRI. OCR bir satiri okuyamazsa secilenlerin toplami
+                fisin toplamindan DUSUK cikar; bunu soylemek, sessizce eksik
+                bir harcama kaydetmekten iyi. Yalnizca ikisi de biliniyorsa
+                ve FARKLIYSA ciziliyor - esitken bir sey soylemeye gerek yok.
+              */}
+              {receiptTotal !== null && chosenItems.length > 0 && chosenTotal !== receiptTotal ? (
+                <Text style={s.foundDiff}>
+                  {t("ui.items_vs_receipt", {
+                    chosen: formatMoney(chosenTotal, currency, locale),
+                    receipt: formatMoney(receiptTotal, currency, locale),
+                  })}
+                </Text>
+              ) : null}
+
+              <View style={s.foundActions}>
+                <Pressable onPress={useChosenItems} disabled={busy || chosenItems.length === 0}>
+                  <Text style={[s.foundUse, chosenItems.length === 0 && s.foundUseOff]}>
+                    {t("ui.use_items", { count: chosenItems.length })}
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => setFoundItems(null)} disabled={busy}>
+                  <Text style={s.foundSkip}>{t("ui.dismiss_items")}</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -1214,6 +1347,32 @@ function createStyles(theme: Theme) {
       paddingTop: 18,
     },
     // Kesikli kare + bakir arti: bos durum bir HEDEF, bir cumle degil.
+    itemsFound: { paddingHorizontal: 20, paddingBottom: 28, gap: 10 },
+    foundRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    foundBox: {
+      width: 22,
+      height: 22,
+      borderRadius: 3,
+      borderWidth: 1,
+      borderColor: theme.inputLine,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    foundBoxOn: { backgroundColor: theme.brand, borderColor: theme.brand },
+    foundTick: { color: theme.onBrand, fontSize: 13, fontFamily: fonts.semibold },
+    foundName: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: theme.foreground },
+    foundAmount: {
+      fontFamily: fonts.mono,
+      fontSize: 14,
+      color: theme.foreground,
+      fontVariant: ["tabular-nums"],
+    },
+    foundDiff: { fontFamily: fonts.body, fontSize: 13, color: theme.copperText },
+    foundActions: { flexDirection: "row", gap: 20, paddingTop: 4 },
+    foundUse: { fontFamily: fonts.medium, fontSize: 14, color: theme.brand },
+    foundUseOff: { color: theme.muted },
+    foundSkip: { fontFamily: fonts.body, fontSize: 14, color: theme.muted },
+
     receiptSlot: {
       width: 46,
       height: 46,

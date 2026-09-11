@@ -21,6 +21,131 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-11 — Fişten kalemler: OCR modülünü kendimiz yazdık
+
+Kullanıcı fişteki kalemleri ayrı ayrı görüp seçmek istedi — istediğini
+alsın, istemediğini çıkarsın, alışverişin içinde ne olduğunu görsün.
+
+**Ölçüm, işi baştan yazdırdı.** Gerçek fişler Wikimedia'dan indirildi ve
+**Apple Vision** ile okundu — uygulamanın iOS'ta kullandığı motorun
+aynısı. Çıktı şuydu:
+
+```
+ 8: 2xLatte Macchiato
+ 9: 1xGloki
+10: 1xSchweinschnitzel      <- önce dört ürün adı
+14: 4.50
+21: 9.00                    <- sonra fiyatlar, başka sırada
+```
+
+Vision bir fişi satır satır vermiyor: ad solda, fiyat sağda, ikisi **ayrı
+gözlem**; döndürdüğü sıra da satıra değil **sütuna** göre. Yani "hangi
+fiyat hangi ada ait" bilgisi metinde **yok**. `expo-text-extractor`
+`boundingBox`'ı atıyordu — bilgi Vision'da vardı, bize ulaşmıyordu.
+
+Bu bir heuristik sorunu değil, **veri eksikliği** sorunuydu.
+
+### Aynı kayıp, çalıştığını sandığımız özelliği de bozuyordu
+
+| Fiş | Okuduğu | Gerçek toplam |
+|---|---|---|
+| Berghotel | 54,50 ✓ | 54,50 |
+| Officeworks | **28,00 ✗** | **27,96** |
+
+İkincide "TOPLAM" yerine ödenen nakdi okudu: `TOTAL` 13. satırda,
+`$27.96` 16. satırda. **Faz 46'nın `NOT_TOTAL` koruması hiç
+ateşlenmiyordu** — o testler etiketle tutarın aynı satırda olduğunu
+varsayıyordu, gerçek Vision çıktısı onları ayırıyor. Uydurma veriyle
+görülemeyecek bir kusur.
+
+### Ne yapıldı
+
+`modules/receipt-ocr` — projenin **ilk özel native modülü**. Aynı motor,
+ama her parçanın konumu da geliyor. `groupIntoLines` satırları konumdan
+geri kuruyor; ondan sonra mevcut toplam okuyucu **değiştirilmeden** doğru
+çalışıyor (`"Total : CHF 54.50"` artık tek satır) ve kalem çıkarma mümkün
+hale geliyor.
+
+**Sabit eşik kullanılmadı, sebebi ölçüldü:** aynı satır / satırlar arası
+farkın harf yüksekliğine oranı Officeworks'te 0,38 ve 0,45 — bir sabit
+0,07'lik bir aralığa sıkışırdı. Onun yerine dikey örtüşme kuralı; kendi
+kendine ölçekleniyor ve k 0,3–0,5 arasında iki fişte de aynı sonucu
+veriyor.
+
+**Sonuç, gerçek fişlerde:** İsviçre fişinden dört kalemin dördü de
+adetleriyle (`2x Latte Macchiato`), toplamları 54,50 — fişin toplamının
+tam kendisi. Officeworks'te ürün kodu yerine gerçek ürün adı, 27,96. Tek
+bir çöp satır yok.
+
+**Tutar seçilen kalemlerden hesaplanıyor, fişin toplamından değil** —
+`SUM(kalem) = tutar` değişmezi veritabanında zorunlu. Fark ekranda
+söyleniyor: "Seçtiklerin 8,50 ₺ · fişin toplamı 366,68 ₺".
+
+### İki şeyi testler yakaladı
+
+**Bir ekran testi gerçek bir kusuru buldu:** kalemler alındığında üstteki
+tutar alanı fişin toplamını göstermeye devam ediyordu (366,68) ama kayıt
+kalemlerin toplamıyla (128,90) giderdi — ekranda bir şey görünüp başkası
+kaydedilirdi.
+
+**Bir negatif kontrol düşmedi ve bir koruma silindi:** `moneyInPart`
+içindeki harf testi kaldırıldığında hiçbir test düşmedi. İncelendi:
+`parseReceiptMoney` zaten bütün dizgenin sayı olmasını istiyor, yani o
+test hiçbir iş yapmıyordu. Asıl koruma başkaydı — parçanın **tamamını**
+ayrıştırmak; geri alındığında altı test birden düşüyor.
+
+---
+
+## 2026-09-11 — Placeholder'ı artık iOS değil biz çiziyoruz
+
+Kullanıcı yayınlanmış 1.0.4'te harcama ekleme ekranındaki **Türkçe**
+placeholder'ı bozuk gördü: "Market alışverişi" yerine harfleri birbirine
+girmiş bir metin. Aynı ekranda **İngilizcesi ("Groceries") düzgündü**.
+
+**Beş şüphe tek tek ölçülüp elendi:**
+
+| Şüphe | Sonuç |
+|---|---|
+| Metinde bozuk karakter | Boşluk U+0020, `ı` U+0131, `ş` U+015F — temiz |
+| `translate()` metni bozuyor | Parametre yoksa metne hiç dokunmuyor |
+| Fontta Türkçe harf/boşluk yok | Familjen Grotesk'in cmap'inde hepsi var |
+| Ekran darlığı | Placeholder 108pt, alan 390pt; 375pt'lik telefonda ~335pt |
+| Placeholder gerçek yazıyla karışıyor | rgb(107,100,89) ile rgb(31,36,32) — ayırt edilebilir |
+
+**Yeniden üretilemedi:** geliştirme build'inde (Expo Go) aynı metin doğru
+çiziliyor, büyütülmüş ekran görüntüsüyle de doğrulandı. Geriye kalan tek
+fark yayınlanmış build'in fontu yükleme yolu — iOS özel bir fontu hazır
+bulamazsa harf harf yedek fonta düşer ve karışık metrikler harfleri
+birbirine geçirir. Bu "İngilizce normal, Türkçe bozuk" ile de uyuşuyor.
+
+**Bu yüzden düzeltme mekanizmadan bağımsız seçildi:** placeholder artık
+iOS'un çizdiği bir şey değil, bizim `<Text>`'imiz (`FieldInput`). Font,
+renk ve aralık tamamen bizde; platformun placeholder'a özel davranışı
+denklemden çıkıyor. Mobildeki **18 placeholder'ın hepsi** çevrildi.
+
+**Hizalama ölçüldü, tahmin edilmedi:** öncesi ve sonrası `x 64..388`,
+genişlik 324 px, en koyu piksel 101 — birebir aynı. Tek fark 2796
+pikselde 1 piksellik dikey kayma.
+
+### İlk yazım iki şeyi sessizce kaybetti, testler yakaladı
+
+Yerel `placeholder` prop'u tamamen kaldırılmıştı. Bununla birlikte
+**`getByPlaceholderText` sorgusu** ve **ekran okuyucunun okuduğu ipucu**
+da gitti; dört ekran testi anında düştü. İkisi de görsel değil
+**anlamsal**: alanın ne beklediğini söylüyorlar.
+
+Çözüm ikisini ayırmak oldu: anlamı yerel prop taşıyor (`transparent`
+olduğu için çizmiyor), görseli bizim `<Text>`. Metin erişilebilirlik
+ağacından gizli, yoksa VoiceOver aynı cümleyi iki kez okurdu — ve bu
+testte `includeHiddenElements` gerektirmesiyle **kendiliğinden
+kanıtlanıyor**.
+
+**Üç negatif kontrol** koşuldu (ipucu değer varken de çizilirse, yerel
+prop yeniden kaldırılırsa, erişilebilirlik gizlemesi kalkarsa); üçü de
+doğru testleri düşürdü.
+
+---
+
 ## 2026-09-10 — Profil fotoğrafı
 
 Kullanıcı kendi fotoğrafını yükleyebiliyor. Fotoğraf R2'de duruyor ve

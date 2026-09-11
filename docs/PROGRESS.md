@@ -2541,6 +2541,46 @@ ve geri alınca geçti.
 
 ---
 
+## Faz 48 — Fişten kalemler + kendi OCR modülümüz · **BİTTİ, HİÇBİR CİHAZDA GÖRÜLMEDİ**
+
+| | |
+|---|---|
+| Modül | `modules/receipt-ocr` — projenin **ilk özel native modülü** |
+| Motor | Apple Vision (aynısı), ama `boundingBox` da dönüyor |
+| Platform | Yalnızca iOS (ADR-030) |
+| Saf katman | `receipt-blocks.ts` (satır kurma) + `receipt-items.ts` (kalem çıkarma) |
+| Veri | Gerçek fişlerin gerçek Vision çıktısı — `src/lib/fixtures/` |
+
+**Özellik eski modülle İMKÂNSIZDI, zor değil.** Vision bir fişi satır
+satır vermiyor; ad ve fiyat ayrı gözlemler ve dönen sıra sütuna göre. "Bu
+fiyat hangi ada ait" bilgisi metinde yok. `expo-text-extractor`
+`boundingBox`'ı atıyordu.
+
+**Aynı kayıp mevcut toplam okumayı da bozuyordu:** gerçek bir fişte
+toplam 27,96 iken **ödenen nakit 28,00** okunuyordu. Faz 46'nın
+`NOT_TOTAL` koruması hiç ateşlenmiyordu çünkü o testler etiketle tutarın
+aynı satırda olduğunu varsayıyordu. Gruplama ikisini aynı satıra
+getirince hem hata düzeldi hem kalemler mümkün oldu.
+
+**Satır kuralı sabit eşik değil, geometrik.** Ölçüldü: bir sabit 0,07
+genişliğinde bir aralığa sıkışırdı ve üçüncü fişte kırılırdı.
+
+**Gerçek fişlerdeki sonuç:** İsviçre fişi 4/4 kalem, adetleriyle, toplam
+54,50 = fişin toplamı. Officeworks 1/1, ürün kodu yerine gerçek adıyla.
+Sıfır çöp satır.
+
+**Yedi negatif kontrolün biri DÜŞMEDİ** ve bu bir kazanç oldu: işe
+yaramayan bir koruma bulunup silindi, asıl korumanın başkası olduğu
+ölçüldü.
+
+**AÇIK KALAN:** native taraf **hiçbir cihazda derlenmedi**. Saf katman
+gerçek Vision çıktısıyla sınandı ama modülün kendisi ancak bir EAS
+build'inde görülecek.
+
+**Test:** 776 kök birim (+19), 103 mobil jest (+7).
+
+---
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına

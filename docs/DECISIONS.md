@@ -530,6 +530,95 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-055 — OCR modülünü kendimiz yazıyoruz: metin yetmiyor, **konum** gerekiyor
+**Tarih:** 2026-09-11 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-11**
+
+**Karar:** `expo-text-extractor` bırakıldı; yerine `modules/receipt-ocr`
+adında **kendi yerel Expo modülümüz** geldi. Aynı motoru (Apple Vision)
+kullanıyor ama her metin parçasının **bounding box**'ını da döndürüyor.
+
+### Bu bir "daha iyi olur" kararı değildi — özellik onsuz **imkânsızdı**
+
+Kullanıcı fişteki kalemleri ayrı ayrı görüp seçmek istedi. Gerçek
+fişlerle, gerçek Vision çıktısıyla ölçüldü:
+
+```
+ 8: 2xLatte Macchiato
+ 9: 1xGloki
+10: 1xSchweinschnitzel      <- önce dört ürün adı
+14: 4.50
+21: 9.00                    <- sonra fiyatlar, başka sırada
+```
+
+Vision bir fişi satır satır vermiyor. Bir fiş satırında ad solda, birim
+fiyat ortada, satır toplamı sağda durur; aradaki boşluk yüzünden Vision
+bunları **ayrı gözlemler** olarak döndürür ve döndürdüğü sıra **sütuna**
+göre gruplanır. Yani "hangi fiyat hangi ada ait" bilgisi metinde **yok**.
+
+Eski modülün Swift kaynağında tek bir satır bunu atıyordu:
+`observation.topCandidates(1).first?.string`. Bilgi Vision'da vardı, bize
+ulaşmıyordu. Hiçbir heuristik bunu geri getiremez.
+
+### Aynı kayıp, **çalıştığını sandığımız** özelliği de bozuyordu
+
+Mevcut toplam okuyucu gerçek Vision çıktısına karşı koşturuldu:
+
+| Fiş | Okuduğu | Gerçek toplam |
+|---|---|---|
+| Berghotel | 54,50 ✓ | 54,50 |
+| Officeworks | **28,00 ✗** | **27,96** |
+
+İkincide "TOPLAM" yerine **ödenen nakdi** okudu. Sebebi aynı: `TOTAL`
+13. satırda, `$27.96` 16. satırda. Etiket eşleşmesi hiç çalışmıyor, iş
+"en büyük kuruşlu sayı" yedeğine kalıyordu.
+
+**Bu, Faz 46'da yakalanan tuzağın ta kendisi.** `NOT_TOTAL` listesi
+"NAKİT 400,00" gibi satırları elemek için yazılmıştı ve negatif kontrolde
+işe yaramıştı — ama o testler etiketle tutarın **aynı satırda** olduğunu
+varsayıyordu. Gerçek Vision çıktısı onları ayırıyor, koruma hiç
+ateşlenmiyor. **Uydurma veriyle görülemeyecek bir kusurdu.**
+
+### Satırları konumdan geri kurmak
+
+`groupIntoLines` parçaları görsel satırlara topluyor; ondan sonra hem
+kalem çıkarma hem de mevcut toplam okuyucu **değiştirilmeden** doğru
+çalışıyor (`"Total : CHF 54.50"` artık tek satır).
+
+**Sabit bir eşik kullanılmadı ve sebebi ölçüldü.** "Aynı satırdaki en
+büyük fark" ile "satırlar arası en küçük fark", ortanca harf yüksekliğine
+oranla: İsviçre fişinde 0,09 ve 1,06; Officeworks'te **0,38 ve 0,45**.
+İkisini birden ayıran bir sabit 0,07 genişliğinde bir aralığa sıkışırdı —
+üçüncü fişte kırılacak bir sayı.
+
+Onun yerine **geometrik bir kural**: parçaların dikey aralıkları, küçük
+olanın yüksekliğinin yarısından fazla örtüşüyorsa aynı satırdalar. Kendi
+kendine ölçekleniyor ve k 0,3–0,5 aralığında her iki fişte de aynı doğru
+sonucu veriyor.
+
+### Bedeli açıkça yazılıyor
+
+- **Projenin ilk özel native modülü.** Android karşılığı yok (ADR-030
+  "önce iOS"); Android'de modül yüklenemez ve çağıran taraf sessizce
+  OCR'siz devam eder — bu davranış zaten vardı.
+- **Expo Go'da çalışmıyor.** Zaten çalışmıyordu; yeni bir kısıt değil.
+- **EAS build'siz doğrulanamaz.** Saf katman gerçek Vision çıktısıyla
+  sınandı, ama native tarafın derlendiği ilk kez bir build'de görülecek.
+
+### Kalem çıkarma: hatasızlık değil, elle yazmaktan iyi olmak
+
+Gerçek bir fişte kampanya satırı, vergi satırı, kur bilgisi — hepsi
+"metin + kuruşlu sayı" görünümünde. Bir kısmı listeye sızacak. Tasarım
+bunu kabul ediyor: liste kullanıcıya gösteriliyor, **hiçbiri seçili
+başlamıyor**, istemediğini çıkarıyor.
+
+**Tutar seçilen kalemlerden hesaplanıyor, fişin toplamından değil.** İkisi
+neredeyse hiç tutmaz ve fişin toplamını bırakıp kalemleri de yazmak
+`SUM(kalem) = tutar` değişmezini kırardı (ADR-052) — kayıt sunucuda
+reddedilirdi. Fark ekranda **söyleniyor**: "Seçtiklerin 8,50 ₺ · fişin
+toplamı 366,68 ₺".
+
+---
+
 ## ADR-054 — Profil fotoğrafı: kendi ucumuzdan servis edilen, ortak gruba bağlı bir görsel
 **Tarih:** 2026-09-10 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-10**
 

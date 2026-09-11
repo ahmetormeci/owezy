@@ -28,40 +28,62 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-10
 
 Current task:
-  YOK. Faz 47 (profil fotografi) BITTI - ADR-054.
+  YOK. Faz 48 (fisten kalemler + kendi OCR modulumuz) BITTI - ADR-055.
 
-  1.0.4 APPLE'DA, incelemede. Build e5371f69 · surum 1.0.4 · build no 21.
-  DIKKAT: PROFIL FOTOGRAFI O BUILD'DE YOK. 1.0.4 gonderildikten SONRA
-  yazildi; telefona ulasmasi icin yeni bir build gerekiyor.
+  1.0.4 YAYINDA. Kullanici test ederken iki sey bildirdi, IKISI DE BITTI:
+    1. Turkce placeholder bozuk ciziliyordu -> DUZELTILDI (11 Eylul)
+    2. Fisteki kalemleri ayri ayri gorup secmek -> YAPILDI (Faz 48)
 
-  FAZ 47 - NE YAPILDI:
-    - avatarStorageKey kolonu (migration 20260910220000), iki veritabanina
-      da uygulandi
-    - src/lib/avatars.ts: setAvatar / readAvatar / removeAvatar /
-      takeAvatarKeyForDeletion
-    - PUT+DELETE /api/v1/me/avatar · GET /api/v1/users/[userId]/avatar
-    - hesap silmede fotograf da gidiyor (account.ts, fisle ayni desen)
-    - web: kullanici menusunde ekle/degistir/kaldir
-    - mobil: hesap ekraninda ayni ucu; MemberAvatar artik fotograf ciziyor
-      ve butun cagri yerlerine avatarUrl/hasImage geciriliyor
-    - gizlilik politikasi iki dilde genisletildi (R2 artik iki tur fotograf
-      tasiyor; toplanan veri listesinde fotografin KENDISI yaziyor)
+  FAZ 48 - EN ONEMLI SEY: OZELLIK ESKI MODULLE IMKANSIZDI, ZOR DEGIL.
 
-  TESTLER: kok 757 · mobil 7 vitest + 91 jest · TAM E2E 64 GECTI (14.0 dk,
-  1 bilerek atlanan) - iki avatar testi de yesil, sonuc OKUNDU.
-  NEGATIF KONTROLLER: 4 servis (ortak grup, yazma sirasi, silme sirasi,
-  tur koklama) + 1 E2E (uc 404 dondurunce naturalWidth dustu, toBeVisible
-  GECMEYE DEVAM ETTI) + 2 mobil (dis adres korumasi, useOptionalSession).
+    Apple Vision bir fisi satir satir vermiyor. Ad solda, fiyat sagda ve
+    ikisi AYRI GOZLEM; dondurdugu sira da satira gore degil SUTUNA gore.
+    "Hangi fiyat hangi ada ait" bilgisi METINDE YOK - konumda var.
+    expo-text-extractor boundingBox'i ATIYORDU.
 
-  BU FAZDA OGRENILEN IKI SEY - IKISI DE TEKRARLANABILIR:
-    1. ADAY LISTESINDEKI GEREKCE BAYATLAYABILIR. "Fis ile profil fotografi
-       tek aday, ayri yapilirsa bedel iki kez odenir" dogruydu; fis 1.0.3'te
-       cikinca bedelin ucte ikisi ZATEN odenmisti ve not guncellenmedigi
-       icin aday oldugundan pahali gorunmeye devam etti. ADR-053'un
-       dersinin aynisi.
-    2. BIR SUNUM BILESENINE OTURUM BAGIMLILIGI EKLEMEK SESSIZ DEGIL.
-       MemberAvatar useSession() cagirinca fotografi OLMAYAN birinin bas
-       harfleri bile oturum istedi. useOptionalSession o yuzden var.
+    AYNI KAYIP MEVCUT TOPLAM OKUMAYI DA BOZUYORDU: gercek bir fiste
+    toplam 27,96 iken ODENEN NAKIT 28,00 okunuyordu. Faz 46'nin NOT_TOTAL
+    korumasi hic atesenmiyordu cunku o testler etiketle tutarin AYNI
+    SATIRDA oldugunu varsayiyordu.
+
+  NE YAPILDI:
+    - modules/receipt-ocr: PROJENIN ILK OZEL NATIVE MODULU. Ayni motor,
+      konum da donuyor. YALNIZCA iOS (ADR-030).
+    - src/lib/receipt-blocks.ts: parcalari gorsel satirlara topluyor.
+      Sabit esik YOK - geometrik ortusme kurali (sebebi olculdu).
+    - src/lib/receipt-items.ts: kalem cikarma, adet carpimi, "2x Kola".
+    - src/lib/fixtures/: GERCEK fislerin GERCEK Vision ciktisi.
+    - Ekranda kalem listesi: hicbiri secili degil, secilenlerin toplami
+      tutar oluyor, FARK gosteriliyor.
+
+  GERCEK FISLERDEKI SONUC: Isvicre fisi 4/4 kalem adetleriyle, toplam
+  54,50 = fisin toplami. Officeworks 1/1, urun kodu yerine gercek adiyla.
+  Sifir cop satir.
+
+  TESTLER: kok 776 (+19) · mobil 103 jest (+7) · TAM E2E 64 GECTI
+  (13.9 dk, 1 bilerek atlanan) - sonuc OKUNDU, tekrar kosmaya gerek yok.
+
+  E2E ILK DENEMEDE BASLAYAMADI ve sebebi belgede yazili tuzakti: simulator
+  icin acilan 3000'deki dev sunucusu kapatilmamisti. Playwright "webServer
+  was not able to start" diyor, gercek satir bir ustte: "Another next dev
+  server is already running."
+  NEGATIF KONTROL: yedi tane. BIRI DUSMEDI ve bu kazanc oldu - ise
+  yaramayan bir koruma bulunup silindi, asil korumanin baskasi oldugu
+  olculdu.
+
+  >>> ACIK KALAN: NATIVE TARAF HICBIR CIHAZDA DERLENMEDI <<<
+
+  Saf katman gercek Vision ciktisiyla sinandi ama modulun KENDISI ancak
+  bir EAS build'inde gorulecek. Expo Go'da native modul zaten calismiyor.
+
+  BULUNAN AMA YAPILMAYAN IKI SEY:
+    1. expo-text-extractor ARTIK KULLANILMIYOR ama package.json'da
+       duruyor. Kaldirmak npm uninstall ister (package-lock degisir);
+       ayri ve temiz bir degisiklik olsun diye yapilmadi.
+    2. expo-doctor 19/21: CocoaPods (bilinen) + 12 paket surumu geride.
+       BENIM DEGISIKLIGIMDEN DEGIL - package.json'a hic dokunulmadi,
+       Expo yukari akista yama surumleri yayimlamis. Bir sonraki build
+       oncesi konusulmali.
 
 >>> AB MAGAZALARINDA UYGULAMA YOK - 10 EYLUL'DE OLCULDU <<<
 
