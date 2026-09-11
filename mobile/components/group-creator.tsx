@@ -1,11 +1,12 @@
 import { fonts } from "../lib/fonts";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslate } from "../lib/i18n";
 import { useApiClient } from "../lib/use-api";
 import { useTheme, type Theme } from "../lib/theme";
 import { Cap } from "./receipt";
+import { FieldInput } from "../components/field";
 
 /**
  * Grup olusturma - SATIR ICI, ayri bir form ekrani degil.
@@ -65,11 +66,10 @@ export function GroupCreator({ onCreated }: { onCreated: () => void }) {
     <View style={s.block}>
       <View style={s.row}>
         <Text style={s.plus}>+</Text>
-        <TextInput
+        <FieldInput
           value={name}
           onChangeText={setName}
           placeholder={t("ui.group_name_placeholder")}
-          placeholderTextColor={theme.muted}
           maxLength={100}
           editable={!busy}
           style={s.input}

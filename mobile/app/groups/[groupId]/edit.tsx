@@ -9,7 +9,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,6 +17,7 @@ import { useTranslate } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
 import { Cap } from "../../../components/receipt";
+import { FieldInput } from "../../../components/field";
 
 /**
  * Grup adi ve aciklamasini duzenleme. MOBILDE YOKTU - web'de fisin USTUNDE
@@ -145,12 +145,11 @@ export default function EditGroupScreen() {
 
           <View style={s.field}>
             <Cap>{t("ui.group_name")}</Cap>
-            <TextInput
+            <FieldInput
               style={s.input}
               value={name}
               onChangeText={setName}
               placeholder={t("ui.group_name_placeholder")}
-              placeholderTextColor={theme.muted}
               maxLength={100}
               editable={!busy}
             />
@@ -158,12 +157,11 @@ export default function EditGroupScreen() {
 
           <View style={s.field}>
             <Cap>{t("ui.group_description")}</Cap>
-            <TextInput
+            <FieldInput
               style={[s.input, s.multiline]}
               value={description}
               onChangeText={setDescription}
               placeholder={t("ui.group_description_placeholder")}
-              placeholderTextColor={theme.muted}
               maxLength={500}
               editable={!busy}
               multiline

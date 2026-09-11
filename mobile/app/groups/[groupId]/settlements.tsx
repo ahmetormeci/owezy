@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,7 +19,7 @@ import { useLocale, useTranslate } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
 import { SectionRule } from "../../../components/receipt";
-import { Field, SelectField } from "../../../components/field";
+import { Field, FieldInput, SelectField } from "../../../components/field";
 
 /**
  * Odeme kaydetme ve kaydedilmis odemeler.
@@ -236,13 +235,12 @@ export default function SettlementsScreen() {
           <View style={s.amountBlock}>
             <Text style={s.fieldLabel}>{t("ui.amount").toLocaleUpperCase(locale)}</Text>
             <View style={s.amountRow}>
-              <TextInput
+              <FieldInput
                 style={s.amountInput}
                 value={amountText}
                 onChangeText={setAmountText}
                 keyboardType="decimal-pad"
                 placeholder="0,00"
-                placeholderTextColor={theme.inputLine}
                 editable={!busy}
               />
               <Text style={s.amountCurrency}>{currency}</Text>
@@ -312,12 +310,11 @@ export default function SettlementsScreen() {
             )}
 
             <Field label={t("ui.settlement_note")}>
-              <TextInput
+              <FieldInput
                 style={s.fieldInput}
                 value={note}
                 onChangeText={setNote}
                 placeholder={t("ui.settlement_note_placeholder")}
-                placeholderTextColor={theme.muted}
                 maxLength={500}
                 editable={!busy}
               />

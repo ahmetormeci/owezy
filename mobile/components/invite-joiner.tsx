@@ -1,12 +1,13 @@
 import { fonts } from "../lib/fonts";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslate } from "../lib/i18n";
 import { inviteTokenFrom } from "../lib/invite-link";
 import { useApiClient } from "../lib/use-api";
 import { useTheme, type Theme } from "../lib/theme";
 import { Cap } from "./receipt";
+import { FieldInput } from "../components/field";
 
 /**
  * Davetle gruba katilma - SATIR ICI, GroupCreator'in tam esi.
@@ -78,11 +79,10 @@ export function InviteJoiner({ onJoined }: { onJoined: () => void }) {
     <View style={s.block}>
       <View style={s.row}>
         <Text style={s.glyph}>→</Text>
-        <TextInput
+        <FieldInput
           value={value}
           onChangeText={setValue}
           placeholder={t("ui.invite_link_placeholder")}
-          placeholderTextColor={theme.muted}
           editable={!busy}
           // Adres yapistiriliyor: bas harfi buyutmek ve otomatik duzeltme
           // KODU BOZAR. Klavye de adres duzenine geciyor.

@@ -17,6 +17,7 @@ import { apiBaseUrl } from "../lib/api";
 import { useTranslate } from "../lib/i18n";
 import { useTheme, type Theme } from "../lib/theme";
 import { Cap } from "../components/receipt";
+import { FieldInput } from "../components/field";
 
 // NEDEN KENDI EKRANIMIZ: mobilde hazir bir giris bileseni kullanmiyoruz;
 // akisi kendimiz kuruyoruz. Web'deki src/components/sign-in-form.tsx ile
@@ -179,7 +180,7 @@ export default function SignInScreen() {
             <Text style={s.muted}>
               {usingBackupCode ? t("ui.backup_code_hint") : t("ui.totp_hint")}
             </Text>
-            <TextInput
+            <FieldInput
               // testID YALNIZCA test icin: RNTL 14'te UNSAFE_getAllByType
               // kaldirildi ve parola/kod alanlarinin gorunur bir etiketi yok.
               testID="two-factor-code"
@@ -192,7 +193,6 @@ export default function SignInScreen() {
               // zorlastirirdi.
               keyboardType={usingBackupCode ? "default" : "number-pad"}
               textContentType="oneTimeCode"
-              placeholderTextColor={theme.muted}
               placeholder={usingBackupCode ? undefined : t("ui.code_placeholder")}
               editable={!busy}
             />
@@ -229,14 +229,13 @@ export default function SignInScreen() {
           <>
             <Cap>{t("ui.verification_code")}</Cap>
             <Text style={s.muted}>{t("ui.code_sent_to", { email })}</Text>
-            <TextInput
+            <FieldInput
               style={s.input}
               value={code}
               onChangeText={setCode}
               autoCapitalize="none"
               keyboardType="number-pad"
               textContentType="oneTimeCode"
-              placeholderTextColor={theme.muted}
               placeholder={t("ui.code_placeholder")}
               editable={!busy}
             />
@@ -254,7 +253,7 @@ export default function SignInScreen() {
         ) : (
           <>
             <Cap>{t("ui.email")}</Cap>
-            <TextInput
+            <FieldInput
               style={s.input}
               value={email}
               onChangeText={setEmail}
@@ -262,7 +261,6 @@ export default function SignInScreen() {
               autoCorrect={false}
               keyboardType="email-address"
               textContentType="emailAddress"
-              placeholderTextColor={theme.muted}
               placeholder={t("ui.email_placeholder")}
               editable={!busy}
             />

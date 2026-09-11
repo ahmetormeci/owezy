@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+} from "react-native";
 import { useTheme, type Theme } from "../lib/theme";
 import { fonts } from "../lib/fonts";
 import { useLocale } from "../lib/i18n";
@@ -37,6 +46,98 @@ export function Field({
         {hint ? <Text style={s.hint}>{hint}</Text> : null}
       </View>
       <View style={s.underline}>{children}</View>
+    </View>
+  );
+}
+
+/**
+ * PLACEHOLDER'I KENDIMIZ CIZIYORUZ, iOS'a birakmiyoruz.
+ *
+ * GERCEKTEN YASANDI (11 Eylul): kullanici yayinlanmis 1.0.4'te aciklama
+ * alanindaki Turkce placeholder'i BOZUK gordu - "Market alışverişi" yerine
+ * harfleri birbirine girmis bir metin. Ingilizce karsiligi ("Groceries")
+ * ayni ekranda duzgun ciziliyordu.
+ *
+ * NE ELENDI, OLCUM ILE:
+ *   - metnin kendisi temiz (bosluk U+0020, ı U+0131, ş U+015F)
+ *   - translate() parametre yoksa metne DOKUNMUYOR
+ *   - Familjen Grotesk'in cmap'inde butun Turkce harfler VE bosluk var
+ *   - genislik degil: placeholder 108pt, alan 390pt (375pt telefonda ~335pt)
+ *   - renk degil: placeholder rgb(107,100,89), gercek deger rgb(31,36,32)
+ *
+ * YENIDEN URETILEMEDI: gelistirme build'inde (Expo Go) ayni metin DOGRU
+ * ciziliyor. Kalan tek fark yayinlanmis build'in font yukleme yolu - iOS
+ * ozel bir fontu hazir bulamazsa harf harf yedek fonta duser ve karisik
+ * metrikler harfleri birbirine gecirir.
+ *
+ * BU YUZDEN DUZELTME MEKANIZMADAN BAGIMSIZ: placeholder artik iOS'un
+ * cizdigi bir sey degil, bizim <Text>'imiz. Font, renk ve aralik tamamen
+ * bizde; platformun placeholder'a ozel davranisi denklemden cikiyor.
+ *
+ * Ayni metni cizen ayni bilesen, deger girilince kayboluyor - yani
+ * "placeholder duruyor mu" sorusu tek bir kosula indi: value bos mu.
+ */
+export function FieldInput({
+  value,
+  placeholder,
+  style,
+  multiline,
+  ...rest
+}: TextInputProps & { value: string }) {
+  const theme = useTheme();
+  const s = useMemo(() => styles(theme), [theme]);
+
+  return (
+    <View style={s.inputWrap}>
+      {placeholder && value === "" ? (
+        /**
+         * pointerEvents="none" SART: metin girisin USTUNDE duruyor ve
+         * dokunusu yutsaydi alan odaklanmazdi - yani alan tiklanamaz
+         * gorunurdu.
+         *
+         * numberOfLines={1}: tek satirlik bir alanda uzun bir ipucu ikinci
+         * satira tasip alt cizgiyi asardi.
+         */
+        <Text
+          pointerEvents="none"
+          /**
+           * EKRAN OKUYUCUDAN GIZLI. Ipucunu yine yerel placeholder
+           * soyluyor (asagida); bu metin onun GORSEL karsiligi. Ikisi de
+           * erisilebilir olsaydi VoiceOver ayni cumleyi iki kez okurdu.
+           */
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          /**
+           * TEK SATIRLIK ALANDA kirpiliyor: uzun bir ipucu ikinci satira
+           * tasip alt cizgiyi asardi. COK SATIRLI alanda SERBEST - orada
+           * metnin sarmasi zaten dogru davranis.
+           */
+          numberOfLines={multiline ? undefined : 1}
+          style={[style, s.placeholder, { color: theme.muted }]}
+        >
+          {placeholder}
+        </Text>
+      ) : null}
+      {/**
+       * YEREL PLACEHOLDER DURUYOR AMA SEFFAF.
+       *
+       * Ilk yazimda tamamen kaldirilmisti ve IKI SEY birden kayboldu:
+       * ekran okuyucunun okudugu ipucu, ve testlerin
+       * getByPlaceholderText sorgusu - dort ekran testi aninda dustu.
+       * Ikisi de gorsel degil ANLAMSAL: alanin ne beklediğini soyluyorlar.
+       *
+       * Cozum ikisini ayirmak: anlami yerel prop tasiyor, cizimi bizim
+       * <Text>. transparent oldugu icin iOS'un bozuk cizimi ekranda
+       * gorunmuyor - hatanin kendisi de boylece denklemden cikiyor.
+       */}
+      <TextInput
+        value={value}
+        style={style}
+        multiline={multiline}
+        placeholder={placeholder}
+        placeholderTextColor="transparent"
+        {...rest}
+      />
     </View>
   );
 }
@@ -129,6 +230,14 @@ export function SelectField<T extends string>({
 function styles(theme: Theme) {
   return StyleSheet.create({
     field: { gap: 7 },
+    inputWrap: { position: "relative" },
+    placeholder: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+    },
     labelRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
     label: {
       fontFamily: fonts.medium,

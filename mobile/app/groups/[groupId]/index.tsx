@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -38,6 +37,7 @@ import { CsvExport } from "../../../components/csv-export";
 import { ReceiptViewer } from "../../../components/receipt-viewer";
 import { ExpenseComposer } from "../../../components/expense-composer";
 import { RecurringList } from "../../../components/recurring-list";
+import { FieldInput } from "../../../components/field";
 import {
   Receipt,
   ReceiptDoubleRule,
@@ -1058,12 +1058,11 @@ export default function GroupScreen() {
                   varmis gibi gostermek olurdu. */}
               <View>
                 <View style={s.filterBar}>
-                  <TextInput
+                  <FieldInput
                     style={s.filterInput}
                     value={query}
                     onChangeText={setQuery}
                     placeholder={t("ui.search_expenses")}
-                    placeholderTextColor={theme.muted}
                     autoCorrect={false}
                     autoCapitalize="none"
                     returnKeyType="search"

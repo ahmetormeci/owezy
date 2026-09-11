@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { fonts } from "../lib/fonts";
@@ -16,6 +15,7 @@ import { useTheme, type Theme } from "../lib/theme";
 // kuruyor. Bildirimler ekrani da ayni modulu cagiriyor.
 import { formatRelativeTime } from "@/lib/notification-text";
 import { MemberAvatar, SectionRule } from "./receipt";
+import { FieldInput } from "../components/field";
 
 /**
  * Harcamanin yorumlari (ADR-049).
@@ -214,12 +214,11 @@ export function ExpenseComments({
         <Text style={s.note}>{t("ui.comments_closed_deleted")}</Text>
       ) : (
         <View style={s.composer}>
-          <TextInput
+          <FieldInput
             style={s.input}
             value={draft}
             onChangeText={setDraft}
             placeholder={t("ui.comment_placeholder")}
-            placeholderTextColor={theme.muted}
             multiline
             maxLength={MAX_COMMENT_LENGTH}
             editable={!busy}

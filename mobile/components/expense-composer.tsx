@@ -1,6 +1,6 @@
 import { fonts } from "../lib/fonts";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { guessCategory } from "@/lib/expense-category-guess";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { parseMoney } from "@/lib/money";
@@ -8,6 +8,7 @@ import { useTranslate } from "../lib/i18n";
 import { useApiClient } from "../lib/use-api";
 import { useTheme, type Theme } from "../lib/theme";
 import { Cap } from "./receipt";
+import { FieldInput } from "../components/field";
 
 /**
  * Fisin bir sonraki satiri: harcamayi ekrandan cikmadan ekler.
@@ -112,20 +113,18 @@ export function ExpenseComposer({
           degil uzerine konmus bir arayuz oldugunu soylerdi. */}
       <View style={s.row}>
         <Text style={s.plus}>+</Text>
-        <TextInput
+        <FieldInput
           value={description}
           onChangeText={setDescription}
           placeholder={t("ui.composer_placeholder")}
-          placeholderTextColor={theme.muted}
           maxLength={200}
           editable={!busy}
           style={s.description}
         />
-        <TextInput
+        <FieldInput
           value={amountText}
           onChangeText={setAmountText}
           placeholder="0,00"
-          placeholderTextColor={theme.muted}
           keyboardType="decimal-pad"
           editable={!busy}
           style={s.amount}
