@@ -80,10 +80,20 @@ Current task:
     1. expo-text-extractor ARTIK KULLANILMIYOR ama package.json'da
        duruyor. Kaldirmak npm uninstall ister (package-lock degisir);
        ayri ve temiz bir degisiklik olsun diye yapilmadi.
-    2. expo-doctor 19/21: CocoaPods (bilinen) + 12 paket surumu geride.
-       BENIM DEGISIKLIGIMDEN DEGIL - package.json'a hic dokunulmadi,
-       Expo yukari akista yama surumleri yayimlamis. Bir sonraki build
-       oncesi konusulmali.
+    2. PAKET SURUMLERI - COZULDU AMA ONCE CI'YI KIRDI.
+
+       12 paket SDK'nin bekledigi surumun gerisindeydi ve bu "sonra
+       bakariz" diye not edildi. YANLISTI: CI expo-doctor'i bir KAPI
+       olarak calistiriyor (.github/workflows/ci.yml) ve o kontrol
+       dustugu icin main KIRMIZI oldu.
+
+       DERS: "benim degisikligimden degil" bir seyi ERTELEMEK icin
+       gecerli bir gerekce degil. Dogru soru "bunu ben mi bozdum" degil,
+       "bu simdi kirik mi". Olculmesi kolaydi - npx expo-doctor - ve
+       olculmedi.
+
+       npx expo install --fix ile cozuldu; ardindan tip kontrolu, lint,
+       103 test ve expo export (CI'nin son adimi) yeniden kosuldu.
 
 >>> AB MAGAZALARINDA UYGULAMA YOK - 10 EYLUL'DE OLCULDU <<<
 
