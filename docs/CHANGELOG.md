@@ -21,6 +21,30 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-12 — Uygulama AB'ye geri döndü
+
+27 AB mağazasının hepsinde yeniden görünüyor (ölçüldü: 27/27; kontrol
+grubu us·gb·tr·no·ch·jp 6/6). Şubat 2025'ten beri yoktu.
+
+**Çözüm tüccar beyanı değil, "tüccar değilim" beyanıydı.** Uzun süre
+yalnızca birinci yol konuşuldu ve bedeli ağırdı: bireysel hesapta adres,
+telefon ve e-posta AB ürün sayfasında **herkese açık** yayımlanıyor,
+üstüne ad-adres kanıtlayan belge isteniyor.
+
+Apple'ın kendi belgesi ikinci bir yol tanımlıyordu ve atlanmıştı:
+`This is not a trader account` — hiçbir iletişim bilgisi, doğrulama ya da
+belge istemiyor. Ürün sayfasında yalnızca bir cümle çıkıyor: tüketici
+koruma hakları taraflar arasındaki sözleşmelere uygulanmaz. Owezy
+ücretsiz, reklamsız ve uygulama içi satın alması olmayan bir uygulama —
+o cümlenin pratik karşılığı küçük.
+
+**Apple hiçbir yerde "kaldırılmış uygulama geri gelir mi" demiyor.** Dört
+ayrı sayfası da yazmıyor; hepsi yalnızca "statü verilene kadar kaldırılır"
+diyor. Ölçerek öğrenildi: beyan girildikten sonra AB mağazaları **bir
+saat içinde** açıldı. Bir sonraki sefere tahmin etmeye gerek yok.
+
+---
+
 ## 2026-09-11 — Fişten kalemler: OCR modülünü kendimiz yazdık
 
 Kullanıcı fişteki kalemleri ayrı ayrı görüp seçmek istedi — istediğini
