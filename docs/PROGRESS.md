@@ -2590,6 +2590,16 @@ karar vermemiştir.
 |---|---|
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
+> **Admin paneli SORULDU VE YAPILMAMASINA KARAR VERİLDİ (12 Eylül).**
+> "Kaç kişi, hangi ülkeden" sorusunun cevabı App Store Connect →
+> Analytics'te **zaten var** ve kod gerektirmiyor. Kendimiz toplayamayız:
+> gizlilik politikası iki ayrı yerde söz vermiş ("hiçbir analiz aracı
+> kurulu değil" ve oturum IP'si "ölçüm için kullanılmaz") ve veritabanında
+> ülke sütunu yok. Sayılar için panel değil tek komutluk bir betik yeter;
+> kullanıcı isterse yazılacak. Bir finansal uygulamada admin paneli yeni
+> bir saldırı yüzeyi demek — ara sıra sorulan bir soru için ödenecek bedel
+> bu değil.
+
 > **Profil fotoğrafı listeden çıktı (10 Eylül, Faz 47)** — ve listedeki
 > gerekçe **çürüdü**: "fiş fotoğrafıyla aynı depo ve arayüz" doğruydu ama
 > sonucu yanlış okunmuştu. Fiş 1.0.3'te çıkınca depo, yükleme arayüzü,

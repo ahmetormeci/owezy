@@ -25,7 +25,7 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-10
+Updated: 2026-09-12
 
 Current task:
   YOK. Faz 48 (fisten kalemler + kendi OCR modulumuz) BITTI - ADR-055.
@@ -33,6 +33,37 @@ Current task:
   1.0.4 YAYINDA. Kullanici test ederken iki sey bildirdi, IKISI DE BITTI:
     1. Turkce placeholder bozuk ciziliyordu -> DUZELTILDI (11 Eylul)
     2. Fisteki kalemleri ayri ayri gorup secmek -> YAPILDI (Faz 48)
+
+  AB MESELESI DE KAPANDI (12 Eylul): uygulama 27 AB magazasinin HEPSINDE
+  geri geldi. Cozum tuccar beyani DEGIL, "tuccar degilim" beyaniydi -
+  ayrintisi asagida.
+
+  >>> 1.0.5'TE NE VAR: DORT SEY, HEPSI 1.0.4 GONDERILDIKTEN SONRA <<<
+    1. Profil fotografi          (Faz 47, ADR-054)
+    2. Placeholder cizimi        (11 Eylul - Turkce metin bozuluyordu)
+    3. Fisten kalemler + kendi OCR modulumuz  (Faz 48, ADR-055)
+    4. 12 Expo paketinin surum guncellemesi
+
+    UCUNCUSU BIR HATA DUZELTMESI DE TASIYOR: 1.0.4'teki OCR, etiketle
+    tutar ayri gozlemlere dustugunde toplam yerine odenen nakdi
+    okuyabiliyor. Kullanici kendi fisinde dogru okudugunu bildirdi;
+    kusur baska bir yerlesimde ortaya cikiyor.
+
+  ADMIN PANELI: YAPILMAYACAK (12 Eylul, kullanici sordu, olculdu).
+    "Kac kisi, hangi ulkeden" sorusunun cevabi ZATEN VAR: App Store
+    Connect -> Analytics, ulkeye gore indirme/aktif cihaz/oturum, KOD
+    GEREKTIRMEDEN. Yalnizca veri paylasimina izin verenlerden geldigi
+    icin gercek sayinin altinda kalir - trend dogru, mutlak sayi degil.
+
+    KENDIMIZ TOPLAYAMAYIZ: gizlilik politikasi iki yerde soz vermis -
+    "Analitik ve reklam verisi. Uygulamada hicbir analiz veya reklam
+    araci kurulu degil." ve oturum IP'si icin "Reklam ya da olcum icin
+    kullanilmaz." Veritabaninda ulke sutunu da yok; locale var ama o
+    kullanicinin sectigi ARAYUZ DILI, konum degil.
+
+    Veritabani su an da cevapliyor: kac hesap ve ne zaman acildi, kaci
+    aktif, kac grup, kac harcama. Bunun icin panel degil tek komutluk
+    bir betik yeter - kullanici isterse yazilacak, HENUZ ISTEMEDI.
 
   FAZ 48 - EN ONEMLI SEY: OZELLIK ESKI MODULLE IMKANSIZDI, ZOR DEGIL.
 

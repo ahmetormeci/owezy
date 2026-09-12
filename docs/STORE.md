@@ -507,8 +507,25 @@ veritabanında**, üretime dokunulmadı.
 
 ## BİR SONRAKİ GÖNDERİM (1.0.5) — ŞİMDİDEN BİRİKEN
 
-**Profil fotoğrafı** (Faz 47, ADR-054) 1.0.4 **gönderildikten sonra**
-yazıldı, yani o sürümde yok. Bir sonraki build'e binecek ve o gönderimde:
+Şunlar 1.0.4 **gönderildikten sonra** yazıldı, yani o sürümde **yok**;
+hepsi bir sonraki build'e binecek:
+
+| | |
+|---|---|
+| Profil fotoğrafı | Faz 47 · ADR-054 |
+| Placeholder çizimi | 11 Eylül — Türkçe metin bozuk çıkıyordu |
+| Fişten kalemler + kendi OCR modülümüz | Faz 48 · ADR-055 |
+| 12 Expo paketinin sürüm güncellemesi | 11 Eylül |
+
+**Üçüncüsü bir hata düzeltmesi de taşıyor:** 1.0.4'teki OCR, etiketle
+tutar ayrı gözlemlere düştüğünde toplam yerine **ödenen nakdi**
+okuyabiliyor (ölçüldü: 27,96 yerine 28,00).
+
+**AB artık açık:** "tüccar değilim" beyanı 12 Eylül'de girildi, uygulama
+27 AB mağazasının hepsinde geri geldi. Yani bu gönderim AB'yi de
+kapsıyor.
+
+Gönderimde bakılacaklar:
 
 - Açıklamaya girmesi gerekiyor mu? **Muhtemelen hayır** — profil fotoğrafı
   bir özellik değil, bir alışkanlık; açıklama zaten uzun. Karar
