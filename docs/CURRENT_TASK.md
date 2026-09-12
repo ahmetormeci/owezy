@@ -95,42 +95,38 @@ Current task:
        npx expo install --fix ile cozuldu; ardindan tip kontrolu, lint,
        103 test ve expo export (CI'nin son adimi) yeniden kosuldu.
 
->>> AB MAGAZALARINDA UYGULAMA YOK - 10 EYLUL'DE OLCULDU <<<
+>>> AB MESELESI KAPANDI (12 Eylul). Asagisi kaydi. <<<
 
-  OLCUM (itunes.apple.com/lookup?id=6805650395&country=XX):
-    AB      at be dk fi fr de gr ie it nl pl pt es se  -> 14/14 SONUC YOK
-    AB disi us gb tr ca au jp ch no br in mx kr sg     -> 13/13 1.0.3 var
+  UYGULAMA 27 AB MAGAZASININ HEPSINDE GERI GELDI - olculdu, 27/27.
+  Kontrol grubu (us gb tr no ch jp) 6/6.
 
-  BELIRLEYICI AYRINTI NORVEC VE ISVICRE: ikisi de Avrupa ama AB uyesi
-  DEGIL, ikisinde de uygulama duruyor. Yani sinir "Avrupa" degil tam
-  olarak AB - bu bir ulke secimi hatasiyla olusmaz.
+  COZUM TUCCAR BEYANI DEGIL, "TUCCAR DEGILIM" BEYANIYDI.
 
-  SEBEBI: DSA (Dijital Hizmetler Yasasi) TUCCAR BEYANI. Apple 17 Subat
-  2025'ten beri AB magazalarinda dagitilan her uygulamada dogrulanmis
-  tuccar bilgisi istiyor; olmayanlar 27 AB magazasindan KALDIRILIYOR.
-  Kullanici bir sey degistirmedi - Apple'in son tarihi isledi.
-  Kaynak: developer.apple.com/news/?id=einwn76m
+  Uzun sure yalnizca tuccar yolu konusuldu ve bedeli agir gorunuyordu:
+  bireysel hesapta adres/telefon/e-posta AB urun sayfasinda HERKESE ACIK
+  yayimlaniyor, ustune ad-adres kanitlayan belge isteniyor.
 
-  NEREDE DUZELTILIR (Apple'in kendi yardim sayfasindan):
-    hesap duzeyi : App Store Connect -> Business -> Agreements sekmesi
-                   -> Compliance bolumu -> Digital Services Act yanindaki
-                   "Complete Compliance Requirements"
-    uygulama     : Apps -> Owezy -> App Information -> "App Store
-                   Regulations and Permits" -> Digital Services Act -> Edit
-    rol          : Account Holder ya da Admin
-    kaynak       : developer.apple.com/help/app-store-connect/
-                   manage-compliance-information/
-                   manage-european-union-digital-services-act-trader-requirements/
+  APPLE'IN KENDI BELGESI IKINCI BIR YOL TANIMLIYOR ve atlanmisti:
+  "This is not a trader account" -> hicbir iletisim bilgisi istenmiyor,
+  dogrulama yok, belge yok. Urun sayfasinda yalnizca bir cumle cikiyor:
+  tuketici koruma haklari senin ile onlar arasindaki sozlesmelere
+  uygulanmaz. Owezy ucretsiz, reklamsiz, uygulama ici satin almasiz -
+  yani o cumlenin pratik karsiligi kucuk.
 
-  BIREYSEL HESAP ICIN BEDELI VAR - KARAR KULLANICININ. Hesap
-  "AHMET ORMECI (Individual)" (EAS ciktisindan olculdu). Apple bireysel
-  tuccarlardan ADRES (ya da posta kutusu), TELEFON ve E-POSTA istiyor ve
-  bunlari AB urun sayfasinda HERKESE ACIK yayimliyor. Yani AB'ye donmenin
-  bedeli ev adresinin magazada gorunmesi. Bir posta kutusu bu yuzden var.
+  DSA'nin tanimi ticari faaliyete bagli ("ticareti, isi, zanaati ya da
+  meslegiyle ilgili amaclarla hareket eden") ve Apple'in rehberi hobi
+  olarak, ticarilestirme niyeti olmadan gelistirilen uygulamalar icin
+  tuccar sayilmayabilecegini soyluyor. KARARI KULLANICI VERDI.
 
-  OLCULEMEYEN: dogrulama bittikten sonra uygulama AB'ye KENDILIGINDEN mi
-  doner yoksa yeni bir gonderim mi gerekir - Apple'in yardim sayfasi bunu
-  YAZMIYOR. Varsayma; panelde gorulecek.
+  NEREDE: App Store Connect -> Business -> Agreements -> Compliance ->
+  Digital Services Act -> Complete Compliance Requirements.
+  Uygulama duzeyi: Apps -> Owezy -> App Information -> App Store
+  Regulations and Permits -> Digital Services Act.
+
+  APPLE HICBIR YERDE "KALDIRILMIS UYGULAMA GERI GELIR MI" DEMIYOR - dort
+  ayri sayfasi da yazmiyor. Olcerek ogrenildi: beyan girildikten sonra
+  AB magazalari BIR SAAT ICINDE acildi. Bir sonraki sefere tahmin
+  etmeye gerek yok, cevap bu.
 
   YAPILANLAR:
     Faz 43  odeme hatirlatmasi   BITTI  (ADR-050)  cbfb887  CI yesil
