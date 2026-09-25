@@ -12,6 +12,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "ios": { "image": "macos-tahoe-26.5-xcode-26.6" },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://owezy.net"
       }

@@ -516,6 +516,8 @@ hepsi bir sonraki build'e binecek:
 | Placeholder çizimi | 11 Eylül — Türkçe metin bozuk çıkıyordu |
 | Fişten kalemler + kendi OCR modülümüz | Faz 48 · ADR-055 |
 | 12 Expo paketinin sürüm güncellemesi | 11 Eylül |
+| 8 Expo paketinin yaması + `expo-text-extractor` kaldırıldı | 25 Eylül — CI'ı yeniden yeşile çevirdi |
+| Build ortamı Xcode 26.6'ya sabitlendi (`eas.json`) | 25 Eylül — Xcode 27 build'i iOS 27'de açılmıyor |
 
 **Üçüncüsü bir hata düzeltmesi de taşıyor:** 1.0.4'teki OCR, etiketle
 tutar ayrı gözlemlere düştüğünde toplam yerine **ödenen nakdi**
@@ -538,10 +540,44 @@ Screenshots'ta sürükleyerek düzelt.
 
 **BUILD ORTAMI:** 1.0.4, EAS'ta `macos-tahoe-26.5-xcode-26.6` ile
 derlendi. Xcode 27 ile derlenen bir build iOS 27'de **açılmıyor**
-(UIScene zorunluluğu) — 1.0.5 bu yüzden Xcode 26.6 ile derlenmeli.
+(UIScene zorunluluğu) — bu yüzden `eas.json` production'da
+`ios.image` artık `macos-tahoe-26.5-xcode-26.6`'ya **sabit** (25 Eylül).
+
+### Sürüm notu — 1.0.5 İngilizce
+
+```
+• Photograph a receipt and its items appear as a list. Pick the ones
+  that belong to this expense and they become lines you can give to
+  the people who had them. Quantities come along too: "2x Cola".
+• What you picked is shown next to the receipt's total, so a line the
+  phone could not read never goes missing unnoticed.
+• The total is read more reliably. On some receipts the cash handed
+  over could be taken for the total; that no longer happens.
+• You can add a profile photo, and the people in your groups see it
+  next to your name.
+• Fixed the hint text in some fields, which could appear garbled.
+```
+
+### Sürüm notu — 1.0.5 Türkçe
+
+```
+• Fişin fotoğrafını çek, kalemleri liste olarak gör. Bu harcamaya ait
+  olanları seç; her biri, onu alanlara verebileceğin bir satıra
+  dönüşür. Adetler de gelir: "2x Kola".
+• Seçtiklerinin toplamı fişin toplamının yanında görünür; telefonun
+  okuyamadığı bir satır fark edilmeden kaybolmaz.
+• Toplam artık daha güvenilir okunuyor. Bazı fişlerde verilen nakit
+  toplam sanılabiliyordu; bu artık olmuyor.
+• Profil fotoğrafı ekleyebiliyorsun; gruplarındaki kişiler onu adının
+  yanında görür.
+• Bazı alanlardaki ipucu metni bozuk görünebiliyordu, düzeltildi.
+```
 
 Gönderimde bakılacaklar:
 
+- **appreview@ PAROLAYLA GİRİYOR MU, İKİNCİ ADIM İSTİYOR MU** — her
+  gönderimden önce, kullanıcı gizli pencerede dener (1.0.3 bu yüzden
+  bir kez reddedildi).
 - Açıklamaya girmesi gerekiyor mu? **Muhtemelen hayır** — profil fotoğrafı
   bir özellik değil, bir alışkanlık; açıklama zaten uzun. Karar
   gönderimde verilecek.

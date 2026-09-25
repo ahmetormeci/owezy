@@ -28,7 +28,19 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-25
 
 Current task:
-  YOK. Faz 48 (fisten kalemler + kendi OCR modulumuz) BITTI - ADR-055.
+  1.0.5 GONDERIMI (25 Eylul, kullanici "1.0.5'e gecelim" dedi).
+    YAPILDI : eas.json build ortami sabit (Xcode 26.6), 8 Expo yamasi
+              (CI kirmiziydi - asagida), expo-text-extractor kaldirildi,
+              surum 1.0.5, surum notlari iki dilde (STORE.md).
+    SIRADA  : commit + push (KULLANICI ONAYI), EAS build (kota), eas
+              submit -> TestFlight internal -> KULLANICI TELEFONDA
+              PLACEHOLDER'A BAKAR -> appreview@ parola kontrolu
+              (kullanici) -> incelemeye gonder. Ingilizce gorsel sirasi
+              (1-4-3-2-5) gonderim sayfasinda duzeltilecek.
+    PUAN ISTEME (store review) ONERILDI, 1.0.5'E ALINMADI: yeni ozellik,
+    once tasarim + onay; yeni bir native paket de getiriyor.
+
+  Faz 48 (fisten kalemler + kendi OCR modulumuz) BITTI - ADR-055.
 
   >>> 25 EYLUL: YEREL RELEASE DOGRULAMASI - UC SONUC <<<
 
@@ -61,8 +73,8 @@ Current task:
      1.0.5 ICIN RISK YOK (simdilik): 1.0.4 EAS'ta Xcode 26.6 / iOS 26.5
      SDK ile derlendi (image "macos-tahoe-26.5-xcode-26.6", log'dan
      okundu) ve Expo'nun listesinde henuz Xcode 27 image'i YOK.
-     SIGORTA ONERILDI, YAPILMADI: eas.json production'a bu image'i
-     sabitlemek (kod degisikligi - kullanici onayi gerekli).
+     SIGORTA YAPILDI (25 Eylul, kullanici onayladi): eas.json production
+     -> ios.image "macos-tahoe-26.5-xcode-26.6". eas config ile dogrulandi.
      ILERIDE SART: Apple yeni SDK'yi zorunlu kildiginda uygulama UIScene'e
      gecmek ZORUNDA. Iki yol: SDK 57.0.23+ ile expo-build-properties
      "enableSceneSupport" (AMA cold-start'ta Linking.getInitialURL()
@@ -79,6 +91,13 @@ Current task:
 
   YAN BULGU: en buyuk erisilebilirlik yazi boyutunda giris ekranindaki
   "Kod gonder" dugmesinin yazisi kirpiliyor. Kucuk, duzeltilmedi.
+
+  CI KIRMIZIYDI (706d4a8, 25 Eylul) VE FARK EDILMESI GECIKTI: dokuman
+  push'undan sonra CI'a BAKILMADI; 1.0.5 hazirligindaki expo-doctor
+  kosusu yakaladi. Sebep kodumuz degil - Expo 8 paketin yamasini
+  yayinlamisti ve CI expo-doctor'i kapi olarak kosuyor. Yani main
+  KENDILIGINDEN kirilabiliyor, hic commit atilmasa bile.
+  DERS: her push'tan sonra CI sonucuna bak - dokuman push'u dahil.
 
   1.0.4 YAYINDA. Kullanici test ederken iki sey bildirdi, IKISI DE BITTI:
     1. Turkce placeholder bozuk ciziliyordu -> DUZELTILDI (11 Eylul)

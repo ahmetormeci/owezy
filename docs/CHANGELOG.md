@@ -21,6 +21,31 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-25 — 1.0.5 hazırlığı: build ortamı sabitlendi, CI yeniden yeşile
+
+**Build ortamı Xcode 26.6'ya sabitlendi** (`mobile/eas.json`,
+production → `ios.image`: `macos-tahoe-26.5-xcode-26.6`). Sebep yerel
+Release build'lerde ölçüldü: **Xcode 27 ile derlenen uygulama iOS 27'de
+hiç açılmıyor** — "UIScene life cycle is required for apps built with
+this SDK". 1.0.4 EAS'ta Xcode 26.6 ile derlendiği için etkilenmedi
+(build kaydından okundu). Sabitleme, EAS varsayılanı değişirse 1.0.5'in
+açılmaz hale gelmesini engelliyor. UIScene'e geçiş ileride zorunlu;
+SDK 57'deki hızlı yol davet linklerini soğuk açılışta bozduğu için
+doğru yol SDK 58.
+
+**CI kırmızıydı ve sebep bizim değişikliğimiz değildi:** Expo 12 Eylül'den
+beri 8 paketin yamasını yayınlamış, CI'daki `expo-doctor` kapısı düştü
+(706d4a8, bir doküman commit'i). `npx expo install --fix` ile düzeltildi;
+expo-doctor 21/21 — eskiden hep düşen CocoaPods kontrolü de artık geçiyor.
+
+**`expo-text-extractor` kaldırıldı.** Faz 48'den beri kullanılmıyordu
+(ADR-055, yerini kendi modülümüz aldı); ölü bir native modül 1.0.5'e
+binmesin diye build'den önce çıkarıldı.
+
+**Sürüm 1.0.5.** Sürüm notları iki dilde STORE.md'de.
+
+---
+
 ## 2026-09-12 — Uygulama AB'ye geri döndü
 
 27 AB mağazasının hepsinde yeniden görünüyor (ölçüldü: 27/27; kontrol
