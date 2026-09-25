@@ -32,11 +32,16 @@ Current task:
     YAPILDI : eas.json build ortami sabit (Xcode 26.6), 8 Expo yamasi
               (CI kirmiziydi - asagida), expo-text-extractor kaldirildi,
               surum 1.0.5, surum notlari iki dilde (STORE.md).
-    SIRADA  : commit + push (KULLANICI ONAYI), EAS build (kota), eas
-              submit -> TestFlight internal -> KULLANICI TELEFONDA
-              PLACEHOLDER'A BAKAR -> appreview@ parola kontrolu
-              (kullanici) -> incelemeye gonder. Ingilizce gorsel sirasi
-              (1-4-3-2-5) gonderim sayfasinda duzeltilecek.
+    GONDERILDI: ea3c004 push (CI yesil) -> EAS build 22 (77f46ac5,
+              Xcode 26.6 17F113 - log'dan dogrulandi) -> eas submit
+              BASARILI (4226b0f8; ~55 dk surdu, Expo durumu normaldi).
+              Build App Store Connect'e yuklendi, Apple isliyor.
+    SIRADA (HEPSI KULLANICIDA):
+              TestFlight'tan 1.0.5 (22)'yi telefona kur -> PLACEHOLDER'A
+              ve fis kalemlerine bak -> appreview@ parola kontrolu ->
+              App Store sekmesinde 1.0.5 surumunu ac, build 22'yi sec,
+              surum notlarini (STORE.md) yapistir, Ingilizce gorsel
+              sirasini (1-4-3-2-5) duzelt -> incelemeye gonder.
     PUAN ISTEME (store review) ONERILDI, 1.0.5'E ALINMADI: yeni ozellik,
     once tasarim + onay; yeni bir native paket de getiriyor.
 
