@@ -21,6 +21,23 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-26 — Mobil testlerde süre sınırı 15 saniye; 1.0.5 TestFlight'ta çalışıyor
+
+CI yalnızca doküman değişen bir commit'te düştü (`15494a8`):
+`new-expense-items`'in **ilk** testi 5 saniyeyi aştı. Test yavaş değildi —
+ekranın ilk çizimi React Native'in tembel yüklenen modüllerini test
+**içinde** dönüştürüyor. Soğuk önbellekle ölçüldü: ilk test 1224 ms,
+ikinci test 29 ms. CI makinesi 3–4 kat yavaş olduğu için sınıra
+dayanıyordu; hangi dosyanın bedeli ödeyeceği sıraya göre değişiyor.
+`mobile/jest.config.js` → `testTimeout: 15000`. Negatif kontrol: 6 saniye
+bekleyen geçici bir test yeni ayarla geçti, `--testTimeout=5000` ile
+aynı mesajla düştü. Tekrar deneme eklenmedi.
+
+Kullanıcı 1.0.5'i (build 22) TestFlight'tan telefonunda denedi:
+çalışıyor.
+
+---
+
 ## 2026-09-25 — 1.0.5 hazırlığı: build ortamı sabitlendi, CI yeniden yeşile
 
 **Build ortamı Xcode 26.6'ya sabitlendi** (`mobile/eas.json`,

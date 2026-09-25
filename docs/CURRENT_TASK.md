@@ -36,9 +36,10 @@ Current task:
               Xcode 26.6 17F113 - log'dan dogrulandi) -> eas submit
               BASARILI (4226b0f8; ~55 dk surdu, Expo durumu normaldi).
               Build App Store Connect'e yuklendi, Apple isliyor.
+    TESTFLIGHT: kullanici build 22'yi telefonunda denedi - "calisiyor"
+              (26 Eylul).
     SIRADA (HEPSI KULLANICIDA):
-              TestFlight'tan 1.0.5 (22)'yi telefona kur -> PLACEHOLDER'A
-              ve fis kalemlerine bak -> appreview@ parola kontrolu ->
+              appreview@ parola kontrolu ->
               App Store sekmesinde 1.0.5 surumunu ac, build 22'yi sec,
               surum notlarini (STORE.md) yapistir, Ingilizce gorsel
               sirasini (1-4-3-2-5) duzelt -> incelemeye gonder.
@@ -103,6 +104,16 @@ Current task:
   yayinlamisti ve CI expo-doctor'i kapi olarak kosuyor. Yani main
   KENDILIGINDEN kirilabiliyor, hic commit atilmasa bile.
   DERS: her push'tan sonra CI sonucuna bak - dokuman push'u dahil.
+
+  CI BIR KEZ DAHA DUSTU (15494a8, 26 Eylul) ve bu sefer KARARSIZ TEST
+  SANILACAK bir desendi: yalnizca dokuman degismisti, ayni testler iki
+  commit once geciyordu. Kullanici gunlugu yapistirdi (gunluk GitHub
+  girisi istiyor, API 403): new-expense-items'in ILK testi 5 sn'yi asti.
+  OLCULDU: soguk onbellekle ilk test 1224 ms, ikinci test 29 ms - ilk
+  cizim RN'nin tembel modullerini test ICINDE donusturuyor. CI 3-4 kat
+  yavas. Cozum: mobile/jest.config.js testTimeout 15000 (gerekce
+  dosyada). Negatif kontrol: 6 sn bekleyen gecici test yeni ayarla
+  GECTI, --testTimeout=5000 ile AYNI mesajla DUSTU. Retry EKLENMEDI.
 
   1.0.4 YAYINDA. Kullanici test ederken iki sey bildirdi, IKISI DE BITTI:
     1. Turkce placeholder bozuk ciziliyordu -> DUZELTILDI (11 Eylul)

@@ -67,4 +67,28 @@ module.exports = {
   // ONCE env (modul yuklenmeden), SONRA taklitler.
   setupFiles: ["<rootDir>/test/jest-env.ts"],
   setupFilesAfterEnv: ["<rootDir>/test/jest-setup.ts"],
+
+  /**
+   * TEST BASINA SURE SINIRI 5 DEGIL 15 SANIYE - ve sebep OLCULDU.
+   *
+   * 26 Eylul'de CI yalnizca dokuman degisen bir commit'te dustu:
+   * new-expense-items'in ILK testi 5 saniyeyi asti. Test yavas degildi;
+   * ekranin ILK CIZIMI, React Native'in tembel yuklenen modullerini O
+   * ANDA donusturuyor ve bu sure testin sinirindan dusuluyor. Soguk
+   * onbellekle (CI her seferinde oyle) olculdu:
+   *
+   *     new-expense-items   ilk test 1224 ms  ·  ikinci test 29 ms
+   *     group-reminder      ilk test  772 ms
+   *     sign-in             ilk test  726 ms
+   *
+   * CI makinesi bunun 3-4 kati yavas: 1,2 saniye orada 4-5 saniye. Hangi
+   * dosyanin bu bedeli odeyecegi de siraya gore degisiyor - yani "ara
+   * sira bir test dusuyor" goruntusu bir kararsizlik degil, sinira
+   * dayanmis bir olcu.
+   *
+   * 15 saniye en kotu durumun ~3 kati. Gercekten takilan bir test YINE
+   * dusuyor, yalnizca daha gec. Tekrar deneme (retry) EKLENMEDI: o,
+   * sorunu cozmez, gorunmez yapar.
+   */
+  testTimeout: 15000,
 };
