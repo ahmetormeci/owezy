@@ -464,7 +464,10 @@ Flatmates, road trips, one dinner: who paid what and who owes whom. Photograph t
 ### Ekran görüntüleri — ÜRETİLDİ, İKİ DİLDE (10 Eylül)
 
 `~/Desktop/owezy-1.0.4-ekran-goruntuleri/` — **20 dosya**: iki dil × iki
-ölçü × beş görsel. Simülatörde (iPhone 14 Pro Max, iOS 26.5), açık temada.
+ölçü × beş görsel. **26 Eylül: klasör artık bu Mac'te yok** (Masaüstü,
+İndirilenler, Belgeler ve Spotlight'ta arandı). Görseller App Store
+Connect'te duruyor ve yeni sürüme kendiliğinden taşınıyor; yeniden
+gerekirse aşağıdaki kurulumla simülatörde yeniden üretilir. Simülatörde (iPhone 14 Pro Max, iOS 26.5), açık temada.
 
 ```
 tr/6.9-inch_1290x2796/   tr/6.5-inch_1284x2778/
