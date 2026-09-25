@@ -38,11 +38,13 @@ Current task:
               Build App Store Connect'e yuklendi, Apple isliyor.
     TESTFLIGHT: kullanici build 22'yi telefonunda denedi - "calisiyor"
               (26 Eylul).
-    SIRADA (HEPSI KULLANICIDA):
-              appreview@ parola kontrolu ->
-              App Store sekmesinde 1.0.5 surumunu ac, build 22'yi sec,
-              surum notlarini (STORE.md) yapistir, Ingilizce gorsel
-              sirasini (1-4-3-2-5) duzelt -> incelemeye gonder.
+    >>> 1.0.5 INCELEMEDE (26 Eylul, kullanici gonderdi) <<<
+              Ingilizce gorsel sirasi 1-4-3-2-5 KALDI - kullanicinin
+              karari ("cok onemli degil"). Tekrar onerme.
+    YAYINA CIKINCA:
+              - itunes lookup ile surumu olc (us/tr/ca -> 1.0.5)
+              - US/CA/GB/AU/NZ aramasini WEB ARAMASIYLA yeniden olc
+                (STORE.md, "BES ULKEDE ARAMADA GORUNMUYOR")
     PUAN ISTEME (store review) ONERILDI, 1.0.5'E ALINMADI: yeni ozellik,
     once tasarim + onay; yeni bir native paket de getiriyor.
 
