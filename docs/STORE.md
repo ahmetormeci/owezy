@@ -505,6 +505,40 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
+## BEŞ ÜLKEDE ARAMADA GÖRÜNMÜYOR (25 Eylül, ölçüldü)
+
+Kullanıcının Kanada'daki bir tanıdığı (iPhone 17 Pro, Kanada hesabı)
+"owezy" aramasında uygulamayı ilk 10'da **göremedi**; doğrudan link
+**açılıyor** — yani uygulama o mağazada VAR, yalnızca aramada yok.
+
+**İki arama servisi farklı sonuç veriyor ve bu ilk ölçümü yanılttı:**
+`itunes.apple.com/search` (eski API) ABD'de "owezy" için 1. sıra
+gösteriyordu. App Store uygulamasının kullandığı arama bu DEĞİL. Gerçeğe
+yakın olan, Apple'ın web mağazasındaki arama:
+`https://apps.apple.com/<ülke>/iphone/search?term=owezy`
+
+| Mağaza | "owezy" | "owezy split expenses" |
+|---|---|---|
+| **US · CA · GB · AU · NZ** | **yok** | **yok** |
+| TR · DE · FR · NL · JP · IE · ES · IT · MX · SE · CH | 1. | 1. (yalnızca TR·DE·FR·NL·JP'de ölçüldü) |
+| IN 5. · SG 4. · ZA 5. · BR 3. · NO 4. · KR 3. | var | — |
+
+Beş ülkede "owezy" aramasına Apple **"Ozzy"** adlı uygulamaları
+döndürüyor. Tırnaklı `"owezy"` aramasına bile bölüşüm uygulamaları
+geliyor ama Owezy değil. **Metinlerimizle ilgisi yok:** aynı İngilizce
+sayfa (ad, açıklama) İrlanda, Hindistan, Singapur ve Güney Afrika'da
+aranabiliyor.
+
+**Koddan düzeltilebilecek bir şey değil.** Yapılabilecekler:
+1. **Apple'a bildirmek** — https://developer.apple.com/contact/ →
+   App Store Connect konusu; ölçüm tablosu kanıt olarak eklenir.
+2. 1.0.5'in yayına çıkması dizini yenileyebilir — çıktıktan sonra
+   yukarıdaki web aramasıyla YENİDEN ÖLÇ.
+3. (Ücretli, karar kullanıcının) Apple Search Ads ile "owezy"
+   kelimesine reklam — markanın kendi adı ucuz bir anahtar kelime.
+
+---
+
 ## BİR SONRAKİ GÖNDERİM (1.0.5) — ŞİMDİDEN BİRİKEN
 
 Şunlar 1.0.4 **gönderildikten sonra** yazıldı, yani o sürümde **yok**;
