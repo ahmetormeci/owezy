@@ -25,10 +25,60 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-12
+Updated: 2026-09-25
 
 Current task:
   YOK. Faz 48 (fisten kalemler + kendi OCR modulumuz) BITTI - ADR-055.
+
+  >>> 25 EYLUL: YEREL RELEASE DOGRULAMASI - UC SONUC <<<
+
+  Kullanici "placeholder hala bozuk" dedi. SEBEBI OLCULDU: duzeltme
+  (7ab0910, 11 Eylul) 1.0.4 build'inden (e5371f69, 10 Eylul) SONRA
+  yazildi; telefondaki 1.0.4'te YOK. O gunden beri yeni build yok.
+
+  Sonra EAS kotasi harcamadan simulatorde Release build yapildi (iki
+  worktree: 46ffb9f = 1.0.4'un birebir kodu, 7dd64af = bugun). Giris
+  yapilmadan ulasilabilen tek alan giris ekrani oldugu icin YALNIZCA
+  TEST KOPYALARINDA e-posta ipucu "Market alisverisi" yapildi (ayni
+  font, ayni boyut - fonts.body 16).
+
+  1. PLACEHOLDER HATASI SIMULATORDE URETILEMEDI. 1.0.4'un kendi
+     placeholder'i bes kosulda da DUZGUN cizildi: Release, iOS 26.5,
+     Turkce sistem dili + Turkce klavye, odakli alan, en buyuk yazi
+     boyutu, Kalin Metin. Yani hata gercek cihaza ozgu. Duzeltmenin
+     Release'te gorsel bir kaymasi YOK (ayni konum, ayni gorunum).
+     KESIN KANIT ICIN TEK YOL: 1.0.5 -> TestFlight (internal, inceleme
+     yok) -> kullanicinin telefonunda bak -> SONRA incelemeye gonder.
+
+  2. OCR MODULU ILK KEZ DERLENDI (Xcode 27) ve uygulamaya baglandi
+     (ReceiptOcr sembolleri binary'de). Cihazda CALISTIRILMADI - o
+     ekran giris istiyor.
+
+  3. >>> EN ONEMLISI: XCODE 27 ILE DERLENEN UYGULAMA iOS 27'DE HIC
+     ACILMIYOR <<<  Sistem kaydi: "UIScene life cycle is required for
+     apps built with this SDK." Hem 1.0.4 kodu hem bugunku kod.
+     iOS 26.5'te acildi - zorlama yalnizca iOS 27'de.
+     1.0.5 ICIN RISK YOK (simdilik): 1.0.4 EAS'ta Xcode 26.6 / iOS 26.5
+     SDK ile derlendi (image "macos-tahoe-26.5-xcode-26.6", log'dan
+     okundu) ve Expo'nun listesinde henuz Xcode 27 image'i YOK.
+     SIGORTA ONERILDI, YAPILMADI: eas.json production'a bu image'i
+     sabitlemek (kod degisikligi - kullanici onayi gerekli).
+     ILERIDE SART: Apple yeni SDK'yi zorunlu kildiginda uygulama UIScene'e
+     gecmek ZORUNDA. Iki yol: SDK 57.0.23+ ile expo-build-properties
+     "enableSceneSupport" (AMA cold-start'ta Linking.getInitialURL()
+     null donuyor - davet linkleri kirilir) ya da SDK 58'e gecis.
+     Kaynak: github.com/expo/fyi/blob/main/ios-scene-lifecycle.md
+     BU MAKINEDE YALNIZCA XCODE 27 VAR: yerel build'ler iOS 27
+     simulatorunde calismaz, iOS 26.5 simulatoru kullanilmali.
+
+  ABD MAGAZASI (kullanici "bulamiyorum" dedi) - OLCULDU, uygulama orada:
+  US lookup var (1.0.4), US arama "owezy" -> 1. sira, "ahmet ormeci"
+  -> 2. sira, web sayfasi 200. Sayfada "Only for iPhone" yaziyor
+  (supportsTablet: false) - iPad'de ya da Mac'te aramada CIKMAZ.
+  Kullaniciya hangi cihaz/hesapla aradigi soruldu.
+
+  YAN BULGU: en buyuk erisilebilirlik yazi boyutunda giris ekranindaki
+  "Kod gonder" dugmesinin yazisi kirpiliyor. Kucuk, duzeltilmedi.
 
   1.0.4 YAYINDA. Kullanici test ederken iki sey bildirdi, IKISI DE BITTI:
     1. Turkce placeholder bozuk ciziliyordu -> DUZELTILDI (11 Eylul)

@@ -525,6 +525,21 @@ okuyabiliyor (ölçüldü: 27,96 yerine 28,00).
 27 AB mağazasının hepsinde geri geldi. Yani bu gönderim AB'yi de
 kapsıyor.
 
+**İNCELEMEYE GÖNDERMEDEN ÖNCE TESTFLIGHT (25 Eylül kararı değil, öneri):**
+placeholder hatası simülatörde hiçbir koşulda üretilemedi, yani
+düzeltmenin işe yaradığının tek kanıtı kullanıcının kendi telefonu.
+Sıra: build → TestFlight internal (inceleme yok) → telefonda bak →
+gönder. Ayrıntı: CURRENT_TASK.md, 25 Eylül bloğu.
+
+**İNGİLİZCE EKRAN GÖRÜNTÜLERİNİN SIRASI YANLIŞ** (ölçüldü, 13 Eylül):
+Türkçe set 1-2-3-4-5, İngilizce set **1-4-3-2-5** sırasında yayında.
+Yayındaki sürümde kilitli; 1.0.5 sayfasında English → Previews and
+Screenshots'ta sürükleyerek düzelt.
+
+**BUILD ORTAMI:** 1.0.4, EAS'ta `macos-tahoe-26.5-xcode-26.6` ile
+derlendi. Xcode 27 ile derlenen bir build iOS 27'de **açılmıyor**
+(UIScene zorunluluğu) — 1.0.5 bu yüzden Xcode 26.6 ile derlenmeli.
+
 Gönderimde bakılacaklar:
 
 - Açıklamaya girmesi gerekiyor mu? **Muhtemelen hayır** — profil fotoğrafı
