@@ -40,6 +40,12 @@ Current task:
         expo-store-review DERLENDI, dugmeler iki boyutta GORULDU.
         TestFlight'ta degerlendirme penceresi HIC gorunmez - Apple'in
         kurali, hata degil. Submit ISTENMEDI, sorulacak. <<<
+    >>> 6d7f1e3 PUSH EDILDI, CI YESIL. EAS BUILD BASLAMADI (27 Eylul):
+        Free plan'in bu ayki iOS build hakki DOLDU, 1 Ekim 2026'da
+        yenileniyor. Tekrar deneme YAPILMADI. Iki yol: 1 Ekim'i beklemek
+        ya da ucretli plana gecmek (KULLANICININ karari, satin alma).
+        YEREL BUILD YOL DEGIL: bu makinede yalnizca Xcode 27 var ve Xcode 27
+        ile derlenen build iOS 27'de ACILMIYOR (UIScene, 25 Eylul). <<<
 
   SIRADAKI IS (kullanici secti): HESAPSIZ UYE. ONCE TASARIM -> onay.
     Aday listesi ve diger eksikler: PROGRESS.md "Sıradaki adaylar".
