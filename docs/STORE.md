@@ -510,16 +510,47 @@ veritabanında**, üretime dokunulmadı.
 
 ## BİR SONRAKİ GÖNDERİM (1.0.6) — ŞİMDİDEN BİRİKEN
 
+Build **1 Ekim**'de (ücretsiz planın aylık iOS build hakkı o gün
+yenileniyor). Misafir özelliği ayrı bir 1.0.7 yerine bu build'e alındı —
+kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
+
 | | |
 |---|---|
+| **Hesapsız üye (misafir):** ekleme, ad değiştirme, etiket, hatırlatma gizli | Faz 50a · ADR-057 · web'de push ile zaten canlıda |
 | Değerlendirme isteği + Hesap'ta "Uygulamayı değerlendir" | Faz 49 · ADR-056 · **yeni native paket** (`expo-store-review`) |
 | Düğmeler büyük yazıda kırpılmıyor (giriş, davet, "Harcama ekle", "Ödeş") | `height: 50` → `minHeight: 50`; en büyük erişilebilirlik boyutunda simülatörde görüldü |
 
-- **App Privacy anketi değişmiyor:** sayaç telefonda kalıyor, hiçbir
-  veri toplanmıyor.
-- **TestFlight'ta pencere hiç görünmez** (Apple'ın kuralı). Hesap
-  ekranındaki satır ise görünür ve App Store'daki yorum sayfasını açar —
-  TestFlight'ta denenebilecek tek parça o.
+- **App Privacy anketine BAKILMALI.** Artık kullanıcı, uygulamayı
+  kullanmayan birinin **adını** giriyor. Bu veri o grubun üyelerine
+  görünüyor ve bizim veritabanımızda duruyor. Hangi kategoriye düştüğü
+  (ör. "Other User Content") gönderimde panelde kontrol edilecek — tahmin
+  edilmeyecek. (Değerlendirme sayacı ankete girmiyor: telefonda kalıyor.)
+- Gizlilik politikası **zaten güncellendi** (27 Eylül, iki dil) ve web'de
+  yayında olduğu için gönderimi beklemiyor.
+- **TestFlight'ta değerlendirme penceresi hiç görünmez** (Apple'ın
+  kuralı). Hesap ekranındaki satır ise görünür ve App Store'daki yorum
+  sayfasını açar — TestFlight'ta denenebilecek parça o.
+- **appreview@ PAROLAYLA GİRİYOR MU** — her gönderimden önce, kullanıcı.
+
+### Sürüm notu — 1.0.6 İngilizce
+
+```
+• Add someone who doesn't use the app. Type a name and they join the
+  group as a guest: they can pay, share and settle like anyone else,
+  so you can start a group on your own.
+• You can rate Owezy from your account page.
+• Buttons no longer cut off their label at the largest text sizes.
+```
+
+### Sürüm notu — 1.0.6 Türkçe
+
+```
+• Uygulamayı kullanmayan birini de ekleyebilirsin. Bir ad yaz, gruba
+  misafir olarak katılsın: herkes gibi ödeyebilir, payını alabilir,
+  ödeşebilir. Böylece bir grubu tek başına başlatabilirsin.
+• Owezy'yi hesap sayfandan değerlendirebilirsin.
+• En büyük yazı boyutunda düğmelerin yazısı artık kesilmiyor.
+```
 
 ---
 

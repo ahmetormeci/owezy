@@ -57,6 +57,8 @@ const CREDITOR = "u-creditor";
 /** Testin degistirdigi dunya: plan ve daha once gonderilen hatirlatmalar. */
 let mockTransfers: { fromUserId: string; toUserId: string; amount: number }[] = [];
 let mockReminders: { toUserId: string; amount: number; sentAt: string }[] = [];
+// Misafir olan uyeler (ADR-057).
+let mockGuestIds: string[] = [];
 
 function mockDataFor(path: string | null): unknown {
   if (path === "/api/v1/me") return { user: { id: ME } };
@@ -77,7 +79,7 @@ function mockDataFor(path: string | null): unknown {
         { userId: ME, displayName: "Ben", role: "OWNER" },
         { userId: DEBTOR, displayName: "Borclu Kisi", role: "MEMBER" },
         { userId: CREDITOR, displayName: "Alacakli Kisi", role: "MEMBER" },
-      ],
+      ].map((member) => ({ ...member, isGuest: mockGuestIds.includes(member.userId) })),
     };
   }
   if (path?.endsWith("/balances")) {
@@ -95,6 +97,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockTransfers = [{ fromUserId: DEBTOR, toUserId: ME, amount: 25000 }];
   mockReminders = [];
+  mockGuestIds = [];
   /**
    * GET yola gore cevap veriyor. Tek bir govde donduren bir taklit,
    * ekrandaki BASKA bir bolumu (tekrarlayan harcamalar) beklemedigi bir
@@ -110,6 +113,17 @@ beforeEach(() => {
 });
 
 describe("hatirlatma hangi satirda cikiyor", () => {
+  it("borclu bir MISAFIRSE cikmiyor - okuyacak kimse yok (ADR-057)", async () => {
+    mockGuestIds = [DEBTOR];
+
+    await render(<GroupScreen />);
+
+    // Satir ORADA; yalnizca dugme yok. Satiri gormeden "dugme yok" demek,
+    // ekran hic cizilmediginde de gecerdi.
+    expect(screen.getByText("Borclu Kisi")).toBeTruthy();
+    expect(screen.queryByText("Hatırlat")).toBeNull();
+  });
+
   it("BANA ODEYECEK kisinin satirinda cikiyor", async () => {
     await render(<GroupScreen />);
     expect(screen.getByText("Hatırlat")).toBeTruthy();

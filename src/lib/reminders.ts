@@ -92,6 +92,15 @@ export async function sendPaymentReminder(
     throw new ValidationError("reminder.self");
   }
 
+  // Misafir giris yapamiyor; hatirlatmayi okuyacak kimse yok (ADR-057).
+  const target = await prisma.user.findUnique({
+    where: { id: toUserId },
+    select: { isGuest: true },
+  });
+  if (target?.isGuest) {
+    throw new ValidationError("reminder.guest");
+  }
+
   /**
    * getGroupBalances GRUBU DA UYELIGI DE KENDISI KONTROL EDIYOR (bulunamayan
    * grup icin NotFoundError, uye olmayan icin ForbiddenError). Kontrolleri

@@ -530,6 +530,83 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-057 — Hesapsız üye (misafir): işaretli bir `User` satırı; sahiplenince kayıtlar gerçek hesaba taşınır
+**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **50a UYGULANDI: 2026-09-27** (mobili 1.0.6'da, 1 Ekim build'i) · **50b (sahiplenme) SIRADA**
+
+**Karar:** Bir üye, gruba yalnızca bir **ad** yazarak hesabı olmayan birini
+ekleyebilir. Bu kişi veritabanında `isGuest = true` işaretli, tek bir gruba
+(`guestGroupId`) bağlı bir `User` satırıdır. Sonradan hesap açarsa, o
+misafire özel tek kullanımlık bir linkle kaydı **sahiplenir**: misafirin
+bütün kayıtları gerçek hesaba taşınır.
+
+Kullanıcının seçimleri (27 Eylül): **her üye** misafir ekleyebilir;
+sahiplenme **yalnızca misafire özel linkle**; iş **iki adımda** — önce
+misafir (50a), sonra sahiplenme (50b).
+
+### Neden bu yol — üç seçenek
+
+`User` tablosuna 25'ten fazla ilişki bağlı: harcamayı ödeyen, paylar,
+ödemeler, kalemler, tekrarlayan harcamalar. Kuruş kuralları da (paylar
+toplamı = tutar, trigger'lar) bu bağlantıların üzerinde.
+
+| | Yol | Sonuç |
+|---|---|---|
+| **A** | Misafir işaretli bir `User` satırı; sahiplenmede kayıtlar taşınır | **Seçildi.** Paraya dokunan hiçbir şey değişmiyor |
+| B | Üyeyi kullanıcıdan ayırmak, finansal tabloları `GroupMember`'a bağlamak | Reddedildi: bütün finansal tabloların göçü |
+| C | Misafir satırı kalıcı, gerçek hesap ona "bağlanır" | Reddedildi: "bu kişi ben miyim" her yetki kontrolüne sızar |
+
+### Misafir ASLA giriş yapamaz — üç katman
+
+1. **E-posta posta almıyor:** `guest-<uuid>@guest.invalid`. `.invalid`
+   RFC 2606'ya göre hiçbir zaman çözülmeyen bir alan adı; giriş kodu
+   gidecek bir yer yok. `User.email` zorunlu ve tekil (Better Auth), boş
+   bırakılamıyor — bu yüzden uydurma ama **tahmin edilemez** bir adres.
+2. **Uygulama:** Better Auth'un `session.create.before` kancası misafire
+   oturumu reddeder; `findCurrentUser` misafir satırını oturum saymaz; kod
+   `@guest.invalid` adresine hiç gönderilmez.
+3. **Veritabanı:** `Session` ve `Account` tablolarına misafir için satır
+   eklenemez (trigger). `User` üzerinde bir CHECK: misafirin grubu ve
+   `@guest.invalid` adresi VAR; misafir olmayanın ikisi de YOK. Yani gerçek
+   biri bu alan adıyla kayıt da olamaz.
+
+### Misafirin sınırları (bilinçli)
+
+- **Yalnızca kendi grubunun üyesi olabilir ve sahip olamaz** — trigger.
+  Sahiplik devri (gruptan ayrılma) ve hesap silmedeki otomatik devir
+  misafirleri **atlar**. İkincisi ölçülerek bulundu: devir "en eski aktif
+  üyeye" gidiyordu; misafir olsaydı trigger reddeder, kullanıcı hesabını
+  **silemezdi**.
+- **Bildirim almaz:** alıcı listesi tek merkezde (`createNotifications`)
+  süzülüyor — her çağıranın ayrı ayrı hatırlaması gerekmesin diye.
+- **Hatırlatma gönderilemez** (`reminder.guest`). Arayüz düğmeyi göstermez.
+- **İki misafir arasındaki ödeme kaydedilemez.** "Ödemeyi yalnızca tarafı
+  kaydeder" kuralı (`settlement.party_only`) gevşetilmedi — sahte ödeme
+  kaydını engelleyen kural o.
+- **Grupta en fazla 20 aktif misafir** — kötüye kullanıma karşı bir tavan.
+- **Çıkarma bugünkü üye kuralıyla:** yalnızca sahip, bakiye sıfırsa.
+  Borcu olan misafir kaybolmaz.
+- **Son gerçek üye ayrılınca grup arşivlenir**, geride misafir kalsa bile —
+  gruba artık kimse erişemiyor.
+
+### 50b — sahiplenme (tasarım, henüz uygulanmadı)
+
+Misafire özel, tek kullanımlık, süreli davet linki (`GroupInvite` +
+hedef misafir). Kabul edilince tek transaction'da misafirin satırları
+gerçek hesaba taşınır, misafir satırı birleştirildi diye işaretlenir.
+**Gruba daha önce üye olmuş biri o gruptaki misafiri sahiplenemez** —
+aynı harcamada iki ayrı payı olabilir ve tekil kısıtlar (`expenseId,
+userId`) çakışır. **Taşınan alanlar bir testle korunacak:** `User`'a bağlı
+her alan ya "taşınır" ya da "misafirde olamaz" diye sınıflanmak zorunda;
+sınıflanmamış yeni bir alan testi düşürür.
+
+### Gizlilik
+
+Artık uygulamayı kullanmayan birinin **adı** başka biri tarafından
+giriliyor ve yalnızca o grubun üyelerine görünüyor. Gizlilik politikası
+iki dilde güncellendi. App Privacy beyanına mobil gönderimde bakılacak.
+
+---
+
 ## ADR-056 — Değerlendirme isteği: Apple'ın yılda üç hakkı, uygulamayı gerçekten kullanana
 **Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-27** (1.0.6 build'ini bekliyor)
 

@@ -28,7 +28,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
     title: "Gizlilik Politikası",
     description:
       "Owezy hangi verileri işliyor, neden işliyor ve neleri hiç toplamıyor.",
-    updated: "2026-08-26",
+    updated: "2026-09-27",
     intro:
       "Owezy, arkadaş ve ev arkadaşı gruplarının ortak harcamalarını kaydettiği " +
       "bir defter uygulamasıdır. Bu sayfa, uygulamanın hangi verileri işlediğini " +
@@ -100,6 +100,10 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Bir harcamaya yazdığın yorumlar. Yorumu yalnızca o grubun üyeleri " +
                 "görür; telefonlara giden bildirimde yorumun METNİ yer almaz.",
               "Davet linkleri ve üyelik kayıtları",
+              "Gruba eklediğin misafirlerin adları. Uygulamayı kullanmayan birini " +
+                "gruba yalnızca adıyla ekleyebilirsin; bu ad yalnızca o grubun " +
+                "üyelerine görünür. Misafir için e-posta, telefon ya da başka bir " +
+                "bilgi tutulmaz; misafir giriş yapamaz ve bildirim almaz.",
               "Sana gönderilen uygulama içi bildirimler",
               "Harcama düzenleme ve silme geçmişi (denetim kaydı)",
               "Bir harcamaya fiş fotoğrafı eklersen: fotoğrafın kendisi ve kimin " +
@@ -110,7 +114,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "p",
             text:
-              "Son maddeye dikkat: bir harcamayı düzenlediğinde ya da sildiğinde, " +
+              "Denetim kaydına dikkat: bir harcamayı düzenlediğinde ya da sildiğinde, " +
               "değişiklikten önceki hâli de kaydediliyor. Bunun sebebi ortak bir defterde " +
               "kimin neyi ne zaman değiştirdiğinin izlenebilir olması.",
           },
@@ -306,7 +310,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
   en: {
     title: "Privacy Policy",
     description: "What data Owezy processes, why, and what it never collects.",
-    updated: "2026-08-26",
+    updated: "2026-09-27",
     intro:
       "Owezy is a shared ledger for friends and flatmates splitting expenses. " +
       "This page explains, in plain language, what the app does with your data. " +
@@ -377,6 +381,10 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
                 "them; the TEXT of a comment is never included in the notification " +
                 "sent to phones.",
               "Invite links and membership records",
+              "The names of guests you add to a group. You can add someone who " +
+                "doesn't use the app by name alone; that name is visible only to the " +
+                "members of that group. No email, phone number or anything else is " +
+                "kept for a guest; a guest can't sign in and gets no notifications.",
               "In-app notifications sent to you",
               "A history of expense edits and deletions (audit log)",
               "If you attach a receipt photo to an expense: the photo itself and who " +
@@ -387,7 +395,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "p",
             text:
-              "Note the last item: when you edit or delete an expense, its previous state " +
+              "Note the audit log: when you edit or delete an expense, its previous state " +
               "is recorded too. In a shared ledger it has to be traceable who changed what, " +
               "and when.",
           },

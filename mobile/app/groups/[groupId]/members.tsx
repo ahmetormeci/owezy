@@ -9,7 +9,8 @@ import { apiBaseUrl } from "../../../lib/api";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
 import { useTheme, type Theme } from "../../../lib/theme";
 import { Cap, SectionRule, MemberAvatar } from "../../../components/receipt";
-import { SelectField } from "../../../components/field";
+import { FieldInput, SelectField } from "../../../components/field";
+import { guestNameSchema } from "@/lib/guest-schemas";
 
 /**
  * Uyeler ve davet.
@@ -37,6 +38,8 @@ type MembersResponse = {
     // Profil fotografi (ADR-054). Opsiyonel: eski bir cevapta alan olmayabilir.
     avatarUrl?: string | null;
     hasImage?: boolean | null;
+    // Hesapsiz uye (ADR-057). Opsiyonel: eski bir sunucu alani dondurmeyebilir.
+    isGuest?: boolean;
   }[];
 };
 type InviteResponse = { invite: { token: string } };
@@ -62,7 +65,7 @@ export default function MembersScreen() {
   const t = useTranslate();
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
-  const { post, remove } = useApiClient();
+  const { post, patch, remove } = useApiClient();
   const locale = useLocale();
   const router = useRouter();
   // Kim oldugumuzu bilmeden "ayril" gosterilemez: sahip miyiz, arkamizda uye
@@ -121,7 +124,11 @@ export default function MembersScreen() {
 
   const loaded = members.state.kind === "ok" ? members.state.data.members : [];
   const me = loaded.find((member) => member.userId === currentUserId);
-  const others = loaded.filter((member) => member.userId !== currentUserId);
+  // Sahiplik devri adaylari. MISAFIR ADAY DEGIL: sahip olamaz, giris
+  // yapamaz (ADR-057). Sunucu da ayni kurali uyguluyor.
+  const others = loaded.filter(
+    (member) => member.userId !== currentUserId && !member.isGuest,
+  );
   const mustTransfer = me?.role === "OWNER" && others.length > 0;
 
   async function leave() {
@@ -168,6 +175,71 @@ export default function MembersScreen() {
    * GORUNUYOR - o parametrelerin dusmesi 1.0.2'de bir kusurdu.
    */
   const [removingId, setRemovingId] = useState<string | null>(null);
+
+  /**
+   * MISAFIR (ADR-057): hesabi olmayan, yalnizca ADI olan bir uye. Her aktif
+   * uye ekleyebilir ve adini degistirebilir; cikarmak asagidaki uye cikarma
+   * ile, yalnizca sahipte. Ad kurali web'le AYNI sema (guest-schemas.ts).
+   */
+  const [guestName, setGuestName] = useState("");
+  const [addingGuest, setAddingGuest] = useState(false);
+
+  async function addGuest() {
+    if (addingGuest) return;
+    const parsed = guestNameSchema.safeParse({ displayName: guestName });
+    if (!parsed.success) {
+      setError(t(parsed.error.issues[0]?.message ?? "validation.invalid"));
+      return;
+    }
+    setAddingGuest(true);
+    setError(null);
+    try {
+      const result = await post(`/api/v1/groups/${groupId}/guests`, parsed.data);
+      if (!result.ok) {
+        setError(t(result.code, result.params));
+        return;
+      }
+      setGuestName("");
+      members.reload();
+    } catch (caught) {
+      setError(String(caught));
+    } finally {
+      setAddingGuest(false);
+    }
+  }
+
+  async function renameGuest(guestId: string, displayName: string) {
+    const parsed = guestNameSchema.safeParse({ displayName });
+    if (!parsed.success) {
+      setError(t(parsed.error.issues[0]?.message ?? "validation.invalid"));
+      return;
+    }
+    setError(null);
+    const result = await patch(`/api/v1/groups/${groupId}/guests/${guestId}`, parsed.data);
+    if (!result.ok) {
+      setError(t(result.code, result.params));
+      return;
+    }
+    members.reload();
+  }
+
+  /**
+   * Alert.prompt YALNIZCA iOS'ta var. Uygulama bugun yalnizca iOS'ta
+   * (ADR-030); Android'e donuldugunde bu diyalog yerine satir icinde bir
+   * alan gerekecek - o gun buraya bakilmali.
+   */
+  function promptRename(guestId: string, displayName: string) {
+    Alert.prompt(
+      t("ui.rename_guest"),
+      undefined,
+      [
+        { text: t("ui.cancel"), style: "cancel" },
+        { text: t("ui.save"), onPress: (value?: string) => void renameGuest(guestId, value ?? "") },
+      ],
+      "plain-text",
+      displayName,
+    );
+  }
 
   async function removeMember(userId: string) {
     if (removingId) return;
@@ -277,9 +349,23 @@ export default function MembersScreen() {
                     {member.displayName}
                   </Text>
                   <Text style={s.role}>
-                    {member.role === "OWNER" ? t("ui.role_owner") : t("ui.role_member")}
+                    {member.isGuest
+                      ? t("ui.guest")
+                      : member.role === "OWNER"
+                        ? t("ui.role_owner")
+                        : t("ui.role_member")}
                   </Text>
                 </View>
+                {/* Misafirin adini HER UYE duzeltebilir: kendisi giris
+                    yapamiyor, baska kimse yok. */}
+                {member.isGuest ? (
+                  <Pressable
+                    hitSlop={12}
+                    onPress={() => promptRename(member.userId, member.displayName)}
+                  >
+                    <Text style={s.rename}>{t("ui.rename_guest")}</Text>
+                  </Pressable>
+                ) : null}
                 {me?.role === "OWNER" && member.userId !== currentUserId ? (
                   removingId === member.userId ? (
                     <ActivityIndicator size="small" color={theme.destructive} />
@@ -298,6 +384,35 @@ export default function MembersScreen() {
                 ) : null}
               </View>
             ))}
+
+            {/* MISAFIR EKLEME ACIK DURUYOR, bir dugmenin arkasinda degil:
+                tek alanlik bir is ve ozelligin amaci "tek basina
+                baslayabilmek". Bir dokunus daha, o kolayligin tersi olurdu. */}
+            <View style={s.guestBlock}>
+              <View style={s.guestRow}>
+                <View style={s.guestField}>
+                  <FieldInput
+                    testID="guest-name"
+                    style={s.guestInput}
+                    value={guestName}
+                    onChangeText={setGuestName}
+                    placeholder={t("ui.guest_name_placeholder")}
+                    maxLength={100}
+                    editable={!addingGuest}
+                    returnKeyType="done"
+                    onSubmitEditing={() => void addGuest()}
+                  />
+                </View>
+                <Pressable onPress={() => void addGuest()} disabled={addingGuest} hitSlop={10}>
+                  {addingGuest ? (
+                    <ActivityIndicator size="small" color={theme.brand} />
+                  ) : (
+                    <Text style={s.guestAdd}>{t("ui.add_guest")}</Text>
+                  )}
+                </Pressable>
+              </View>
+              <Text style={s.warning}>{t("ui.guest_hint")}</Text>
+            </View>
           </View>
         )}
 
@@ -436,6 +551,26 @@ function createStyles(theme: Theme) {
      * bunu istiyor: yikici eylem, bir bakiye durumuyla ayni renkte olamaz.
      */
     remove: { fontFamily: fonts.body, fontSize: 12, color: theme.destructive },
+    rename: { fontFamily: fonts.body, fontSize: 12, color: theme.brand },
+
+    // Misafir ekleme: davet baglantisinin "tekrar paylas"i gibi dusuk sesli
+    // bir eylem - birincil dugme (davet) asagida kaliyor.
+    guestBlock: { paddingTop: 14, gap: 8 },
+    guestRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.inputLine,
+    },
+    guestField: { flex: 1 },
+    guestInput: {
+      fontFamily: fonts.body,
+      fontSize: 14.5,
+      color: theme.foreground,
+      paddingVertical: 10,
+    },
+    guestAdd: { fontFamily: fonts.semibold, fontSize: 13.5, color: theme.brand },
 
     // Birincil eylem: harcama ekleme ekranindaki dugmeyle ayni olcu ve
     // yaricap.

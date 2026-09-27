@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 
 const { mockTx, mockPrisma } = vi.hoisted(() => ({
   mockTx: {
-    user: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn(), findMany: vi.fn() },
     notification: { createMany: vi.fn() },
   },
   mockPrisma: {
@@ -42,6 +42,8 @@ const BASE_PAYLOAD = { groupId: "group-1", groupName: "Ev" };
 
 beforeEach(() => {
   mockTx.user.findUnique.mockReset();
+  // Bildirim alicilarindan misafirler suzuluyor (ADR-057); varsayilan: misafir YOK.
+  mockTx.user.findMany.mockReset().mockResolvedValue([]);
   mockTx.notification.createMany.mockReset();
   for (const fn of Object.values(mockPrisma.notification)) fn.mockReset();
 
@@ -49,6 +51,44 @@ beforeEach(() => {
 });
 
 describe("createNotifications", () => {
+  /**
+   * MISAFIR GIRIS YAPAMIYOR (ADR-057) - bildirimi okuyacak kimse yok.
+   * Suzme TEK MERKEZDE: cagiranlar alici listesini "gruptaki butun aktif
+   * uyeler" diye kuruyor. Bu test kirilirsa her misafir icin okunmayan
+   * bildirim satirlari birikir ve push kuyrugu bosa calisir.
+   */
+  it("MISAFIRE bildirim yazilmiyor - suzme tek merkezde", async () => {
+    mockTx.user.findMany.mockResolvedValue([{ id: BERK }]);
+
+    await createNotifications(tx, {
+      type: "EXPENSE_ADDED",
+      actorId: ACTOR,
+      recipientIds: [ALI, BERK],
+      payload: BASE_PAYLOAD,
+    });
+
+    const rows = mockTx.notification.createMany.mock.calls[0][0].data;
+    expect(rows.map((row: { userId: string }) => row.userId)).toEqual([ALI]);
+    expect(mockTx.user.findMany).toHaveBeenCalledWith({
+      where: { id: { in: [ALI, BERK] }, isGuest: true },
+      select: { id: true },
+    });
+  });
+
+  it("alicilarin HEPSI misafirse veritabanina hic yazmiyor", async () => {
+    mockTx.user.findMany.mockResolvedValue([{ id: ALI }, { id: BERK }]);
+
+    const result = await createNotifications(tx, {
+      type: "EXPENSE_ADDED",
+      actorId: ACTOR,
+      recipientIds: [ALI, BERK],
+      payload: BASE_PAYLOAD,
+    });
+
+    expect(result).toBeNull();
+    expect(mockTx.notification.createMany).not.toHaveBeenCalled();
+  });
+
   it("her alici icin bir kayit olusturur", async () => {
     await createNotifications(tx, {
       type: "EXPENSE_ADDED",

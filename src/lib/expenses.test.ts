@@ -26,7 +26,7 @@ const { mockTx } = vi.hoisted(() => ({
     expenseEdit: { create: vi.fn() },
     // Bildirimler harcamayla AYNI transaction'da yaziliyor; createNotifications
     // islemi yapanin adini okumak icin user.findUnique de cagiriyor.
-    user: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn(), findMany: vi.fn() },
     notification: { createMany: vi.fn() },
   },
 }));
@@ -74,6 +74,8 @@ const baseEqualInput = {
 };
 
 function resetMocks() {
+  // Bildirim alicilarindan misafirler suzuluyor (ADR-057); varsayilan: misafir YOK.
+  mockTx.user.findMany.mockReset().mockResolvedValue([]);
   mockTx.group.findUnique.mockReset();
   mockTx.groupMember.findMany.mockReset();
   mockTx.groupMember.findFirst.mockReset();

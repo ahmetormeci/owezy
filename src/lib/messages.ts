@@ -94,6 +94,9 @@ export const MESSAGES_TR = {
 
   // Odeme hatirlatmasi (ADR-050)
   "reminder.self": "Kendine hatırlatma gönderemezsin",
+  "reminder.guest": "Misafire hatırlatma gönderilemez; uygulamayı kullanmıyor",
+  "guest.limit": "Bir grupta en fazla {max} misafir olabilir",
+  "guest.not_found": "Misafir bulunamadı",
   /**
    * OLCUT ODESME PLANI, ham bakiye degil - cumle bunu soyluyor. "Borcu yok"
    * deseydi yanlis olurdu: kisinin gruba borcu olabilir ama sadelestirilmis
@@ -213,6 +216,8 @@ export const MESSAGES_TR = {
   "validation.group_name_too_long": "Grup adı en fazla 100 karakter olabilir",
   "validation.display_name_required": "Adın boş olamaz",
   "validation.display_name_too_long": "Ad en fazla 100 karakter olabilir",
+  // Misafirin adi (ADR-057). Ayri kod: "Adin bos olamaz" misafir icin yanlis kisiye konusurdu.
+  "validation.guest_name_required": "Misafirin adını yaz",
   "validation.description_too_long": "Açıklama en fazla 500 karakter olabilir",
   "validation.currency_unsupported": "Desteklenmeyen para birimi",
 
@@ -507,6 +512,15 @@ export const MESSAGES_TR = {
   "ui.delete_account_done": "Hesabın silindi.",
   "ui.try_again": "Tekrar dene",
   "ui.you": "Sen",
+  // Hesapsiz uye (ADR-057)
+  "ui.guest": "misafir",
+  "ui.add_guest": "Misafir ekle",
+  "ui.guest_name_placeholder": "Adı, örneğin Selin",
+  "ui.guest_hint": "Uygulamayı kullanmayan birini adıyla ekle. Harcamalarda ve ödemelerde herkes gibi seçilebilir; giriş yapamaz ve bildirim almaz.",
+  "ui.rename_guest": "Adını değiştir",
+  "ui.guest_name": "Misafirin adı",
+  "ui.guest_added_named": "{name} misafir olarak eklendi",
+  "ui.guest_renamed": "Misafirin adı değişti",
   "ui.member_left": "Ayrıldı",
 
   // --- Bakiye ---
@@ -1004,6 +1018,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "validation.comment_too_long": "A comment can be at most 500 characters",
 
   "reminder.self": "You cannot remind yourself",
+  "reminder.guest": "Guests can't be reminded; they don't use the app",
+  "guest.limit": "A group can have at most {max} guests",
+  "guest.not_found": "Guest not found",
   "reminder.no_debt": "This person does not appear to owe you anything",
   "reminder.too_soon": "You can remind the same person once every {hours} hours",
 
@@ -1092,6 +1109,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "validation.group_name_too_long": "Group name can be at most 100 characters",
   "validation.display_name_required": "Your name cannot be empty",
   "validation.display_name_too_long": "Name can be at most 100 characters",
+  "validation.guest_name_required": "Enter the guest's name",
   "validation.description_too_long": "Description can be at most 500 characters",
   "validation.currency_unsupported": "Unsupported currency",
 
@@ -1296,6 +1314,15 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.delete_account_done": "Your account has been deleted.",
   "ui.try_again": "Try again",
   "ui.you": "You",
+  // Guest members (ADR-057)
+  "ui.guest": "guest",
+  "ui.add_guest": "Add a guest",
+  "ui.guest_name_placeholder": "Name, e.g. Selin",
+  "ui.guest_hint": "Add someone who doesn't use the app, by name. They can be picked in expenses and settlements like anyone else; they can't sign in and get no notifications.",
+  "ui.rename_guest": "Rename",
+  "ui.guest_name": "Guest's name",
+  "ui.guest_added_named": "{name} was added as a guest",
+  "ui.guest_renamed": "Guest renamed",
   "ui.member_left": "Left",
 
   // --- Balances ---

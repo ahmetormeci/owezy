@@ -23,6 +23,8 @@ const { mockPrisma, mockTx } = vi.hoisted(() => {
     mockTx: tx,
     mockPrisma: {
       group: { findUnique: vi.fn() },
+      // Hedef misafir mi (ADR-057)? Varsayilan cevap undefined: misafir degil.
+      user: { findUnique: vi.fn() },
       paymentReminder: { findMany: vi.fn(), deleteMany: vi.fn() },
       $transaction: vi.fn(async (fn: (client: typeof tx) => unknown) => fn(tx)),
     },
@@ -105,6 +107,18 @@ describe("kime hatirlatilabilir", () => {
 
   it("kendine hatirlatma reddediliyor ve PLANA HIC BAKILMIYOR", async () => {
     await expect(sendPaymentReminder(ME, GROUP, ME)).rejects.toThrow(ValidationError);
+    expect(mockGetGroupBalances).not.toHaveBeenCalled();
+  });
+
+  it("MISAFIRE hatirlatma reddediliyor - okuyacak kimse yok (ADR-057)", async () => {
+    // Once: bu dosya clearAllMocks kullaniyor ve o, verilen cevabi SILMIYOR.
+    // Kalici bir cevap sonraki testlere sizip hepsini "misafir" yapiyordu.
+    mockPrisma.user.findUnique.mockResolvedValueOnce({ isGuest: true });
+
+    const error = await sendPaymentReminder(ME, GROUP, DEBTOR).catch((e) => e);
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect(error.code).toBe("reminder.guest");
     expect(mockGetGroupBalances).not.toHaveBeenCalled();
   });
 

@@ -21,6 +21,28 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-27 — Hesapsız üye: misafir (Faz 50a, ADR-057)
+
+Bir üye artık gruba **yalnızca bir ad yazarak** hesabı olmayan birini
+ekleyebiliyor. Misafir harcamada, kalemde, tekrarlayan harcamada ve
+ödemede herkes gibi seçiliyor; grubu kuran kişi tek başına başlayabiliyor.
+Sonradan hesap açıp kaydı sahiplenme (Faz 50b) sırada.
+
+Misafir veritabanında işaretli, tek gruba bağlı bir `User` — bu yüzden
+bakiye, bölüşüm ve kuruş kurallarına hiç dokunulmadı. **Giriş yapamaz** ve
+bu dört katmanda tutuluyor: posta almayan bir e-posta, oturum kancası,
+`findCurrentUser`, ve son katman olarak veritabanı trigger'ları (misafire
+`Session`/`Account` yazılamıyor, sahip olamıyor, başka grupta üye olamıyor).
+Bildirim almaz; ona hatırlatma gönderilemez.
+
+Yol üstünde bulunan kusur: hesap silmede sahiplik "en eski aktif üyeye"
+gidiyordu — misafir olsaydı kullanıcı hesabını silemezdi. Düzeltildi.
+
+Gizlilik politikası iki dilde güncellendi; sayfadaki tarih 26 Ağustos'ta
+kalmıştı (içerik 8 ve 10 Eylül'de değişmişti), o da düzeldi.
+
+---
+
 ## 2026-09-27 — Değerlendirme isteği (Faz 49, ADR-056)
 
 1.0.5 yayında ve mağazada **0 puan** var. Uygulama artık bir kayıt

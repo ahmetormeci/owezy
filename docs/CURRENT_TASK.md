@@ -28,6 +28,21 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-27
 
 Current task:
+  FAZ 50a - HESAPSIZ UYE / MISAFIR (ADR-057). KOD BITTI, TESTLER YESIL,
+  COMMIT KULLANICI ONAYINI BEKLIYOR.
+    Kullanici secti (27 Eylul): her uye ekler; sahiplenme yalnizca
+    misafire ozel linkle; iki adim (50a misafir, 50b sahiplenme).
+    Misafir = isGuest isaretli, tek gruba bagli bir User. Para tablolari
+    DEGISMEDI. Giris yapamaz: dort katman (posta almayan adres, Better Auth
+    oturum kancasi, findCurrentUser, veritabani trigger'lari).
+    Gocu: 20260927120000_add_guest_members - DEV ve E2E'ye UYGULANDI.
+    PRODUCTION'A push ile gider (vercel-build: prisma migrate deploy).
+    Web push ile canliya cikar; mobil 1 EKIM'deki 1.0.6 build'ine giriyor
+    (kullanicinin karari: ayri bir 1.0.7 yerine - bir build hakki kazaniliyor).
+    GIZLILIK POLITIKASI guncellendi (iki dil) + App Privacy anketine
+    1.0.6 gonderiminde BAKILACAK (STORE.md).
+    SONRAKI: Faz 50b - sahiplenme. Tasarim ADR-057'de.
+
   FAZ 49 - DEGERLENDIRME ISTEGI (ADR-056). KOD BITTI, testler yesil.
     Kullanici secti (27 Eylul): otomatik + Hesap'ta satir.
     Kural: 5 basarili kayit, ilk acilistan 7 gun, son sorudan 120 gun.
@@ -47,8 +62,7 @@ Current task:
         YEREL BUILD YOL DEGIL: bu makinede yalnizca Xcode 27 var ve Xcode 27
         ile derlenen build iOS 27'de ACILMIYOR (UIScene, 25 Eylul). <<<
 
-  SIRADAKI IS (kullanici secti): HESAPSIZ UYE. ONCE TASARIM -> onay.
-    Aday listesi ve diger eksikler: PROGRESS.md "Sıradaki adaylar".
+  Aday listesi ve diger eksikler: PROGRESS.md "Sıradaki adaylar".
 
   1.0.5 YAYINDA (26 Eylul 15:37 UTC, olculdu). Build 22, Xcode 26.6.
     Puan: 0. BES ULKEDE ARAMA HALA YOK (27 Eylul: us/ca/gb/au/nz bos,

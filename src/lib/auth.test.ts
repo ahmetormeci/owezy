@@ -72,4 +72,13 @@ describe("findCurrentUser", () => {
     await expect(findCurrentUser()).resolves.toBeNull();
     expect(mockPrisma.user.create).not.toHaveBeenCalled();
   });
+
+  it("oturum bir MISAFIRE aitse OTURUM YOK sayiliyor (ADR-057)", async () => {
+    // Uc katman bunu zaten engelliyor: posta almayan e-posta, oturum
+    // kancasi, veritabani trigger'i. Bu dorduncusu.
+    mockGetSession.mockResolvedValue({ user: { id: "misafir" } });
+    mockPrisma.user.findUnique.mockResolvedValue({ id: "misafir", isGuest: true });
+
+    await expect(findCurrentUser()).resolves.toBeNull();
+  });
 });

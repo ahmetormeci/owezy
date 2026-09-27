@@ -32,6 +32,15 @@ adrese çevirmek artık kısıtı ihlal eder. `DELETE /api/v1/me` henüz yazılm
 
 `deletedAt` — hesap kapatma (anonimleştirme) işareti.
 
+`isGuest`, `guestGroupId` — **hesapsız üye (misafir), ADR-057.** Bir üyenin
+yalnızca ADINI yazarak gruba eklediği, hesabı olmayan kişi. Tek bir gruba
+bağlı (`guestGroupId`) ve e-postası `guest-<uuid>@guest.invalid` — posta
+almayan, tahmin edilemeyen bir adres (`email` zorunlu ve tekil olduğu için
+boş bırakılamıyor). **Giriş yapamaz**, o grubun **sahibi olamaz**, başka bir
+grubun üyesi olamaz; kurallar aşağıdaki 11–14'te. Paraya dokunan hiçbir tablo
+değişmedi: misafir de bir `User` olduğu için ödeyen, pay, ödeme ve kalem
+bağlantıları olduğu gibi çalışıyor.
+
 `emailVerified` — Better Auth'un çekirdek alanı. Faz 25 öncesinde karşılığı
 yoktu; doğrulamayı Clerk yapıyordu ve sonucunu saklamıyorduk.
 
@@ -251,6 +260,15 @@ Sonradan eklenen kısıtlar (kendi migration'larında):
 |---|---|---|
 | 9 | `ExpenseParticipant.basisPoints` NULL ya da 0–10000 arası | CHECK (`20260812214219`) |
 | 10 | `Expense.descriptionFold` her zaman açıklamanın katlanmış hâli | `GENERATED ALWAYS ... STORED` (`20260813120000`) |
+| 11 | Misafirin grubu **ve** `@guest.invalid` adresi var; misafir olmayanın **ikisi de yok** | CHECK `User_guest_shape` (`20260927120000`) |
+| 12 | Misafire `Session` ya da `Account` satırı yazılamaz — **giriş yapamaz** | BEFORE INSERT/UPDATE trigger (`reject_guest_auth_row`) |
+| 13 | Misafir yalnızca **kendi grubunun** üyesi olabilir | BEFORE INSERT/UPDATE trigger (`check_guest_membership`) |
+| 14 | Misafir **sahip** (`OWNER`) olamaz | aynı trigger |
+
+11–14'ün dördü de geliştirme veritabanında geri alınan işlemlerle
+**denendi** (27 Eylül): dokuz denemenin dokuzu doğru — iki olumlu kontrol
+geçti, yedi yasak kendi mesajıyla reddedildi. Kalıcı karşılığı
+`e2e/guests.spec.ts` son testinde.
 
 9 numaralı kuralın "toplam 10000 olmalı" tarafı burada **yok**: o, çoklu satır
 toplamı gerektirir ve 8 numaralı kuralla aynı sebepten CHECK'e yazılamaz.
@@ -318,6 +336,8 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260910130000_add_payment_reminder` | `PaymentReminder` + `NotificationType.PAYMENT_REMINDED`. Soğuma penceresi (24 saat) bu tablo olmadan uygulanamazdı (ADR-050) |
 | `20260910180000_add_recurring_expense` | `RecurringExpense` + `RecurringExpenseShare` + `RecurrenceInterval` + `Expense.recurringExpenseId`. Şablon bir harcama değil bir takvim (ADR-051); pay toplamı ve para birimi için iki tetikleyici |
 | `20260910200000_add_expense_item` | `SplitType.ITEMIZED` + `ExpenseItem` + `ExpenseItemShare`. Kalemler bir GIRDI katmani; bakiyeye giren sey yine paylar (ADR-052) |
+| `20260910220000_add_user_avatar_storage_key` | `User.avatarStorageKey` — profil fotoğrafının depodaki anahtarı (ADR-054). `avatarUrl` ve `hasImage` Clerk döneminden zaten vardı |
+| `20260927120000_add_guest_members` | `User.isGuest` + `User.guestGroupId`; CHECK `User_guest_shape`; misafire oturum/hesap ve yanlış grup/sahiplik trigger'ları (ADR-057, kurallar 11–14) |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
 [DECISIONS.md](DECISIONS.md) ADR-012.

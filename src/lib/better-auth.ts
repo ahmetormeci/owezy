@@ -6,6 +6,7 @@ import { bearer } from "better-auth/plugins/bearer";
 import { emailOTP } from "better-auth/plugins/email-otp";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { sendOtpEmail } from "@/lib/email";
+import { isGuestEmail, mayOpenSession } from "@/lib/guests";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -188,6 +189,24 @@ export const auth = betterAuth({
   },
 
   databaseHooks: {
+    /**
+     * MISAFIRE OTURUM ACILMAZ (ADR-057) - uc katmanin uygulamadaki.
+     *
+     * Misafirin e-postasi posta almiyor ve parolasi yok, yani normal bir
+     * yoldan buraya gelinemez. Bu kanca, o varsayimlardan birinin bir gun
+     * yanlis cikmasina karsi. false = oturum OLUSTURULMAZ (Better Auth'un
+     * sozlesmesi). Son katman veritabaninda: Session'a misafir icin satir
+     * yazilamiyor.
+     */
+    session: {
+      create: {
+        async before(session) {
+          if (!(await mayOpenSession(session.userId))) {
+            return false;
+          }
+        },
+      },
+    },
     user: {
       create: {
         /**
@@ -280,6 +299,15 @@ export const auth = betterAuth({
          * her durumda "kod gonderildi" goruyor (yine 1. maddedeki sizinti).
          * Hata sunucu loguna dusuyor - teslimat bozuldugunda tek isaretimiz o.
          */
+        /**
+         * MISAFIR ADRESINE HIC GONDERILMIYOR (ADR-057). Adres zaten posta
+         * almiyor; gondermeyi denemek yalnizca her seferinde bir teslimat
+         * hatasi loglardi. Sessizce donuluyor: cevap her durumda ayni (1.
+         * maddedeki sizinti burada da gecerli).
+         */
+        if (isGuestEmail(email)) {
+          return;
+        }
         after(async () => {
           try {
             await sendOtpEmail({

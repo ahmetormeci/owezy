@@ -156,6 +156,16 @@ model User {
   // ayri duruyor cunku orada kayit ile nesne bagimsiz yasayabiliyor.
   avatarStorageKey String?
 
+  /// HESAPSIZ UYE (ADR-057). Misafir, bir uyenin yalnizca ADINI yazarak
+  /// gruba ekledigi, hesabi olmayan kisi. Giris YAPAMAZ: e-postasi
+  /// guest-<uuid>@guest.invalid ve Session/Account tablolarina onun icin
+  /// satir yazilmasini trigger'lar engelliyor. Tek bir gruba bagli
+  /// (guestGroupId) ve o grubun sahibi olamaz. CHECK "User_guest_shape"
+  /// ikisini birlikte zorluyor: misafirin grubu VAR, digerlerinin YOK.
+  isGuest      Boolean @default(false)
+  guestGroupId String? @db.Uuid
+  guestGroup   Group?  @relation("GroupGuests", fields: [guestGroupId], references: [id], onDelete: Restrict)
+
   // Bu kullanicinin olusturdugu gruplar
   createdGroups Group[] @relation("GroupCreatedBy")
 
@@ -206,6 +216,7 @@ model User {
   itemShares        ExpenseItemShare[]      @relation("itemShareUser")
 
   @@index([email])
+  @@index([guestGroupId])
 }
 
 model Group {
@@ -225,6 +236,7 @@ model Group {
   invites     GroupInvite[]
   reminders   PaymentReminder[]
   recurring   RecurringExpense[]
+  guests      User[]             @relation("GroupGuests")
 
   @@index([createdById])
   @@index([deletedAt])

@@ -50,7 +50,23 @@ export async function createNotifications(
 ): Promise<PendingPush | null> {
   // Kisi kendi yaptigi islem icin bildirim almaz. Ayrica ayni kisi listede
   // birden fazla gecebilir (orn. hem odeyen hem katilimci) - tek bildirim yeter.
-  const recipients = [...new Set(input.recipientIds)].filter((id) => id !== input.actorId);
+  const candidates = [...new Set(input.recipientIds)].filter((id) => id !== input.actorId);
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  /**
+   * MISAFIRE BILDIRIM YAZILMIYOR (ADR-057): giris yapamiyor, okuyamaz.
+   * Suzme BURADA, tek merkezde - cagiranlar alici listesini "gruptaki
+   * butun aktif uyeler" diye kuruyor ve her birinin misafiri ayri ayri
+   * hatirlamasi, birinin unutmasini bekleyen bir tasarim olurdu.
+   */
+  const guests = await tx.user.findMany({
+    where: { id: { in: candidates }, isGuest: true },
+    select: { id: true },
+  });
+  const guestIds = new Set(guests.map((guest) => guest.id));
+  const recipients = candidates.filter((id) => !guestIds.has(id));
   if (recipients.length === 0) {
     return null;
   }

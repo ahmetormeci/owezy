@@ -2605,15 +2605,47 @@ Sekiz negatif kontrolün sekizi de düştü.
 göstermediği. StoreKit bunu bildirmiyor; TestFlight'ta pencere hiç
 çıkmıyor.
 
+
+## Faz 50a — Hesapsız üye (misafir) · **BİTTİ, WEB'DE; MOBİLİ 1.0.6'DA (1 EKİM BUILD'İ)**
+
+| | |
+|---|---|
+| Karar | ADR-057 (kullanıcı seçti: her üye ekler · sahiplenme yalnızca özel linkle · iki adım) |
+| Model | Misafir = `isGuest` işaretli, tek gruba bağlı bir `User`. Paraya dokunan tablo **değişmedi** |
+| Uçlar | `POST /groups/:id/guests` (ekle) · `PATCH /groups/:id/guests/:guestId` (ad). Çıkarma: mevcut üye çıkarma ucu |
+| Giriş | **Yapamaz** — dört katman: posta almayan adres · Better Auth oturum kancası · `findCurrentUser` · veritabanı trigger'ı |
+| Arayüz | Web: üye sayfasında ekleme formu, "misafir" etiketi, ad değiştirme. Mobil: aynısı + grup ekranında hatırlatma gizli |
+| Gizlilik | Politika iki dilde güncellendi (ve 26 Ağustos'ta kalmış tarih düzeldi) |
+
+**Ölçülerek bulunan bir kusur:** hesap silindiğinde sahiplik "en eski aktif
+üyeye" devrediliyordu. Misafir olsaydı veritabanı reddeder ve kullanıcı
+hesabını **silemezdi**. Devir artık misafirleri atlıyor (gruptan ayrılmada da).
+
+**Testler:** birim 19 (misafir modülü 13 + bildirim, hatırlatma, ayrılma,
+hesap silme, oturum), mobil ekran 5, E2E 3 (tek başına başlama akışı baştan
+sona; grup dışından ekleme 403; veritabanı misafire oturum/sahiplik
+yazdırmıyor). Eski 54 birim testi yeni bildirim sorgusunu tanımıyordu —
+taklitlere "misafir yok" cevabı eklendi, davranış aynı. **Negatif kontrol:**
+servis katmanında yediden yedi, arayüzde "Hatırlat" gizleme bir; hepsi düştü.
+
+**Testlerin yakaladığı iki arayüz kusuru:** ad değiştirme diyaloğunun başlığı
+alanın etiketiyle aynıydı (ekran okuyucuda iki öğe aynı ad); boş misafir adı
+"Adın boş olamaz" diyordu — yani kullanıcıya **kendi** adından bahsediyordu.
+
+**Bilinçli sınırlar:** iki misafir arasındaki ödeme kaydedilemez; grupta en
+fazla 20 aktif misafir; son gerçek üye ayrılınca grup arşivlenir. Ayrıntı
+ADR-057.
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
 karar vermemiştir.
 
-> **SIRADAKİ İŞ SEÇİLDİ (27 Eylül): HESAPSIZ ÜYE.** Kullanıcı, puan
-> isteme bittikten sonra bunu seçti. **Önce tasarım** (veri modeli,
-> sonradan hesap açınca kaydın bağlanması, yetkiler) → onay → uygulama.
-> Tasarım DECISIONS.md'ye yazılmadan karar alınmış sayılmaz.
+> **SIRADAKİ İŞ: FAZ 50b — MİSAFİRİ SAHİPLENME.** Tasarımı ADR-057'de,
+> kullanıcı onayladı (27 Eylül): misafire özel tek kullanımlık link, kabul
+> edilince misafirin kayıtları gerçek hesaba taşınır. En riskli parça
+> birleştirme; `User`'a bağlı her alanın sınıflanmasını zorlayan bir test
+> şartı var.
 
 | Aday | Neden önemli |
 |---|---|

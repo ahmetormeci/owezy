@@ -344,7 +344,7 @@ export async function listGroupMembers(userId: string, groupId: string) {
       userId: true,
       role: true,
       joinedAt: true,
-      user: { select: { displayName: true, avatarUrl: true, hasImage: true } },
+      user: { select: { displayName: true, avatarUrl: true, hasImage: true, isGuest: true } },
     },
     orderBy: { joinedAt: "asc" },
   });
@@ -356,6 +356,9 @@ export async function listGroupMembers(userId: string, groupId: string) {
     displayName: member.user.displayName,
     avatarUrl: member.user.avatarUrl,
     hasImage: member.user.hasImage,
+    // Misafir (ADR-057): arayuz etiketi, hatirlatma dugmesini ve sahiplik
+    // devri secenegini buna gore gosteriyor.
+    isGuest: member.user.isGuest,
   }));
 }
 
@@ -410,8 +413,13 @@ export async function leaveGroup(userId: string, groupId: string, newOwnerId?: s
 
     await assertBalanceIsSettled(tx, groupId, userId);
 
+    /**
+     * MISAFIRLER SAYILMIYOR (ADR-057). Iki sebep: misafir sahip OLAMAZ
+     * (veritabani trigger'i reddeder), ve geride yalnizca misafir kaldiysa
+     * gruba erisebilecek KIMSE kalmamistir - yani grup arsivlenmeli.
+     */
     const otherActiveMembers = await tx.groupMember.findMany({
-      where: { groupId, leftAt: null, userId: { not: userId } },
+      where: { groupId, leftAt: null, userId: { not: userId }, user: { isGuest: false } },
       select: { userId: true },
     });
 

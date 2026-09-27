@@ -7,6 +7,7 @@ import { getTranslate } from "@/lib/i18n-server";
 import { Badge } from "@/components/ui/badge";
 import { InviteManager } from "@/components/invite-manager";
 import { LeaveGroupButton, RemoveMemberButton } from "@/components/member-actions";
+import { AddGuestForm, RenameGuestButton } from "@/components/guest-actions";
 import { SectionHead } from "@/components/section-head";
 import { PersonAvatar } from "@/components/person-avatar";
 
@@ -40,7 +41,11 @@ export default async function GroupMembersPage({
   }
 
   const isOwner = group.role === "OWNER";
-  const otherMembers = members.filter((member) => member.userId !== user.id);
+  // Sahiplik devri icin adaylar. MISAFIR ADAY DEGIL: sahip olamaz ve
+  // giris yapamaz (ADR-057). Sunucu da ayni kurali uyguluyor.
+  const otherMembers = members.filter(
+    (member) => member.userId !== user.id && !member.isGuest,
+  );
   const nameByUserId = Object.fromEntries(
     members.map((member) => [member.userId, member.displayName]),
   );
@@ -81,21 +86,41 @@ export default async function GroupMembersPage({
                     {t("ui.role_owner")}
                   </span>
                 ) : null}
+                {/* Misafir de rol gibi DUZ METIN (ADR-021): bir durum degil,
+                    kisinin ne oldugu. */}
+                {member.isGuest ? (
+                  <span className="shrink-0 text-xs text-muted-foreground">{t("ui.guest")}</span>
+                ) : null}
                 {member.userId === user.id ? (
                   <Badge variant="outline">{t("ui.you")}</Badge>
                 ) : null}
               </div>
 
-              {isOwner && member.userId !== user.id ? (
-                <RemoveMemberButton
-                  groupId={groupId}
-                  userId={member.userId}
-                  displayName={member.displayName}
-                />
-              ) : null}
+              <div className="flex shrink-0 items-center gap-1">
+                {/* Misafirin adini HER UYE duzeltebilir: kendisi giris
+                    yapamiyor, baska kimse yok. */}
+                {member.isGuest ? (
+                  <RenameGuestButton
+                    groupId={groupId}
+                    guestId={member.userId}
+                    displayName={member.displayName}
+                  />
+                ) : null}
+                {isOwner && member.userId !== user.id ? (
+                  <RemoveMemberButton
+                    groupId={groupId}
+                    userId={member.userId}
+                    displayName={member.displayName}
+                  />
+                ) : null}
+              </div>
             </li>
           ))}
         </ul>
+
+        <div className="mt-4">
+          <AddGuestForm groupId={groupId} />
+        </div>
 
         {/* Gruptan ayrilma listenin PARCASI degil, o yuzden cizginin
             altinda ve solda tek basina duruyor. */}

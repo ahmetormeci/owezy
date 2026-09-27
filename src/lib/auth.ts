@@ -39,5 +39,11 @@ export const findCurrentUser = cache(async () => {
   if (!session?.user) {
     return null;
   }
-  return prisma.user.findUnique({ where: { id: session.user.id } });
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  // Misafir hicbir kosulda oturum sahibi sayilmaz (ADR-057). Oraya bir
+  // oturumla ulasilmasi zaten uc katmanda engelli; bu dorduncusu.
+  if (user?.isGuest) {
+    return null;
+  }
+  return user;
 });

@@ -189,6 +189,7 @@ export default async function GroupDetailPage({
   const { currency, balances, suggestedTransfers } = balanceData;
   const roleByUserId = new Map(members.map((member) => [member.userId, member.role]));
   const nameByUserId = new Map(balances.map((balance) => [balance.userId, balance.displayName]));
+  const guestIds = new Set(members.filter((member) => member.isGuest).map((member) => member.userId));
   const personByUserId = new Map<string, Person>(
     balances.map((balance) => [
       balance.userId,
@@ -411,13 +412,17 @@ export default async function GroupDetailPage({
               /* Hatirlatma YALNIZCA BURADA (ADR-050): yon sabit, alacakli
                  borcluya dokunuyor. "Odemen gerekenler" listesinde karsiligi
                  yok ve "grubun geri kalani" zaten dokunulabilir degil. */
-              action={(transfer) => (
-                <RemindButton
-                  groupId={groupId}
-                  toUserId={transfer.fromUserId}
-                  alreadySentAt={remindedAtByUserId.get(transfer.fromUserId) ?? null}
-                />
-              )}
+              action={(transfer) =>
+                // Misafir giris yapamiyor; hatirlatmayi okuyacak kimse yok
+                // (ADR-057). Sunucu da reddediyor - dugme hic cizilmiyor.
+                guestIds.has(transfer.fromUserId) ? null : (
+                  <RemindButton
+                    groupId={groupId}
+                    toUserId={transfer.fromUserId}
+                    alreadySentAt={remindedAtByUserId.get(transfer.fromUserId) ?? null}
+                  />
+                )
+              }
             />
             {/* Beni ilgilendirmeyen transferler. Ayni blokta ama en altta ve
                 soluk: grubun takas plani dogru bir bilgi, ama benim isim

@@ -16,7 +16,7 @@ const { mockTx, mockPrisma } = vi.hoisted(() => ({
     groupMember: { findFirst: vi.fn(), findMany: vi.fn() },
     settlement: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
     // Bildirimler odemeyle AYNI transaction'da yaziliyor.
-    user: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn(), findMany: vi.fn() },
     notification: { createMany: vi.fn() },
   },
   mockPrisma: {
@@ -52,6 +52,8 @@ const validInput = {
 };
 
 function resetMocks() {
+  // Bildirim alicilarindan misafirler suzuluyor (ADR-057); varsayilan: misafir YOK.
+  mockTx.user.findMany.mockReset().mockResolvedValue([]);
   mockTx.group.findUnique.mockReset();
   mockTx.groupMember.findFirst.mockReset();
   mockTx.groupMember.findMany.mockReset();

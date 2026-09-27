@@ -127,7 +127,14 @@ type SummaryResponse = {
   byMonth: MonthSlice[];
 };
 type MembersResponse = {
-  members: { userId: string; displayName: string; avatarUrl?: string | null; hasImage?: boolean | null }[];
+  members: {
+    userId: string;
+    displayName: string;
+    avatarUrl?: string | null;
+    hasImage?: boolean | null;
+    // Hesapsiz uye (ADR-057): hatirlatma dugmesi ona cizilmiyor.
+    isGuest?: boolean;
+  }[];
 };
 type MeResponse = { user: { id: string } };
 type SuggestedTransfer = { fromUserId: string; toUserId: string; amount: number };
@@ -695,9 +702,11 @@ export default function GroupScreen() {
   const overflowCount = allMembers.length - shownMembers.length;
 
   const nameByUserId: Record<string, string> = {};
+  const guestIds = new Set<string>();
   if (members.state.kind === "ok") {
     for (const member of members.state.data.members) {
       nameByUserId[member.userId] = member.displayName;
+      if (member.isGuest) guestIds.add(member.userId);
     }
   }
 
@@ -981,7 +990,9 @@ export default function GroupScreen() {
                           bir satira koysaydik ayni kisi kartta iki kez
                           gorunurdu.
                         */}
-                        {!iOwe ? (
+                        {/* Misafir giris yapamiyor; hatirlatmayi okuyacak
+                            kimse yok (ADR-057). Sunucu da reddediyor. */}
+                        {!iOwe && !guestIds.has(otherId) ? (
                           reminded ? (
                             <Text style={s.remindDone}>{t("ui.reminded")}</Text>
                           ) : (

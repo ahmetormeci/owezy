@@ -85,8 +85,19 @@ export async function deleteAccount(userId: string) {
     let transferredGroups = 0;
 
     for (const membership of memberships) {
+      /**
+       * MISAFIRLER SAYILMIYOR (ADR-057) ve bu olculerek bulundu: sahiplik
+       * "en eski aktif uyeye" gidiyor; o bir misafir olsaydi veritabani
+       * trigger'i reddeder ve kullanici hesabini SILEMEZDI. Geride yalnizca
+       * misafir kaldiysa gruba erisebilecek kimse yok - arsivleniyor.
+       */
       const others = await tx.groupMember.findMany({
-        where: { groupId: membership.groupId, leftAt: null, userId: { not: userId } },
+        where: {
+          groupId: membership.groupId,
+          leftAt: null,
+          userId: { not: userId },
+          user: { isGuest: false },
+        },
         // EN ESKI aktif uye: sahiplik ona gecuyor.
         orderBy: { joinedAt: "asc" },
         select: { id: true },

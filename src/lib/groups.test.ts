@@ -17,7 +17,7 @@ const { mockTx, mockPrisma } = vi.hoisted(() => ({
     settlement: { findMany: vi.fn() },
     // Bildirimler ayni transaction'da yaziliyor; createNotifications islemi
     // yapanin adini okumak icin user.findUnique de cagiriyor.
-    user: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn(), findMany: vi.fn() },
     notification: { createMany: vi.fn() },
   },
   mockPrisma: {
@@ -62,6 +62,8 @@ function resetMocks() {
   for (const model of Object.values(mockPrisma)) {
     for (const fn of Object.values(model)) fn.mockReset();
   }
+  // Bildirim alicilarindan misafirler suzuluyor (ADR-057); varsayilan: misafir YOK.
+  mockTx.user.findMany.mockResolvedValue([]);
 }
 
 function liveGroupTx() {
@@ -446,6 +448,32 @@ describe("listGroupMembers", () => {
 
 describe("leaveGroup", () => {
   beforeEach(resetMocks);
+
+  /**
+   * MISAFIRLER SAYILMIYOR (ADR-057). Sahip ayrilirken devir ve arsiv
+   * kararlari "geride kim kaldi" sorgusuna bakiyor; misafir sahip olamaz
+   * ve gruba erisemez. Taklit findMany where'i yok saydigi icin SORGUNUN
+   * KENDISI kontrol ediliyor - yoksa kosul silindiginde test yine gecerdi.
+   */
+  it("geride yalnizca MISAFIR kaldiysa grup ARSIVLENIYOR - misafirler sayilmiyor", async () => {
+    liveGroupTx();
+    mockTx.groupMember.findFirst.mockResolvedValue({ id: "m-owner", role: "OWNER" });
+    noOutstandingBalances();
+    // Sorgu misafirleri disladigi icin gercek veritabani bos dizi donerdi.
+    mockTx.groupMember.findMany.mockResolvedValue([]);
+    mockTx.groupMember.update.mockResolvedValue({ id: "m-owner", leftAt: new Date() });
+
+    await leaveGroup(OWNER, GROUP_ID);
+
+    expect(mockTx.groupMember.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ user: { isGuest: false } }),
+      }),
+    );
+    expect(mockTx.group.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { deletedAt: expect.any(Date) } }),
+    );
+  });
 
   it("uye olmayan kullanici ayrilamaz", async () => {
     liveGroupTx();

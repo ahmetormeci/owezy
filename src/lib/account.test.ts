@@ -251,6 +251,23 @@ describe("gruplar", () => {
     );
   });
 
+  /**
+   * OLCULEREK BULUNDU (ADR-057): devir "en eski aktif uyeye" gidiyordu ve
+   * o bir MISAFIR olabiliyordu. Veritabani misafirin sahip olmasini
+   * reddettigi icin sonuc, kullanicinin hesabini SILEMEMESI olurdu.
+   */
+  it("sahipligi MISAFIRE devretmiyor - halef sorgusu misafirleri disliyor", async () => {
+    withGroup({ id: "m1", groupId: "g1", role: "OWNER" }, [{ id: "gercekUye" }]);
+
+    await deleteAccount(USER);
+
+    expect(mockTx.groupMember.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ user: { isGuest: false } }),
+      }),
+    );
+  });
+
   it("sahip DEGILSE kimseye sahiplik vermiyor", async () => {
     withGroup({ id: "m1", groupId: "g1", role: "MEMBER" }, [{ id: "m2" }]);
 
