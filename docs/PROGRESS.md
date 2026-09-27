@@ -2732,7 +2732,6 @@ karar vermemiştir.
 | Aday | Neden önemli |
 |---|---|
 | **SDK 58'e geçiş** | **Seçmeli değil, acil de değil.** Sahne düzeni Faz 51'de SDK 57'de açıldı; kalan: SDK 58 kararlı çıkınca yükseltmek, `enableSceneSupport`'u kaldırmak, EAS'ta Xcode 27 imajı gelince sabitlemeyi kaldırmak. Son tarih **Nisan 2027** (Apple, iOS 27 SDK zorunluluğu). Bilinen işler: `csv-export.tsx`'teki `file.write` async oluyor, expo-router çekirdeği, RN 0.88 katı TS API; Xcode 27 ile uygulama yeniden boyutlandırılabilir oluyor (ADR-058) |
-| **Android** | Türkiye'de telefonların %85'ten fazlası Android. OCR modülümüz yalnızca iOS; Play Console hesabı gerekiyor. ADR-030 "önce iOS" |
 | **IBAN ile ödeme — mobil (52b)** | 52a (sunucu + web) bitti. Kalan: mobil arayüz (`expo-clipboard`, hesap ekranı, bakiye kartı, ödeme ekranı). **1 Ekim'deki 1.0.6 build'inden sonra** başlanmalı — yoksa 1.0.6'ya girer. 1.0.7 gönderiminde App Store gizlilik anketi: Financial Info → Other Financial Info (ADR-059) |
 | **Birden fazla ödeyen** | "Hesabı ikimiz ödedik". Settle Up ücretsiz veriyor. `Expense.paidById` tek alan |
 | **Birden fazla para birimi** | Yurt dışı tatili. Kur kaynağı gerekiyor (dış servis → gizlilik beyanı) |
@@ -2740,6 +2739,13 @@ karar vermemiştir.
 | **Yorum E2E testi bütçesinin sınırında** | `comments.spec.ts` "iki kişi yazışır" tek başına 43–46 sn, bütçe 60 sn. 27 Eylül tam koşusunda bir sayfa geçişi takılınca sınırı aştı (grup sayfası 15 sn açılmadı); hemen ardından değişikliksiz tam koşu temiz geçti (69/1). Sebep 50b değil: davet yolunu kullanan diğer testlerin süreleri iki koşuda aynı. Öneri: bu teste `test.slow()` ve ölçümü yanına — playwright.config'teki "bütçe değişmiyor" kararına dokunmadan, yalnızca bu uzun çok kişili akış için. **Karar kullanıcının** |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
+> **Android SORULDU VE BIRAKILDI (27 Eylül, kullanıcının kararı).** Engel
+> kod değil, Google'ın yeni kişisel hesaplara koyduğu kural: yayından önce
+> 12 test kullanıcısıyla 14 gün kesintisiz kapalı test. Kullanıcının eski bir
+> Play hesabı yok, test grubu bulamıyor; web'i Android için "ana ekrana
+> eklenebilir" yapmak da istenmedi — web'in bugünkü hâli yeterli. Ayrıntı ve
+> yeniden açılırsa bakılacaklar: ADR-030'un 27 Eylül eki. **Tekrar önerme.**
+>
 > **Admin paneli SORULDU VE YAPILMAMASINA KARAR VERİLDİ (12 Eylül).**
 > "Kaç kişi, hangi ülkeden" sorusunun cevabı App Store Connect →
 > Analytics'te **zaten var** ve kod gerektirmiyor. Kendimiz toplayamayız:

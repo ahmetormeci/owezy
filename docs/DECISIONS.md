@@ -2753,7 +2753,7 @@ testler yazılırken tasarım ayrıca konuşulacak.
 ---
 
 ## ADR-030 — Önce iOS; mağaza gerekleri koda giriyor
-**Tarih:** 2026-08-24 · **Durum:** Kabul edildi
+**Tarih:** 2026-08-24 · **Durum:** Kabul edildi · **27 Eylül eki: Android BIRAKILDI (aşağıda)**
 
 **Karar:** Mobil uygulama **önce iOS'ta** çıkacak. Android'e sonra dönülecek.
 
@@ -2771,6 +2771,28 @@ olacak, yalnızca yayın süreci sonraya kalıyor.
 
 **Mağaza gerekleri hakkındaki bilgi PROJECT.md'nin "Yayınlama" bölümünde.**
 Orası bir karar listesi değil, gereklerin envanteri.
+
+### 27 Eylül eki — Android geliştirmesi YAPILMAYACAK
+
+Kullanıcının kararı. "Sonra dönülecek" varsayımı kalktı.
+
+- **Engel kodda değil, mağaza kuralında:** 13 Kasım 2023'ten sonra açılan
+  kişisel Play hesapları, yayına çıkmadan önce **en az 12 test kullanıcısıyla
+  14 gün kesintisiz** kapalı test yapmak zorunda (Aralık 2024'te 20'den
+  12'ye indi). Kullanıcının daha önce açılmış bir Play hesabı YOK ve 12
+  kişilik test grubu bulamıyor.
+- **Değerlendirilip reddedilen yollar:** web'i Android'de "ana ekrana
+  eklenebilir" yapmak (PWA) — kullanıcı Android'e pazarlama yapılmayacağını,
+  web'in bugünkü hâlinin yeterli olduğunu söyledi; karşılıklı test
+  toplulukları (yüzeysel etkileşim, başvuru uzayabilir); şirket hesabı
+  (D-U-N-S, muhasebe; AB'deki "tüccar değilim" beyanıyla çelişir).
+- **Android kullanıcısı için bugün ne var:** owezy.net tarayıcıda çalışıyor;
+  misafir özelliği (ADR-057) uygulamayı hiç kullanmayanı da gruba katıyor.
+- **Yeniden açılırsa önce ölçülecek:** kodda yalnızca iOS'ta çalışan dört yer
+  (fiş OCR modülü `platforms: ["apple"]`, `lib/push.ts` bildirimleri yalnızca
+  iOS'ta açıyor, misafir adında `Alert.prompt`, değerlendirme adresi App
+  Store), ayrıca FCM (yeni alt işleyen → gizlilik politikası) ve
+  `assetlinks.json`.
 
 ### HENÜZ KARAR VERİLMEDİ
 
