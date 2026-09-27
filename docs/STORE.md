@@ -520,6 +520,7 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
 | **Misafiri sahiplenme:** misafire özel link, "X olarak katıl" onayı | Faz 50b · ADR-057 · mobil katılma ekranı misafir linkinde onay bekliyor |
 | Değerlendirme isteği + Hesap'ta "Uygulamayı değerlendir" | Faz 49 · ADR-056 · **yeni native paket** (`expo-store-review`) |
 | Düğmeler büyük yazıda kırpılmıyor (giriş, davet, "Harcama ekle", "Ödeş") | `height: 50` → `minHeight: 50`; en büyük erişilebilirlik boyutunda simülatörde görüldü |
+| iOS sahne yaşam döngüsü (UIScene) — kullanıcıya görünmez, sürüm notuna girmez | Faz 51 · ADR-058 · **yeni native paket** (`expo-build-properties`); imaj yine Xcode 26.6 |
 
 - **App Privacy anketine BAKILMALI.** Artık kullanıcı, uygulamayı
   kullanmayan birinin **adını** giriyor. Bu veri o grubun üyelerine
@@ -532,6 +533,12 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
   kuralı). Hesap ekranındaki satır ise görünür ve App Store'daki yorum
   sayfasını açar — TestFlight'ta denenebilecek parça o.
 - **appreview@ PAROLAYLA GİRİYOR MU** — her gönderimden önce, kullanıcı.
+- **İNCELEMEYE GÖNDERMEDEN ÖNCE TESTFLIGHT — bu sefer ŞART** (kullanıcının
+  kararı, 27 Eylül): uygulamanın açılışı değişti (Faz 51). Telefonda üç
+  şey: (1) uygulama açılıyor mu, (2) uygulama **kapalıyken** bir davet
+  linkine dokununca davet ekranı geliyor mu, (3) bir bildirime dokununca
+  grup açılıyor mu. Simülatörde ölçülemeyen tam bu üçü (ADR-058).
+  Build log'unda Xcode 26.6 (17F113) olduğunu da doğrula.
 
 ### Sürüm notu — 1.0.6 İngilizce
 

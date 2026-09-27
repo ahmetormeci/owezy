@@ -2661,17 +2661,45 @@ indi, sınır 15 saniye.
 davet durumu), mobil ekran +6, E2E +2 (sahiplenme akışı; zaten üye olanın
 reddi) ve veritabanı testine iki yeni kural. Negatif kontrol: dokuzdan dokuz.
 
+## Faz 51 — iOS sahne yaşam döngüsü (UIScene) · **BİTTİ, 1.0.6 BUILD'İNİ BEKLİYOR**
+
+| | |
+|---|---|
+| Değişiklik | `expo-build-properties` → `ios.enableSceneSupport: true` (`mobile/app.json`). Native kodu Expo üretiyor |
+| Neden | Xcode 27 ile derlenen sahnesiz uygulama iOS 27'de açılmıyor; Apple Nisan 2027'den itibaren iOS 27 SDK'yı zorunlu kılıyor |
+| Sabitleme | EAS imajı Xcode 26.6'da **kalıyor** — her seferinde tek şey değişsin |
+| SDK 58 | Ayrı iş (kullanıcının seçimi); o gün `enableSceneSupport` kaldırılacak |
+| 1.0.6 | Giriyor — **incelemeye göndermeden önce TestFlight'ta** açılış, kapalıyken davet linki, bildirime dokunma |
+
+**Negatif kontrol önce yapıldı:** o günkü `main` Xcode 27 ile derlenip iOS
+27 simülatöründe açılmadı (`UIScene life cycle is required…`). Aynı
+makinede sahneli build açıldı; uygulama kapalıyken ve açıkken gelen davet
+linki davet ekranına gitti, açıkken gelen link **bir kez** teslim edildi;
+iOS 26.5'te de kapalıyken gelen link çalıştı.
+
+**Eski not yanlış çıktı:** "SDK 57 yolu davet linklerini soğuk açılışta
+bozar" notu, Expo rehberinin sorun giderme maddesinden yazılmıştı. Kurulu
+`expo@57.0.25` düzeltmeyi taşıyor — kod okundu, ölçümle doğrulandı
+(ADR-058).
+
+**Yerelde ölçülemeyen:** universal link (imzasız simülatör), giriş gerektiren
+ekranlar, Xcode 26.6 ile derlenmiş sahneli build. TestFlight kontrolü
+bunun için.
+
+**Testler:** mobil vitest 98, jest 120, tsc, lint, expo-doctor 21/21 —
+değişmedi (değişiklik yalnızca native yapılandırma).
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
 karar vermemiştir.
 
-> **Hesapsız üye tamamlandı (Faz 50a + 50b, 27 Eylül).** Sıradaki iş
-> seçilmedi; aday listesi aşağıda.
+> **UIScene'in ilk yarısı tamamlandı (Faz 51, 27 Eylül):** sahne düzeni
+> SDK 57'de açıldı. Kalan yarısı SDK 58 yükseltmesi — aşağıdaki ilk satır.
 
 | Aday | Neden önemli |
 |---|---|
-| **UIScene / SDK 58'e geçiş** | **Seçmeli değil.** Xcode 27 ile derlenen build iOS 27'de açılmıyor (25 Eylül, ölçüldü). Build ortamı Xcode 26.6'ya sabit (`eas.json`); Apple yeni SDK'yı zorunlu kılmadan önce yapılmalı. SDK 57'deki hızlı yol davet linklerini soğuk açılışta bozuyor |
+| **SDK 58'e geçiş** | **Seçmeli değil, acil de değil.** Sahne düzeni Faz 51'de SDK 57'de açıldı; kalan: SDK 58 kararlı çıkınca yükseltmek, `enableSceneSupport`'u kaldırmak, EAS'ta Xcode 27 imajı gelince sabitlemeyi kaldırmak. Son tarih **Nisan 2027** (Apple, iOS 27 SDK zorunluluğu). Bilinen işler: `csv-export.tsx`'teki `file.write` async oluyor, expo-router çekirdeği, RN 0.88 katı TS API; Xcode 27 ile uygulama yeniden boyutlandırılabilir oluyor (ADR-058) |
 | **Android** | Türkiye'de telefonların %85'ten fazlası Android. OCR modülümüz yalnızca iOS; Play Console hesabı gerekiyor. ADR-030 "önce iOS" |
 | **IBAN ile ödeme** | Türkiye için ucuz kazanç. **Gizlilik politikası değişmeli:** "Neleri toplamıyoruz" bölümü IBAN'ı açıkça sayıyor |
 | **Birden fazla ödeyen** | "Hesabı ikimiz ödedik". Settle Up ücretsiz veriyor. `Expense.paidById` tek alan |

@@ -530,6 +530,102 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-058 — iOS sahne yaşam döngüsü (UIScene): SDK 57'de şimdi açılıyor, SDK 58 ayrı iş
+**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-27** (1.0.6'da, 1 Ekim build'i — incelemeye göndermeden önce TestFlight kontrolüyle)
+
+**Karar:** `mobile/app.json`'da `expo-build-properties` →
+`ios.enableSceneSupport: true`. Uygulama iOS'un **sahne tabanlı** yaşam
+döngüsüne geçiyor: pencereyi artık `AppDelegate` değil, Expo'nun
+`EXExpoAppSceneDelegate`'i açıyor. EAS build imajı Xcode 26.6'da **sabit
+kalıyor** (`eas.json`). SDK 58 yükseltmesi **ayrı bir iş**.
+
+Kullanıcının seçimleri (27 Eylül): önce SDK 57'de sahne, SDK 58 sonra ayrı
+iş olarak; değişiklik 1.0.6'ya girsin, **incelemeye göndermeden önce
+TestFlight'ta** kontrol edilsin.
+
+### Neden gerekli
+
+Xcode 27 (iOS 27 SDK) ile derlenip sahne düzenine geçmemiş bir uygulama iOS
+27'de **hiç açılmıyor**. Simülatörde iki kez ölçüldü (25 ve 27 Eylül),
+sistem kaydı:
+
+```
+Application failed to launch: UIScene life cycle is required for apps built with this SDK.
+```
+
+Apple 9 Eylül 2026'da duyurdu: **Nisan 2027'den itibaren** App Store'a
+yüklenen her build iOS 27 SDK ile derlenmek zorunda. Yani Xcode 26.6
+sabitlemesinin ömrü o ayda bitiyor.
+
+### Neden şimdi ve neden SDK 57'de — üç seçenek
+
+| | Yol | Sonuç |
+|---|---|---|
+| **A** | SDK 57 + `enableSceneSupport` | **Seçildi, önce.** Bir paket ve bir ayar; gereken native kodu Expo üretiyor (`ios/` depoda yok, CNG) |
+| **B** | SDK 58 kararlı çıkınca doğrudan geçmek | **Sonra, ayrı iş.** Sahne kendiliğinden gelir, ama React Native 0.86 → 0.88, expo-router'ın gezinme çekirdeği ve katı TypeScript API'si **aynı anda** değişir — bir şey bozulursa sebep ayrılamaz |
+| C | Hiçbir şey yapmamak, Nisan'a kadar sabitlemeye güvenmek | Reddedildi: bu makinedeki tek Xcode 27 ve yerel Release build'leri iOS 27'de açılmıyordu — hedef ortamda **ölçüm yapamıyorduk** |
+
+O gün SDK 58 önizlemedeydi (`58.0.0-preview.7`); kararlı sürüm React Native
+0.88 çıkınca geliyor. EAS'ta Xcode 27 imajı yoktu (en yenisi
+`macos-tahoe-26.5-xcode-26.6`).
+
+### Eski not YANLIŞ ÇIKTI
+
+25 Eylül'de "SDK 57 yolu `Linking.getInitialURL()`'i soğuk açılışta bozar,
+davet linkleri kırılır" diye yazılmıştı. Kaynak Expo rehberinin sorun
+giderme maddesiydi, kod okunmamıştı. **Kurulu `expo@57.0.25`'te düzeltme
+var:** `ExpoAppSceneDelegate.swift`, sahnenin `connectionOptions`'ındaki
+URL'yi ve universal link etkinliğini, React Native'in okuduğu launch
+options anahtarlarına geri koyuyor. Ölçümle doğrulandı (aşağıda).
+
+### Ölçüm (27 Eylül · Release · Xcode 27 · yerel simülatör)
+
+| Build | iOS | Sonuç |
+|---|---|---|
+| Sahnesiz (o günkü `main`) | 27.0 | **Açılmadı** — yukarıdaki satır. Negatif kontrol |
+| Sahneli | 27.0 | Açıldı, giriş ekranı |
+| Sahneli | 27.0 | Uygulama **kapalıyken** `owezy://join/…` → davet ekranı. Link kaybolsaydı giriş ekranı gelirdi |
+| Sahneli | 27.0 | Uygulama **açıkken** link → davet ekranı; bir kez geri → giriş ekranı. Link **bir kez** teslim ediliyor — şablondaki `RCTLinkingManager` çağrısı çift teslim yapmıyor |
+| Sahneli | 27.0 | Klavye açılıyor, yazı giriliyor, ekran klavyeye göre kayıyor |
+| Sahneli | 26.5 | Uygulama kapalıyken link → davet ekranı |
+
+**Yerelde ölçülemeyenler — TestFlight kontrolünün sebebi:**
+
+- **Universal link** (`https://owezy.net/join/…`): imzasız simülatör
+  build'inde associated domains çalışmıyor. Aynı Expo kodu işliyor ama
+  ayrı bir anahtar üzerinden.
+- **Giriş gerektiren her şey** — bildirime dokunma, değerlendirme
+  penceresi, fotoğraf seçici, paylaşım. Ajan giriş kodunu forma yazmıyor.
+  Kütüphane kodu okundu: değerlendirme ve seçiciler pencereyi sahneden
+  buluyor (`SceneGeometry`); kendi OCR modülümüz pencereye dokunmuyor;
+  bizim kodda `AppState` yok.
+- **Xcode 26.6 ile derlenmiş sahneli build:** bu makinede yalnızca
+  Xcode 27 var.
+
+Bu yüzden 1.0.6 **incelemeye gönderilmeden önce** TestFlight'ta üç şey:
+(1) açılıyor mu, (2) uygulama kapalıyken bir davet linkine dokununca davet
+ekranı geliyor mu, (3) bir bildirime dokununca grup açılıyor mu.
+
+### Sonuç
+
+- Sahne düzeni 1.0.6 ile sahaya çıkıyor. SDK 58'e geçildiğinde sahne kısmı
+  **zaten denenmiş** olacak.
+- **SDK 58 işi** (ayrı tasarım gerekir): `enableSceneSupport` kaldırılır
+  (58'de etkisiz, prebuild uyarı veriyor); `csv-export.tsx`'teki
+  `file.write` async oluyor; expo-router çekirdeği değişti; React Native
+  0.88 katı TypeScript API'si.
+- **Xcode 27'ye geçilen gün** (EAS imajı gelince): iOS 27 SDK ile derlenen
+  iPhone uygulamaları **yeniden boyutlandırılabilir** oluyor ve
+  `orientation: portrait` kilidi işe yaramayabilir. Düzen farklı
+  genişliklerde denenmeli.
+- **Sabitleme Nisan 2027'den önce kaldırılmalı.**
+
+Kaynaklar: developer.apple.com/news/?id=k1mtkt1k ·
+github.com/expo/fyi/blob/main/ios-scene-lifecycle.md ·
+expo.dev/changelog/sdk-58-beta
+
+---
+
 ## ADR-057 — Hesapsız üye (misafir): işaretli bir `User` satırı; sahiplenince kayıtlar gerçek hesaba taşınır
 **Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **50a ve 50b UYGULANDI: 2026-09-27** (mobili 1.0.6'da, 1 Ekim build'i)
 

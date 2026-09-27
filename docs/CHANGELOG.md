@@ -21,6 +21,23 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-27 — iOS sahne yaşam döngüsü (Faz 51, ADR-058)
+
+Uygulama iOS'un sahne tabanlı yaşam döngüsüne geçti
+(`expo-build-properties` → `ios.enableSceneSupport`). Kullanıcıya görünen
+bir değişiklik yok; sebebi Apple: Xcode 27 ile derlenen sahnesiz uygulama
+iOS 27'de açılmıyor ve Nisan 2027'den itibaren yeni SDK zorunlu.
+
+Önce negatif kontrol: o günkü kod Xcode 27 ile iOS 27'de açılmadı. Sahneli
+build açıldı; davet linki uygulama kapalıyken de açıkken de davet ekranına
+gitti ve bir kez teslim edildi. **"SDK 57 yolu davet linklerini bozar"
+notu yanlış çıktı** — kurulu Expo sürümü düzeltmeyi taşıyor.
+
+Build imajı Xcode 26.6'da kaldı. SDK 58 ayrı iş. 1.0.6 incelemeye
+gönderilmeden önce TestFlight'ta denenecek.
+
+---
+
 ## 2026-09-27 — Misafiri sahiplenme (Faz 50b, ADR-057)
 
 Misafir artık sonradan kendi hesabıyla katılabiliyor. Bir üye misafirin

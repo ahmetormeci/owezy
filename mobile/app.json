@@ -57,6 +57,14 @@
           "photosPermission": "Owezy accesses your photos so you can attach a receipt to an expense. Only the photo you pick is uploaded.",
           "cameraPermission": "Owezy uses the camera so you can photograph a receipt and attach it to an expense. The photo is attached to that expense only."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
+        }
       ]
     ],
     "locales": {

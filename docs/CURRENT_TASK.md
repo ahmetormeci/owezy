@@ -28,9 +28,26 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-27
 
 Current task:
-  YOK - SIRADAKI IS SECILMEDI. Kullanici compact sonrasi yeni islere
-  devam edecek. Aday listesi: PROGRESS.md "Sıradaki adaylar" (basinda
-  ZORUNLU olan UIScene / SDK 58 gecisi var).
+  FAZ 51 - iOS SAHNE YASAM DONGUSU (UIScene) - BITTI, COMMIT ONAYI BEKLIYOR.
+  ADR-058. Kullanicinin secimi (27 Eylul): once SDK 57'de sahne, SDK 58
+  sonra AYRI IS; 1.0.6'ya girsin, TestFlight kontroluyle.
+
+  Degisen: mobile/app.json (expo-build-properties -> ios.enableSceneSupport),
+  mobile/package.json + lock (expo-build-properties ~57.0.22). Kod degil,
+  native yapilandirma - AMA package.json oldugu icin KOD COMMIT'I sayilir:
+  push icin kullanicinin onayi gerekir.
+
+  Olculdu (Release, Xcode 27, yerel simulator): sahnesiz main iOS 27'de
+  ACILMADI (negatif kontrol); sahneli build acildi, kapaliyken/acikken
+  davet linki davet ekranina gitti, link BIR KEZ teslim edildi, iOS
+  26.5'te de calisti. Testler: mobil vitest 98, jest 120, tsc, lint,
+  expo-doctor 21/21.
+
+  Sonraki adim: kullanici commit/push derse at, push'tan sonra CI'a bak.
+
+  YAN BULGU (kullaniciya soruldu): src/lib/messages.ts:821
+  "ui.invite_needs_account" TURKCE KARAKTERSIZ yazilmis ("katilmak icin
+  once giris..."). Tek bozuk TR metni bu (tarandi). Kapsam disi.
 
   >>> 1 EKIM 2026: 1.0.6 BUILD GUNU <<<
     Zamanlanmis gorev: owezy-1-0-6-build-hatirlatma (1 Ekim 10:00,
@@ -40,9 +57,18 @@ Current task:
       -> build log'undan Xcode 26.6 (17F113) oldugunu DOGRULA (eas.json'da
          image sabit; Xcode 27 build'i iOS 27'de acilmiyor).
       -> submit ISTENIRSE eas submit (1.0.5'te ~55 dk surdu, normaldi).
+         eas submit YALNIZCA App Store Connect'e YUKLER -> TestFlight'ta
+         gorunur. INCELEMEYE GONDERME ayri adim: kullanici panelde, ASAGIDAKI
+         TestFlight kontrolunden SONRA.
     Surum app.json'da ZATEN 1.0.6. Surum notu iki dilde STORE.md.
     1.0.6'da: misafir (50a) + sahiplenme (50b) + degerlendirme istegi (49)
-    + buyuk yazida dugme kirpilmasi.
+    + buyuk yazida dugme kirpilmasi + sahne yasam dongusu (51).
+    >>> INCELEMEYE GONDERMEDEN ONCE TESTFLIGHT - SART (Faz 51) <<<
+    Acilis degisti (sahne). Kullanici telefonda: (1) aciliyor mu,
+    (2) uygulama KAPALIYKEN davet linkine dokununca davet ekrani geliyor
+    mu, (3) bildirime dokununca grup aciliyor mu. Simulatorde
+    olculemeyen tam bu uc (universal link, giris gerektiren ekranlar,
+    Xcode 26.6 ile derlenmis sahneli build).
     GONDERIMDE KULLANICI: App Privacy anketi (artik misafir ADLARI
     giriliyor - kategoriyi panelde sec, tahmin etme) + appreview@ parola
     kontrolu. EAS Free plan ayda sinirli iOS build veriyor; 27 Eylul'de
@@ -119,8 +145,10 @@ Current task:
      -> ios.image "macos-tahoe-26.5-xcode-26.6". eas config ile dogrulandi.
      ILERIDE SART: Apple yeni SDK'yi zorunlu kildiginda uygulama UIScene'e
      gecmek ZORUNDA. Iki yol: SDK 57.0.23+ ile expo-build-properties
-     "enableSceneSupport" (AMA cold-start'ta Linking.getInitialURL()
-     null donuyor - davet linkleri kirilir) ya da SDK 58'e gecis.
+     "enableSceneSupport" ya da SDK 58'e gecis.
+     [27 EYLUL DUZELTME: "enableSceneSupport davet linklerini bozar" notu
+     YANLIS CIKTI - expo@57.0.25 duzeltmeyi tasiyor, olculdu. Sahne
+     Faz 51'de acildi, ADR-058. Apple son tarihi: Nisan 2027.]
      Kaynak: github.com/expo/fyi/blob/main/ios-scene-lifecycle.md
      BU MAKINEDE YALNIZCA XCODE 27 VAR: yerel build'ler iOS 27
      simulatorunde calismaz, iOS 26.5 simulatoru kullanilmali.
