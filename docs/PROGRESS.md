@@ -2689,7 +2689,7 @@ bunun için.
 **Testler:** mobil vitest 98, jest 120, tsc, lint, expo-doctor 21/21 —
 değişmedi (değişiklik yalnızca native yapılandırma).
 
-## Faz 52a — IBAN ile ödeme: sunucu + web · **BİTTİ (commit onayı bekliyor); MOBİLİ 52b, 1.0.7**
+## Faz 52a — IBAN ile ödeme: sunucu + web · **BİTTİ, WEB'DE CANLI (ef501a5); MOBİLİ 52b, 1.0.7**
 
 | | |
 |---|---|

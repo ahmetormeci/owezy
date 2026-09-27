@@ -28,19 +28,19 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-27
 
 Current task:
-  FAZ 52a - IBAN ILE ODEME (sunucu + web + gizlilik) - BITTI, COMMIT
-  ONAYI BEKLIYOR. ADR-059. Kullanicinin secimleri (27 Eylul): gorunurluk
+  FAZ 52a - IBAN ILE ODEME (sunucu + web + gizlilik) - BITTI, CANLIDA
+  (ef501a5, 27 Eylul). ADR-059. Kullanicinin secimleri (27 Eylul): gorunurluk
   "gruplarindaki herkes", yalnizca IBAN (ad soyad yok).
 
   Degisen: prisma (User.iban + ibanUpdatedAt, 4 CHECK; goc
-  20260927210000_add_user_iban - dev ve E2E veritabanlarina UYGULANDI,
-  production'a push'taki vercel-build uygulayacak), src/lib/iban.ts (yeni),
+  20260927210000_add_user_iban - dev, E2E ve PRODUCTION'da uygulandi), src/lib/iban.ts (yeni),
   me-schemas, PATCH /me (+ degisince maskeli e-posta), email.ts,
   listGroupMembers, deleteAccount, messages (21 anahtar x 2 dil), web:
   iban-dialog, iban-actions, user-menu, layout, grup sayfasi, odeme
   diyalogu; gizlilik politikasi iki dilde; e2e/iban.spec.ts.
-  KOD COMMIT'I: push kullanicinin onayiyla. Push'tan sonra: CI, sonra
-  canlida yeni goc (ornegin /support 200 + IBAN satiri menude).
+  CANLIDA OLCULDU: yeni gizlilik metni production'da (vercel-build once
+  goc calistiriyor - goc dusseydi build de duserdi), girissiz PATCH /me
+  401, CI (ef501a5) completed/success.
 
   Testler: kok 849 (+36), mobil vitest 98 + jest 120, tsc, lint, TAM E2E
   72 gecti / 1 bilerek atlandi (17,3 dk).
