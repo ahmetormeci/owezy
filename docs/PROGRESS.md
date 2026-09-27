@@ -2689,6 +2689,26 @@ bunun için.
 **Testler:** mobil vitest 98, jest 120, tsc, lint, expo-doctor 21/21 —
 değişmedi (değişiklik yalnızca native yapılandırma).
 
+## Faz 52a — IBAN ile ödeme: sunucu + web · **BİTTİ (commit onayı bekliyor); MOBİLİ 52b, 1.0.7**
+
+| | |
+|---|---|
+| Akış | Alacaklı IBAN'ını ekler → borçlu "Ödemen gerekenler" satırında ya da ödeme penceresinde kopyalar → bankada öder → ödemeyi kaydeder |
+| Görünürlük | Ortak gruptaki herkes (kullanıcının seçimi) — kural üyelik kuralının kendisi |
+| Tutulan | Yalnızca IBAN + son değişiklik anı; ad soyad yok (kullanıcının seçimi) |
+| Doğrulama | Ülke + uzunluk tablosu ve mod-97 kontrol hanesi; tek modül (`src/lib/iban.ts`) web, mobil, sunucu |
+| Güvenlik | Her değişiklikte sahibine maskeli e-posta; son 7 günde değişmiş IBAN'da ödeyene uyarı |
+| Veritabanı | 4 CHECK: biçim, ikili, misafirde yok, silinmiş hesapta yok (kurallar 17–20) |
+| Gizlilik | Politika iki dilde güncellendi; App Store anketi 1.0.7'de |
+
+**52b (mobil) bilerek sonraya:** EAS build'i çalışma klasöründen alıyor;
+mobil IBAN ekranları 1 Ekim'de klasörde olsaydı 1.0.6'ya girerdi.
+
+**Testler:** birim +36 (IBAN modülü 24, `/me` 9, üye listesi 2, hesap silme
+1), E2E +3 (ekle → kopyala → kaldır akışı,
+üye olmayan göremiyor, veritabanı kuralları olumlu kontrolüyle). Tam E2E
+72 geçti / 1 bilerek atlandı (17,3 dk); kök 849, mobil 98 + 120.
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
@@ -2701,7 +2721,7 @@ karar vermemiştir.
 |---|---|
 | **SDK 58'e geçiş** | **Seçmeli değil, acil de değil.** Sahne düzeni Faz 51'de SDK 57'de açıldı; kalan: SDK 58 kararlı çıkınca yükseltmek, `enableSceneSupport`'u kaldırmak, EAS'ta Xcode 27 imajı gelince sabitlemeyi kaldırmak. Son tarih **Nisan 2027** (Apple, iOS 27 SDK zorunluluğu). Bilinen işler: `csv-export.tsx`'teki `file.write` async oluyor, expo-router çekirdeği, RN 0.88 katı TS API; Xcode 27 ile uygulama yeniden boyutlandırılabilir oluyor (ADR-058) |
 | **Android** | Türkiye'de telefonların %85'ten fazlası Android. OCR modülümüz yalnızca iOS; Play Console hesabı gerekiyor. ADR-030 "önce iOS" |
-| **IBAN ile ödeme** | Türkiye için ucuz kazanç. **Gizlilik politikası değişmeli:** "Neleri toplamıyoruz" bölümü IBAN'ı açıkça sayıyor |
+| **IBAN ile ödeme — mobil (52b)** | 52a (sunucu + web) bitti. Kalan: mobil arayüz (`expo-clipboard`, hesap ekranı, bakiye kartı, ödeme ekranı). **1 Ekim'deki 1.0.6 build'inden sonra** başlanmalı — yoksa 1.0.6'ya girer. 1.0.7 gönderiminde App Store gizlilik anketi: Financial Info → Other Financial Info (ADR-059) |
 | **Birden fazla ödeyen** | "Hesabı ikimiz ödedik". Settle Up ücretsiz veriyor. `Expense.paidById` tek alan |
 | **Birden fazla para birimi** | Yurt dışı tatili. Kur kaynağı gerekiyor (dış servis → gizlilik beyanı) |
 | **Apple / Google ile giriş** | Kayıt sürtünmesi; Google eklenirse Apple girişi de zorunlu (4.8) |

@@ -508,6 +508,17 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
+## 1.0.7 — ŞİMDİDEN BİRİKEN
+
+| | |
+|---|---|
+| **IBAN ile ödeme — mobil** | Faz 52b · ADR-059 · web'de (52a) canlı. **1.0.6 build'i alındıktan SONRA** yazılacak; **yeni native paket** (`expo-clipboard`) |
+
+- **App Privacy anketi DEĞİŞMELİ:** Financial Info → **Other Financial
+  Info** (IBAN), kullanıcıya bağlı, amaç App Functionality, izleme yok.
+  Panelde kullanıcı işaretleyecek — 1.0.7 IBAN'ı gösteren ilk sürüm.
+- Gizlilik politikası zaten güncel (27 Eylül, iki dil, web'de).
+
 ## BİR SONRAKİ GÖNDERİM (1.0.6) — ŞİMDİDEN BİRİKEN
 
 Build **1 Ekim**'de (ücretsiz planın aylık iOS build hakkı o gün

@@ -96,6 +96,17 @@ describe("kisisel veri", () => {
     expect(data.locale).toBeNull();
   });
 
+  it("IBAN'i ve degisiklik anini temizliyor (ADR-059)", async () => {
+    // Silinmis bir kisinin banka bilgisi saklanmaya devam etmemeli.
+    // Veritabani da zorluyor (User_deleted_no_iban) - bu satir unutulsaydi
+    // hesap silme DUSERDI, sessizce IBAN'i birakmazdi.
+    await deleteAccount(USER);
+
+    const data = mockTx.user.update.mock.calls[0][0].data;
+    expect(data.iban).toBeNull();
+    expect(data.ibanUpdatedAt).toBeNull();
+  });
+
   it("deletedAt isaretliyor - SOFT delete", async () => {
     await deleteAccount(USER);
 

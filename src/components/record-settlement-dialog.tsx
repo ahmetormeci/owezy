@@ -16,12 +16,16 @@ import {
 import { Input, selectClassName } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-client";
+import { CopyIbanButton } from "@/components/iban-actions";
+import { formatIban } from "@/lib/iban";
 import { useLocale, useTranslate } from "@/lib/i18n";
 import { formatMoney, parseMoney } from "@/lib/money";
 
 type Counterparty = {
   userId: string;
   displayName: string;
+  /** Alacakli bu kisiyse kopyalanacak IBAN (ADR-059). */
+  iban: { iban: string; recentlyChanged: boolean } | null;
 };
 
 type SuggestedTransfer = {
@@ -69,6 +73,14 @@ export function RecordSettlementDialog({
 
   // Netlestirme onerileri arasinda bu yon ve kisi icin bir tutar varsa
   // kullaniciya tek tikla doldurma imkani sunuyoruz.
+  // Odemeyi SEN yapiyorsan karsi tarafin IBAN'i. Gelen odemede gosterilmez:
+  // orada alici sensin.
+  const payeeIban =
+    direction === "outgoing"
+      ? (counterparties.find((counterparty) => counterparty.userId === counterpartyId)?.iban ??
+        null)
+      : null;
+
   const matchingSuggestion = suggestedTransfers.find(
     (transfer) => transfer.fromUserId === fromUserId && transfer.toUserId === toUserId,
   );
@@ -164,6 +176,27 @@ export function RecordSettlementDialog({
                 ))}
               </select>
             </div>
+
+            {payeeIban ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium">{t("ui.recipient_iban")}</p>
+                <div className="flex items-center gap-2">
+                  {/* select-all: tek tikla tamami secilsin - pano izni
+                      olmayan tarayicida elle kopyalamanin yolu bu. */}
+                  <span className="min-w-0 flex-1 truncate font-mono text-sm select-all">
+                    {formatIban(payeeIban.iban)}
+                  </span>
+                  <CopyIbanButton
+                    iban={payeeIban.iban}
+                    recentlyChanged={payeeIban.recentlyChanged}
+                    appearance="button"
+                  />
+                </div>
+                {payeeIban.recentlyChanged ? (
+                  <p className="text-xs text-destructive">{t("ui.iban_recently_changed")}</p>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="settlement-amount">{t("ui.amount")}</Label>

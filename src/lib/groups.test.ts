@@ -494,6 +494,43 @@ describe("listGroupMembers", () => {
       },
     ]);
   });
+
+  it("IBAN'i ve degisiklik anini doner (ADR-059) - ve veritabanindan GERCEKTEN secer", async () => {
+    liveGroupPrisma();
+    mockPrisma.groupMember.findFirst.mockResolvedValue({ id: "m1" });
+    const changedAt = new Date("2026-09-27T10:00:00Z");
+    mockPrisma.groupMember.findMany.mockResolvedValue([
+      {
+        userId: OWNER,
+        role: "OWNER",
+        joinedAt: new Date("2026-08-01"),
+        user: {
+          displayName: "Ali",
+          avatarUrl: null,
+          hasImage: false,
+          isGuest: false,
+          iban: "TR330006100519786457841326",
+          ibanUpdatedAt: changedAt,
+        },
+      },
+    ]);
+
+    const members = await listGroupMembers(OWNER, GROUP_ID);
+
+    expect(members[0].iban).toBe("TR330006100519786457841326");
+    expect(members[0].ibanUpdatedAt).toBe(changedAt);
+    // Sahte veritabani ne verirse doner; asil kanit sorgunun alanlari ISTEMESI.
+    const select = mockPrisma.groupMember.findMany.mock.calls[0][0].select.user.select;
+    expect(select).toMatchObject({ iban: true, ibanUpdatedAt: true });
+  });
+
+  it("uye olmayana IBAN dahil hicbir sey donmez", async () => {
+    liveGroupPrisma();
+    mockPrisma.groupMember.findFirst.mockResolvedValue(null);
+
+    await expect(listGroupMembers(OTHER, GROUP_ID)).rejects.toThrow();
+    expect(mockPrisma.groupMember.findMany).not.toHaveBeenCalled();
+  });
 });
 
 describe("leaveGroup", () => {

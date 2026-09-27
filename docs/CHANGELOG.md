@@ -21,6 +21,24 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-27 — IBAN ile ödeme, web (Faz 52a, ADR-059)
+
+Kullanıcı isterse hesabına IBAN'ını ekliyor; ona borçlu olan grup
+arkadaşları "Ödemen gerekenler" satırında ve ödeme penceresinde IBAN'ı
+tek dokunuşla kopyalıyor. Owezy para taşımıyor.
+
+IBAN hem uzunluğu hem kontrol hanesiyle doğrulanıyor — yanlış IBAN'a para
+gitmesinin önündeki asıl duvar bu. IBAN değişince sahibine maskeli bir
+e-posta gidiyor ve son 7 günde değişmiş bir IBAN'ı kopyalayan kişi
+uyarılıyor: hesabı ele geçiren birinin ödemeleri kendine yönlendirmesine
+karşı. Misafirin ve silinmiş hesabın IBAN'ı olamıyor; veritabanı da
+zorluyor.
+
+Gizlilik politikası iki dilde güncellendi ("IBAN toplamıyoruz" artık doğru
+değil). Mobil arayüz 1.0.6 build'inden sonra (52b).
+
+---
+
 ## 2026-09-27 — iOS sahne yaşam döngüsü (Faz 51, ADR-058)
 
 Uygulama iOS'un sahne tabanlı yaşam döngüsüne geçti

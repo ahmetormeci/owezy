@@ -90,6 +90,7 @@ export default async function AppLayout({
               // Sutun zaten okunan satirda: menudeki "Acik / Kapali" bilgisi
               // BEDAVA geliyor, ek bir sorgu yok.
               twoFactorEnabled={user.twoFactorEnabled}
+              iban={user.iban}
             />
           </div>
         </div>

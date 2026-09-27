@@ -40,7 +40,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Owezy para taşımaz. Kart, IBAN veya ödeme bilgisi hiç toplamıyoruz.",
+              "Owezy para taşımaz. Kart bilgisi hiç toplamıyoruz. IBAN'ını yalnızca sen " +
+                "eklersen saklarız ve onu yalnızca grup arkadaşların görür.",
               "Parolanı hiçbir zaman okunabilir hâlde saklamıyoruz; yalnızca geri " +
                 "döndürülemez bir özeti tutulur. Parola belirlemek zorunda da değilsin — " +
                 "e-postana gelen kodla girebilirsin.",
@@ -77,6 +78,10 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Görünen adın",
               "Profil fotoğrafın (yüklediysen): fotoğrafın kendisi, adresi ve gerçekten bir fotoğraf yükleyip yüklemediğin. Fotoğrafını yalnızca seninle ortak bir grubu olanlar görebilir; herkese açık bir adresi yoktur.",
               "Arayüz dili tercihin",
+              "IBAN'ın, eklediysen: kendisi ve en son ne zaman değiştirildiği. " +
+                "Yalnızca seninle ortak bir grubu olanlar görür — sana ödeme yaparken " +
+                "kopyalasınlar diye. Değiştirdiğinde ya da kaldırdığında e-posta " +
+                "adresine bir bildirim gider. İstediğin an kaldırabilirsin.",
               "Parola belirlediysen: parolanın geri döndürülemez özeti (hash). " +
                 "Parolanın kendisi hiçbir yerde saklanmaz.",
               "Açık oturumların. Her oturumla birlikte bağlandığın IP adresi ve " +
@@ -129,8 +134,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Ödeme bilgisi: kart numarası, IBAN, banka hesabı — hiçbiri. Uygulama para transferi yapmaz; " +
-                "ödeşme kaydı yalnızca senin girdiğin bir nottur.",
+              "Kart numarası, banka parolası ya da internet bankacılığı bilgisi — hiçbiri. " +
+                "Uygulama para transferi yapmaz; ödeşme kaydı yalnızca senin girdiğin " +
+                "bir nottur. IBAN ise yalnızca sen eklersen tutulur (yukarıda).",
               "Konum bilgisi, rehberin, fotoğraf galerin.",
               "Reklam kimliği (IDFA) ya da cihazını uygulamalar arasında tanıyan " +
                 "herhangi bir tanımlayıcı. Bildirimleri açtıysan sakladığımız " +
@@ -169,7 +175,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             kind: "ul",
             items: [
               "Neon — veritabanı",
-              "Resend — giriş kodu e-postalarının gönderimi (e-posta adresin bu hizmete iletilir)",
+              "Resend — giriş kodu ve IBAN değişikliği bildirimi e-postalarının gönderimi " +
+                "(e-posta adresin bu hizmete iletilir; bildirimde IBAN'ın yalnızca son dört " +
+                "hanesi yer alır)",
               "Vercel — uygulamanın barındırılması",
               "Cloudflare — alan adı yönlendirmesi ve fotoğrafların saklandığı yer: fişler ve profil fotoğrafları (R2)",
               "Expo — telefona bildirim gönderimi. Bildirimin metni bu hizmetten " +
@@ -229,7 +237,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             kind: "p",
             text:
               "Sildiğinde ne olduğunu açıkça yazmak istiyoruz, çünkü beklediğinden farklı " +
-              "olabilir. Kişisel bilgilerin — e-posta adresin, adın, profil fotoğrafın — " +
+              "olabilir. Kişisel bilgilerin — e-posta adresin, adın, profil fotoğrafın, IBAN'ın — " +
               "silinir. YÜKLEDİĞİN FİŞ FOTOĞRAFLARI DA SİLİNİR, depodan da; " +
               "YAZDIĞIN YORUMLAR DA SİLİNİR. Ancak girdiğin harcama ve ödeşme " +
               "kayıtları silinmez; anonimleştirilmiş bir kullanıcıya bağlı " +
@@ -325,7 +333,8 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Owezy does not move money. We never collect card, bank account or payment details.",
+              "Owezy does not move money. We never collect card details. Your IBAN is " +
+                "stored only if you add it, and only your group members see it.",
               "We never store your password in readable form — only an irreversible " +
                 "digest of it. You do not have to set one at all: you can sign in with " +
                 "a code sent to your email.",
@@ -363,6 +372,10 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Your display name",
               "Your profile photo, if you uploaded one: the photo itself, its address, and whether you actually uploaded one. Only people who share a group with you can see it; it has no public address.",
               "Your interface language preference",
+              "Your IBAN, if you added one: the IBAN itself and when it last changed. " +
+                "Only people who share a group with you can see it — so they can copy " +
+                "it when they pay you. When you change or remove it, a notice goes to " +
+                "your email address. You can remove it any time.",
               "If you set a password: an irreversible digest (hash) of it. The password " +
                 "itself is stored nowhere.",
               "Your open sessions. Each one stores the IP address you connected from " +
@@ -413,8 +426,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
           {
             kind: "ul",
             items: [
-              "Payment details: no card numbers, no bank accounts. The app transfers no money; " +
-                "a settlement is only a note that you entered.",
+              "Card numbers, bank passwords or online banking details — none of them. " +
+                "The app transfers no money; a settlement is only a note that you " +
+                "entered. An IBAN is kept only if you add one (see above).",
               "Location, contacts, photo library.",
               "An advertising identifier (IDFA), or any identifier that recognises " +
                 "your device across apps. If you turned notifications on, the " +
@@ -453,7 +467,9 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             kind: "ul",
             items: [
               "Neon — database",
-              "Resend — delivery of sign-in code emails (your email address is passed to this service)",
+              "Resend — delivery of sign-in code and IBAN change notice emails (your email " +
+                "address is passed to this service; a notice shows only the last four " +
+                "characters of your IBAN)",
               "Vercel — hosting",
               "Cloudflare — domain routing, and where photos are stored: receipts and profile photos (R2)",
               "Expo — delivering notifications to your phone. The notification text " +
@@ -510,7 +526,7 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
             kind: "p",
             text:
               "We want to be explicit about what deletion does, because it may not be what " +
-              "you expect. Your personal details — email address, name, profile picture — " +
+              "you expect. Your personal details — email address, name, profile picture, IBAN — " +
               "are removed. THE RECEIPT PHOTOS YOU UPLOADED ARE DELETED TOO, from storage " +
               "as well, AND SO ARE THE COMMENTS YOU WROTE. Your expenses and settlements " +
               "are not: they stay, attached to an anonymised user.",

@@ -28,27 +28,31 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-27
 
 Current task:
-  FAZ 51 - iOS SAHNE YASAM DONGUSU (UIScene) - BITTI, PUSH EDILDI
-  (a3f1ca2). ADR-058. Kullanicinin secimi (27 Eylul): once SDK 57'de
-  sahne, SDK 58 sonra AYRI IS; 1.0.6'ya girdi, TestFlight kontroluyle.
+  FAZ 52a - IBAN ILE ODEME (sunucu + web + gizlilik) - BITTI, COMMIT
+  ONAYI BEKLIYOR. ADR-059. Kullanicinin secimleri (27 Eylul): gorunurluk
+  "gruplarindaki herkes", yalnizca IBAN (ad soyad yok).
 
-  Degisen: mobile/app.json (expo-build-properties -> ios.enableSceneSupport),
-  mobile/package.json + lock (expo-build-properties ~57.0.22).
+  Degisen: prisma (User.iban + ibanUpdatedAt, 4 CHECK; goc
+  20260927210000_add_user_iban - dev ve E2E veritabanlarina UYGULANDI,
+  production'a push'taki vercel-build uygulayacak), src/lib/iban.ts (yeni),
+  me-schemas, PATCH /me (+ degisince maskeli e-posta), email.ts,
+  listGroupMembers, deleteAccount, messages (21 anahtar x 2 dil), web:
+  iban-dialog, iban-actions, user-menu, layout, grup sayfasi, odeme
+  diyalogu; gizlilik politikasi iki dilde; e2e/iban.spec.ts.
+  KOD COMMIT'I: push kullanicinin onayiyla. Push'tan sonra: CI, sonra
+  canlida yeni goc (ornegin /support 200 + IBAN satiri menude).
 
-  Olculdu (Release, Xcode 27, yerel simulator): sahnesiz main iOS 27'de
-  ACILMADI (negatif kontrol); sahneli build acildi, kapaliyken/acikken
-  davet linki davet ekranina gitti, link BIR KEZ teslim edildi, iOS
-  26.5'te de calisti. Testler: kok 813, mobil vitest 98, jest 120, tsc,
-  lint, expo-doctor 21/21.
+  Testler: kok 849 (+36), mobil vitest 98 + jest 120, tsc, lint, TAM E2E
+  72 gecti / 1 bilerek atlandi (17,3 dk).
 
-  AYNI GUN, AYRI COMMIT: davet ekranindaki "ui.invite_needs_account" TR
-  metni Turkce karaktersiz yazilmisti ("katilmak icin once giris...") -
-  DUZELTILDI (fd82f33). Tek bozuk TR metni buydu (tarandi). Yalnizca
-  mobil davet ekrani kullaniyor; 1.0.6'ya giriyor.
-  Iki commit birlikte push edildi; CI (fd82f33) completed/success.
+  SONRAKI ADIM - 52b MOBIL: 1 EKIM'DEKI 1.0.6 BUILD'I ALINDIKTAN SONRA.
+  Sebep: EAS build'i calisma klasorunden aliyor; mobil IBAN ekranlari
+  o gun klasorde olursa 1.0.6'ya girer. 52b: expo-clipboard (yeni native
+  paket), hesap ekraninda satir, bakiye kartinda kopyalama, odeme
+  ekraninda alicinin IBAN'i, ekran testleri. 1.0.7 gonderiminde App
+  Privacy: Financial Info -> Other Financial Info (STORE.md 1.0.7).
 
-  Sonraki is: SECILMEDI. Aday listesi PROGRESS.md "Sıradaki adaylar"
-  (basinda SDK 58'e gecis - acil degil, son tarih Nisan 2027).
+  Faz 51 (sahne, a3f1ca2) ve Turkce metin (fd82f33) PUSH EDILDI, CI yesil.
 
   >>> 1 EKIM 2026: 1.0.6 BUILD GUNU <<<
     Zamanlanmis gorev: owezy-1-0-6-build-hatirlatma (1 Ekim 10:00,

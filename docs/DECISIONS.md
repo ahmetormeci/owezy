@@ -530,6 +530,101 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-059 — IBAN ile ödeme: kullanıcının kendi IBAN'ı, grup arkadaşlarına görünür; değişince e-posta
+**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **52a UYGULANDI: 2026-09-27** (sunucu + web + gizlilik) · 52b (mobil) 1 Ekim'deki 1.0.6 build'inden **sonra**
+
+**Karar:** Kullanıcı isterse hesabına **tek bir IBAN** ekler. Ortak bir
+grupta olduğu herkes onu görür ve ödeme anında tek dokunuşla kopyalar.
+Owezy para taşımaya başlamıyor — yalnızca ödeyenin işini kolaylaştırıyor.
+
+Kullanıcının seçimleri (27 Eylül): görünürlük **gruplarındaki herkes**;
+**yalnızca IBAN**, ad soyad tutulmuyor. İş iki adımda: 52a sunucu + web +
+gizlilik metni (push ile canlı), 52b mobil. 52b'nin 1.0.6 build'inden sonraya
+kalmasının sebebi mekanik: EAS build'i çalışma klasöründen alıyor; mobil
+ekranlar o gün klasörde olsaydı 1.0.6'ya girerdi, oysa karar 1.0.7.
+
+### Görünürlük — iki seçenek
+
+| | Yol | Sonuç |
+|---|---|---|
+| **A** | Gruplarındaki herkes | **Seçildi.** Kural üyelik kuralının kendisi: `listGroupMembers` zaten yalnızca grubun aktif üyesine cevap veriyor. Arkadaşlar IBAN'ı zaten birbirine veriyor |
+| B | Yalnızca şu an sana borçlu olanlar | Reddedildi: sunucu her okumada bakiyeyi hesaplamalı; plandan farklı bir ödemede IBAN görünmez |
+
+**Ad soyad tutulmuyor:** daha az kişisel veri. Banka "alıcı adı" isterse
+ödeyen yazar — arkadaşının adını biliyor.
+
+### Doğrulama — iki katman ve veritabanı
+
+`src/lib/iban.ts` **saf bir modül**: sunucu, web ve mobil aynı dosyayı
+kullanıyor. Formun kabul edip API'nin reddettiği bir IBAN olamaz.
+
+1. **Ülke + uzunluk** (SWIFT IBAN kaydı). Tabloda olmayan ülke
+   **reddediliyor**: "US" ile başlayıp kontrol hanesi tutan bir dizi IBAN
+   değildir. Kayda yeni bir ülke eklenirse tabloya da eklenmeli.
+2. **Kontrol hanesi (ISO 7064 mod-97):** tek yanlış haneyi ve yer
+   değiştirmiş hanelerin çoğunu yakalıyor. Yanlış IBAN'a para gitmesinin
+   önündeki asıl duvar bu.
+
+Kayıt biçimi tek: boşluksuz, büyük harf (`toUpperCase`, **`toLocaleUpperCase`
+değil** — Türkçe yerel ayarda `i` → `İ` olurdu). Ekranda 4'erli gösteriliyor,
+panoya boşluksuz kopyalanıyor. Boş metin "kaldır" sayılıyor.
+
+Veritabanı dört CHECK ile zorluyor (DATABASE.md kurallar 17–20): biçim,
+`iban` ile `ibanUpdatedAt` **birlikte**, misafirde IBAN yok, silinmiş
+hesapta IBAN yok. Sonuncusu hesap silmenin IBAN'ı unutmasını imkânsız
+kılıyor — unutursa silme sessizce IBAN'ı bırakmaz, **düşer**.
+
+### Güvenlik — IBAN değişikliği bir saldırı hamlesi
+
+Hesabı ele geçiren biri IBAN'ı değiştirip grup arkadaşlarının ödemelerini
+kendine yönlendirebilir. İki önlem:
+
+1. **Her değişiklikte sahibine e-posta** (ekleme, değiştirme, kaldırma).
+   IBAN **maskeli** (`TR•• •••• 1326`): posta, hesabı ele geçirilmiş birinin
+   gelen kutusuna da düşebilir. Posta gidemezse kayıt geri alınmıyor —
+   kullanıcının istediği yapıldı — ama hata kaybolmuyor, loglanıyor.
+2. **Son 7 günde değişmiş IBAN'da ödeyene uyarı:** kopyalama anında
+   ("emin değilsen ödemeden önce sor") ve ödeme penceresinde kalıcı bir
+   satır. Parayı gönderecek kişi, değişikliği fark edebilecek son kişi.
+
+**Aynı IBAN yeniden kaydedilirse hiçbir şey yazılmıyor:** uyarı penceresi
+yeniden başlamasın, sahibine boşuna posta gitmesin.
+
+**Değerlendirildi, yapılmadı:** IBAN değiştirmek için yeniden giriş
+istemek. Giriş e-posta koduyla yapılıyor, yani hesabı ele geçiren zaten
+e-postaya erişmiş demek — bildirim o durumda da gider, asıl koruma ödeyenin
+uyarısı. Parolalı giriş yaygınlaşırsa ya da bir kötüye kullanım görülürse
+yeniden bakılmalı.
+
+### Gizlilik
+
+Politika iki dilde değişti: "IBAN toplamıyoruz" cümleleri kaldırıldı; IBAN
+"hangi verileri işliyoruz" listesine girdi; Resend satırı bildirim
+postasını da sayıyor; hesap silmede IBAN silinenler arasında.
+**App Store Connect gizlilik anketi 1.0.7 gönderiminde:** Financial Info →
+Other Financial Info, kullanıcıya bağlı, amaç App Functionality —
+kullanıcı panelde işaretleyecek (1.0.6 IBAN göstermiyor).
+
+### Nerede (web, 52a)
+
+- Kullanıcı menüsü: "IBAN · Ekli / Yok" satırı → pencere (ekle,
+  değiştir, kaldır) — iki adımlı doğrulamayla aynı desen.
+- Grup sayfası, "Ödemen gerekenler" satırı: "IBAN'ı kopyala" —
+  "Hatırlat" ile aynı görünüm.
+- Ödeme kaydet penceresi, giden ödeme: "Alıcının IBAN'ı". Gelen ödemede
+  yok (alıcı sensin).
+- "Sana ödenecekler" varken IBAN'ın yoksa: "IBAN ekle" ipucu. Bu olmasa
+  özelliği kimse bulmazdı.
+- Pano yazılamazsa IBAN hata mesajında gösteriliyor.
+
+### Mobil (52b, 1.0.7)
+
+`expo-clipboard` (tek dokunuş; yeni native paket ama 1.0.7 zaten yeni bir
+build). Hesap ekranında satır, bakiye kartında borçlu olduğun satırda
+kopyalama, ödeme ekranında alıcının IBAN'ı.
+
+---
+
 ## ADR-058 — iOS sahne yaşam döngüsü (UIScene): SDK 57'de şimdi açılıyor, SDK 58 ayrı iş
 **Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-27** (1.0.6'da, 1 Ekim build'i — incelemeye göndermeden önce TestFlight kontrolüyle)
 

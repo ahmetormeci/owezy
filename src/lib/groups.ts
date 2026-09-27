@@ -420,7 +420,16 @@ export async function listGroupMembers(userId: string, groupId: string) {
       userId: true,
       role: true,
       joinedAt: true,
-      user: { select: { displayName: true, avatarUrl: true, hasImage: true, isGuest: true } },
+      user: {
+        select: {
+          displayName: true,
+          avatarUrl: true,
+          hasImage: true,
+          isGuest: true,
+          iban: true,
+          ibanUpdatedAt: true,
+        },
+      },
     },
     orderBy: { joinedAt: "asc" },
   });
@@ -435,6 +444,15 @@ export async function listGroupMembers(userId: string, groupId: string) {
     // Misafir (ADR-057): arayuz etiketi, hatirlatma dugmesini ve sahiplik
     // devri secenegini buna gore gosteriyor.
     isGuest: member.user.isGuest,
+    /**
+     * IBAN (ADR-059): ortak bir gruptaki HERKES goruyor - kullanicinin
+     * secimi (27 Eylul). Bu fonksiyon zaten yalnizca grubun aktif uyesine
+     * cevap veriyor (assertActiveMemberOfGroup), yani gorunurluk kurali
+     * uyelik kuralinin kendisi. Misafirde ve silinmis hesapta hep null
+     * (veritabani kurallari).
+     */
+    iban: member.user.iban,
+    ibanUpdatedAt: member.user.ibanUpdatedAt,
   }));
 }
 

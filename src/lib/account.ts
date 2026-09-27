@@ -224,6 +224,10 @@ export async function deleteAccount(userId: string) {
         emailVerified: false,
         twoFactorEnabled: false,
         locale: null,
+        // Silinmis bir kisinin banka bilgisi kalamaz (ADR-059). Veritabani
+        // da zorluyor: User_deleted_no_iban.
+        iban: null,
+        ibanUpdatedAt: null,
         deletedAt: now,
       },
     });

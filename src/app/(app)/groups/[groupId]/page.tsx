@@ -23,6 +23,8 @@ import { GroupSummary } from "@/components/group-summary";
 import { Receipt, ReceiptLine } from "@/components/receipt";
 import { ExpenseComposer } from "@/components/expense-composer";
 import { RemindButton } from "@/components/remind-button";
+import { AddIbanHint, CopyIbanButton } from "@/components/iban-actions";
+import { isIbanRecentlyChanged } from "@/lib/iban";
 import { RecurringList } from "@/components/recurring-list";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
 
@@ -190,6 +192,21 @@ export default async function GroupDetailPage({
   const roleByUserId = new Map(members.map((member) => [member.userId, member.role]));
   const nameByUserId = new Map(balances.map((balance) => [balance.userId, balance.displayName]));
   const guestIds = new Set(members.filter((member) => member.isGuest).map((member) => member.userId));
+  // IBAN (ADR-059): alacaklinin IBAN'i ve "son 7 gunde degisti mi". Uye
+  // listesinden - zaten okunuyor, ek sorgu yok. "Simdi" SUNUCUDA alinip
+  // tek kez hesaplaniyor; istemci saatine guvenilmiyor.
+  const now = new Date();
+  const ibanByUserId = new Map(
+    members
+      .filter((member) => member.iban)
+      .map((member) => [
+        member.userId,
+        {
+          iban: member.iban as string,
+          recentlyChanged: isIbanRecentlyChanged(member.ibanUpdatedAt, now),
+        },
+      ]),
+  );
   const personByUserId = new Map<string, Person>(
     balances.map((balance) => [
       balance.userId,
@@ -288,6 +305,7 @@ export default async function GroupDetailPage({
               .map((balance) => ({
                 userId: balance.userId,
                 displayName: balance.displayName,
+                iban: ibanByUserId.get(balance.userId) ?? null,
               }))}
             suggestedTransfers={suggestedTransfers}
           />
@@ -401,6 +419,14 @@ export default async function GroupDetailPage({
               currency={currency}
               locale={locale}
               fallbackName={t("ui.unknown_user")}
+              /* Alacaklinin IBAN'i varsa kopyalanabiliyor (ADR-059). Odeme
+                 bankada yapiliyor, burada yalnizca kaydediliyor. */
+              action={(transfer) => {
+                const payee = ibanByUserId.get(transfer.toUserId);
+                return payee ? (
+                  <CopyIbanButton iban={payee.iban} recentlyChanged={payee.recentlyChanged} />
+                ) : null;
+              }}
             />
             <SuggestionGroup
               title={t("ui.will_be_paid_to_you")}
@@ -424,6 +450,9 @@ export default async function GroupDetailPage({
                 )
               }
             />
+            {/* Sana odenecekler var ama IBAN'in yok: ozelligin kesfedildigi
+                yer burasi (ADR-059). */}
+            {iReceive.length > 0 && !user.iban ? <AddIbanHint /> : null}
             {/* Beni ilgilendirmeyen transferler. Ayni blokta ama en altta ve
                 soluk: grubun takas plani dogru bir bilgi, ama benim isim
                 degil. */}

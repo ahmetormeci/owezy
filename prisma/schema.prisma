@@ -176,6 +176,15 @@ model User {
   mergedGuests User[]        @relation("GuestMergedInto")
   guestInvites GroupInvite[] @relation("GuestInvite")
 
+  /// IBAN ILE ODEME (ADR-059, Faz 52a). Kullanici ISTERSE ekliyor; ortak bir
+  /// grupta oldugu herkes ona odeme yaparken goruyor. Kayit bicimi tek:
+  /// bosluksuz, buyuk harf (src/lib/iban.ts). ibanUpdatedAt odeyene
+  /// "yakinda degisti" notunu cikariyor. CHECK'ler: bicim (User_iban_shape),
+  /// ikisi birlikte (User_iban_updated_pair), misafirde yok
+  /// (User_guest_no_iban), silinmis hesapta yok (User_deleted_no_iban).
+  iban          String?
+  ibanUpdatedAt DateTime?
+
   // Bu kullanicinin olusturdugu gruplar
   createdGroups Group[] @relation("GroupCreatedBy")
 

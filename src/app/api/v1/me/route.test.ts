@@ -6,11 +6,17 @@ const {
   mockUserUpdate,
   mockEnforceWriteLimit,
   mockAccountFindFirst,
+  mockSendIbanChangedEmail,
 } = vi.hoisted(() => ({
   mockEnforceWriteLimit: vi.fn(),
   mockGetOrCreateCurrentUser: vi.fn(),
   mockUserUpdate: vi.fn(),
   mockAccountFindFirst: vi.fn(),
+  mockSendIbanChangedEmail: vi.fn(),
+}));
+
+vi.mock("@/lib/email", () => ({
+  sendIbanChangedEmail: mockSendIbanChangedEmail,
 }));
 
 vi.mock("@/lib/api-rate-limit", () => ({
@@ -49,6 +55,8 @@ beforeEach(() => {
   mockUserUpdate.mockReset();
   mockAccountFindFirst.mockReset();
   mockAccountFindFirst.mockResolvedValue(null);
+  mockSendIbanChangedEmail.mockReset();
+  mockSendIbanChangedEmail.mockResolvedValue(undefined);
 
   mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
   mockUserUpdate.mockImplementation(async ({ data }: { data: { locale: string } }) => ({
@@ -111,6 +119,143 @@ describe("PATCH /api/v1/me", () => {
     expect(json.ok).toBe(false);
     expect(typeof json.code).toBe("string");
     expect(json.code).toMatch(/^[a-z]+\.[a-z_]+$/);
+  });
+});
+
+/**
+ * IBAN (ADR-059). Ornek IBAN'lar SWIFT kaydindaki orneklerdir.
+ */
+describe("PATCH /api/v1/me - IBAN", () => {
+  const IBAN = "TR330006100519786457841326";
+  const OTHER_IBAN = "DE89370400440532013000";
+
+  beforeEach(() => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({
+      id: USER_ID,
+      email: "ali@example.com",
+      locale: "en",
+      iban: null,
+    });
+    mockUserUpdate.mockImplementation(async ({ data }: { data: object }) => ({
+      id: USER_ID,
+      ...data,
+    }));
+  });
+
+  it("bosluklu ve kucuk harfli IBAN'i normalize edip degisiklik aniyla birlikte kaydeder", async () => {
+    const response = await PATCH(patchRequest({ iban: "tr33 0006 1005 1978 6457 8413 26" }));
+
+    expect(response.status).toBe(200);
+    const { data } = mockUserUpdate.mock.calls[0][0];
+    expect(data.iban).toBe(IBAN);
+    expect(data.ibanUpdatedAt).toBeInstanceOf(Date);
+  });
+
+  it("degisince sahibine MASKELI IBAN'la ve hesap diliyle e-posta gonderir", async () => {
+    await PATCH(patchRequest({ iban: IBAN }));
+
+    expect(mockSendIbanChangedEmail).toHaveBeenCalledWith({
+      to: "ali@example.com",
+      maskedIban: "TR•• •••• 1326",
+      locale: "en",
+    });
+  });
+
+  it("AYNI IBAN yeniden kaydedilirse yazmaz ve e-posta gondermez", async () => {
+    // Yeniden yazmak "yakinda degisti" notunu yeniden baslatir ve sahibine
+    // bosuna "IBAN'in degisti" postasi giderdi.
+    mockGetOrCreateCurrentUser.mockResolvedValue({
+      id: USER_ID,
+      email: "ali@example.com",
+      locale: "tr",
+      iban: IBAN,
+    });
+
+    const response = await PATCH(patchRequest({ iban: "TR33 0006 1005 1978 6457 8413 26" }));
+
+    expect(response.status).toBe(200);
+    const { data } = mockUserUpdate.mock.calls[0][0];
+    expect(data).not.toHaveProperty("iban");
+    expect(data).not.toHaveProperty("ibanUpdatedAt");
+    expect(mockSendIbanChangedEmail).not.toHaveBeenCalled();
+  });
+
+  it("baska bir IBAN'a gecince yazar ve bildirir", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({
+      id: USER_ID,
+      email: "ali@example.com",
+      locale: "tr",
+      iban: IBAN,
+    });
+
+    await PATCH(patchRequest({ iban: OTHER_IBAN }));
+
+    expect(mockUserUpdate.mock.calls[0][0].data.iban).toBe(OTHER_IBAN);
+    expect(mockSendIbanChangedEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ maskedIban: "DE•• •••• 3000" }),
+    );
+  });
+
+  it("null IBAN'i ve degisiklik anini BIRLIKTE siler ve kaldirildigini bildirir", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({
+      id: USER_ID,
+      email: "ali@example.com",
+      locale: "tr",
+      iban: IBAN,
+    });
+
+    await PATCH(patchRequest({ iban: null }));
+
+    expect(mockUserUpdate.mock.calls[0][0].data).toEqual({ iban: null, ibanUpdatedAt: null });
+    expect(mockSendIbanChangedEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ maskedIban: null }),
+    );
+  });
+
+  it("bos metni kaldirma sayar", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({
+      id: USER_ID,
+      email: "ali@example.com",
+      locale: "tr",
+      iban: IBAN,
+    });
+
+    await PATCH(patchRequest({ iban: "   " }));
+
+    expect(mockUserUpdate.mock.calls[0][0].data).toEqual({ iban: null, ibanUpdatedAt: null });
+  });
+
+  it("kontrol hanesi tutmayan IBAN'i reddeder ve hicbir sey yazmaz", async () => {
+    const response = await PATCH(patchRequest({ iban: "TR330006100519786457841327" }));
+
+    expect(response.status).toBe(400);
+    // Dogrulama hatalarinin genel sekli (lib/api.ts): kod "validation.invalid",
+    // alanin kendi kodu issues icinde.
+    const json = await response.json();
+    expect(json.code).toBe("validation.invalid");
+    expect(json.issues[0].message).toBe("validation.iban_invalid");
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+    expect(mockSendIbanChangedEmail).not.toHaveBeenCalled();
+  });
+
+  it("e-posta gidemese de kayit yapilmis sayilir (200)", async () => {
+    mockSendIbanChangedEmail.mockRejectedValue(new Error("Resend kapali"));
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const response = await PATCH(patchRequest({ iban: IBAN }));
+
+    expect(response.status).toBe(200);
+    expect(mockUserUpdate).toHaveBeenCalled();
+    // Hata KAYBOLMUYOR: teslimat bozuldugunda tek isaretimiz bu satir.
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it("dil degisikligi IBAN'a dokunmaz", async () => {
+    await PATCH(patchRequest({ locale: "tr" }));
+
+    expect(mockUserUpdate.mock.calls[0][0].data).toEqual({ locale: "tr" });
+    expect(mockSendIbanChangedEmail).not.toHaveBeenCalled();
   });
 });
 

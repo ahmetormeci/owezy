@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PersonAvatar } from "@/components/person-avatar";
+import { IbanDialog } from "@/components/iban-dialog";
 import { apiRequest } from "@/lib/api-client";
 import { updateMeSchema } from "@/lib/me-schemas";
 import { useTranslate } from "@/lib/i18n";
@@ -59,12 +60,14 @@ export function UserMenu({
   avatarUrl,
   hasImage,
   twoFactorEnabled,
+  iban,
 }: {
   displayName: string;
   email: string;
   avatarUrl?: string | null;
   hasImage?: boolean | null;
   twoFactorEnabled: boolean;
+  iban: string | null;
 }) {
   const router = useRouter();
   const t = useTranslate();
@@ -73,6 +76,7 @@ export function UserMenu({
   const [menuOpen, setMenuOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [ibanOpen, setIbanOpen] = useState(false);
   const [name, setName] = useState(displayName);
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -363,6 +367,25 @@ export function UserMenu({
                 {t(twoFactorEnabled ? "ui.two_factor_is_on" : "ui.two_factor_is_off")}
               </span>
             </Button>
+            {/*
+              IBAN SATIRI (ADR-059) - iki adimli dogrulamayla ayni desen:
+              durum satirin uzerinde ("Ekli" / "Yok"), duzenleme ayri bir
+              diyalogda. Deger layout'un zaten okudugu satirdan geliyor.
+            */}
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => {
+                setMenuOpen(false);
+                setIbanOpen(true);
+              }}
+            >
+              <span className="truncate">{t("ui.iban")}</span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {t(iban ? "ui.iban_is_set" : "ui.iban_is_unset")}
+              </span>
+            </Button>
             <Button
               type="button"
               variant="ghost"
@@ -399,6 +422,7 @@ export function UserMenu({
     {deleteOpen ? (
       <DeleteAccountDialog open onOpenChange={setDeleteOpen} />
     ) : null}
+    {ibanOpen ? <IbanDialog open onOpenChange={setIbanOpen} currentIban={iban} /> : null}
     </>
   );
 }

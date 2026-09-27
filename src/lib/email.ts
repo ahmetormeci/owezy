@@ -127,6 +127,62 @@ export async function sendOtpEmail({
   }
 }
 
+/**
+ * IBAN DEGISTI BILDIRIMI (ADR-059).
+ *
+ * NEDEN VAR: hesabi ele gecirilen birinin IBAN'i degistirilirse, grup
+ * arkadaslarinin ona gonderdigi para BASKASINA gider. Sahibinin bunu
+ * ogrenmesinin en hizli yolu bu e-posta. Bankalarin "hesap bilgin
+ * degisti" postasiyla ayni mantik.
+ *
+ * IBAN'IN TAMAMI YAZILMIYOR (maskIban): posta, hesabi ele gecirilmis
+ * birinin gelen kutusuna da dusebilir; sahibi kendi IBAN'ini son
+ * hanelerinden tanir.
+ *
+ * DIL HESAP TERCIHINDEN: OTP'nin aksine burada kimlik KANITLANMIS - istek
+ * oturum acmis kullanicidan geldi. Tercih yoksa varsayilan.
+ */
+export async function sendIbanChangedEmail({
+  to,
+  maskedIban,
+  locale: preferred,
+}: {
+  to: string;
+  /** Yeni IBAN'in maskelenmis hali; null = IBAN kaldirildi. */
+  maskedIban: string | null;
+  locale: string | null;
+}): Promise<void> {
+  const locale = normalizeLocale(preferred);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    translate(key, params, locale);
+
+  const subject = t("email.iban_changed_subject");
+  const heading = t("email.iban_changed_heading");
+  const body =
+    maskedIban === null
+      ? t("email.iban_removed_body")
+      : t("email.iban_set_body", { iban: maskedIban });
+  const notYou = t("email.iban_not_you");
+
+  const { error } = await resend().emails.send({
+    from: FROM,
+    to,
+    subject,
+    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
+  <p style="margin:0 0 24px;font-size:11px;letter-spacing:2px;color:#888;text-transform:uppercase">${escapeHtml(heading)}</p>
+  <p style="margin:0 0 8px;font-size:15px;line-height:1.5">${escapeHtml(body)}</p>
+  <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#666">${escapeHtml(notYou)}</p>
+</div>`,
+    text: `${heading}\n\n${body}\n\n${notYou}`,
+  });
+
+  if (error) {
+    // Cagiran (PATCH /me) yakaliyor: bildirim gidemedi diye IBAN kaydi
+    // geri alinmiyor - kayit zaten yapildi ve kullanicinin istedigi o.
+    throw new Error(`Resend gönderemedi: ${error.name} - ${error.message}`);
+  }
+}
+
 // Metinler sozlukten geliyor, yani bizim yazdigimiz sabitler - ama kod
 // Better Auth'tan gelen bir deger ve HTML'e giriyor. Kacisi tek yerde
 // yapmak, bir gun sozluge tirnak ya da "&" girdiginde de dogru kalmasini

@@ -77,6 +77,12 @@ değil. `ExpenseReceipt.storageKey` ile aynı rol. İçerik türü ayrı bir kol
 tutulmuyor: anahtarın uzantısını (`.jpg` / `.png`) bu kodun kendisi üretiyor
 ve tür baytlardan koklanarak seçiliyor — kapalı bir döngü.
 
+`iban` — kullanıcının isteğe bağlı IBAN'ı (ADR-059). Kayıt biçimi tek:
+boşluksuz, büyük harf; ekranda 4'erli gösteriliyor. Ortak gruptaki herkes
+görüyor (`listGroupMembers`). `ibanUpdatedAt` son değişiklik anı: ödeyene
+"son 7 günde değişti" uyarısı buradan çıkıyor. Aynı IBAN yeniden
+kaydedilirse ikisi de yazılmıyor.
+
 `locale` kolonu `String`, enum değil — dil listesi büyüdüğünde migration
 gerektirmesin.
 Doğrulama uygulamada: `normalizeLocale()` beyaz liste uyguluyor ve **hem
@@ -271,11 +277,20 @@ Sonradan eklenen kısıtlar (kendi migration'larında):
 | 14 | Misafir **sahip** (`OWNER`) olamaz | aynı trigger |
 | 15 | Misafire özel davet linki **tek kullanımlık** | CHECK `GroupInvite_guest_single_use` (`20260927180000`) |
 | 16 | Yalnızca misafir devredilir; `mergedIntoId` ve `mergedAt` **birlikte**; kendine devir yok | CHECK `User_merge_shape` |
+| 17 | `User.iban` boşluksuz büyük harf, ülke kodu + 2 kontrol hanesi + 11–30 harf/rakam | CHECK `User_iban_shape` (`20260927210000`) |
+| 18 | `iban` ile `ibanUpdatedAt` **birlikte** yazılır, birlikte silinir | CHECK `User_iban_updated_pair` |
+| 19 | Misafirin IBAN'ı olamaz | CHECK `User_guest_no_iban` |
+| 20 | Silinmiş hesabın IBAN'ı olamaz — hesap silme unutursa **düşer** | CHECK `User_deleted_no_iban` |
 
 11–14'ün dördü de geliştirme veritabanında geri alınan işlemlerle
 **denendi** (27 Eylül): dokuz denemenin dokuzu doğru — iki olumlu kontrol
 geçti, yedi yasak kendi mesajıyla reddedildi. Kalıcı karşılığı
 `e2e/guests.spec.ts` son testinde.
+
+17–20'nin kalıcı karşılığı `e2e/iban.spec.ts` son testinde: doğru biçim
+yazılabiliyor (olumlu kontrol), beş yasak kendi kısıt adıyla reddediliyor.
+Kontrol hanesinin **hesabı** (mod-97) veritabanında değil, uygulamada
+(`src/lib/iban.ts`); veritabanı bozuk biçimin girmesini engelliyor.
 
 9 numaralı kuralın "toplam 10000 olmalı" tarafı burada **yok**: o, çoklu satır
 toplamı gerektirir ve 8 numaralı kuralla aynı sebepten CHECK'e yazılamaz.
@@ -345,6 +360,7 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260910200000_add_expense_item` | `SplitType.ITEMIZED` + `ExpenseItem` + `ExpenseItemShare`. Kalemler bir GIRDI katmani; bakiyeye giren sey yine paylar (ADR-052) |
 | `20260910220000_add_user_avatar_storage_key` | `User.avatarStorageKey` — profil fotoğrafının depodaki anahtarı (ADR-054). `avatarUrl` ve `hasImage` Clerk döneminden zaten vardı |
 | `20260927180000_add_guest_claim` | `GroupInvite.guestUserId` + `User.mergedIntoId` + `User.mergedAt`; tek kullanımlık misafir linki ve devir şekli CHECK'leri (ADR-057, kurallar 15–16) |
+| `20260927210000_add_user_iban` | `User.iban` + `User.ibanUpdatedAt`; biçim, ikili, misafir ve silinmiş hesap CHECK'leri (ADR-059, kurallar 17–20) |
 | `20260927120000_add_guest_members` | `User.isGuest` + `User.guestGroupId`; CHECK `User_guest_shape`; misafire oturum/hesap ve yanlış grup/sahiplik trigger'ları (ADR-057, kurallar 11–14) |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.

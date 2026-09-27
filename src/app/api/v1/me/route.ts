@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { updateMeSchema } from "@/lib/me-schemas";
 import { deleteAccount } from "@/lib/account";
 import { handleApiError } from "@/lib/api";
+import { sendIbanChangedEmail } from "@/lib/email";
+import { maskIban } from "@/lib/iban";
 
 export async function GET() {
   const user = await findCurrentUser();
@@ -42,7 +44,7 @@ export async function GET() {
 }
 
 /**
- * Kullanicinin kendi tercihlerini gunceller: dil ve gorunen ad.
+ * Kullanicinin kendi tercihlerini gunceller: dil, gorunen ad ve IBAN.
  *
  * NEDEN CEREZ YETMIYOR: cerez tarayiciya ait. Kullanici baska bir cihazdan
  * girdiginde orada cerez yok ve dili yeniden secmesi gerekirdi. Kayit,
@@ -64,6 +66,13 @@ export async function PATCH(request: NextRequest) {
 
     const body = updateMeSchema.parse(await request.json());
 
+    /**
+     * IBAN YALNIZCA DEGISTIYSE yaziliyor (ADR-059). Ayni IBAN'i yeniden
+     * kaydetmek "yakinda degisti" notunu yeniden baslatir ve sahibine
+     * bosuna "IBAN'in degisti" postasi giderdi.
+     */
+    const ibanChanged = body.iban !== undefined && body.iban !== user.iban;
+
     // YALNIZCA GONDERILEN ALAN yaziliyor. Ikisini birden yazsaydik, dil
     // dugmesine basmak adi undefined'a cevirirdi - iki ayri arayuz ayni uca
     // konusuyor ve birbirinin alanini silmemeli.
@@ -72,8 +81,31 @@ export async function PATCH(request: NextRequest) {
       data: {
         ...(body.locale === undefined ? {} : { locale: body.locale }),
         ...(body.displayName === undefined ? {} : { displayName: body.displayName }),
+        // IBAN ile degisiklik ani BIRLIKTE yaziliyor, birlikte siliniyor -
+        // veritabani da bunu zorluyor (User_iban_updated_pair).
+        ...(ibanChanged
+          ? { iban: body.iban, ibanUpdatedAt: body.iban === null ? null : new Date() }
+          : {}),
       },
     });
+
+    if (ibanChanged) {
+      /**
+       * KAYITTAN SONRA ve BEKLENEREK, ama hatasi yanita YANSIMIYOR: posta
+       * gidemedi diye IBAN geri alinmiyor - kullanicinin istedigi kayit
+       * yapildi. Hata kayboluyor da degil; teslimat bozuldugunda tek
+       * isaretimiz bu satir (OTP ile ayni desen, better-auth.ts).
+       */
+      try {
+        await sendIbanChangedEmail({
+          to: user.email,
+          maskedIban: body.iban ? maskIban(body.iban) : null,
+          locale: user.locale,
+        });
+      } catch (error) {
+        console.error("[me] IBAN değişikliği bildirimi gönderilemedi:", error);
+      }
+    }
 
     return NextResponse.json({ ok: true, user: updated });
   } catch (error) {
