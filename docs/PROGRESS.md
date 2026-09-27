@@ -1125,7 +1125,7 @@ destek sayfasındaki adres gerçekten çalışıyor.
 
 ---
 
-## Faz 42 — Harcamaya yorum · **BİTTİ, MOBİLİ YAYINLANMADI**
+## Faz 42 — Harcamaya yorum · **BİTTİ, 1.0.4'TE YAYINDA**
 
 Bir harcamanın altına not düşülebiliyor. Kullanıcının daha önce seçtiği beş
 özellikten ilki; en ucuzu olduğu için değil, **tasarım sistemi hazır olduğu
@@ -2324,7 +2324,7 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 
 ---
 
-## Faz 43 — Ödeme hatırlatması · **BİTTİ, MOBİLİ YAYINLANMADI**
+## Faz 43 — Ödeme hatırlatması · **BİTTİ, 1.0.4'TE YAYINDA**
 
 Alacaklı, ödeşme planında kendisine ödemesi gereken kişiye "Hatırlat"
 diyebiliyor. Kullanıcının seçtiği dört maddeden ikincisi.
@@ -2364,7 +2364,7 @@ düştü, geri alınınca yeniden geçti.
 
 ---
 
-## Faz 44 — Tekrarlayan harcama · **BİTTİ, MOBİLİ YAYINLANMADI**
+## Faz 44 — Tekrarlayan harcama · **BİTTİ, 1.0.4'TE YAYINDA** (cron'un canlıda ürettiği hâlâ görülmedi)
 
 Kira, abonelik, aidat. Kullanıcının seçtiği dört maddeden üçüncüsü.
 
@@ -2406,7 +2406,7 @@ boş grupta gizleniyordu — yani şablonunu yeni kuran kullanıcı onu göremez
 
 ---
 
-## Faz 45 — Kalem kalem bölüşüm · **BİTTİ, MOBİLİ YAYINLANMADI**
+## Faz 45 — Kalem kalem bölüşüm · **BİTTİ, 1.0.4'TE YAYINDA**
 
 Restoran hesabı. Kullanıcının seçtiği dört maddeden dördüncüsü ve
 sonuncusu — fiş OCR kullanıcının kararıyla atlandı.
@@ -2453,7 +2453,7 @@ kurulup düzenlendi ve kalemlerin düzenlemeden sonra da durduğu doğrulandı.
 
 ---
 
-## Faz 46 — Fişten tutar okuma · **BİTTİ, HİÇBİR CİHAZDA GÖRÜLMEDİ**
+## Faz 46 — Fişten tutar okuma · **BİTTİ, 1.0.4'TE YAYINDA** (kullanıcı kendi fişinde doğru okuduğunu bildirdi)
 
 Fiş fotoğrafı eklenince tutar alanı kendiliğinden doluyor. Dört maddenin
 **atlanmış olanı** — ve atlanma gerekçesi aynı gün ölçülüp çürütüldü.
@@ -2494,7 +2494,7 @@ davranışı.
 
 ---
 
-## Faz 47 — Profil fotoğrafı · **BİTTİ, HİÇBİR CİHAZDA GÖRÜLMEDİ**
+## Faz 47 — Profil fotoğrafı · **BİTTİ, 1.0.5'TE YAYINDA**
 
 Kullanıcı kendi fotoğrafını yükleyebiliyor; fotoğraf R2'de duruyor ve
 **kendi ucumuzdan** servis ediliyor.
@@ -2541,7 +2541,7 @@ ve geri alınca geçti.
 
 ---
 
-## Faz 48 — Fişten kalemler + kendi OCR modülümüz · **BİTTİ, HİÇBİR CİHAZDA GÖRÜLMEDİ**
+## Faz 48 — Fişten kalemler + kendi OCR modülümüz · **BİTTİ, 1.0.5'TE YAYINDA**
 
 | | |
 |---|---|
@@ -2581,13 +2581,48 @@ build'inde görülecek.
 
 ---
 
+
+## Faz 49 — Değerlendirme isteği · **BİTTİ, 1.0.6 BUILD'İNİ BEKLİYOR**
+
+| | |
+|---|---|
+| Karar | ADR-056 |
+| Kural | 5 başarılı kayıt · ilk açılıştan 7 gün · son sorudan 120 gün |
+| Tetik | harcama, tekrarlayan harcama, ödeme, hızlı ekleme — **başarı dalının sonunda** |
+| Elle yol | Hesap → "Uygulamayı değerlendir" (yalnızca iOS) |
+| Paket | `expo-store-review` — **native**, yeni build gerektiriyor |
+| Gizlilik | sayaç yalnızca telefonda; politika değişmedi |
+
+**Neden şimdi:** 1.0.5 yayında ve mağazada **0 puan** var (ölçüldü,
+27 Eylül). Apple bir kullanıcıya pencereyi yılda en fazla üç kez
+gösteriyor; kural o üç hakkı uygulamayı gerçekten kullanana ayırıyor.
+
+**Testler:** 12 birim (kural, sınırlar, hata yolları) + 6 ekran (dört
+kayıt yolunun bağlantısı, reddedilen kayıt, fişi yüklenemeyen kayıt).
+Sekiz negatif kontrolün sekizi de düştü.
+
+**Görülemeyecek olan:** Apple'ın pencereyi gerçekten gösterip
+göstermediği. StoreKit bunu bildirmiyor; TestFlight'ta pencere hiç
+çıkmıyor.
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
 karar vermemiştir.
 
+> **SIRADAKİ İŞ SEÇİLDİ (27 Eylül): HESAPSIZ ÜYE.** Kullanıcı, puan
+> isteme bittikten sonra bunu seçti. **Önce tasarım** (veri modeli,
+> sonradan hesap açınca kaydın bağlanması, yetkiler) → onay → uygulama.
+> Tasarım DECISIONS.md'ye yazılmadan karar alınmış sayılmaz.
+
 | Aday | Neden önemli |
 |---|---|
+| **UIScene / SDK 58'e geçiş** | **Seçmeli değil.** Xcode 27 ile derlenen build iOS 27'de açılmıyor (25 Eylül, ölçüldü). Build ortamı Xcode 26.6'ya sabit (`eas.json`); Apple yeni SDK'yı zorunlu kılmadan önce yapılmalı. SDK 57'deki hızlı yol davet linklerini soğuk açılışta bozuyor |
+| **Android** | Türkiye'de telefonların %85'ten fazlası Android. OCR modülümüz yalnızca iOS; Play Console hesabı gerekiyor. ADR-030 "önce iOS" |
+| **IBAN ile ödeme** | Türkiye için ucuz kazanç. **Gizlilik politikası değişmeli:** "Neleri toplamıyoruz" bölümü IBAN'ı açıkça sayıyor |
+| **Birden fazla ödeyen** | "Hesabı ikimiz ödedik". Settle Up ücretsiz veriyor. `Expense.paidById` tek alan |
+| **Birden fazla para birimi** | Yurt dışı tatili. Kur kaynağı gerekiyor (dış servis → gizlilik beyanı) |
+| **Apple / Google ile giriş** | Kayıt sürtünmesi; Google eklenirse Apple girişi de zorunlu (4.8) |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
 > **Admin paneli SORULDU VE YAPILMAMASINA KARAR VERİLDİ (12 Eylül).**

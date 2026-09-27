@@ -28,6 +28,7 @@ import { Field, FieldInput, SelectField } from "../../../../components/field";
 import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
+import { noteSaveAndMaybeAskForReview } from "../../../../lib/review-prompt";
 import { useTheme, type Theme } from "../../../../lib/theme";
 import { Cap } from "../../../../components/receipt";
 import { apiBaseUrl } from "../../../../lib/api";
@@ -521,7 +522,10 @@ export default function NewExpenseScreen() {
 
     // Harcama zaten kaydedildi, yalnizca fis kalmisti: tekrar YARATMIYORUZ.
     if (savedExpenseId) {
-      if (await sendReceipt(savedExpenseId)) router.back();
+      if (await sendReceipt(savedExpenseId)) {
+        router.back();
+        void noteSaveAndMaybeAskForReview();
+      }
       return;
     }
 
@@ -552,6 +556,7 @@ export default function NewExpenseScreen() {
         return;
       }
       router.back();
+      void noteSaveAndMaybeAskForReview();
       return;
     }
 
@@ -589,6 +594,13 @@ export default function NewExpenseScreen() {
 
     // Geri donuldugunde fis kendini tazeliyor (useFocusEffect, grup ekrani).
     router.back();
+    /**
+     * IS BITTIKTEN SONRA, ortasinda degil: kayit ve fis tamam, ekran
+     * kapandi. Apple'a "sorabilirsin" demenin dogru ani bu (ADR-056).
+     * Fis yuklenemediyse buraya gelinmiyor - kullanici ekranda, hatayi
+     * okuyor; o an soru sormanin ani degil.
+     */
+    void noteSaveAndMaybeAskForReview();
   }
 
   if (members.state.kind === "loading" || group.state.kind === "loading") {

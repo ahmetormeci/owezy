@@ -530,6 +530,90 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-056 — Değerlendirme isteği: Apple'ın yılda üç hakkı, uygulamayı gerçekten kullanana
+**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-27** (1.0.6 build'ini bekliyor)
+
+**Karar:** Uygulama, bir kayıt **başarıyla bittikten sonra** Apple'ın
+kendi değerlendirme penceresini ister — yalnızca şu üç koşul birlikte
+tutarsa:
+
+| Koşul | Değer |
+|---|---|
+| Başarılı kayıt (harcama, tekrarlayan harcama, ödeme, hızlı ekleme) | en az **5** |
+| Uygulamanın bu cihazda ilk açılışından beri | en az **7 gün** |
+| Son istekten beri | en az **120 gün** |
+
+Ayrıca Hesap ekranında her zaman duran bir **"Uygulamayı değerlendir"**
+satırı var (yalnızca iOS). App Store'un yorum sayfasını açar; kullanıcının
+kendi istediği yol olduğu için kurala tabi değil.
+
+Kullanıcı üç seçenek arasından seçti (27 Eylül): "otomatik + Hesap'ta
+satır" — diğer ikisi "yalnızca satır" ve "yalnızca borç kapanınca".
+
+### Neden bir kural gerekiyor
+
+Pencere Apple'ın (Guideline 5.6.1: başka bir puan penceresi yasak) ve
+gösterip göstermeyeceğine de Apple karar veriyor — bir kullanıcıya
+**yılda en fazla üç kez**. `requestReview()` "göster" demek değil,
+"gösterecekseniz şimdi uygun" demek. Kural olmazsa ilk kayıtta sorulur
+ve üç haktan biri, uygulamayı henüz tanımayan birine gider.
+
+Mağazada 1.0.5 yayındayken puan sayısı **0** (ölçüldü, 27 Eylül). Yeni
+bir uygulamanın aramada yükselmesinin en ucuz yolu puan.
+
+### Ne zaman: iş bittiğinde, ortasında değil
+
+Çağrı dört kayıt yolunun **başarı dalının sonunda**. İki durumda
+bilerek **çağrılmıyor**:
+
+- **Kayıt reddedilirse** — kullanıcı hatayı okuyor.
+- **Harcama kaydedildi ama fiş yüklenemediyse** — ekran açık kalıyor ve
+  ne olduğunu söylüyor (kısmi başarısızlık). O an soru sormanın
+  anı değil. Fiş sonradan yüklenince soruluyor.
+
+Ödeme **iptali** sayılmıyor: olumlu bir an değil.
+
+### Gizlilik: sayaç telefondan çıkmıyor
+
+Üç değer (`firstSeenAt`, `saves`, `lastAskedAt`) cihazın anahtarlığında
+(`expo-secure-store`) duruyor, sunucuya hiçbir şey gitmiyor. Gizlilik
+politikasının "hiçbir analiz aracı kurulu değil" sözü doğru kalıyor;
+politika ve App Privacy beyanı **değişmedi**. (Oturum, dil ve tema
+tercihleri de aynı şekilde yalnızca cihazda.)
+
+### Ayrıntılar ve bilinçli seçimler
+
+- **Önce yazılıyor, sonra soruluyor.** `requestReview()` düşerse
+  `lastAskedAt` yine kayıtlı; yoksa bir sonraki kayıtta tekrar sorulurdu.
+- **Pencere yoksa hak harcanmış sayılmıyor.** TestFlight'ta
+  `isAvailableAsync()` false döner; o durumda `lastAskedAt` boş kalır.
+- **Hiçbir zaman fırlatmıyor.** Kayıt zaten başarılı; anahtarlıktaki bir
+  aksaklık kullanıcıya "kaydedilemedi" gibi görünmemeli.
+- **Bozuk kayıt yok sayılıyor** — sayaç baştan başlıyor. En kötü sonuç
+  bir soru gecikmesi; bozuk veriye güvenip erken sormaktan iyi.
+- **"İlk açılış" gerçekten ilk açılış:** `noteAppOpened()` kök düzende
+  çağrılıyor. Yazılamadıysa ilk kayıt anı ilk açılış sayılıyor.
+- **Mevcut kullanıcılar** için sayaç 1.0.6'nın ilk açılışında başlıyor.
+
+### Bedeli
+
+- **Yeni bir native paket** (`expo-store-review`) → görmek için yeni bir
+  build (1.0.6). Expo Go'da ve TestFlight'ta pencere hiç görünmüyor;
+  gerçek davranış ancak mağazadan kurulan sürümde görülebilir.
+- Kuralın kendisi testlerle korunuyor ama Apple'ın pencereyi gerçekten
+  gösterip göstermediği **ölçülemez** — StoreKit bunu bildirmiyor.
+
+### Doğrulama
+
+`lib/review-prompt.test.ts` (12) kuralı, sınırları ve hata yollarını;
+`test/screens/review-prompt.test.tsx` (6) dört kayıt yolunun bağlantısını
+sınıyor. **Sekiz negatif kontrolün sekizi de düştü:** dört çağrı tek tek
+silindi; çağrı fiş yüklenmeden önceye ve hata kontrolünün önüne taşındı;
+5 kayıt şartı 4'e indirildi; yazma ile sorma yer değiştirdi; pencere
+yokken de hak harcandı.
+
+---
+
 ## ADR-055 — OCR modülünü kendimiz yazıyoruz: metin yetmiyor, **konum** gerekiyor
 **Tarih:** 2026-09-11 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-11**
 

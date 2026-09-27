@@ -16,6 +16,12 @@ jest.mock("expo-secure-store", () =>
   require("./expo-secure-store.mock"),
 );
 
+// StoreKit de native (lib/review-prompt.ts, ADR-056). Ayni ikiz yolu.
+jest.mock("expo-store-review", () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("./expo-store-review.mock"),
+);
+
 /**
  * modules/receipt-ocr NATIVE: Node'da yuklenemiyor - expo-secure-store ile
  * ayni sebep.

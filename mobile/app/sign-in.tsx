@@ -385,7 +385,13 @@ function createStyles(theme: Theme) {
     // yaricap (3).
     button: {
       marginTop: 12,
-      height: 50,
+      /**
+       * minHeight, height DEGIL: en buyuk erisilebilirlik yazi boyutunda
+       * metin 50'ye sigmiyor ve kirpiliyordu (25 Eylul, simulatorde
+       * goruldu). Normal boyda dugme yine 50; yazi buyuyunce o da buyuyor.
+       */
+      minHeight: 50,
+      paddingVertical: 12,
       backgroundColor: theme.brand,
       borderRadius: 3,
       alignItems: "center",

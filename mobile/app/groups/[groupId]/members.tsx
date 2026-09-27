@@ -440,7 +440,9 @@ function createStyles(theme: Theme) {
     // Birincil eylem: harcama ekleme ekranindaki dugmeyle ayni olcu ve
     // yaricap.
     invite: {
-      height: 50,
+      // Kirpilma sebebi ve cozumu: sign-in.tsx'teki birincil dugme.
+      minHeight: 50,
+      paddingVertical: 12,
       borderRadius: 3,
       backgroundColor: theme.brand,
       alignItems: "center",

@@ -6,6 +6,7 @@ import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { parseMoney } from "@/lib/money";
 import { useTranslate } from "../lib/i18n";
 import { useApiClient } from "../lib/use-api";
+import { noteSaveAndMaybeAskForReview } from "../lib/review-prompt";
 import { useTheme, type Theme } from "../lib/theme";
 import { Cap } from "./receipt";
 import { FieldInput } from "../components/field";
@@ -99,6 +100,7 @@ export function ExpenseComposer({
       setDescription("");
       setAmountText("");
       onAdded();
+      void noteSaveAndMaybeAskForReview();
     } catch (caught) {
       setError(String(caught));
     } finally {

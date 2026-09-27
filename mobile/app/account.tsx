@@ -1,7 +1,17 @@
 import { fonts } from "../lib/fonts";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SUPPORTED_LOCALES, type Locale } from "@/lib/locale";
 import { useSession } from "../lib/auth";
@@ -9,6 +19,7 @@ import { disablePush } from "../lib/push";
 import { useLocale, useSetLocale, useTranslate } from "../lib/i18n";
 import { apiBaseUrl } from "../lib/api";
 import { pickReceipt, uploadReceipt } from "../lib/receipt-file";
+import { WRITE_REVIEW_URL } from "../lib/review-prompt";
 import { useApiClient, useApiGet } from "../lib/use-api";
 import { useTheme, useThemeChoice, type Theme } from "../lib/theme";
 import { SectionRule, MemberAvatar } from "../components/receipt";
@@ -320,6 +331,15 @@ export default function AccountScreen() {
           </View>
         </View>
 
+        {/* DEGERLENDIRME: kullanicinin KENDI istedigi yol, otomatik sorunun
+            kuralina tabi degil (ADR-056). Yalnizca iOS - uygulama baska bir
+            magazada yok. */}
+        {Platform.OS === "ios" ? (
+          <Pressable style={s.rate} onPress={() => void Linking.openURL(WRITE_REVIEW_URL)}>
+            <Text style={s.secondaryText}>{t("ui.rate_app")}</Text>
+          </Pressable>
+        ) : null}
+
         <Pressable style={s.secondary} onPress={() => void leave()} disabled={busy}>
           <Text style={s.secondaryText}>{t("ui.sign_out")}</Text>
         </Pressable>
@@ -404,6 +424,9 @@ function createStyles(theme: Theme) {
     segmentTextOn: { fontFamily: fonts.semibold, color: theme.onBrand },
 
     secondary: { paddingVertical: 28 },
+    // Alt bosluk YOK: hemen altindaki "Cikis yap" kendi ust boslugunu
+    // getiriyor. Iki satir arasi boylece sayfanin geri kalaniyla ayni (28).
+    rate: { paddingTop: 28 },
     secondaryText: {
       color: theme.muted,
       fontFamily: fonts.body,

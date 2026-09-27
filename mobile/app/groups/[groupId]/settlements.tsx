@@ -17,6 +17,7 @@ import { formatDate } from "@/lib/dates";
 import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
+import { noteSaveAndMaybeAskForReview } from "../../../lib/review-prompt";
 import { useTheme, type Theme } from "../../../lib/theme";
 import { SectionRule } from "../../../components/receipt";
 import { Field, FieldInput, SelectField } from "../../../components/field";
@@ -158,6 +159,8 @@ export default function SettlementsScreen() {
         return;
       }
       router.back();
+      // Odeme IPTALI sayilmiyor (asagida doCancel): olumlu bir an degil.
+      void noteSaveAndMaybeAskForReview();
     } catch (caught) {
       setError(String(caught));
     } finally {

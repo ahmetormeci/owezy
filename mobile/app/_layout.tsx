@@ -5,6 +5,7 @@ import { ThemeProvider, useTheme } from "../lib/theme";
 import * as Notifications from "expo-notifications";
 import * as SplashScreen from "expo-splash-screen";
 import { fonts, useAppFonts } from "../lib/fonts";
+import { noteAppOpened } from "../lib/review-prompt";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";
 import { syncPushToken } from "../lib/push";
 import { SessionProvider, useSession } from "../lib/auth";
@@ -243,6 +244,11 @@ export default function RootLayout() {
     if (!fontsReady) return;
     void SplashScreen.hideAsync().catch(() => {});
   }, [fontsReady]);
+
+  // Degerlendirme kuralinin "ilk acilistan 7 gun" sarti icin (ADR-056).
+  useEffect(() => {
+    void noteAppOpened();
+  }, []);
 
   /**
    * ADRES ACILISTA KONTROL EDILIYOR, ilk istekte degil.

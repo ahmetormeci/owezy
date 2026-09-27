@@ -508,6 +508,21 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
+## BİR SONRAKİ GÖNDERİM (1.0.6) — ŞİMDİDEN BİRİKEN
+
+| | |
+|---|---|
+| Değerlendirme isteği + Hesap'ta "Uygulamayı değerlendir" | Faz 49 · ADR-056 · **yeni native paket** (`expo-store-review`) |
+| Düğmeler büyük yazıda kırpılmıyor (giriş, davet, "Harcama ekle", "Ödeş") | `height: 50` → `minHeight: 50`; en büyük erişilebilirlik boyutunda simülatörde görüldü |
+
+- **App Privacy anketi değişmiyor:** sayaç telefonda kalıyor, hiçbir
+  veri toplanmıyor.
+- **TestFlight'ta pencere hiç görünmez** (Apple'ın kuralı). Hesap
+  ekranındaki satır ise görünür ve App Store'daki yorum sayfasını açar —
+  TestFlight'ta denenebilecek tek parça o.
+
+---
+
 ## BEŞ ÜLKEDE ARAMADA GÖRÜNMÜYOR (25 Eylül, ölçüldü)
 
 Kullanıcının Kanada'daki bir tanıdığı (iPhone 17 Pro, Kanada hesabı)

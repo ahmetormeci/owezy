@@ -25,33 +25,31 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-25
+Updated: 2026-09-27
 
 Current task:
-  1.0.5 GONDERIMI (25 Eylul, kullanici "1.0.5'e gecelim" dedi).
-    YAPILDI : eas.json build ortami sabit (Xcode 26.6), 8 Expo yamasi
-              (CI kirmiziydi - asagida), expo-text-extractor kaldirildi,
-              surum 1.0.5, surum notlari iki dilde (STORE.md).
-    GONDERILDI: ea3c004 push (CI yesil) -> EAS build 22 (77f46ac5,
-              Xcode 26.6 17F113 - log'dan dogrulandi) -> eas submit
-              BASARILI (4226b0f8; ~55 dk surdu, Expo durumu normaldi).
-              Build App Store Connect'e yuklendi, Apple isliyor.
-    TESTFLIGHT: kullanici build 22'yi telefonunda denedi - "calisiyor"
-              (26 Eylul).
-    >>> 1.0.5 YAYINDA (26 Eylul 15:37 UTC, olculdu: tr/us/ca/gb/de) <<<
-    Puan: 0. BES ULKEDE ARAMA HALA YOK (27 Eylul, web aramasi: us/ca/gb/
-    au/nz bos, tr/de 1.) - yeni surum dizini YENILEMEDI. Kalan yol
-    Apple'a bildirim (Distribution); gonderildi mi BILINMIYOR.
+  FAZ 49 - DEGERLENDIRME ISTEGI (ADR-056). KOD BITTI, testler yesil.
+    Kullanici secti (27 Eylul): otomatik + Hesap'ta satir.
+    Kural: 5 basarili kayit, ilk acilistan 7 gun, son sorudan 120 gun.
+    Tetik: harcama / tekrarlayan / odeme / hizli ekleme - BASARI DALININ
+    SONUNDA. Reddedilen kayitta ve fisi yuklenemeyen kayitta SORULMUYOR.
+    Sayac YALNIZCA TELEFONDA; gizlilik politikasi degismedi.
+    >>> 1.0.6: kullanici "hepsini yap, commitle pushla ve build al"
+        dedi (27 Eylul). Ayni build'de dort birincil dugmenin buyuk yazida
+        kirpilmasi da duzeldi (minHeight). Yerel Release build'de
+        expo-store-review DERLENDI, dugmeler iki boyutta GORULDU.
+        TestFlight'ta degerlendirme penceresi HIC gorunmez - Apple'in
+        kurali, hata degil. Submit ISTENMEDI, sorulacak. <<<
 
-    >>> (eski) 1.0.5 INCELEMEDE (26 Eylul, kullanici gonderdi) <<<
-              Ingilizce gorsel sirasi 1-4-3-2-5 KALDI - kullanicinin
-              karari ("cok onemli degil"). Tekrar onerme.
-    YAYINA CIKINCA:
-              - itunes lookup ile surumu olc (us/tr/ca -> 1.0.5)
-              - US/CA/GB/AU/NZ aramasini WEB ARAMASIYLA yeniden olc
-                (STORE.md, "BES ULKEDE ARAMADA GORUNMUYOR")
-    PUAN ISTEME (store review) ONERILDI, 1.0.5'E ALINMADI: yeni ozellik,
-    once tasarim + onay; yeni bir native paket de getiriyor.
+  SIRADAKI IS (kullanici secti): HESAPSIZ UYE. ONCE TASARIM -> onay.
+    Aday listesi ve diger eksikler: PROGRESS.md "Sıradaki adaylar".
+
+  1.0.5 YAYINDA (26 Eylul 15:37 UTC, olculdu). Build 22, Xcode 26.6.
+    Puan: 0. BES ULKEDE ARAMA HALA YOK (27 Eylul: us/ca/gb/au/nz bos,
+    tr/de 1.) - yeni surum dizini yenilemedi. Kalan yol Apple'a bildirim
+    (developer.apple.com/contact -> Distribution); gonderildi mi
+    BILINMIYOR. Ingilizce gorsel sirasi 1-4-3-2-5 KALDI - kullanicinin
+    karari, tekrar onerme.
 
   Faz 48 (fisten kalemler + kendi OCR modulumuz) BITTI - ADR-055.
 

@@ -67,6 +67,10 @@ export default defineConfig({
       "expo-secure-store": fileURLToPath(
         new URL("./test/expo-secure-store.mock.ts", import.meta.url),
       ),
+      // StoreKit de native: ayni sebep, ayni yol (lib/review-prompt.ts).
+      "expo-store-review": fileURLToPath(
+        new URL("./test/expo-store-review.mock.ts", import.meta.url),
+      ),
     },
   },
 });

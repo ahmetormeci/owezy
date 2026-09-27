@@ -1714,7 +1714,9 @@ function createStyles(theme: Theme) {
     },
     actionPrimary: {
       flex: 1,
-      height: 50,
+      // Kirpilma sebebi ve cozumu: sign-in.tsx'teki birincil dugme.
+      minHeight: 50,
+      paddingVertical: 12,
       borderRadius: 3,
       backgroundColor: theme.brand,
       alignItems: "center",
@@ -1723,7 +1725,8 @@ function createStyles(theme: Theme) {
     actionPrimaryText: { fontFamily: fonts.semibold, fontSize: 15.5, color: theme.onBrand },
     // Ikincil eylem CERCEVELI: iki dolgulu dugme hicbirini one cikarmazdi.
     actionSecondary: {
-      height: 50,
+      minHeight: 50,
+      paddingVertical: 12,
       paddingHorizontal: 18,
       borderRadius: 3,
       borderWidth: 1,

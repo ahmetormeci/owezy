@@ -21,6 +21,32 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-27 — Değerlendirme isteği (Faz 49, ADR-056)
+
+1.0.5 yayında ve mağazada **0 puan** var. Uygulama artık bir kayıt
+başarıyla bittikten sonra Apple'ın değerlendirme penceresini istiyor —
+en az 5 kayıt, ilk açılıştan 7 gün ve son sorudan 120 gün şartıyla.
+Apple pencereyi bir kullanıcıya yılda en fazla üç kez gösteriyor; kural
+bu hakları uygulamayı gerçekten kullanana ayırıyor. Hesap ekranında her
+zaman duran bir "Uygulamayı değerlendir" satırı da var.
+
+Sayaç yalnızca telefonda; sunucuya hiçbir şey gitmiyor, gizlilik
+politikası değişmedi. `expo-store-review` native bir paket olduğu için
+kullanıcıya **1.0.6** ile ulaşacak.
+
+18 yeni test; sekiz negatif kontrolün sekizi de düştü. PROGRESS.md'de
+Faz 42–48'in eskimiş "yayınlanmadı" durumları da düzeltildi.
+
+**Düğmeler büyük yazıda artık kırpılmıyor.** Dört birincil düğme (giriş,
+davet, "Harcama ekle", "Ödeş") sabit `height: 50` taşıyordu; en büyük
+erişilebilirlik yazı boyutunda metin sığmıyordu. `minHeight: 50` +
+dikey boşluk: normal boyda yine 50, yazı büyüyünce düğme de büyüyor.
+Yerel Release build'de iki boyutta da görüldü.
+
+**Sürüm 1.0.6.**
+
+---
+
 ## 2026-09-26 — Mobil testlerde süre sınırı 15 saniye; 1.0.5 TestFlight'ta çalışıyor
 
 CI yalnızca doküman değişen bir commit'te düştü (`15494a8`):

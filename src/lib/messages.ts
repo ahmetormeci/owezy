@@ -486,6 +486,7 @@ export const MESSAGES_TR = {
   // Faz 25.4'te web de bu sozluge bagsizlandi - ayni anahtarlari iki istemci
   // birden kullaniyor.
   "ui.sign_out": "Çıkış yap",
+  "ui.rate_app": "Uygulamayı değerlendir",
 
   /**
    * HESAP SILME. App Store Guideline 5.1.1(v) uygulama ici silmeyi zorunlu
@@ -1282,6 +1283,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.role_member": "Member",
 
   "ui.sign_out": "Sign out",
+  "ui.rate_app": "Rate Owezy",
 
   "ui.account": "Account",
   "ui.delete_account": "Delete my account",
