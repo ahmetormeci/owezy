@@ -28,47 +28,52 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-27
 
 Current task:
-  FAZ 50b - MISAFIRI SAHIPLENME (ADR-057). KOD BITTI, TESTLER YESIL,
-  COMMIT KULLANICI ONAYINI BEKLIYOR.
-    Misafire ozel tek kullanimlik link; onay SUNUCUDA (confirmGuestId);
-    onizlemede yalnizca AD (kullanicinin secimi). 28 User alani sinifli,
-    sema testi zorluyor. Gocu 20260927180000_add_guest_claim - DEV ve E2E'ye
-    UYGULANDI, production'a push ile gider. Mobil 1.0.6'ya (1 Ekim).
-    E2E'nin buldugu: kabul 500 donuyordu (P2028, 5 sn transaction siniri).
+  YOK - SIRADAKI IS SECILMEDI. Kullanici compact sonrasi yeni islere
+  devam edecek. Aday listesi: PROGRESS.md "Sıradaki adaylar" (basinda
+  ZORUNLU olan UIScene / SDK 58 gecisi var).
 
-  FAZ 50a - HESAPSIZ UYE / MISAFIR (ADR-057). d13c9a9 ile CANLIDA (27 Eylul).
-    Kullanici secti (27 Eylul): her uye ekler; sahiplenme yalnizca
-    misafire ozel linkle; iki adim (50a misafir, 50b sahiplenme).
-    Misafir = isGuest isaretli, tek gruba bagli bir User. Para tablolari
-    DEGISMEDI. Giris yapamaz: dort katman (posta almayan adres, Better Auth
-    oturum kancasi, findCurrentUser, veritabani trigger'lari).
-    Gocu: 20260927120000_add_guest_members - DEV ve E2E'ye UYGULANDI.
-    PRODUCTION'A push ile gider (vercel-build: prisma migrate deploy).
-    Web push ile canliya cikar; mobil 1 EKIM'deki 1.0.6 build'ine giriyor
-    (kullanicinin karari: ayri bir 1.0.7 yerine - bir build hakki kazaniliyor).
-    GIZLILIK POLITIKASI guncellendi (iki dil) + App Privacy anketine
-    1.0.6 gonderiminde BAKILACAK (STORE.md).
+  >>> 1 EKIM 2026: 1.0.6 BUILD GUNU <<<
+    Zamanlanmis gorev: owezy-1-0-6-build-hatirlatma (1 Ekim 10:00,
+    ~/.claude/scheduled-tasks/). YALNIZCA HATIRLATIR, build almaz.
+    Kullanici "build al" deyince:
+      eas build --platform ios --profile production --non-interactive --no-wait
+      -> build log'undan Xcode 26.6 (17F113) oldugunu DOGRULA (eas.json'da
+         image sabit; Xcode 27 build'i iOS 27'de acilmiyor).
+      -> submit ISTENIRSE eas submit (1.0.5'te ~55 dk surdu, normaldi).
+    Surum app.json'da ZATEN 1.0.6. Surum notu iki dilde STORE.md.
+    1.0.6'da: misafir (50a) + sahiplenme (50b) + degerlendirme istegi (49)
+    + buyuk yazida dugme kirpilmasi.
+    GONDERIMDE KULLANICI: App Privacy anketi (artik misafir ADLARI
+    giriliyor - kategoriyi panelde sec, tahmin etme) + appreview@ parola
+    kontrolu. EAS Free plan ayda sinirli iOS build veriyor; 27 Eylul'de
+    dolmustu, 1 Ekim'de yenileniyor.
 
-  FAZ 49 - DEGERLENDIRME ISTEGI (ADR-056). KOD BITTI, testler yesil.
-    Kullanici secti (27 Eylul): otomatik + Hesap'ta satir.
-    Kural: 5 basarili kayit, ilk acilistan 7 gun, son sorudan 120 gun.
-    Tetik: harcama / tekrarlayan / odeme / hizli ekleme - BASARI DALININ
-    SONUNDA. Reddedilen kayitta ve fisi yuklenemeyen kayitta SORULMUYOR.
-    Sayac YALNIZCA TELEFONDA; gizlilik politikasi degismedi.
-    >>> 1.0.6: kullanici "hepsini yap, commitle pushla ve build al"
-        dedi (27 Eylul). Ayni build'de dort birincil dugmenin buyuk yazida
-        kirpilmasi da duzeldi (minHeight). Yerel Release build'de
-        expo-store-review DERLENDI, dugmeler iki boyutta GORULDU.
-        TestFlight'ta degerlendirme penceresi HIC gorunmez - Apple'in
-        kurali, hata degil. Submit ISTENMEDI, sorulacak. <<<
-    >>> 6d7f1e3 PUSH EDILDI, CI YESIL. EAS BUILD BASLAMADI (27 Eylul):
-        Free plan'in bu ayki iOS build hakki DOLDU, 1 Ekim 2026'da
-        yenileniyor. Tekrar deneme YAPILMADI. Iki yol: 1 Ekim'i beklemek
-        ya da ucretli plana gecmek (KULLANICININ karari, satin alma).
-        YEREL BUILD YOL DEGIL: bu makinede yalnizca Xcode 27 var ve Xcode 27
-        ile derlenen build iOS 27'de ACILMIYOR (UIScene, 25 Eylul). <<<
+  CANLIDA (web, 27 Eylul) - mobil karsiliklari 1.0.6'yi bekliyor:
+    Faz 50b  misafiri sahiplenme   465ef64  ADR-057  prod'da olculdu
+    Faz 50a  hesapsiz uye/misafir  d13c9a9  ADR-057  prod'da olculdu
+    Faz 49   degerlendirme istegi  6d7f1e3  ADR-056  (yalnizca mobil)
+    Production gocleri uygulandi: 20260927120000_add_guest_members ve
+    20260927180000_add_guest_claim (Vercel build'i migrate deploy
+    calistiriyor; yeni uclar giris yapmamisa 401 = yeni surum yayinda).
 
-  Aday listesi ve diger eksikler: PROGRESS.md "Sıradaki adaylar".
+  HESAPSIZ UYE - AKILDA TUTULACAKLAR (ayrinti ADR-057):
+    - Misafir = isGuest isaretli, tek gruba bagli bir User. Giris YAPAMAZ:
+      posta almayan adres, oturum kancasi, findCurrentUser, DB trigger'lari.
+    - Sahiplenme GUEST_REFERENCE_POLICY'den calisiyor (28 User alani:
+      8 move, 1 keep, 19 never). YENI BIR TABLO User'a baglanirsa orada
+      siniflanmali - yoksa guests.test.ts'teki sema testi duser.
+    - Onay SUNUCUDA (confirmGuestId). Mobil katilma ekrani normal davette
+      aninda katilir; misafir linkinde adi gosterip onay bekler.
+
+  ACIK KALANLAR:
+    - Bes ulkede (us/ca/gb/au/nz) aramada gorunmuyor. Apple'a bildirim
+      (developer.apple.com/contact -> Distribution) gonderildi mi
+      BILINMIYOR. 1.0.6 yayina cikinca web aramasiyla YENIDEN OLC.
+    - Cron'un canlida harcama urettigi hic gorulmedi.
+    - Yorum E2E testi butcesinin sinirinda - aday, KULLANICI KARARI.
+
+  DERS (bu oturumdan): her push'tan sonra CI'a bak - dokuman push'u dahil.
+  Main, hic commit atilmadan da kirilabiliyor (Expo yamalari, expo-doctor).
 
   1.0.5 YAYINDA (26 Eylul 15:37 UTC, olculdu). Build 22, Xcode 26.6.
     Puan: 0. BES ULKEDE ARAMA HALA YOK (27 Eylul: us/ca/gb/au/nz bos,
