@@ -28,26 +28,26 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-27
 
 Current task:
-  FAZ 51 - iOS SAHNE YASAM DONGUSU (UIScene) - BITTI, COMMIT ONAYI BEKLIYOR.
-  ADR-058. Kullanicinin secimi (27 Eylul): once SDK 57'de sahne, SDK 58
-  sonra AYRI IS; 1.0.6'ya girsin, TestFlight kontroluyle.
+  FAZ 51 - iOS SAHNE YASAM DONGUSU (UIScene) - BITTI, PUSH EDILDI
+  (a3f1ca2). ADR-058. Kullanicinin secimi (27 Eylul): once SDK 57'de
+  sahne, SDK 58 sonra AYRI IS; 1.0.6'ya girdi, TestFlight kontroluyle.
 
   Degisen: mobile/app.json (expo-build-properties -> ios.enableSceneSupport),
-  mobile/package.json + lock (expo-build-properties ~57.0.22). Kod degil,
-  native yapilandirma - AMA package.json oldugu icin KOD COMMIT'I sayilir:
-  push icin kullanicinin onayi gerekir.
+  mobile/package.json + lock (expo-build-properties ~57.0.22).
 
   Olculdu (Release, Xcode 27, yerel simulator): sahnesiz main iOS 27'de
   ACILMADI (negatif kontrol); sahneli build acildi, kapaliyken/acikken
   davet linki davet ekranina gitti, link BIR KEZ teslim edildi, iOS
-  26.5'te de calisti. Testler: mobil vitest 98, jest 120, tsc, lint,
-  expo-doctor 21/21.
+  26.5'te de calisti. Testler: kok 813, mobil vitest 98, jest 120, tsc,
+  lint, expo-doctor 21/21.
 
-  Sonraki adim: kullanici commit/push derse at, push'tan sonra CI'a bak.
+  AYNI GUN, AYRI COMMIT: davet ekranindaki "ui.invite_needs_account" TR
+  metni Turkce karaktersiz yazilmisti ("katilmak icin once giris...") -
+  DUZELTILDI. Tek bozuk TR metni buydu (tarandi). Yalnizca mobil davet
+  ekrani kullaniyor; 1.0.6'ya giriyor.
 
-  YAN BULGU (kullaniciya soruldu): src/lib/messages.ts:821
-  "ui.invite_needs_account" TURKCE KARAKTERSIZ yazilmis ("katilmak icin
-  once giris..."). Tek bozuk TR metni bu (tarandi). Kapsam disi.
+  Sonraki is: SECILMEDI. Aday listesi PROGRESS.md "Sıradaki adaylar"
+  (basinda SDK 58'e gecis - acil degil, son tarih Nisan 2027).
 
   >>> 1 EKIM 2026: 1.0.6 BUILD GUNU <<<
     Zamanlanmis gorev: owezy-1-0-6-build-hatirlatma (1 Ekim 10:00,
@@ -62,7 +62,8 @@ Current task:
          TestFlight kontrolunden SONRA.
     Surum app.json'da ZATEN 1.0.6. Surum notu iki dilde STORE.md.
     1.0.6'da: misafir (50a) + sahiplenme (50b) + degerlendirme istegi (49)
-    + buyuk yazida dugme kirpilmasi + sahne yasam dongusu (51).
+    + buyuk yazida dugme kirpilmasi + sahne yasam dongusu (51)
+    + davet ekraninda Turkce karakterler.
     >>> INCELEMEYE GONDERMEDEN ONCE TESTFLIGHT - SART (Faz 51) <<<
     Acilis degisti (sahne). Kullanici telefonda: (1) aciliyor mu,
     (2) uygulama KAPALIYKEN davet linkine dokununca davet ekrani geliyor

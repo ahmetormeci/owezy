@@ -819,7 +819,7 @@ export const MESSAGES_TR = {
   // Universal link ile gelen ama hesabi olmayan kisiye. Davet edilenin
   // cogu zaman hesabi YOK - uygulamayi kurmasinin sebebi o baglanti.
   "ui.invite_needs_account":
-    "Bu davete katilmak icin once giris yapman gerekiyor. Hesabin yoksa e-posta adresinle bir tane olusturulur.",
+    "Bu davete katılmak için önce giriş yapman gerekiyor. Hesabın yoksa e-posta adresinle bir tane oluşturulur.",
   "ui.invite_link_placeholder": "Davet bağlantısı veya kodu",
   "ui.joining": "Katılınıyor...",
   "ui.joined_group": "Gruba katıldın",

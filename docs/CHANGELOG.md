@@ -36,6 +36,11 @@ notu yanlış çıktı** — kurulu Expo sürümü düzeltmeyi taşıyor.
 Build imajı Xcode 26.6'da kaldı. SDK 58 ayrı iş. 1.0.6 incelemeye
 gönderilmeden önce TestFlight'ta denenecek.
 
+Ölçüm sırasında görülen bir yan kusur da ayrı bir commit'le düzeltildi:
+mobil davet ekranındaki "önce giriş yap" metni Türkçe karakterler olmadan
+yazılmıştı ("katilmak icin once giris"). Bütün Türkçe metinler tarandı,
+bozuk olan yalnızca buydu.
+
 ---
 
 ## 2026-09-27 — Misafiri sahiplenme (Faz 50b, ADR-057)
