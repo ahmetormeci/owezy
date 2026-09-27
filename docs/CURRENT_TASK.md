@@ -38,7 +38,12 @@ Current task:
               Build App Store Connect'e yuklendi, Apple isliyor.
     TESTFLIGHT: kullanici build 22'yi telefonunda denedi - "calisiyor"
               (26 Eylul).
-    >>> 1.0.5 INCELEMEDE (26 Eylul, kullanici gonderdi) <<<
+    >>> 1.0.5 YAYINDA (26 Eylul 15:37 UTC, olculdu: tr/us/ca/gb/de) <<<
+    Puan: 0. BES ULKEDE ARAMA HALA YOK (27 Eylul, web aramasi: us/ca/gb/
+    au/nz bos, tr/de 1.) - yeni surum dizini YENILEMEDI. Kalan yol
+    Apple'a bildirim (Distribution); gonderildi mi BILINMIYOR.
+
+    >>> (eski) 1.0.5 INCELEMEDE (26 Eylul, kullanici gonderdi) <<<
               Ingilizce gorsel sirasi 1-4-3-2-5 KALDI - kullanicinin
               karari ("cok onemli degil"). Tekrar onerme.
     YAYINA CIKINCA:
