@@ -28,7 +28,7 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-27
 
 Current task:
-  FAZ 53 - POSTALAR JUNK'A DUSUYORDU - BITTI, COMMIT ONAYI BEKLIYOR.
+  FAZ 53 - POSTALAR JUNK'A DUSUYORDU - BITTI, CANLIDA (431f4ac), CI yesil.
   ADR-060. Olculdu: DKIM, SPF (send.owezy.net), DMARC p=reject DOGRU -
   sebep kurulum degil; muhtemelen yeni alan adinin itibari + ciplak posta.
   (TUZAK: bu makinenin varsayilan cozucusu TXT'ye BOS doner -
@@ -46,6 +46,14 @@ Current task:
 
   Testler: kok 857 (+8, email.test.ts yeni), mobil 98 + 120, tsc, lint,
   TAM E2E 72 gecti / 1 bilerek atlandi (17,2 dk).
+
+  CANLIYA CIKTI MI - YENI OLCU YOLU: yeni metin istemci paketinde curl ile
+  ARANAMIYOR (eski metin de bulunamadi - yontem gecersizdi). Vercel her
+  commit icin GitHub'a yayin durumu yaziyor, depo acik:
+    api.github.com/repos/ahmetormeci/owezy/deployments?sha=<SHA>
+      -> environment "Production" -> .../deployments/<id>/statuses
+  Sinandi: ef501a5 "success" 21:55:53, gizlilik metni canlida 21:56:04.
+  431f4ac "success" 22:59:49.
 
   FAZ 52a (IBAN, web) CANLIDA: ef501a5, CI yesil. 52b (mobil) 1 Ekim
   build'inden SONRA - EAS calisma klasorunden build aliyor.
