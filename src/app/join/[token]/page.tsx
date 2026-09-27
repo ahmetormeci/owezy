@@ -58,16 +58,32 @@ export default async function JoinPage({
     );
   }
 
+  // Misafire ozel davet (ADR-057): kisi o misafir OLARAK katiliyor ve
+  // misafirin kayitlari ona geciyor. Yalnizca AD gosteriliyor - bakiye
+  // bilerek yok (link birine iletilirse para bilgisi sizmasin).
+  const guest = status.guest;
+
   return (
     <AuthShell className="max-w-md">
       <h1 className="font-heading text-xl">
-        {t("ui.invited_to_group", { groupName: status.groupName })}
+        {guest
+          ? t("ui.invited_as_guest", { groupName: status.groupName, guestName: guest.displayName })
+          : t("ui.invited_to_group", { groupName: status.groupName })}
       </h1>
+      {guest ? (
+        <p className="text-muted-foreground">
+          {t("ui.guest_claim_explain", { guestName: guest.displayName })}
+        </p>
+      ) : null}
 
       {userId ? (
         <>
           <p className="text-muted-foreground">{t("ui.join_press_button")}</p>
-          <AcceptInvite token={token} />
+          <AcceptInvite
+            token={token}
+            confirmGuestId={guest?.id}
+            label={guest ? t("ui.join_as_guest", { guestName: guest.displayName }) : undefined}
+          />
         </>
       ) : (
         <>

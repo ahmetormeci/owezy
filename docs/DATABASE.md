@@ -41,6 +41,11 @@ grubun üyesi olamaz; kurallar aşağıdaki 11–14'te. Paraya dokunan hiçbir t
 değişmedi: misafir de bir `User` olduğu için ödeyen, pay, ödeme ve kalem
 bağlantıları olduğu gibi çalışıyor.
 
+`mergedIntoId`, `mergedAt` — **misafirin sahiplenilmesi (Faz 50b).** Misafirin
+kayıtları gerçek bir hesaba devredildiğinde KİME ve NE ZAMAN. Misafir satırı
+**silinmez**: değişiklik geçmişi (`ExpenseEdit`) onu gösteriyor. Hangi
+alanların taşındığı `src/lib/guests.ts` → `GUEST_REFERENCE_POLICY`.
+
 `emailVerified` — Better Auth'un çekirdek alanı. Faz 25 öncesinde karşılığı
 yoktu; doğrulamayı Clerk yapıyordu ve sonucunu saklamıyorduk.
 
@@ -264,6 +269,8 @@ Sonradan eklenen kısıtlar (kendi migration'larında):
 | 12 | Misafire `Session` ya da `Account` satırı yazılamaz — **giriş yapamaz** | BEFORE INSERT/UPDATE trigger (`reject_guest_auth_row`) |
 | 13 | Misafir yalnızca **kendi grubunun** üyesi olabilir | BEFORE INSERT/UPDATE trigger (`check_guest_membership`) |
 | 14 | Misafir **sahip** (`OWNER`) olamaz | aynı trigger |
+| 15 | Misafire özel davet linki **tek kullanımlık** | CHECK `GroupInvite_guest_single_use` (`20260927180000`) |
+| 16 | Yalnızca misafir devredilir; `mergedIntoId` ve `mergedAt` **birlikte**; kendine devir yok | CHECK `User_merge_shape` |
 
 11–14'ün dördü de geliştirme veritabanında geri alınan işlemlerle
 **denendi** (27 Eylül): dokuz denemenin dokuzu doğru — iki olumlu kontrol
@@ -337,6 +344,7 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260910180000_add_recurring_expense` | `RecurringExpense` + `RecurringExpenseShare` + `RecurrenceInterval` + `Expense.recurringExpenseId`. Şablon bir harcama değil bir takvim (ADR-051); pay toplamı ve para birimi için iki tetikleyici |
 | `20260910200000_add_expense_item` | `SplitType.ITEMIZED` + `ExpenseItem` + `ExpenseItemShare`. Kalemler bir GIRDI katmani; bakiyeye giren sey yine paylar (ADR-052) |
 | `20260910220000_add_user_avatar_storage_key` | `User.avatarStorageKey` — profil fotoğrafının depodaki anahtarı (ADR-054). `avatarUrl` ve `hasImage` Clerk döneminden zaten vardı |
+| `20260927180000_add_guest_claim` | `GroupInvite.guestUserId` + `User.mergedIntoId` + `User.mergedAt`; tek kullanımlık misafir linki ve devir şekli CHECK'leri (ADR-057, kurallar 15–16) |
 | `20260927120000_add_guest_members` | `User.isGuest` + `User.guestGroupId`; CHECK `User_guest_shape`; misafire oturum/hesap ve yanlış grup/sahiplik trigger'ları (ADR-057, kurallar 11–14) |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.

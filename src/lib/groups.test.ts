@@ -7,6 +7,7 @@ const { mockTx, mockPrisma } = vi.hoisted(() => ({
     group: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), create: vi.fn(), update: vi.fn() },
     groupMember: {
       findFirst: vi.fn(),
+      findFirstOrThrow: vi.fn(),
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
@@ -17,7 +18,7 @@ const { mockTx, mockPrisma } = vi.hoisted(() => ({
     settlement: { findMany: vi.fn() },
     // Bildirimler ayni transaction'da yaziliyor; createNotifications islemi
     // yapanin adini okumak icin user.findUnique de cagiriyor.
-    user: { findUnique: vi.fn(), findMany: vi.fn() },
+    user: { findUnique: vi.fn(), findMany: vi.fn(), findUniqueOrThrow: vi.fn() },
     notification: { createMany: vi.fn() },
   },
   mockPrisma: {
@@ -25,6 +26,14 @@ const { mockTx, mockPrisma } = vi.hoisted(() => ({
     groupMember: { findFirst: vi.fn(), findMany: vi.fn() },
     groupInvite: { findMany: vi.fn(), findUnique: vi.fn() },
   },
+}));
+
+// Sahiplenmenin KENDISI guests.test.ts'te; burada yalnizca DOGRU ANDA ve
+// DOGRU ARGUMANLARLA cagrildigi sinaniyor (ADR-057, Faz 50b).
+const { mockClaimGuest } = vi.hoisted(() => ({ mockClaimGuest: vi.fn() }));
+vi.mock("@/lib/guests", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/guests")>()),
+  claimGuest: mockClaimGuest,
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -207,6 +216,47 @@ describe("updateGroup", () => {
 
 describe("getInviteStatus", () => {
   beforeEach(resetMocks);
+
+  describe("misafire ozel davet (ADR-057)", () => {
+    const guestInvite = {
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      maxUses: 1,
+      useCount: 0,
+      groupId: GROUP_ID,
+      guestUserId: "user-guest",
+      guestUser: { displayName: "Selin", mergedIntoId: null },
+      group: { name: "Ev", deletedAt: null },
+    };
+
+    it("gecerliyse misafirin YALNIZCA ADINI donduruyor - bakiye yok", async () => {
+      mockPrisma.groupInvite.findUnique.mockResolvedValue(guestInvite);
+      mockPrisma.groupMember.findFirst.mockResolvedValue({ id: "m-guest" });
+
+      await expect(getInviteStatus("token")).resolves.toEqual({
+        valid: true,
+        groupName: "Ev",
+        guest: { id: "user-guest", displayName: "Selin" },
+      });
+    });
+
+    it("misafir DEVRALINMISSA link gecersiz", async () => {
+      mockPrisma.groupInvite.findUnique.mockResolvedValue({
+        ...guestInvite,
+        guestUser: { displayName: "Selin", mergedIntoId: "user-baskasi" },
+      });
+      mockPrisma.groupMember.findFirst.mockResolvedValue({ id: "m-guest" });
+
+      await expect(getInviteStatus("token")).resolves.toEqual({ valid: false, reason: "REVOKED" });
+    });
+
+    it("misafir GRUPTAN CIKARILMISSA link gecersiz", async () => {
+      mockPrisma.groupInvite.findUnique.mockResolvedValue(guestInvite);
+      mockPrisma.groupMember.findFirst.mockResolvedValue(null);
+
+      await expect(getInviteStatus("token")).resolves.toEqual({ valid: false, reason: "REVOKED" });
+    });
+  });
 
   function invite(overrides: Record<string, unknown> = {}) {
     return {
@@ -725,6 +775,55 @@ describe("acceptGroupInvite", () => {
     mockTx.group.findUniqueOrThrow.mockResolvedValue({ name: "Ev" });
     mockTx.groupMember.findMany.mockResolvedValue([{ userId: OWNER }, { userId: MEMBER }]);
     mockTx.user.findUnique.mockResolvedValue({ displayName: "Uye" });
+  });
+
+  /**
+   * MISAFIRE OZEL DAVET (ADR-057, Faz 50b). Kabul eden kisi misafirin
+   * borcunu da ustleniyor; bu yuzden ACIK ONAY - misafirin kimligi geri
+   * gonderilmeden - kabul edilmiyor. Onay istemciye birakilsaydi, eski ya
+   * da hatali bir istemci kimseye sormadan baskasinin borcunu yazardi.
+   */
+  describe("misafire ozel davet", () => {
+    const GUEST = "user-guest";
+
+    beforeEach(() => {
+      mockTx.groupInvite.findUnique.mockResolvedValue(validInvite({ guestUserId: GUEST }));
+      mockTx.groupMember.findFirst.mockResolvedValue(null);
+      mockTx.user.findUniqueOrThrow.mockResolvedValue({ displayName: "Selin" });
+      mockTx.groupMember.findFirstOrThrow.mockResolvedValue({ id: "m-guest", userId: MEMBER });
+      mockClaimGuest.mockReset().mockResolvedValue(undefined);
+    });
+
+    it("ONAYSIZ istek reddediliyor ve cevap grubu ve misafiri SOYLUYOR", async () => {
+      const error = await acceptGroupInvite(MEMBER, RAW_TOKEN).catch((e) => e);
+
+      expect(error).toBeInstanceOf(ConflictError);
+      expect(error.code).toBe("invite.guest_confirm");
+      expect(error.params).toEqual({ guestName: "Selin", groupName: "Ev", guestId: GUEST });
+      expect(mockClaimGuest).not.toHaveBeenCalled();
+      expect(mockTx.groupMember.create).not.toHaveBeenCalled();
+    });
+
+    it("BASKA BIR MISAFIRIN kimligiyle onay da reddediliyor", async () => {
+      const error = await acceptGroupInvite(MEMBER, RAW_TOKEN, "user-baska").catch((e) => e);
+
+      expect(error.code).toBe("invite.guest_confirm");
+      expect(mockClaimGuest).not.toHaveBeenCalled();
+    });
+
+    it("ONAYLI istek misafiri SAHIPLENIYOR - yeni uyelik YARATMIYOR", async () => {
+      const membership = await acceptGroupInvite(MEMBER, RAW_TOKEN, GUEST);
+
+      expect(mockClaimGuest).toHaveBeenCalledWith(mockTx, MEMBER, GROUP_ID, GUEST);
+      // Misafirin uyelik satiri artik bu kisinin; ikinci bir satir olmamali.
+      expect(mockTx.groupMember.create).not.toHaveBeenCalled();
+      expect(membership).toEqual({ id: "m-guest", userId: MEMBER });
+      // Davet TUKENIYOR: ayni link ikinci kez kullanilamaz.
+      expect(mockTx.groupInvite.update).toHaveBeenCalledWith({
+        where: { id: INVITE_ID },
+        data: { useCount: { increment: 1 } },
+      });
+    });
   });
 
   // Ham token veritabaninda HIC saklanmiyor; aranan sey onun hash'i.

@@ -531,7 +531,7 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 ---
 
 ## ADR-057 — Hesapsız üye (misafir): işaretli bir `User` satırı; sahiplenince kayıtlar gerçek hesaba taşınır
-**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **50a UYGULANDI: 2026-09-27** (mobili 1.0.6'da, 1 Ekim build'i) · **50b (sahiplenme) SIRADA**
+**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **50a ve 50b UYGULANDI: 2026-09-27** (mobili 1.0.6'da, 1 Ekim build'i)
 
 **Karar:** Bir üye, gruba yalnızca bir **ad** yazarak hesabı olmayan birini
 ekleyebilir. Bu kişi veritabanında `isGuest = true` işaretli, tek bir gruba
@@ -588,16 +588,54 @@ toplamı = tutar, trigger'lar) bu bağlantıların üzerinde.
 - **Son gerçek üye ayrılınca grup arşivlenir**, geride misafir kalsa bile —
   gruba artık kimse erişemiyor.
 
-### 50b — sahiplenme (tasarım, henüz uygulanmadı)
+### 50b — sahiplenme (UYGULANDI)
 
-Misafire özel, tek kullanımlık, süreli davet linki (`GroupInvite` +
-hedef misafir). Kabul edilince tek transaction'da misafirin satırları
-gerçek hesaba taşınır, misafir satırı birleştirildi diye işaretlenir.
-**Gruba daha önce üye olmuş biri o gruptaki misafiri sahiplenemez** —
-aynı harcamada iki ayrı payı olabilir ve tekil kısıtlar (`expenseId,
-userId`) çakışır. **Taşınan alanlar bir testle korunacak:** `User`'a bağlı
-her alan ya "taşınır" ya da "misafirde olamaz" diye sınıflanmak zorunda;
-sınıflanmamış yeni bir alan testi düşürür.
+Bir üye misafirin satırından **misafire özel, tek kullanımlık, 7 günlük**
+bir link üretir (`GroupInvite.guestUserId`). Linki kabul eden kişi misafir
+**olarak** katılır ve misafirin kayıtları tek transaction'da onun hesabına
+geçer. Misafir satırı **silinmez**; `mergedIntoId` + `mergedAt` ile işaretlenir
+— değişiklik geçmişi (`ExpenseEdit`) onu gösteriyor ve öyle kalmalı.
+
+**Önizleme yalnızca ad** (kullanıcının seçimi): "X grubuna Selin olarak
+katılıyorsun". Bakiye bilerek gösterilmiyor — link birine iletilirse para
+bilgisi sızmasın.
+
+**ONAY SUNUCUDA.** Misafir linkinde `acceptGroupInvite`, misafirin kimliği
+(`confirmGuestId`) geri gönderilmeden kabul etmiyor; onaysız istek
+`invite.guest_confirm` ile, grup ve misafir adını taşıyarak reddediliyor.
+Web sayfası adı zaten gösterdiği için kimliği doğrudan gönderiyor. **Mobil
+katılma ekranı** normal davette hâlâ **anında** katılıyor (eski, bilinçli
+karar: linke dokunmak onaydır) — misafir linkinde bu cevabı alınca adı
+gösterip "Selin olarak katıl"ı bekliyor. Onayı istemciye bırakmak, eski ya
+da hatalı bir istemcinin kimseye sormadan başkasının borcunu yazması
+demekti.
+
+**Taşıma listesi kodun kendisi.** `GUEST_REFERENCE_POLICY` şemada `User`'a
+bağlanan **28 alanın hepsini** sınıflıyor: 8 `move`, 1 `keep`
+(`GroupInvite.guestUserId`), 19 `never`. Taşıma ve kontrol bu listeden
+dönerek yapılıyor. İki test: şemayı okuyup listeyle **birebir** eşleştiren
+(yeni, sınıflanmamış bir alan testi düşürür) ve 8 `move` alanını **elle
+yazılmış** bir listeyle sabitleyen (sınıflamayı değiştirmek bilinçli bir
+test değişikliği ister — ilk hâlinde bir alanı `move`'dan `keep`'e çevirmek
+hiçbir testi düşürmüyordu, negatif kontrol gösterdi).
+
+**Sıra:** (1) sahiplenen bu gruba **hiç** üye olmamış olmalı (ayrılmış
+üyelik de sayılır); (2) misafir "henüz devredilmediyse" koşuluyla tek
+adımda işaretlenir — yarış burada kapanıyor; (3) `never` alanlarında satır
+aranır, varsa **her şey geri alınır**; (4) misafirin dahil olduğu
+harcamaların **sürüm sayacı artırılır** (açık kalmış bir düzenleme formu
+eski ödeyenle sessizce kaydedemesin) — **taşımadan önce**, sonra misafir
+aranamazdı; (5) `move` alanları taşınır.
+
+**Ölçülerek bulunan: transaction süre sınırı.** İlk yazımda `never`
+kontrolü 19 ayrı sorguydu; E2E'de kabul **500** döndü — Prisma'nın 5
+saniyelik transaction sınırı aşılmıştı (P2028, 5336 ms; veritabanı uzakta
+olduğunda her sorgu ~120 ms). Kontrol tek sorguya indi (tablo/sütun adları
+listeden, değer parametre) ve kabulün sınırı 15 saniye yapıldı.
+
+**Veritabanı kuralları:** misafir linki tek kullanımlık (`CHECK
+GroupInvite_guest_single_use`); yalnızca misafir devredilir, "kime" ve "ne
+zaman" birlikte yazılır, kendine devir yok (`CHECK User_merge_shape`).
 
 ### Gizlilik
 

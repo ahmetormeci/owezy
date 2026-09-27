@@ -21,6 +21,31 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-27 — Misafiri sahiplenme (Faz 50b, ADR-057)
+
+Misafir artık sonradan kendi hesabıyla katılabiliyor. Bir üye misafirin
+satırından **misafire özel, tek kullanımlık** bir link üretiyor; linki açan
+kişi "X grubuna Selin olarak katılıyorsun" görüyor ve onaylayınca misafirin
+harcamaları, payları ve ödemeleri onun hesabına geçiyor. Önizlemede yalnızca
+ad var, bakiye bilerek yok.
+
+**Onay sunucuda:** misafirin kimliği geri gönderilmeden kabul yok. Mobil
+katılma ekranı normal davette eskisi gibi anında katılıyor; misafir
+linkinde adı gösterip onay bekliyor.
+
+**Hiçbir tablonun unutulmaması:** şemada `User`'a bağlanan 28 alanın hepsi
+sınıflı ve bir test şemayı okuyarak bunu zorluyor. Taşıma bu listeden
+dönerek yapılıyor; misafirde olmaması gereken bir satır bulunursa her şey
+geri alınıyor.
+
+E2E bir kusur buldu: kabul 500 dönüyordu — transaction 5 saniyeyi aşmıştı
+(19 ayrı sorgu, uzak veritabanı). Kontrol teke indi, sınır 15 saniye.
+
+Gizlilik politikası iki dilde bir cümle kazandı: misafir kaydı devralınınca
+kayıtlar gerçek hesaba geçer, misafir adı değişiklik geçmişinde kalır.
+
+---
+
 ## 2026-09-27 — Hesapsız üye: misafir (Faz 50a, ADR-057)
 
 Bir üye artık gruba **yalnızca bir ad yazarak** hesabı olmayan birini

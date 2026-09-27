@@ -14,6 +14,8 @@ import { useLocale, useTranslate } from "@/lib/i18n";
 export type InviteListItem = {
   id: string;
   invitedById: string;
+  // Misafire ozel davetse KIMIN icin (ADR-057).
+  guestName?: string | null;
   expiresAt: string;
   maxUses: number;
   useCount: number;
@@ -158,6 +160,11 @@ export function InviteManager({
                         used: invite.useCount,
                         max: invite.maxUses,
                       })}
+                      {invite.guestName ? (
+                        <span className="ml-2 font-sans text-xs text-muted-foreground">
+                          {t("ui.invite_for_guest", { name: invite.guestName })}
+                        </span>
+                      ) : null}
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {t("ui.invite_valid_until", {

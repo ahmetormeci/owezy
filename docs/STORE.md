@@ -517,6 +517,7 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
 | | |
 |---|---|
 | **Hesapsız üye (misafir):** ekleme, ad değiştirme, etiket, hatırlatma gizli | Faz 50a · ADR-057 · web'de push ile zaten canlıda |
+| **Misafiri sahiplenme:** misafire özel link, "X olarak katıl" onayı | Faz 50b · ADR-057 · mobil katılma ekranı misafir linkinde onay bekliyor |
 | Değerlendirme isteği + Hesap'ta "Uygulamayı değerlendir" | Faz 49 · ADR-056 · **yeni native paket** (`expo-store-review`) |
 | Düğmeler büyük yazıda kırpılmıyor (giriş, davet, "Harcama ekle", "Ödeş") | `height: 50` → `minHeight: 50`; en büyük erişilebilirlik boyutunda simülatörde görüldü |
 
@@ -538,6 +539,8 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
 • Add someone who doesn't use the app. Type a name and they join the
   group as a guest: they can pay, share and settle like anyone else,
   so you can start a group on your own.
+• Send a guest their own link. When they join with it, everything
+  entered under their name becomes theirs.
 • You can rate Owezy from your account page.
 • Buttons no longer cut off their label at the largest text sizes.
 ```
@@ -548,6 +551,8 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
 • Uygulamayı kullanmayan birini de ekleyebilirsin. Bir ad yaz, gruba
   misafir olarak katılsın: herkes gibi ödeyebilir, payını alabilir,
   ödeşebilir. Böylece bir grubu tek başına başlatabilirsin.
+• Misafire kendine özel bir link gönder. O linkle katılınca, adına
+  girilen her şey onun olur.
 • Owezy'yi hesap sayfandan değerlendirebilirsin.
 • En büyük yazı boyutunda düğmelerin yazısı artık kesilmiyor.
 ```

@@ -28,8 +28,15 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-27
 
 Current task:
-  FAZ 50a - HESAPSIZ UYE / MISAFIR (ADR-057). KOD BITTI, TESTLER YESIL,
+  FAZ 50b - MISAFIRI SAHIPLENME (ADR-057). KOD BITTI, TESTLER YESIL,
   COMMIT KULLANICI ONAYINI BEKLIYOR.
+    Misafire ozel tek kullanimlik link; onay SUNUCUDA (confirmGuestId);
+    onizlemede yalnizca AD (kullanicinin secimi). 28 User alani sinifli,
+    sema testi zorluyor. Gocu 20260927180000_add_guest_claim - DEV ve E2E'ye
+    UYGULANDI, production'a push ile gider. Mobil 1.0.6'ya (1 Ekim).
+    E2E'nin buldugu: kabul 500 donuyordu (P2028, 5 sn transaction siniri).
+
+  FAZ 50a - HESAPSIZ UYE / MISAFIR (ADR-057). d13c9a9 ile CANLIDA (27 Eylul).
     Kullanici secti (27 Eylul): her uye ekler; sahiplenme yalnizca
     misafire ozel linkle; iki adim (50a misafir, 50b sahiplenme).
     Misafir = isGuest isaretli, tek gruba bagli bir User. Para tablolari
@@ -41,7 +48,6 @@ Current task:
     (kullanicinin karari: ayri bir 1.0.7 yerine - bir build hakki kazaniliyor).
     GIZLILIK POLITIKASI guncellendi (iki dil) + App Privacy anketine
     1.0.6 gonderiminde BAKILACAK (STORE.md).
-    SONRAKI: Faz 50b - sahiplenme. Tasarim ADR-057'de.
 
   FAZ 49 - DEGERLENDIRME ISTEGI (ADR-056). KOD BITTI, testler yesil.
     Kullanici secti (27 Eylul): otomatik + Hesap'ta satir.

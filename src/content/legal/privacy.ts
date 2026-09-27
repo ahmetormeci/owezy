@@ -103,7 +103,10 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "Gruba eklediğin misafirlerin adları. Uygulamayı kullanmayan birini " +
                 "gruba yalnızca adıyla ekleyebilirsin; bu ad yalnızca o grubun " +
                 "üyelerine görünür. Misafir için e-posta, telefon ya da başka bir " +
-                "bilgi tutulmaz; misafir giriş yapamaz ve bildirim almaz.",
+                "bilgi tutulmaz; misafir giriş yapamaz ve bildirim almaz. Misafir " +
+                "sonradan kendisine gönderilen özel linkle katılırsa, onun adına " +
+                "girilen kayıtlar kendi hesabına geçer; misafir adı değişiklik " +
+                "geçmişinde kalır.",
               "Sana gönderilen uygulama içi bildirimler",
               "Harcama düzenleme ve silme geçmişi (denetim kaydı)",
               "Bir harcamaya fiş fotoğrafı eklersen: fotoğrafın kendisi ve kimin " +
@@ -384,7 +387,10 @@ export const PRIVACY_POLICY: LegalDocumentByLocale = {
               "The names of guests you add to a group. You can add someone who " +
                 "doesn't use the app by name alone; that name is visible only to the " +
                 "members of that group. No email, phone number or anything else is " +
-                "kept for a guest; a guest can't sign in and gets no notifications.",
+                "kept for a guest; a guest can't sign in and gets no notifications. " +
+                "If the guest later joins through the personal link sent to them, " +
+                "everything entered under their name moves to their own account; " +
+                "the guest name stays in the edit history.",
               "In-app notifications sent to you",
               "A history of expense edits and deletions (audit log)",
               "If you attach a receipt photo to an expense: the photo itself and who " +

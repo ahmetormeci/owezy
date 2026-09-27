@@ -2636,16 +2636,38 @@ alanın etiketiyle aynıydı (ekran okuyucuda iki öğe aynı ad); boş misafir 
 fazla 20 aktif misafir; son gerçek üye ayrılınca grup arşivlenir. Ayrıntı
 ADR-057.
 
+
+## Faz 50b — Misafiri sahiplenme · **BİTTİ, WEB'DE; MOBİLİ 1.0.6'DA (1 EKİM BUILD'İ)**
+
+| | |
+|---|---|
+| Akış | Üye misafirin satırından özel link üretir → açan kişi "X olarak katıl" der → misafirin kayıtları onun hesabına geçer |
+| Link | Tek kullanımlık, 7 gün; veritabanı tek kullanımı zorluyor |
+| Önizleme | Yalnızca grup ve misafir **adı** (kullanıcının seçimi) — bakiye yok |
+| Onay | **Sunucuda:** misafirin kimliği geri gönderilmeden kabul yok (`invite.guest_confirm`) |
+| Taşınan | 8 alan: üyelik, ödeyen, paylar, kalem payları, ödemenin iki tarafı, tekrarlayan ödeyen ve payları |
+| Mobil | Misafir satırında "Seçenekler" (davet, ad, çıkar); katılma ekranı misafir linkinde onay bekliyor |
+
+**Şemadaki her `User` bağlantısı sınıflı** (28 alan) ve bir test bunu şema
+dosyasını okuyarak zorluyor. **Negatif kontrolün buldurduğu boşluk:** ilk
+hâlde bir alanı `move`'dan `keep`'e çevirmek hiçbir testi düşürmüyordu —
+taşınan sekiz alan artık elle yazılmış bir listeyle sabit.
+
+**E2E'nin bulduğu kusur:** sahiplenme 500 dönüyordu — transaction 5 saniyeyi
+aşmıştı (P2028, sunucu kaydından okundu). 19 ayrı kontrol sorgusu teke
+indi, sınır 15 saniye.
+
+**Testler:** birim +18 (sahiplenme, link, şema eşleşmesi, onaylı kabul,
+davet durumu), mobil ekran +6, E2E +2 (sahiplenme akışı; zaten üye olanın
+reddi) ve veritabanı testine iki yeni kural. Negatif kontrol: dokuzdan dokuz.
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
 karar vermemiştir.
 
-> **SIRADAKİ İŞ: FAZ 50b — MİSAFİRİ SAHİPLENME.** Tasarımı ADR-057'de,
-> kullanıcı onayladı (27 Eylül): misafire özel tek kullanımlık link, kabul
-> edilince misafirin kayıtları gerçek hesaba taşınır. En riskli parça
-> birleştirme; `User`'a bağlı her alanın sınıflanmasını zorlayan bir test
-> şartı var.
+> **Hesapsız üye tamamlandı (Faz 50a + 50b, 27 Eylül).** Sıradaki iş
+> seçilmedi; aday listesi aşağıda.
 
 | Aday | Neden önemli |
 |---|---|
@@ -2655,6 +2677,7 @@ karar vermemiştir.
 | **Birden fazla ödeyen** | "Hesabı ikimiz ödedik". Settle Up ücretsiz veriyor. `Expense.paidById` tek alan |
 | **Birden fazla para birimi** | Yurt dışı tatili. Kur kaynağı gerekiyor (dış servis → gizlilik beyanı) |
 | **Apple / Google ile giriş** | Kayıt sürtünmesi; Google eklenirse Apple girişi de zorunlu (4.8) |
+| **Yorum E2E testi bütçesinin sınırında** | `comments.spec.ts` "iki kişi yazışır" tek başına 43–46 sn, bütçe 60 sn. 27 Eylül tam koşusunda bir sayfa geçişi takılınca sınırı aştı (grup sayfası 15 sn açılmadı); hemen ardından değişikliksiz tam koşu temiz geçti (69/1). Sebep 50b değil: davet yolunu kullanan diğer testlerin süreleri iki koşuda aynı. Öneri: bu teste `test.slow()` ve ölçümü yanına — playwright.config'teki "bütçe değişmiyor" kararına dokunmadan, yalnızca bu uzun çok kişili akış için. **Karar kullanıcının** |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
 > **Admin paneli SORULDU VE YAPILMAMASINA KARAR VERİLDİ (12 Eylül).**

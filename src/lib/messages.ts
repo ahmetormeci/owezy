@@ -97,6 +97,9 @@ export const MESSAGES_TR = {
   "reminder.guest": "Misafire hatırlatma gönderilemez; uygulamayı kullanmıyor",
   "guest.limit": "Bir grupta en fazla {max} misafir olabilir",
   "guest.not_found": "Misafir bulunamadı",
+  "guest.claim_already_member": "Bu gruba daha önce katılmışsın; bir misafirin kaydını devralamazsın",
+  "guest.already_claimed": "Bu misafirin kaydı zaten devralındı",
+  "invite.guest_confirm": "Bu davet {guestName} için. Onaylarsan {groupName} grubunda {guestName} adına girilen kayıtlar senin hesabına geçer",
   /**
    * OLCUT ODESME PLANI, ham bakiye degil - cumle bunu soyluyor. "Borcu yok"
    * deseydi yanlis olurdu: kisinin gruba borcu olabilir ama sadelestirilmis
@@ -521,6 +524,14 @@ export const MESSAGES_TR = {
   "ui.guest_name": "Misafirin adı",
   "ui.guest_added_named": "{name} misafir olarak eklendi",
   "ui.guest_renamed": "Misafirin adı değişti",
+  "ui.invite_guest": "Davet et",
+  "ui.guest_actions": "Seçenekler",
+  "ui.guest_invite_ready": "{name} için link hazır",
+  "ui.guest_invite_hint": "Link bir kez kullanılabilir ve 7 gün geçerli. Açan kişi {name} olarak katılır ve {name} adına girilen kayıtlar onun hesabına geçer.",
+  "ui.invited_as_guest": "{groupName} grubuna {guestName} olarak katılıyorsun",
+  "ui.guest_claim_explain": "{guestName} adına girilen harcamalar, paylar ve ödemeler senin hesabına geçecek.",
+  "ui.join_as_guest": "{guestName} olarak katıl",
+  "ui.invite_for_guest": "{name} için",
   "ui.member_left": "Ayrıldı",
 
   // --- Bakiye ---
@@ -1021,6 +1032,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "reminder.guest": "Guests can't be reminded; they don't use the app",
   "guest.limit": "A group can have at most {max} guests",
   "guest.not_found": "Guest not found",
+  "guest.claim_already_member": "You've already been in this group, so you can't take over a guest's records",
+  "guest.already_claimed": "This guest's records have already been taken over",
+  "invite.guest_confirm": "This invite is for {guestName}. If you confirm, everything entered under {guestName} in {groupName} moves to your account",
   "reminder.no_debt": "This person does not appear to owe you anything",
   "reminder.too_soon": "You can remind the same person once every {hours} hours",
 
@@ -1323,6 +1337,14 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.guest_name": "Guest's name",
   "ui.guest_added_named": "{name} was added as a guest",
   "ui.guest_renamed": "Guest renamed",
+  "ui.invite_guest": "Invite",
+  "ui.guest_actions": "Options",
+  "ui.guest_invite_ready": "Link for {name} is ready",
+  "ui.guest_invite_hint": "The link works once and is valid for 7 days. Whoever opens it joins as {name}, and everything entered under {name} moves to their account.",
+  "ui.invited_as_guest": "You're joining {groupName} as {guestName}",
+  "ui.guest_claim_explain": "The expenses, shares and settlements entered under {guestName} will move to your account.",
+  "ui.join_as_guest": "Join as {guestName}",
+  "ui.invite_for_guest": "for {name}",
   "ui.member_left": "Left",
 
   // --- Balances ---

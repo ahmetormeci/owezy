@@ -174,3 +174,113 @@ export function RenameGuestButton({
     </Dialog>
   );
 }
+
+/**
+ * Misafire OZEL davet linki (ADR-057, Faz 50b). Linki acan kisi misafir
+ * OLARAK katilir ve misafirin kayitlari onun hesabina gecer.
+ *
+ * IKI ADIM: once ne olacagi anlatiliyor, link ancak "olustur"a basilinca
+ * uretiliyor. Diyalogu acmak link uretseydi her acilis, kimsenin
+ * gondermedigi gecerli bir davet birakirdi.
+ *
+ * Link BIR KEZ gosteriliyor - normal davetle ayni kural: veritabaninda
+ * yalnizca ozeti duruyor, ham kod bir daha uretilemez.
+ */
+export function GuestInviteButton({
+  groupId,
+  guestId,
+  displayName,
+}: {
+  groupId: string;
+  guestId: string;
+  displayName: string;
+}) {
+  const router = useRouter();
+  const t = useTranslate();
+  const [open, setOpen] = useState(false);
+  const [link, setLink] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  async function handleCreate() {
+    setError(null);
+    setIsCreating(true);
+    try {
+      const data = await apiRequest<{ invite: { token: string } }>(
+        `/api/v1/groups/${groupId}/guests/${guestId}/invite`,
+        { method: "POST" },
+      );
+      setLink(`${window.location.origin}/join/${data.invite.token}`);
+      // Asagidaki davet listesi yeni linki gostersin (iptal edilebilsin).
+      router.refresh();
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : t("server.unexpected"));
+    } finally {
+      setIsCreating(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success(t("ui.link_copied"));
+    } catch {
+      toast.error(t("ui.link_copy_failed"));
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        // Kapatilinca link unutuluyor: bir kez gosterildi, o kadar.
+        if (!next) {
+          setLink(null);
+          setError(null);
+        }
+      }}
+    >
+      <DialogTrigger
+        render={
+          <Button variant="ghost" size="sm">
+            {t("ui.invite_guest")}
+          </Button>
+        }
+      />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {link ? t("ui.guest_invite_ready", { name: displayName }) : t("ui.invite_guest")}
+          </DialogTitle>
+          <DialogDescription>{t("ui.guest_invite_hint", { name: displayName })}</DialogDescription>
+        </DialogHeader>
+
+        {link ? (
+          <div className="flex flex-col gap-3 py-2">
+            <p className="text-sm text-muted-foreground">{t("ui.invite_once_warning")}</p>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                aria-label={t("ui.guest_invite_ready", { name: displayName })}
+                value={link}
+                onFocus={(event) => event.target.select()}
+              />
+              <Button type="button" variant="outline" onClick={handleCopy}>
+                {t("ui.copy")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <DialogFooter>
+            <Button onClick={handleCreate} disabled={isCreating}>
+              {isCreating ? t("ui.saving") : t("ui.create_invite")}
+            </Button>
+          </DialogFooter>
+        )}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </DialogContent>
+    </Dialog>
+  );
+}

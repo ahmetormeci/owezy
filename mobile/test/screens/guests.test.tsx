@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
-import { Alert } from "react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { Alert, Share } from "react-native";
 import MembersScreen from "../../app/groups/[groupId]/members";
 
 /**
@@ -88,14 +88,29 @@ it("BOS AD sunucuya GITMIYOR ve ekranda soyleniyor", async () => {
   expect(screen.getByText("Misafirin adını yaz")).toBeTruthy();
 });
 
+/**
+ * MISAFIRIN EYLEMLERI TEK MENUDE (satira uc metin sigmiyordu). Menude
+ * davet ve ad HER UYEYE, cikarma yalnizca sahibe - sunucu kurali ayni.
+ */
+function openGuestMenu() {
+  const alert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+  return {
+    alert,
+    buttons: () =>
+      alert.mock.calls[0][2] as { text: string; onPress?: () => void; style?: string }[],
+  };
+}
+
 it("ADI DEGISTIRILEBILIYOR - kendisi giris yapamiyor, grup duzeltiyor", async () => {
   const prompt = jest.spyOn(Alert, "prompt").mockImplementation(() => {});
+  const menu = openGuestMenu();
   await render(<MembersScreen />);
 
-  await fireEvent.press(screen.getByText("Adını değiştir"));
+  await fireEvent.press(screen.getByText("Seçenekler"));
+  menu.buttons().find((b) => b.text === "Adını değiştir")?.onPress?.();
+
   // Diyalog mevcut adla aciliyor.
   expect(prompt.mock.calls[0][4]).toBe("Selin");
-
   const buttons = prompt.mock.calls[0][2] as { onPress?: (value?: string) => void }[];
   buttons[1].onPress?.("Selin K.");
 
@@ -104,4 +119,33 @@ it("ADI DEGISTIRILEBILIYOR - kendisi giris yapamiyor, grup duzeltiyor", async ()
       displayName: "Selin K.",
     }),
   );
+});
+
+it("DAVET: misafire OZEL link uretiliyor, paylasiliyor ve kimin icin oldugu yaziyor", async () => {
+  mockPost.mockResolvedValue({ ok: true, data: { invite: { token: "tok123" } } });
+  const share = jest.spyOn(Share, "share").mockResolvedValue({ action: "sharedAction" });
+  const menu = openGuestMenu();
+  await render(<MembersScreen />);
+
+  await fireEvent.press(screen.getByText("Seçenekler"));
+  await act(async () => {
+    menu.buttons().find((b) => b.text === "Davet et")?.onPress?.();
+  });
+
+  await waitFor(() =>
+    expect(mockPost).toHaveBeenCalledWith("/api/v1/groups/g1/guests/u-guest/invite", {}),
+  );
+  expect(share.mock.calls[0][0].message).toMatch(/\/join\/tok123$/);
+  expect(screen.getByText("SELİN İÇİN LİNK HAZIR")).toBeTruthy();
+});
+
+it("menude CIKARMA yalnizca SAHIBE gorunuyor", async () => {
+  // Bu dosyada ben SAHIBIM (mockDataFor, role: OWNER).
+  const menu = openGuestMenu();
+  await render(<MembersScreen />);
+
+  await fireEvent.press(screen.getByText("Seçenekler"));
+
+  const texts = menu.buttons().map((b) => b.text);
+  expect(texts).toEqual(["Davet et", "Adını değiştir", "Çıkar", "Vazgeç"]);
 });

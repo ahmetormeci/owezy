@@ -166,6 +166,16 @@ model User {
   guestGroupId String? @db.Uuid
   guestGroup   Group?  @relation("GroupGuests", fields: [guestGroupId], references: [id], onDelete: Restrict)
 
+  /// SAHIPLENME (ADR-057, Faz 50b). Misafirin kayitlari gercek bir hesaba
+  /// devredildiginde KIME ve NE ZAMAN. Misafir satiri SILINMIYOR: degisiklik
+  /// gecmisi onu gosteriyor. CHECK "User_merge_shape": yalnizca misafir
+  /// devredilir, iki alan birlikte yazilir.
+  mergedIntoId String?       @db.Uuid
+  mergedAt     DateTime?
+  mergedInto   User?         @relation("GuestMergedInto", fields: [mergedIntoId], references: [id], onDelete: Restrict)
+  mergedGuests User[]        @relation("GuestMergedInto")
+  guestInvites GroupInvite[] @relation("GuestInvite")
+
   // Bu kullanicinin olusturdugu gruplar
   createdGroups Group[] @relation("GroupCreatedBy")
 
@@ -217,6 +227,7 @@ model User {
 
   @@index([email])
   @@index([guestGroupId])
+  @@index([mergedIntoId])
 }
 
 model Group {
@@ -425,9 +436,13 @@ model GroupInvite {
   useCount    Int       @default(0)
   createdAt   DateTime  @default(now())
   revokedAt   DateTime?
+  /// Misafire OZEL link (ADR-057, Faz 50b). NULL = normal grup daveti.
+  /// CHECK "GroupInvite_guest_single_use": misafir linki tek kullanimlik.
+  guestUserId String?   @db.Uuid
 
   group     Group @relation(fields: [groupId], references: [id], onDelete: Restrict)
   invitedBy User  @relation("invitedBy", fields: [invitedById], references: [id], onDelete: Restrict)
+  guestUser User? @relation("GuestInvite", fields: [guestUserId], references: [id], onDelete: Restrict)
 
   // Guvenlik notu: tokenHash, ham davet token'inin hash'idir (orn. SHA-256).
   // Ham token veritabaninda ASLA saklanmaz; kullaniciya yalnizca link olusturulurken bir kez gosterilir.
@@ -437,6 +452,7 @@ model GroupInvite {
 
   @@unique([tokenHash])
   @@index([groupId])
+  @@index([guestUserId])
 }
 
 model Notification {

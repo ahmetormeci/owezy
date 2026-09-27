@@ -57,6 +57,8 @@ type InvitesResponse = {
     expiresAt: string;
     maxUses: number;
     useCount: number;
+    // Misafire ozel davetse KIMIN icin (ADR-057).
+    guestName?: string | null;
   }[];
 };
 
@@ -82,6 +84,8 @@ export default function MembersScreen() {
 
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState<string | null>(null);
+  // Ekrandaki link bir MISAFIRE ozelse onun adi; normal davette null.
+  const [linkFor, setLinkFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function createInvite() {
@@ -99,6 +103,7 @@ export default function MembersScreen() {
       // sifrelenmis ozeti duruyor. Ekranda tutup paylasima veriyoruz.
       const url = `${apiBaseUrl()}/join/${result.data.invite.token}`;
       setLink(url);
+      setLinkFor(null);
       // Yeni davet asagidaki listede de gorunmeli; yoksa kullanici az once
       // urettigi seyi iptal edemezdi.
       invites.reload();
@@ -221,6 +226,59 @@ export default function MembersScreen() {
       return;
     }
     members.reload();
+  }
+
+  /**
+   * MISAFIRE OZEL DAVET (ADR-057, Faz 50b): linki acan kisi misafir OLARAK
+   * katilir ve misafirin kayitlari onun hesabina gecer. Tek kullanimlik,
+   * 7 gun. Normal davet gibi paylasim sayfasi aciliyor ve link ekranda da
+   * kaliyor - bir daha uretilemez.
+   */
+  async function inviteGuest(guestId: string, displayName: string) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await post<InviteResponse>(
+        `/api/v1/groups/${groupId}/guests/${guestId}/invite`,
+        {},
+      );
+      if (!result.ok) {
+        setError(t(result.code, result.params));
+        return;
+      }
+      const url = `${apiBaseUrl()}/join/${result.data.invite.token}`;
+      setLink(url);
+      setLinkFor(displayName);
+      invites.reload();
+      await Share.share({ message: url });
+    } catch (caught) {
+      setError(String(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * MISAFIRIN EYLEMLERI TEK MENUDE. Satira uc metin (davet et, adini
+   * degistir, cikar) yan yana sigmiyordu: 320pt'lik bir ekranda ada ~50pt
+   * kaliyordu. Cikarma yalnizca sahipte - sunucu kurali ayni.
+   */
+  function guestMenu(guestId: string, displayName: string) {
+    Alert.alert(displayName, undefined, [
+      { text: t("ui.invite_guest"), onPress: () => void inviteGuest(guestId, displayName) },
+      { text: t("ui.rename_guest"), onPress: () => promptRename(guestId, displayName) },
+      ...(me?.role === "OWNER"
+        ? [
+            {
+              text: t("ui.remove_member"),
+              style: "destructive" as const,
+              onPress: () => confirmRemove(guestId, displayName),
+            },
+          ]
+        : []),
+      { text: t("ui.cancel"), style: "cancel" as const },
+    ]);
   }
 
   /**
@@ -356,17 +414,20 @@ export default function MembersScreen() {
                         : t("ui.role_member")}
                   </Text>
                 </View>
-                {/* Misafirin adini HER UYE duzeltebilir: kendisi giris
-                    yapamiyor, baska kimse yok. */}
+                {/* Misafirin eylemleri HER UYEYE acik (davet, ad); cikarma
+                    menude yalnizca sahibe. Kendisi giris yapamiyor. */}
                 {member.isGuest ? (
-                  <Pressable
-                    hitSlop={12}
-                    onPress={() => promptRename(member.userId, member.displayName)}
-                  >
-                    <Text style={s.rename}>{t("ui.rename_guest")}</Text>
-                  </Pressable>
-                ) : null}
-                {me?.role === "OWNER" && member.userId !== currentUserId ? (
+                  removingId === member.userId ? (
+                    <ActivityIndicator size="small" color={theme.destructive} />
+                  ) : (
+                    <Pressable
+                      hitSlop={12}
+                      onPress={() => guestMenu(member.userId, member.displayName)}
+                    >
+                      <Text style={s.rename}>{t("ui.guest_actions")}</Text>
+                    </Pressable>
+                  )
+                ) : me?.role === "OWNER" && member.userId !== currentUserId ? (
                   removingId === member.userId ? (
                     <ActivityIndicator size="small" color={theme.destructive} />
                   ) : (
@@ -428,7 +489,14 @@ export default function MembersScreen() {
 
           {link ? (
             <View style={s.linkBlock}>
-              <Cap>{t("ui.invite_ready")}</Cap>
+              <Cap>
+                {linkFor
+                  ? t("ui.guest_invite_ready", { name: linkFor })
+                  : t("ui.invite_ready")}
+              </Cap>
+              {linkFor ? (
+                <Text style={s.warning}>{t("ui.guest_invite_hint", { name: linkFor })}</Text>
+              ) : null}
               {/* Link EKRANDA da duruyor: paylasim sayfasi kapatilirsa kod
                   kaybolmasin. Bir daha uretilemez. */}
               <Text selectable style={s.link}>
@@ -460,6 +528,9 @@ export default function MembersScreen() {
                       max: invite.maxUses,
                     })}
                   </Text>
+                  {invite.guestName ? (
+                    <Text style={s.role}>{t("ui.invite_for_guest", { name: invite.guestName })}</Text>
+                  ) : null}
                   <Text style={s.role}>
                     {t("ui.invite_valid_until", {
                       date: formatDate(new Date(invite.expiresAt), locale),

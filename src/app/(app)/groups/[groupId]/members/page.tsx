@@ -7,7 +7,7 @@ import { getTranslate } from "@/lib/i18n-server";
 import { Badge } from "@/components/ui/badge";
 import { InviteManager } from "@/components/invite-manager";
 import { LeaveGroupButton, RemoveMemberButton } from "@/components/member-actions";
-import { AddGuestForm, RenameGuestButton } from "@/components/guest-actions";
+import { AddGuestForm, GuestInviteButton, RenameGuestButton } from "@/components/guest-actions";
 import { SectionHead } from "@/components/section-head";
 import { PersonAvatar } from "@/components/person-avatar";
 
@@ -100,11 +100,18 @@ export default async function GroupMembersPage({
                 {/* Misafirin adini HER UYE duzeltebilir: kendisi giris
                     yapamiyor, baska kimse yok. */}
                 {member.isGuest ? (
-                  <RenameGuestButton
-                    groupId={groupId}
-                    guestId={member.userId}
-                    displayName={member.displayName}
-                  />
+                  <>
+                    <GuestInviteButton
+                      groupId={groupId}
+                      guestId={member.userId}
+                      displayName={member.displayName}
+                    />
+                    <RenameGuestButton
+                      groupId={groupId}
+                      guestId={member.userId}
+                      displayName={member.displayName}
+                    />
+                  </>
                 ) : null}
                 {isOwner && member.userId !== user.id ? (
                   <RemoveMemberButton
@@ -147,6 +154,7 @@ export default async function GroupMembersPage({
             expiresAt: invite.expiresAt.toISOString(),
             maxUses: invite.maxUses,
             useCount: invite.useCount,
+            guestName: invite.guestName,
           }))}
         />
       </section>

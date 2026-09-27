@@ -6,7 +6,20 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useTranslate } from "@/lib/i18n";
 
-export function AcceptInvite({ token }: { token: string }) {
+/**
+ * `confirmGuestId`: misafire ozel davette (ADR-057) ACIK ONAY - sayfa
+ * misafirin adini zaten gosterdi, kullanici "X olarak katil"a basiyor.
+ * Sunucu bu kimlik gelmeden sahiplenmeyi kabul etmiyor.
+ */
+export function AcceptInvite({
+  token,
+  confirmGuestId,
+  label,
+}: {
+  token: string;
+  confirmGuestId?: string;
+  label?: string;
+}) {
   const router = useRouter();
   const t = useTranslate();
   const [isJoining, setIsJoining] = useState(false);
@@ -20,7 +33,7 @@ export function AcceptInvite({ token }: { token: string }) {
       const response = await fetch("/api/v1/invites/accept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify(confirmGuestId ? { token, confirmGuestId } : { token }),
       });
       const data = await response.json();
 
@@ -42,7 +55,7 @@ export function AcceptInvite({ token }: { token: string }) {
   return (
     <div className="flex flex-col items-center gap-4">
       <Button onClick={handleJoin} disabled={isJoining}>
-        {isJoining ? t("ui.joining") : t("ui.join_group")}
+        {isJoining ? t("ui.joining") : (label ?? t("ui.join_group"))}
       </Button>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>

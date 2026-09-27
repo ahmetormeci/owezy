@@ -1,10 +1,10 @@
-import { randomBytes, createHash } from "crypto";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { NotFoundError, ForbiddenError, ConflictError } from "@/lib/errors";
 import { assertActiveMemberOfGroup } from "@/lib/group-access";
 import { calculateBalances } from "@/lib/balances";
 import { createNotifications } from "@/lib/notifications";
+import { claimGuest, generateInviteToken, hashInviteToken } from "@/lib/guests";
 import { DEFAULT_CURRENCY, type SupportedCurrency } from "@/lib/money";
 
 const DEFAULT_INVITE_TTL_DAYS = 7;
@@ -57,13 +57,9 @@ export async function listGroupsForUser(userId: string) {
   }));
 }
 
-function generateRawToken() {
-  return randomBytes(32).toString("hex");
-}
-
-function hashToken(rawToken: string) {
-  return createHash("sha256").update(rawToken).digest("hex");
-}
+// Davet kodu tek yerden: guests.ts (misafir davetleri de ayni yolu kullaniyor).
+const generateRawToken = generateInviteToken;
+const hashToken = hashInviteToken;
 
 type CreateInviteOptions = {
   maxUses?: number;
@@ -101,7 +97,19 @@ export async function createGroupInvite(
   };
 }
 
-export async function acceptGroupInvite(userId: string, rawToken: string) {
+/**
+ * `confirmGuestId`: davet bir MISAFIRE ozelse (ADR-057, Faz 50b) kabul
+ * eden kisi bunu ACIKCA onaylamali - misafirin kimligini geri gondererek.
+ * Onaysiz istek "invite.guest_confirm" ile reddedilir ve cevap grup ile
+ * misafir adini tasir; istemci onu gosterip ikinci istegi gonderir. Yani
+ * baskasinin borcunu ustlenmek, istemcinin iyi niyetine degil SUNUCUYA
+ * bagli. Normal davetler bu parametreyi hic kullanmiyor.
+ */
+export async function acceptGroupInvite(
+  userId: string,
+  rawToken: string,
+  confirmGuestId?: string,
+) {
   const tokenHash = hashToken(rawToken);
 
   return prisma.$transaction(async (tx) => {
@@ -124,14 +132,38 @@ export async function acceptGroupInvite(userId: string, rawToken: string) {
       throw new ConflictError("group.already_member");
     }
 
-    const membership = await tx.groupMember.create({
-      data: {
-        groupId: invite.groupId,
-        userId,
-        role: "MEMBER",
-        invitedById: invite.invitedById,
-      },
-    });
+    let membership;
+    if (invite.guestUserId) {
+      if (confirmGuestId !== invite.guestUserId) {
+        const [guest, group] = await Promise.all([
+          tx.user.findUniqueOrThrow({
+            where: { id: invite.guestUserId },
+            select: { displayName: true },
+          }),
+          tx.group.findUniqueOrThrow({ where: { id: invite.groupId }, select: { name: true } }),
+        ]);
+        throw new ConflictError("invite.guest_confirm", {
+          guestName: guest.displayName,
+          groupName: group.name,
+          guestId: invite.guestUserId,
+        });
+      }
+
+      // Misafirin uyelik satiri dahil butun kayitlari bu hesaba geciyor.
+      await claimGuest(tx, userId, invite.groupId, invite.guestUserId);
+      membership = await tx.groupMember.findFirstOrThrow({
+        where: { groupId: invite.groupId, userId, leftAt: null },
+      });
+    } else {
+      membership = await tx.groupMember.create({
+        data: {
+          groupId: invite.groupId,
+          userId,
+          role: "MEMBER",
+          invitedById: invite.invitedById,
+        },
+      });
+    }
 
     await tx.groupInvite.update({
       where: { id: invite.id },
@@ -158,7 +190,16 @@ export async function acceptGroupInvite(userId: string, rawToken: string) {
     });
 
     return membership;
-  });
+  },
+  /**
+   * SURE SINIRI 5 DEGIL 15 SANIYE. Misafir sahiplenmesi (ADR-057) tek
+   * transaction'da ~25 sorgu calistiriyor; veritabani uzakta oldugunda
+   * (E2E, gelistirme) Prisma'nin 5 saniyelik varsayilani asildi ve kabul
+   * 500 dondu (P2028, olculdu). Production'da uygulama ile veritabani ayni
+   * bolgede; bu pay orada bir yavaslamaya karsi.
+   */
+  { timeout: 15_000 },
+  );
 }
 
 // Grup detay sayfasi icin: grubun kendisi + cagiran kisinin rolu.
@@ -230,7 +271,14 @@ export async function updateGroup(
 }
 
 export type InviteStatus =
-  | { valid: true; groupName: string }
+  | {
+      valid: true;
+      groupName: string;
+      // Misafire ozel davet (ADR-057): kabul eden bu kisi OLARAK katilir.
+      // Yalnizca AD - bakiye bilinerek gosterilmiyor (kullanicinin karari):
+      // link birine iletilirse para bilgisi sizmasin.
+      guest?: { id: string; displayName: string };
+    }
   | { valid: false; reason: "NOT_FOUND" | "REVOKED" | "EXPIRED" | "EXHAUSTED" };
 
 /**
@@ -249,6 +297,9 @@ export async function getInviteStatus(rawToken: string): Promise<InviteStatus> {
       expiresAt: true,
       maxUses: true,
       useCount: true,
+      groupId: true,
+      guestUserId: true,
+      guestUser: { select: { displayName: true, mergedIntoId: true } },
       group: { select: { name: true, deletedAt: true } },
     },
   });
@@ -264,6 +315,24 @@ export async function getInviteStatus(rawToken: string): Promise<InviteStatus> {
   }
   if (invite.useCount >= invite.maxUses) {
     return { valid: false, reason: "EXHAUSTED" };
+  }
+
+  if (invite.guestUserId && invite.guestUser) {
+    // Misafir devralinmis ya da gruptan cikarilmissa link artik bir seye
+    // karsilik gelmiyor. "Iptal edildi" en dogru cumle: sahiplenilecek kimse
+    // kalmadi.
+    const guestStillThere = await prisma.groupMember.findFirst({
+      where: { groupId: invite.groupId, userId: invite.guestUserId, leftAt: null },
+      select: { id: true },
+    });
+    if (invite.guestUser.mergedIntoId || !guestStillThere) {
+      return { valid: false, reason: "REVOKED" };
+    }
+    return {
+      valid: true,
+      groupName: invite.group.name,
+      guest: { id: invite.guestUserId, displayName: invite.guestUser.displayName },
+    };
   }
 
   return { valid: true, groupName: invite.group.name };
@@ -288,9 +357,16 @@ export async function listGroupInvites(userId: string, groupId: string) {
       maxUses: true,
       useCount: true,
       createdAt: true,
+      // Misafire ozel davetse KIMIN icin oldugu (ADR-057).
+      guestUser: { select: { displayName: true } },
     },
     orderBy: { createdAt: "desc" },
-  });
+  }).then((invites) =>
+    invites.map(({ guestUser, ...invite }) => ({
+      ...invite,
+      guestName: guestUser?.displayName ?? null,
+    })),
+  );
 }
 
 export async function revokeGroupInvite(userId: string, groupId: string, inviteId: string) {
