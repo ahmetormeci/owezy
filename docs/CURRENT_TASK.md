@@ -43,8 +43,9 @@ Current task:
 
   AYNI GUN, AYRI COMMIT: davet ekranindaki "ui.invite_needs_account" TR
   metni Turkce karaktersiz yazilmisti ("katilmak icin once giris...") -
-  DUZELTILDI. Tek bozuk TR metni buydu (tarandi). Yalnizca mobil davet
-  ekrani kullaniyor; 1.0.6'ya giriyor.
+  DUZELTILDI (fd82f33). Tek bozuk TR metni buydu (tarandi). Yalnizca
+  mobil davet ekrani kullaniyor; 1.0.6'ya giriyor.
+  Iki commit birlikte push edildi; CI (fd82f33) completed/success.
 
   Sonraki is: SECILMEDI. Aday listesi PROGRESS.md "Sıradaki adaylar"
   (basinda SDK 58'e gecis - acil degil, son tarih Nisan 2027).
