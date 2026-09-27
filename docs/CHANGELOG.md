@@ -172,7 +172,16 @@ this SDK". 1.0.4 EAS'ta Xcode 26.6 ile derlendiği için etkilenmedi
 (build kaydından okundu). Sabitleme, EAS varsayılanı değişirse 1.0.5'in
 açılmaz hale gelmesini engelliyor. UIScene'e geçiş ileride zorunlu;
 SDK 57'deki hızlı yol davet linklerini soğuk açılışta bozduğu için
-doğru yol SDK 58.
+doğru yol SDK 58. *[27 Eylül: bu gerekçe YANLIŞ çıktı — kurulu
+expo 57.0.25 düzeltmeyi taşıyor, ölçüldü; sahne SDK 57'de açıldı, ADR-058.]*
+
+**Placeholder hatası simülatörde üretilemedi.** Kullanıcı "hâlâ bozuk"
+dedi; sebep düzeltmenin (11 Eylül) 1.0.4 build'inden (10 Eylül) sonra
+yazılmış olmasıydı. 1.0.4'ün birebir kodu Release olarak beş koşulda
+denendi (iOS 26.5, Türkçe dil + klavye, odaklı alan, en büyük yazı,
+Kalın Metin) ve hepsinde düzgün çizildi — hata gerçek cihaza özgü. Kanıt
+kullanıcının telefonuydu: 1.0.5 (build 22) TestFlight'ta denendi, çalışıyor
+(26 Eylül).
 
 **CI kırmızıydı ve sebep bizim değişikliğimiz değildi:** Expo 12 Eylül'den
 beri 8 paketin yamasını yayınlamış, CI'daki `expo-doctor` kapısı düştü

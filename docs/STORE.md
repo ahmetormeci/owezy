@@ -639,12 +639,11 @@ kapsıyor.
 placeholder hatası simülatörde hiçbir koşulda üretilemedi, yani
 düzeltmenin işe yaradığının tek kanıtı kullanıcının kendi telefonu.
 Sıra: build → TestFlight internal (inceleme yok) → telefonda bak →
-gönder. Ayrıntı: CURRENT_TASK.md, 25 Eylül bloğu.
+gönder. Ayrıntı: CHANGELOG.md, 25 Eylül kayıtları.
 
-**İNGİLİZCE EKRAN GÖRÜNTÜLERİNİN SIRASI YANLIŞ** (ölçüldü, 13 Eylül):
-Türkçe set 1-2-3-4-5, İngilizce set **1-4-3-2-5** sırasında yayında.
-Yayındaki sürümde kilitli; 1.0.5 sayfasında English → Previews and
-Screenshots'ta sürükleyerek düzelt.
+**İngilizce ekran görüntülerinin sırası 1-4-3-2-5 KALDI** (Türkçe set
+1-2-3-4-5). Kullanıcının kararı (26 Eylül): "sıralamadan gönderdim, çok
+önemli değil". **Tekrar önerme.**
 
 **BUILD ORTAMI:** 1.0.4, EAS'ta `macos-tahoe-26.5-xcode-26.6` ile
 derlendi. Xcode 27 ile derlenen bir build iOS 27'de **açılmıyor**
