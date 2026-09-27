@@ -282,6 +282,7 @@ export function SignInForm() {
         <div className="flex flex-col gap-2">
           <Label htmlFor="code">{t("ui.verification_code")}</Label>
           <p className="text-sm text-muted-foreground">{t("ui.code_sent_to", { email })}</p>
+          <p className="text-sm text-muted-foreground">{t("ui.code_check_spam")}</p>
           <Input
             id="code"
             value={code}

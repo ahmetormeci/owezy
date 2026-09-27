@@ -21,6 +21,17 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-09-27 — Postalar junk'a düşüyordu (Faz 53, ADR-060)
+
+Alan adının kimlik kayıtları ölçüldü ve doğru çıktı; sebep büyük ihtimalle
+yeni bir alan adının itibarsızlığı ve postanın oltalamaya benzeyen
+çıplaklığı. Postalar artık tam bir HTML belgesi, altında kimin neden
+gönderdiğini söyleyen bir satır var ve yanıtlar destek@owezy.net'e gidiyor.
+Kodun gittiği her ekran "gelmezse gereksiz/spam klasörüne bak" diyor.
+Kullanıcı Resend'de takibi kapattı ve Cloudflare'de DMARC raporlarını açtı.
+
+---
+
 ## 2026-09-27 — IBAN ile ödeme, web (Faz 52a, ADR-059)
 
 Kullanıcı isterse hesabına IBAN'ını ekliyor; ona borçlu olan grup

@@ -229,6 +229,7 @@ export default function SignInScreen() {
           <>
             <Cap>{t("ui.verification_code")}</Cap>
             <Text style={s.muted}>{t("ui.code_sent_to", { email })}</Text>
+            <Text style={s.muted}>{t("ui.code_check_spam")}</Text>
             <FieldInput
               style={s.input}
               value={code}

@@ -530,6 +530,47 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-060 — Giden posta: tam belge, kimlik satırı, gerçek yanıt adresi; DMARC raporları Cloudflare'de
+**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-27**
+
+**Bağlam:** Kullanıcı postalarımızın gereksiz (junk) klasörüne düştüğünü
+bildirdi.
+
+**Ölçülen — kimlik kayıtları DOĞRU:** DKIM (`resend._domainkey`), gönderim
+alt alan adının SPF'i (`send.owezy.net` → amazonses) ve DMARC
+`p=reject; sp=reject; adkim=s; aspf=r`. Yani sebep "kimliğimizi
+kanıtlayamıyoruz" değil. (Tuzak: bu makinenin varsayılan çözücüsü TXT
+sorgularına BOŞ dönüyor — `dig @1.1.1.1` ile sorulmalı.)
+
+**Muhtemel sebep** (kanıtlanmadı): alan adı yeni ve az posta gönderiyor —
+itibarı yok; üstüne posta "yalnızca bir kod, noreply, kimlik yok" olarak
+oltalama postalarına benziyordu ve HTML'i tam bir belge değildi.
+
+**Karar — kodda:**
+- Postalar **tam bir HTML belgesi**: doctype, `<html lang>`, karakter seti,
+  `<body>`. Yan kazanç: `lang="tr"` ile büyük harfe çevrilen başlıklar
+  Türkçe kurala uyuyor (İ).
+- **Alt bilgi kimliği söylüyor:** neden aldın + "Owezy · owezy.net · yanıtla,
+  destek@'e ulaşır". Düz metin sürümünde de.
+- **Yanıt adresi `destek@owezy.net`** (Cloudflare Email Routing ile
+  kullanıcının kutusuna). Gönderen `noreply@` kaldı — değiştirmek itibarı
+  sıfırdan başlatabilirdi.
+- Kod giren her ekranda (web: giriş, kayıt doğrulama, parola sıfırlama;
+  mobil: giriş) **"birkaç dakikada gelmezse gereksiz/spam klasörüne bak"**.
+  Sebep ne olursa olsun kullanıcıya bugün yardım eden bu.
+
+**Karar — panelde (kullanıcı yaptı, 27 Eylül):** Resend'de açılma/tıklama
+takibi kapalı (açık olsaydı gizlilik politikasının "ölçüm yok" sözüyle de
+çelişirdi); Cloudflare DMARC Management açıldı — DMARC kaydına
+`rua=...@dmarc-reports.cloudflare.net` eklendi, posta servislerinin günlük
+raporları Cloudflare panelinde.
+
+**Yapılmayan:** ücretli özel IP (bu hacimde ısınmamış bir IP itibarı
+kötüleştirir), BIMI (ücretli sertifika ister). İtibar hacim ve etkileşimle
+oluşuyor; DMARC raporları hangi servisin sorun çıkardığını gösterecek.
+
+---
+
 ## ADR-059 — IBAN ile ödeme: kullanıcının kendi IBAN'ı, grup arkadaşlarına görünür; değişince e-posta
 **Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **52a UYGULANDI: 2026-09-27** (sunucu + web + gizlilik) · 52b (mobil) 1 Ekim'deki 1.0.6 build'inden **sonra**
 

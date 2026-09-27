@@ -312,6 +312,10 @@ export const MESSAGES_TR = {
   "ui.send_code": "Kod gönder",
   "ui.verification_code": "Doğrulama kodu",
   "ui.code_sent_to": "{email} adresine gönderildi.",
+  // Posta yeni bir alan adindan geliyor ve bazi servisler onu gereksiz
+  // klasorune atiyor (27 Eylul). Sebep ne olursa olsun kullaniciya BUGUN
+  // yardim eden sey bu cumle.
+  "ui.code_check_spam": "Birkaç dakikada gelmezse gereksiz ya da spam klasörüne bak.",
   "ui.code_placeholder": "000000",
   "ui.change_email": "E-postayı değiştir",
   "ui.password": "Parola",
@@ -469,6 +473,9 @@ export const MESSAGES_TR = {
   "email.iban_set_body": "Hesabına yeni bir IBAN kaydedildi: {iban}. Grup arkadaşların sana ödeme yaparken artık bunu görecek.",
   "email.iban_removed_body": "Hesabındaki IBAN kaldırıldı. Grup arkadaşların sana ödeme yaparken artık IBAN görmeyecek.",
   "email.iban_not_you": "Bunu sen yapmadıysan hemen Owezy'ye gir, IBAN'ını düzelt ve destek@owezy.net adresine yaz.",
+  "email.footer_reason_otp": "Bu postayı, owezy.net'te bu adresle bir giriş ya da doğrulama istendiği için aldın.",
+  "email.footer_reason_account": "Bu postayı, Owezy hesabında bir değişiklik yapıldığı için aldın.",
+  "email.footer_contact": "Owezy · owezy.net · Sorun varsa bu postayı yanıtla; destek@owezy.net adresine ulaşır.",
   "ui.sample_title": "Kahvaltı",
   "ui.theme_toggle": "Temayı değiştir",
   // Dil dugmesi. Kisa etiketler ("TR" / "EN") her dilde ayni yazilir ama yine
@@ -1212,6 +1219,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.send_code": "Send code",
   "ui.verification_code": "Verification code",
   "ui.code_sent_to": "Sent to {email}.",
+  "ui.code_check_spam": "If it does not arrive in a few minutes, check your junk or spam folder.",
   "ui.code_placeholder": "000000",
   "ui.change_email": "Change email",
   "ui.password": "Password",
@@ -1326,6 +1334,9 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "email.iban_set_body": "A new IBAN was saved to your account: {iban}. Your group members will see it when they pay you.",
   "email.iban_removed_body": "The IBAN on your account was removed. Your group members will no longer see an IBAN when they pay you.",
   "email.iban_not_you": "If this wasn't you, sign in to Owezy now, fix your IBAN and write to destek@owezy.net.",
+  "email.footer_reason_otp": "You received this because a sign-in or verification was requested on owezy.net with this address.",
+  "email.footer_reason_account": "You received this because something changed on your Owezy account.",
+  "email.footer_contact": "Owezy · owezy.net · If something is wrong, reply to this email; it reaches destek@owezy.net.",
   "ui.sample_title": "Breakfast",
   "ui.theme_toggle": "Switch theme",
   "ui.language_short_tr": "TR",

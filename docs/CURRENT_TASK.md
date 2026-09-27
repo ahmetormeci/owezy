@@ -28,31 +28,28 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-09-27
 
 Current task:
-  FAZ 52a - IBAN ILE ODEME (sunucu + web + gizlilik) - BITTI, CANLIDA
-  (ef501a5, 27 Eylul). ADR-059. Kullanicinin secimleri (27 Eylul): gorunurluk
-  "gruplarindaki herkes", yalnizca IBAN (ad soyad yok).
+  FAZ 53 - POSTALAR JUNK'A DUSUYORDU - BITTI, COMMIT ONAYI BEKLIYOR.
+  ADR-060. Olculdu: DKIM, SPF (send.owezy.net), DMARC p=reject DOGRU -
+  sebep kurulum degil; muhtemelen yeni alan adinin itibari + ciplak posta.
+  (TUZAK: bu makinenin varsayilan cozucusu TXT'ye BOS doner -
+  "dig @1.1.1.1 +short TXT _dmarc.owezy.net" kullan.)
 
-  Degisen: prisma (User.iban + ibanUpdatedAt, 4 CHECK; goc
-  20260927210000_add_user_iban - dev, E2E ve PRODUCTION'da uygulandi), src/lib/iban.ts (yeni),
-  me-schemas, PATCH /me (+ degisince maskeli e-posta), email.ts,
-  listGroupMembers, deleteAccount, messages (21 anahtar x 2 dil), web:
-  iban-dialog, iban-actions, user-menu, layout, grup sayfasi, odeme
-  diyalogu; gizlilik politikasi iki dilde; e2e/iban.spec.ts.
-  CANLIDA OLCULDU: yeni gizlilik metni production'da (vercel-build once
-  goc calistiriyor - goc dusseydi build de duserdi), girissiz PATCH /me
-  401, CI (ef501a5) completed/success.
+  Kodda: email.ts tam HTML belgesi + kimlik alt bilgisi + replyTo
+  destek@owezy.net; kod giren 4 ekranda (web giris/kayit/sifirlama, mobil
+  giris) "gelmezse gereksiz/spam klasorune bak". MOBIL SATIR 1 Ekim'den
+  once push edilirse 1.0.6'ya GIRER (kucuk, metin).
+  Panelde (KULLANICI YAPTI, 27 Eylul): Resend acilma/tiklama takibi kapali;
+  Cloudflare DMARC Management acik - DMARC'a rua eklendi (olculdu):
+  v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r;
+  rua=mailto:...@dmarc-reports.cloudflare.net
+  Raporlar Cloudflare panelinde: hangi servis postalarimizi geciriyor.
 
-  Testler: kok 849 (+36), mobil vitest 98 + jest 120, tsc, lint, TAM E2E
-  72 gecti / 1 bilerek atlandi (17,3 dk).
+  Testler: kok 857 (+8, email.test.ts yeni), mobil 98 + 120, tsc, lint,
+  TAM E2E 72 gecti / 1 bilerek atlandi (17,2 dk).
 
-  SONRAKI ADIM - 52b MOBIL: 1 EKIM'DEKI 1.0.6 BUILD'I ALINDIKTAN SONRA.
-  Sebep: EAS build'i calisma klasorunden aliyor; mobil IBAN ekranlari
-  o gun klasorde olursa 1.0.6'ya girer. 52b: expo-clipboard (yeni native
-  paket), hesap ekraninda satir, bakiye kartinda kopyalama, odeme
-  ekraninda alicinin IBAN'i, ekran testleri. 1.0.7 gonderiminde App
-  Privacy: Financial Info -> Other Financial Info (STORE.md 1.0.7).
-
-  Faz 51 (sahne, a3f1ca2) ve Turkce metin (fd82f33) PUSH EDILDI, CI yesil.
+  FAZ 52a (IBAN, web) CANLIDA: ef501a5, CI yesil. 52b (mobil) 1 Ekim
+  build'inden SONRA - EAS calisma klasorunden build aliyor.
+  Faz 51 (sahne, a3f1ca2) ve Turkce metin (fd82f33) PUSH EDILDI.
 
   >>> 1 EKIM 2026: 1.0.6 BUILD GUNU <<<
     Zamanlanmis gorev: owezy-1-0-6-build-hatirlatma (1 Ekim 10:00,

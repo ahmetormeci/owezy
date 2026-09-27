@@ -2709,6 +2709,18 @@ mobil IBAN ekranları 1 Ekim'de klasörde olsaydı 1.0.6'ya girerdi.
 üye olmayan göremiyor, veritabanı kuralları olumlu kontrolüyle). Tam E2E
 72 geçti / 1 bilerek atlandı (17,3 dk); kök 849, mobil 98 + 120.
 
+## Faz 53 — Postalar junk'a düşüyordu · **BİTTİ**
+
+| | |
+|---|---|
+| Ölçüm | DKIM, SPF, DMARC (`p=reject`) doğru — sebep kurulum değil (ADR-060) |
+| Posta | Tam HTML belgesi, kimlik satırlı alt bilgi, yanıt adresi `destek@owezy.net` |
+| Ekran | Kod giren dört ekranda "gelmezse gereksiz/spam klasörüne bak" |
+| Panel (kullanıcı) | Resend takibi kapalı; Cloudflare DMARC raporları açık |
+
+**Testler:** `src/lib/email.test.ts` yeni (8): belge yapısı, dil, alt bilgi
+(HTML ve düz metin), yanıt adresi, hata fırlatma, IBAN bildirimi.
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına

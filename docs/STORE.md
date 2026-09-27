@@ -532,6 +532,7 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
 | Değerlendirme isteği + Hesap'ta "Uygulamayı değerlendir" | Faz 49 · ADR-056 · **yeni native paket** (`expo-store-review`) |
 | Düğmeler büyük yazıda kırpılmıyor (giriş, davet, "Harcama ekle", "Ödeş") | `height: 50` → `minHeight: 50`; en büyük erişilebilirlik boyutunda simülatörde görüldü |
 | iOS sahne yaşam döngüsü (UIScene) — kullanıcıya görünmez, sürüm notuna girmez | Faz 51 · ADR-058 · **yeni native paket** (`expo-build-properties`); imaj yine Xcode 26.6 |
+| Kod ekranında "gelmezse gereksiz/spam klasörüne bak" | Faz 53 · ADR-060 — web'de push ile canlı |
 | Davet ekranında "önce giriş yap" metni Türkçe karakterlerle | 27 Eylül — "katilmak icin once giris" yazıyordu; simülatörde görüldü |
 
 - **App Privacy anketine BAKILMALI.** Artık kullanıcı, uygulamayı

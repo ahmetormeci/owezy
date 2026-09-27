@@ -4,7 +4,7 @@ import { translate } from "@/lib/messages";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, normalizeLocale, type Locale } from "@/lib/locale";
 
 /**
- * Giden e-posta. Bugun tek bir sey gonderiyoruz: tek seferlik kod.
+ * Giden e-posta: tek seferlik kod ve IBAN degisikligi bildirimi.
  *
  * NEDEN BIZDE: Clerk butun postayi kendisi gonderiyordu. Better Auth
  * headless - kodu uretiyor, gondermeyi bize birakiyor. Bu, gocun en gercek
@@ -16,6 +16,64 @@ import { DEFAULT_LOCALE, LOCALE_COOKIE, normalizeLocale, type Locale } from "@/l
  */
 
 const FROM = "Owezy <noreply@owezy.net>";
+
+/**
+ * YANIT ADRESI GERCEK BIR KUTU. "noreply"a yazan kisinin yazdigi kaybolmasin;
+ * ayrica calisan bir iletisim adresi, posta servislerinin ve okuyanin gozunde
+ * bir guven isareti (junk sorunu, 27 Eylul). destek@ Cloudflare Email Routing
+ * ile kullanicinin kutusuna yonleniyor.
+ */
+const REPLY_TO = "destek@owezy.net";
+
+/**
+ * Butun postalarin ortak kabugu.
+ *
+ * NEDEN TAM BIR BELGE: once govde ciplak bir <div>'di - <html>, <body>,
+ * karakter seti yoktu. Bazi filtreler bunu (HTML_MIME_NO_HTML_TAG) eksi puan
+ * sayiyor; posta zaten "yalnizca bir kod" iceren kisa bir metin ve oltalama
+ * postalarina benzemesi kolay.
+ *
+ * ALT BILGI KIMLIGI SOYLUYOR: kim gonderdi, neden aldin, nereye yazarsin.
+ * Oltalama postasi bunlari soylemez; soylemek hem okuyanin hem filtrenin
+ * guvenini artiriyor.
+ *
+ * Gorsel dil ADR-021: kisitlama. Logo yok, gorsel yok, dis font yok - hepsi
+ * ayri birer teslimat riski.
+ */
+function emailDocument({
+  locale,
+  subject,
+  content,
+  reason,
+}: {
+  locale: Locale;
+  subject: string;
+  /** Kabugun icine giren, zaten KACISLANMIS HTML. */
+  content: string;
+  /** Alt bilgideki "bu postayi neden aldin" cumlesi. */
+  reason: string;
+}): string {
+  const contact = translate("email.footer_contact", undefined, locale);
+  return `<!DOCTYPE html>
+<html lang="${locale}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background:#ffffff">
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
+${content}
+<p style="margin:32px 0 0;padding-top:16px;border-top:1px solid #eee;font-size:12px;line-height:1.5;color:#888">${escapeHtml(reason)}<br>${escapeHtml(contact)}</p>
+</div>
+</body>
+</html>`;
+}
+
+/** Duz metin surumunun alt bilgisi - HTML'dekiyle ayni iki cumle. */
+function textFooter(reason: string, locale: Locale): string {
+  return `\n\n--\n${reason}\n${translate("email.footer_contact", undefined, locale)}`;
+}
 
 // Modul yuklenirken degil, ILK KULLANIMDA olusturuluyor. Sebep: bu dosyayi
 // import eden her sey (ornegin bir test) anahtar yokken de yuklenebilmeli;
@@ -102,20 +160,24 @@ export async function sendOtpEmail({
   const body = t("email.otp_body", { minutes });
   const ignore = t("email.otp_ignore");
 
+  const reason = t("email.footer_reason_otp");
+
   const { error } = await resend().emails.send({
     from: FROM,
+    replyTo: REPLY_TO,
     to,
     subject,
-    // Gorsel dil ADR-021: kisitlama. Logo yok, gorsel yok, dis font yok -
-    // hepsi ayri birer teslimat riski ve hicbiri kodu okumaya yardim etmiyor.
-    // Kodun kendisi tek vurgulu ogesi.
-    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
-  <p style="margin:0 0 24px;font-size:11px;letter-spacing:2px;color:#888;text-transform:uppercase">${escapeHtml(heading)}</p>
-  <p style="margin:0 0 24px;font-size:34px;font-weight:600;letter-spacing:6px">${escapeHtml(code)}</p>
-  <p style="margin:0 0 8px;font-size:15px;line-height:1.5">${escapeHtml(body)}</p>
-  <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#666">${escapeHtml(ignore)}</p>
-</div>`,
-    text: `${heading}\n\n${code}\n\n${body}\n\n${ignore}`,
+    // Kodun kendisi tek vurgulu oge; kabuk ve alt bilgi emailDocument'ta.
+    html: emailDocument({
+      locale,
+      subject,
+      reason,
+      content: `<p style="margin:0 0 24px;font-size:11px;letter-spacing:2px;color:#888;text-transform:uppercase">${escapeHtml(heading)}</p>
+<p style="margin:0 0 24px;font-size:34px;font-weight:600;letter-spacing:6px">${escapeHtml(code)}</p>
+<p style="margin:0 0 8px;font-size:15px;line-height:1.5">${escapeHtml(body)}</p>
+<p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#666">${escapeHtml(ignore)}</p>`,
+    }),
+    text: `${heading}\n\n${code}\n\n${body}\n\n${ignore}${textFooter(reason, locale)}`,
   });
 
   if (error) {
@@ -164,16 +226,22 @@ export async function sendIbanChangedEmail({
       : t("email.iban_set_body", { iban: maskedIban });
   const notYou = t("email.iban_not_you");
 
+  const reason = t("email.footer_reason_account");
+
   const { error } = await resend().emails.send({
     from: FROM,
+    replyTo: REPLY_TO,
     to,
     subject,
-    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
-  <p style="margin:0 0 24px;font-size:11px;letter-spacing:2px;color:#888;text-transform:uppercase">${escapeHtml(heading)}</p>
-  <p style="margin:0 0 8px;font-size:15px;line-height:1.5">${escapeHtml(body)}</p>
-  <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#666">${escapeHtml(notYou)}</p>
-</div>`,
-    text: `${heading}\n\n${body}\n\n${notYou}`,
+    html: emailDocument({
+      locale,
+      subject,
+      reason,
+      content: `<p style="margin:0 0 24px;font-size:11px;letter-spacing:2px;color:#888;text-transform:uppercase">${escapeHtml(heading)}</p>
+<p style="margin:0 0 8px;font-size:15px;line-height:1.5">${escapeHtml(body)}</p>
+<p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#666">${escapeHtml(notYou)}</p>`,
+    }),
+    text: `${heading}\n\n${body}\n\n${notYou}${textFooter(reason, locale)}`,
   });
 
   if (error) {

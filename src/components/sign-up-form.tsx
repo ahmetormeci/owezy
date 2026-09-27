@@ -128,6 +128,7 @@ export function SignUpForm() {
           <p className="text-sm text-muted-foreground">
             {t("ui.verify_email_hint", { email })}
           </p>
+          <p className="text-sm text-muted-foreground">{t("ui.code_check_spam")}</p>
           <Input
             id="verify-code"
             value={code}
