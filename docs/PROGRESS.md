@@ -2721,7 +2721,7 @@ mobil IBAN ekranları 1 Ekim'de klasörde olsaydı 1.0.6'ya girerdi.
 **Testler:** `src/lib/email.test.ts` yeni (8): belge yapısı, dil, alt bilgi
 (HTML ve düz metin), yanıt adresi, hata fırlatma, IBAN bildirimi.
 
-## Faz 52b — IBAN ile ödeme: mobil · **BİTTİ, `iban-mobil` DALINDA; 1.0.7**
+## Faz 52b — IBAN ile ödeme: mobil · **BİTTİ, 1.0.6'DA (build 26)**
 
 | | |
 |---|---|
@@ -2730,8 +2730,10 @@ mobil IBAN ekranları 1 Ekim'de klasörde olsaydı 1.0.6'ya girerdi.
 | Ödeme ekranı | Giden ödemede alıcının IBAN'ı + kopyala; son 7 günde değiştiyse uyarı |
 | Pano | `expo-clipboard` — yeni native paket; panoya boşluksuz kayıt |
 
-**Ayrı dalda, çünkü** 1.0.6 incelemede: bir düzeltme build'i gerekirse
-`main` temiz kalmalı. 1.0.6 onaylanınca `main`'e alınır.
+**Önce ayrı dalda yazıldı** (1.0.6 build 25 TestFlight'taydı, bir düzeltme
+build'i gerekirse `main` temiz kalmalıydı). Build 25 henüz incelemeye
+gönderilmemişken iş bitti; kullanıcı tek build'e karar verdi (4 Ekim) ve
+dal `main`'e alındı — 1.0.6 build 26.
 
 **Testler:** `test/screens/iban.test.tsx` (14) — hesap ekranı (ekle, yanlış
 IBAN sunucuya gitmiyor, normalize, kaldır, aynı IBAN istek atmıyor), bakiye

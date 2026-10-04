@@ -572,7 +572,7 @@ oluşuyor; DMARC raporları hangi servisin sorun çıkardığını gösterecek.
 ---
 
 ## ADR-059 — IBAN ile ödeme: kullanıcının kendi IBAN'ı, grup arkadaşlarına görünür; değişince e-posta
-**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **52a UYGULANDI: 2026-09-27** (sunucu + web + gizlilik) · **52b UYGULANDI: 2026-10-04** (mobil, `iban-mobil` dalında; 1.0.7)
+**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **52a UYGULANDI: 2026-09-27** (sunucu + web + gizlilik) · **52b UYGULANDI: 2026-10-04** (mobil; kullanıcının kararıyla 1.0.7 yerine **1.0.6**'ya alındı — tek build, tek inceleme)
 
 **Karar:** Kullanıcı isterse hesabına **tek bir IBAN** ekler. Ortak bir
 grupta olduğu herkes onu görür ve ödeme anında tek dokunuşla kopyalar.

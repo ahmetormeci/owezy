@@ -21,13 +21,14 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
-## 2026-10-04 — IBAN telefonda (Faz 52b, ADR-059) — `iban-mobil` dalında
+## 2026-10-04 — IBAN telefonda (Faz 52b, ADR-059) — 1.0.6'ya alındı
 
 Hesap ekranında IBAN eklenip değiştirilebiliyor; bakiye kartında borçlu
 olduğun kişinin satırında "IBAN'ı kopyala", ödeme ekranında alıcının IBAN'ı
 var. Son 7 günde değişmiş bir IBAN kopyalanırken uyarı çıkıyor. Kopyalama
-için `expo-clipboard` eklendi. 1.0.6 incelemede olduğu için iş ayrı bir
-dalda; 1.0.7'ye girecek.
+için `expo-clipboard` eklendi. Önce ayrı bir dalda yazıldı; 1.0.6 build 25
+henüz incelemeye gönderilmemişken bitince kullanıcı tek build'e karar verdi:
+dal `main`'e alındı, 1.0.6 build 26 ile gidiyor.
 
 ---
 

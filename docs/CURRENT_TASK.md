@@ -33,37 +33,26 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-10-04
 
 Current task:
-  >>> DAL VAR: "iban-mobil" (7701e7e, YALNIZCA YERELDE, push edilmedi) -
-  Faz 52b IBAN mobil, kodu+testleri+dokumanlari hazir. 1.0.6 onaylaninca
-  main'e merge -> 1.0.7. Ayrintisi o dalin CURRENT_TASK'inda. <<<
-  1.0.6 (BUILD 25) APP STORE CONNECT'E YUKLENDI (4 Ekim) - KULLANICININ
-  TESTFLIGHT KONTROLU BEKLENIYOR, SONRA INCELEMEYE GONDERIM (kullanici).
-    EAS build fd32d5ed, commit 9451131, 6 dk. Build kaydinda olculdu:
-    "Xcode 26.6 (17F113)", VM "macos-tahoe-26.5-xcode-26.6".
-    Submit e15d2104 "finished" (bir dakikadan kisa; 1.0.5'teki 55 dk Expo
-    kesintisiydi). Apple isliyor - TestFlight'ta 10-30 dk icinde gorunur.
-    Build numarasi 25: 23 ve 24, 27 Eylul'de kota dolunca reddedilen
-    denemelerde harcandi - sorun degil, numara yalnizca artmali.
-  Build'den once Expo'nun 29 Eylul yamalari alindi (9451131): expo
-  57.0.26, expo-constants 57.0.20, expo-router 57.0.24 - ucu de "kullaniciya
-  gorunen degisiklik yok"; expo'nun ios/build/src klasorleri 57.0.25 ile
-  BIREBIR AYNI (sahne olcumleri gecerli). CI yesil.
+  1.0.6 = BUILD 26 (IBAN DAHIL) - build ve App Store Connect'e yukleme
+  suruyor/bitti (asagida). KULLANICI: TestFlight'ta IBAN'in gorsel kontrolu
+  + uc kontrolun kisa tekrari, App Privacy (misafir adlari + IBAN), build
+  26'yi secip incelemeye gonderim.
+
+  NASIL BURAYA GELINDI (4 Ekim):
+    Build 25 (fd32d5ed, Xcode 26.6) TestFlight'ta uc kontrolu GECTI ama
+    incelemeye GONDERILMEDI. Faz 52b (IBAN mobil) o sirada "iban-mobil"
+    dalinda bitti; kullanici tek build'e karar verdi -> dal main'e alindi
+    (0a38fc0), build 26 alinacak. Build 25 kullanilmiyor.
+    Build'den once Expo'nun 29 Eylul yamalari alindi (9451131) - ucu de
+    "kullaniciya gorunen degisiklik yok", expo'nun sahne kodu birebir ayni.
   EXPO'DA YENI: EAS'ta Xcode 27.0 ve 27.1 imajlari VAR; SDK 58.0.x
   yayinda ama "latest" hala 57. Sabitleme 1.0.6'da bilerek duruyor
   (ADR-058) - kaldirmak SDK 58 isinin parcasi.
 
-  FAZ 52b - IBAN MOBIL: KOD HAZIR, "iban-mobil" DALINDA, COMMIT ONAYI
-  BEKLIYOR. 1.0.6'da duzeltme gerekirse diye main temiz: dal 1.0.6
-  onaylaninca main'e alinir (merge), 1.0.7 ondan sonra.
-    Hesap ekrani IBAN bolumu, bakiye kartinda kopyalama + "IBAN ekle"
-    ipucu, odeme ekraninda alicinin IBAN'i; expo-clipboard (yeni native).
-    Testler: iban.test.tsx 14 (negatif kontrol 4 dusurdu), mobil 98 + 134,
-    tsc, lint, expo-doctor 21/21, expo export temiz.
-    SIMULATORDE GORULMEDI - uc ekran da giris istiyor (ajan giris kodu
-    yazmiyor). Gorsel kontrol: kullanici simulatorde girerse ya da 1.0.7
-    TestFlight'ta.
-  DIKKAT - DAL VARKEN DOKUMAN COMMIT'I: main'deki dokuman degisikligi
-  main'de, 52b dokumanlari dalda. Merge'te docs/ catisabilir - elle birlestir.
+  FAZ 52b OZETI: hesap ekraninda IBAN bolumu, bakiye kartinda kopyalama +
+  "IBAN ekle" ipucu, odeme ekraninda alicinin IBAN'i; expo-clipboard.
+  iban.test.tsx 14 (negatif kontrol 4 dusurdu). SIMULATORDE GORULMEDI
+  (giris gerekiyor) - gorsel kontrol build 26'nin TestFlight'inda.
 
 >>> 1.0.6 - BUILD ALINDI (4 Ekim), KALAN ADIMLAR <<<
   (Hatirlatma gorevi 1 Ekim'de uygulama kapali oldugu icin 4 Ekim'de
@@ -78,13 +67,15 @@ Current task:
   Surum app.json'da ZATEN 1.0.6. Surum notu iki dilde STORE.md.
   1.0.6'da: misafir (50a) + sahiplenme (50b) + degerlendirme istegi (49)
   + buyuk yazida dugme kirpilmasi + sahne yasam dongusu (51) + davet
-  ekraninda Turkce karakterler + kod ekraninda "spam klasorune bak" (53).
+  ekraninda Turkce karakterler + kod ekraninda "spam klasorune bak" (53)
+  + IBAN mobil (52b).
   >>> INCELEMEYE GONDERMEDEN ONCE TESTFLIGHT - SART (Faz 51) <<<
     Telefonda: (1) aciliyor mu, (2) uygulama KAPALIYKEN davet linkine
     dokununca davet ekrani geliyor mu, (3) bildirime dokununca grup
     aciliyor mu. Simulatorde olculemeyen tam bu uc.
-  GONDERIMDE KULLANICI: App Privacy anketi (misafir ADLARI - kategoriyi
-  panelde sec, tahmin etme) + appreview@ parola kontrolu.
+  GONDERIMDE KULLANICI: App Privacy anketi (misafir ADLARI + IBAN ->
+  Financial Info / Other Financial Info - kategoriyi panelde sec, tahmin
+  etme) + appreview@ parola kontrolu + surumde BUILD 26'yi sec.
 
 ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
   1. TEKRARLAYAN HARCAMA canlida gercekten uretim yaptigi HIC GORULMEDI.
@@ -126,8 +117,8 @@ DIS DUNYA - 27 EYLUL OLCUMU:
 
 CANLIDA OLAN (web) - MOBIL KARSILIGI 1.0.6'DA:
   Faz 49 degerlendirme istegi (yalnizca mobil) · Faz 50a/50b misafir ·
-  Faz 51 sahne (yalnizca mobil) · Faz 53 posta. Faz 52a IBAN web'de
-  canli (ef501a5); mobili 52b / 1.0.7.
+  Faz 51 sahne (yalnizca mobil) · Faz 53 posta · Faz 52a IBAN (web'de
+  canli, ef501a5) - mobili 52b de 1.0.6'da.
 
 AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):
   - MISAFIR (ADR-057): isGuest isaretli, tek gruba bagli User; giris
@@ -161,8 +152,8 @@ GONDERIM KONTROL LISTESI (her surum):
      mu - 1.0.3 bu kontrol atlandigi icin reddedildi (Guideline 2.1).
   4. App Privacy anketi degisti mi (yeni veri turu = yeni satir). Girili
      olanlar: Identifiers -> Device ID (push), User Content -> Photos or
-     Videos (fis, profil). 1.0.6'da misafir ADLARI, 1.0.7'de Financial
-     Info -> Other Financial Info (IBAN) eklenecek.
+     Videos (fis, profil). 1.0.6'da misafir ADLARI ve Financial Info ->
+     Other Financial Info (IBAN) eklenecek.
   5. Incelemeye gonder. Ekran kaydi gerekirse FIZIKSEL CIHAZDA (Apple'in
      ret metni acikca istiyor; simulator kaydi kullanilamadi).
   App Review Information dolu ve oyle kalmali (demo hesap + Notes; Notes

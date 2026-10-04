@@ -508,18 +508,13 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
-## 1.0.7 — ŞİMDİDEN BİRİKEN
+## 1.0.6 — BUILD 26 (IBAN DAHİL), TESTFLIGHT KONTROLÜ VE İNCELEME BEKLİYOR
 
-| | |
-|---|---|
-| **IBAN ile ödeme — mobil** | Faz 52b · ADR-059 · `iban-mobil` dalında hazır (4 Ekim); 1.0.6 onaylanınca `main`'e. **Yeni native paket** (`expo-clipboard`) |
-
-- **App Privacy anketi DEĞİŞMELİ:** Financial Info → **Other Financial
-  Info** (IBAN), kullanıcıya bağlı, amaç App Functionality, izleme yok.
-  Panelde kullanıcı işaretleyecek — 1.0.7 IBAN'ı gösteren ilk sürüm.
-- Gizlilik politikası zaten güncel (27 Eylül, iki dil, web'de).
-
-## 1.0.6 — BUILD 25 YÜKLENDİ (4 Ekim), TESTFLIGHT KONTROLÜ VE İNCELEME BEKLİYOR
+**Build 25 (4 Ekim) TestFlight'ta denendi ve üç kontrolü geçti, ama
+incelemeye GÖNDERİLMEDİ:** IBAN'ın mobil tarafı (52b) o sırada bitti ve
+kullanıcı tek build'e almaya karar verdi (4 Ekim) — tek inceleme turu,
+tek gizlilik anketi güncellemesi, tek TestFlight turu. 1.0.6 sürümünde
+**build 26 seçilecek.**
 
 Build **1 Ekim**'de (ücretsiz planın aylık iOS build hakkı o gün
 yenileniyor). Misafir özelliği ayrı bir 1.0.7 yerine bu build'e alındı —
@@ -533,6 +528,7 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
 | Düğmeler büyük yazıda kırpılmıyor (giriş, davet, "Harcama ekle", "Ödeş") | `height: 50` → `minHeight: 50`; en büyük erişilebilirlik boyutunda simülatörde görüldü |
 | iOS sahne yaşam döngüsü (UIScene) — kullanıcıya görünmez, sürüm notuna girmez | Faz 51 · ADR-058 · **yeni native paket** (`expo-build-properties`); imaj yine Xcode 26.6 |
 | Kod ekranında "gelmezse gereksiz/spam klasörüne bak" | Faz 53 · ADR-060 — web'de push ile canlı |
+| **IBAN ile ödeme — mobil:** hesap ekranında IBAN, bakiye kartında kopyala, ödeme ekranında alıcının IBAN'ı | Faz 52b · ADR-059 · web'de (52a) 27 Eylül'den beri canlı · **yeni native paket** (`expo-clipboard`) |
 | Davet ekranında "önce giriş yap" metni Türkçe karakterlerle | 27 Eylül — "katilmak icin once giris" yazıyordu; simülatörde görüldü |
 
 - **App Privacy anketine BAKILMALI.** Artık kullanıcı, uygulamayı
@@ -540,6 +536,9 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
   görünüyor ve bizim veritabanımızda duruyor. Hangi kategoriye düştüğü
   (ör. "Other User Content") gönderimde panelde kontrol edilecek — tahmin
   edilmeyecek. (Değerlendirme sayacı ankete girmiyor: telefonda kalıyor.)
+- **App Privacy'ye IBAN da girecek:** Financial Info → **Other Financial
+  Info**, kullanıcıya bağlı, amaç App Functionality, izleme yok. Misafir
+  adlarıyla AYNI güncellemede, panelde kullanıcı işaretleyecek.
 - Gizlilik politikası **zaten güncellendi** (27 Eylül, iki dil) ve web'de
   yayında olduğu için gönderimi beklemiyor.
 - **TestFlight'ta değerlendirme penceresi hiç görünmez** (Apple'ın
@@ -552,6 +551,10 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
   linkine dokununca davet ekranı geliyor mu, (3) bir bildirime dokununca
   grup açılıyor mu. Simülatörde ölçülemeyen tam bu üçü (ADR-058).
   Build log'unda Xcode 26.6 (17F113) olduğunu da doğrula.
+  **Build 25 bu üçünü geçti (4 Ekim).** Build 26'da yeni bir native parça
+  var (`expo-clipboard`), üçü kısaca tekrar + **IBAN'ın görsel kontrolü**
+  (simülatörde giriş gerektirdiği için hiç görülmedi): hesap ekranında
+  ekle/kaldır, bakiye kartında kopyala, ödeme ekranında alıcının IBAN'ı.
 
 ### Sürüm notu — 1.0.6 İngilizce
 
@@ -561,6 +564,8 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
   so you can start a group on your own.
 • Send a guest their own link. When they join with it, everything
   entered under their name becomes theirs.
+• Add your IBAN on your account page, and the people who owe you can
+  copy it in one tap when they pay you. Owezy itself moves no money.
 • You can rate Owezy from your account page.
 • Buttons no longer cut off their label at the largest text sizes.
 ```
@@ -573,6 +578,8 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
   ödeşebilir. Böylece bir grubu tek başına başlatabilirsin.
 • Misafire kendine özel bir link gönder. O linkle katılınca, adına
   girilen her şey onun olur.
+• Hesap sayfana IBAN'ını ekle; sana borçlu olanlar öderken tek
+  dokunuşla kopyalasın. Owezy para taşımaz.
 • Owezy'yi hesap sayfandan değerlendirebilirsin.
 • En büyük yazı boyutunda düğmelerin yazısı artık kesilmiyor.
 ```
