@@ -508,7 +508,7 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
-## 1.0.6 — BUILD 26 (IBAN DAHİL), TESTFLIGHT KONTROLÜ VE İNCELEME BEKLİYOR
+## 1.0.6 — BUILD 26 (IBAN DAHİL) YÜKLENDİ (4 Ekim), TESTFLIGHT KONTROLÜ VE İNCELEME BEKLİYOR
 
 **Build 25 (4 Ekim) TestFlight'ta denendi ve üç kontrolü geçti, ama
 incelemeye GÖNDERİLMEDİ:** IBAN'ın mobil tarafı (52b) o sırada bitti ve

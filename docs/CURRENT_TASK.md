@@ -33,8 +33,10 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-10-04
 
 Current task:
-  1.0.6 = BUILD 26 (IBAN DAHIL) - build ve App Store Connect'e yukleme
-  suruyor/bitti (asagida). KULLANICI: TestFlight'ta IBAN'in gorsel kontrolu
+  1.0.6 = BUILD 26 (IBAN DAHIL) - APP STORE CONNECT'E YUKLENDI (4 Ekim).
+    EAS build 064c24e3, commit 5d7cdd5, 6 dk; kayitta "Xcode 26.6 (17F113)"
+    ve ExpoClipboard hedefi var. Submit f66789a2 "finished". CI yesil.
+  KULLANICI: TestFlight'ta IBAN'in gorsel kontrolu
   + uc kontrolun kisa tekrari, App Privacy (misafir adlari + IBAN), build
   26'yi secip incelemeye gonderim.
 

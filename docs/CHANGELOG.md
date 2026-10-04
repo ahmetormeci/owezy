@@ -28,7 +28,8 @@ olduğun kişinin satırında "IBAN'ı kopyala", ödeme ekranında alıcının I
 var. Son 7 günde değişmiş bir IBAN kopyalanırken uyarı çıkıyor. Kopyalama
 için `expo-clipboard` eklendi. Önce ayrı bir dalda yazıldı; 1.0.6 build 25
 henüz incelemeye gönderilmemişken bitince kullanıcı tek build'e karar verdi:
-dal `main`'e alındı, 1.0.6 build 26 ile gidiyor.
+dal `main`'e alındı, 1.0.6 build 26 ile gidiyor. Build 26 Xcode 26.6 ile
+derlendi ve App Store Connect'e yüklendi (4 Ekim).
 
 ---
 
