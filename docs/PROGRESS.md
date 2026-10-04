@@ -2721,6 +2721,29 @@ mobil IBAN ekranları 1 Ekim'de klasörde olsaydı 1.0.6'ya girerdi.
 **Testler:** `src/lib/email.test.ts` yeni (8): belge yapısı, dil, alt bilgi
 (HTML ve düz metin), yanıt adresi, hata fırlatma, IBAN bildirimi.
 
+## Faz 52b — IBAN ile ödeme: mobil · **BİTTİ, `iban-mobil` DALINDA; 1.0.7**
+
+| | |
+|---|---|
+| Hesap ekranı | Kimliğin altında IBAN bölümü: ekle, düzenle, kaldır — ekranın içinde |
+| Bakiye kartı | Borçlu olduğun satırda "IBAN'ı kopyala"; alacaklıysan "IBAN ekle" ipucu |
+| Ödeme ekranı | Giden ödemede alıcının IBAN'ı + kopyala; son 7 günde değiştiyse uyarı |
+| Pano | `expo-clipboard` — yeni native paket; panoya boşluksuz kayıt |
+
+**Ayrı dalda, çünkü** 1.0.6 incelemede: bir düzeltme build'i gerekirse
+`main` temiz kalmalı. 1.0.6 onaylanınca `main`'e alınır.
+
+**Testler:** `test/screens/iban.test.tsx` (14) — hesap ekranı (ekle, yanlış
+IBAN sunucuya gitmiyor, normalize, kaldır, aynı IBAN istek atmıyor), bakiye
+kartı (yalnızca borçlu satırda, boşluksuz pano, eski IBAN'da uyarı yok, yeni
+IBAN'da uyarı, pano hatası, ipucu var/yok), ödeme ekranı (yalnızca giden,
+uyarı satırı). **Negatif kontrol:** satır koşulu tersine çevrilince 4 test
+düştü. Mobil 98 vitest + 134 jest, expo-doctor 21/21, `expo export` temiz.
+
+**Simülatörde GÖRÜLMEDİ:** üç ekran da giriş istiyor ve ajan giriş kodunu
+forma yazmıyor. Görsel kontrol kullanıcının girişiyle simülatörde ya da
+1.0.7 TestFlight'ta.
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
@@ -2732,7 +2755,6 @@ karar vermemiştir.
 | Aday | Neden önemli |
 |---|---|
 | **SDK 58'e geçiş** | **Seçmeli değil, acil de değil.** Sahne düzeni Faz 51'de SDK 57'de açıldı; kalan: SDK 58 kararlı çıkınca yükseltmek, `enableSceneSupport`'u kaldırmak, EAS'ta Xcode 27 imajı gelince sabitlemeyi kaldırmak. Son tarih **Nisan 2027** (Apple, iOS 27 SDK zorunluluğu). Bilinen işler: `csv-export.tsx`'teki `file.write` async oluyor, expo-router çekirdeği, RN 0.88 katı TS API; Xcode 27 ile uygulama yeniden boyutlandırılabilir oluyor (ADR-058) |
-| **IBAN ile ödeme — mobil (52b)** | 52a (sunucu + web) bitti. Kalan: mobil arayüz (`expo-clipboard`, hesap ekranı, bakiye kartı, ödeme ekranı). **1 Ekim'deki 1.0.6 build'inden sonra** başlanmalı — yoksa 1.0.6'ya girer. 1.0.7 gönderiminde App Store gizlilik anketi: Financial Info → Other Financial Info (ADR-059) |
 | **Birden fazla ödeyen** | "Hesabı ikimiz ödedik". Settle Up ücretsiz veriyor. `Expense.paidById` tek alan |
 | **Birden fazla para birimi** | Yurt dışı tatili. Kur kaynağı gerekiyor (dış servis → gizlilik beyanı) |
 | **Apple / Google ile giriş** | Kayıt sürtünmesi; Google eklenirse Apple girişi de zorunlu (4.8) |

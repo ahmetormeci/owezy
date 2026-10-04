@@ -22,6 +22,12 @@ jest.mock("expo-store-review", () =>
   require("./expo-store-review.mock"),
 );
 
+// IBAN kopyalama (ADR-059): pano da native, ayni yol.
+jest.mock("expo-clipboard", () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("./expo-clipboard.mock"),
+);
+
 /**
  * modules/receipt-ocr NATIVE: Node'da yuklenemiyor - expo-secure-store ile
  * ayni sebep.

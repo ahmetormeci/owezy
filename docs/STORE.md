@@ -512,7 +512,7 @@ veritabanında**, üretime dokunulmadı.
 
 | | |
 |---|---|
-| **IBAN ile ödeme — mobil** | Faz 52b · ADR-059 · web'de (52a) canlı. **1.0.6 build'i alındıktan SONRA** yazılacak; **yeni native paket** (`expo-clipboard`) |
+| **IBAN ile ödeme — mobil** | Faz 52b · ADR-059 · `iban-mobil` dalında hazır (4 Ekim); 1.0.6 onaylanınca `main`'e. **Yeni native paket** (`expo-clipboard`) |
 
 - **App Privacy anketi DEĞİŞMELİ:** Financial Info → **Other Financial
   Info** (IBAN), kullanıcıya bağlı, amaç App Functionality, izleme yok.

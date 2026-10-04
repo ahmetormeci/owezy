@@ -23,6 +23,9 @@ import { WRITE_REVIEW_URL } from "../lib/review-prompt";
 import { useApiClient, useApiGet } from "../lib/use-api";
 import { useTheme, useThemeChoice, type Theme } from "../lib/theme";
 import { SectionRule, MemberAvatar } from "../components/receipt";
+import { FieldInput } from "../components/field";
+import { formatIban } from "@/lib/iban";
+import { updateMeSchema } from "@/lib/me-schemas";
 
 /**
  * Hesap ekrani. MOBILDE BOYLE BIR EKRAN YOKTU.
@@ -44,6 +47,8 @@ type Me = {
     // Profil fotografi (ADR-054).
     avatarUrl?: string | null;
     hasImage?: boolean | null;
+    // IBAN (ADR-059). Opsiyonel: eski bir sunucu cevabinda alan olmayabilir.
+    iban?: string | null;
   };
 };
 
@@ -72,6 +77,51 @@ export default function AccountScreen() {
   const [localeBusy, setLocaleBusy] = useState<Locale | null>(null);
 
   const [photoBusy, setPhotoBusy] = useState(false);
+
+  /**
+   * IBAN (ADR-059). EKRANIN ICINDE duzenleniyor, ayri bir ekran ya da
+   * diyalog yok - bu ekrandaki her bolum boyle (dil, gorunum, fotograf).
+   *
+   * DOGRULAMA SUNUCUYLA AYNI SEMADAN (me-schemas.ts, ortak modul): formun
+   * kabul edip API'nin reddettigi bir IBAN olmasin. Bosluk ve kucuk harf
+   * sorun degil; kayda normalize edilip gidiyor.
+   */
+  const [ibanEditing, setIbanEditing] = useState(false);
+  const [ibanText, setIbanText] = useState("");
+  const [ibanBusy, setIbanBusy] = useState(false);
+  const [ibanError, setIbanError] = useState<string | null>(null);
+  const currentIban = state.kind === "ok" ? (state.data.user.iban ?? null) : null;
+
+  function startIbanEdit() {
+    setIbanText(currentIban ? formatIban(currentIban) : "");
+    setIbanError(null);
+    setIbanEditing(true);
+  }
+
+  async function saveIban(raw: string | null) {
+    if (ibanBusy) return;
+    setIbanError(null);
+    const parsed = updateMeSchema.safeParse({ iban: raw });
+    if (!parsed.success) {
+      setIbanError(t(parsed.error.issues[0]?.message ?? "validation.invalid"));
+      return;
+    }
+    const next = parsed.data.iban ?? null;
+    // Degismediyse istek yok: sunucu zaten yazmazdi.
+    if (next === currentIban) {
+      setIbanEditing(false);
+      return;
+    }
+    setIbanBusy(true);
+    const result = await patch("/api/v1/me", { iban: next });
+    setIbanBusy(false);
+    if (!result.ok) {
+      setIbanError(t(result.code, result.params));
+      return;
+    }
+    setIbanEditing(false);
+    reload();
+  }
 
   /**
    * PROFIL FOTOGRAFI (ADR-054).
@@ -262,6 +312,64 @@ export default function AccountScreen() {
           </View>
         )}
 
+        {/* IBAN (ADR-059). KIMLIGIN HEMEN ALTINDA: hesaba ait bir bilgi ve
+            gorunum/dil gibi bir tercih degil. Ipucu her durumda gorunuyor -
+            kimin gorecegini soylemeden IBAN istemek dogru olmazdi. */}
+        {state.kind === "ok" ? (
+          <View style={s.block}>
+            <SectionRule label={t("ui.iban")} />
+            {ibanEditing ? (
+              <View style={s.ibanForm}>
+                <FieldInput
+                  testID="iban-input"
+                  style={s.ibanInput}
+                  value={ibanText}
+                  onChangeText={setIbanText}
+                  placeholder="TR00 0000 0000 0000 0000 0000 00"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  maxLength={64}
+                  editable={!ibanBusy}
+                  autoFocus
+                />
+                {ibanError ? <Text style={s.error}>{ibanError}</Text> : null}
+                <View style={s.photoActions}>
+                  <Pressable onPress={() => void saveIban(ibanText)} disabled={ibanBusy}>
+                    <Text style={s.photoAction}>
+                      {ibanBusy ? t("ui.saving") : t("ui.save")}
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={() => setIbanEditing(false)} disabled={ibanBusy}>
+                    <Text style={s.mutedAction}>{t("ui.cancel")}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : currentIban ? (
+              <View style={s.ibanForm}>
+                {/* selectable: uzun basinca kopyalanabilsin. */}
+                <Text style={s.ibanValue} selectable>
+                  {formatIban(currentIban)}
+                </Text>
+                {ibanError ? <Text style={s.error}>{ibanError}</Text> : null}
+                <View style={s.photoActions}>
+                  <Pressable onPress={startIbanEdit} disabled={ibanBusy}>
+                    <Text style={s.photoAction}>{t("ui.edit")}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => void saveIban(null)} disabled={ibanBusy}>
+                    <Text style={s.photoAction}>{t("ui.remove_iban")}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable style={s.ibanForm} onPress={startIbanEdit}>
+                <Text style={s.photoAction}>{t("ui.add_iban")}</Text>
+              </Pressable>
+            )}
+            <Text style={s.ibanHint}>{t("ui.iban_hint")}</Text>
+          </View>
+        ) : null}
+
         {/* GORUNUM. DILDEN FARKLI OLARAK SUNUCUYA GITMIYOR: kagidin rengi
             yalnizca bu cihazda anlamli. Ayni hesabin telefonu koyu,
             tarayicisi acik olabilir ve bu bir tutarsizlik degil.
@@ -405,6 +513,19 @@ function createStyles(theme: Theme) {
       color: theme.brand,
     },
     name: { fontSize: 17, fontFamily: fonts.medium, color: theme.foreground },
+    // IBAN bolumu (ADR-059). Deger es aralikli fontla: 4'erli gruplar
+    // hizali dursun, 0 ile O karismasin.
+    ibanForm: { paddingTop: 14, gap: 8 },
+    ibanInput: { fontFamily: fonts.mono, fontSize: 15, color: theme.foreground, padding: 0 },
+    ibanValue: { fontFamily: fonts.mono, fontSize: 15, color: theme.foreground },
+    ibanHint: {
+      fontFamily: fonts.body,
+      fontSize: 12.5,
+      lineHeight: 18,
+      color: theme.muted,
+      paddingTop: 10,
+    },
+    mutedAction: { fontFamily: fonts.medium, fontSize: 13, color: theme.muted },
     muted: { fontFamily: fonts.body, fontSize: 13.5, color: theme.muted },
 
     block: { paddingTop: 28 },
