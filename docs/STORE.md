@@ -519,7 +519,7 @@ veritabanında**, üretime dokunulmadı.
   Panelde kullanıcı işaretleyecek — 1.0.7 IBAN'ı gösteren ilk sürüm.
 - Gizlilik politikası zaten güncel (27 Eylül, iki dil, web'de).
 
-## BİR SONRAKİ GÖNDERİM (1.0.6) — ŞİMDİDEN BİRİKEN
+## 1.0.6 — BUILD 25 YÜKLENDİ (4 Ekim), TESTFLIGHT KONTROLÜ VE İNCELEME BEKLİYOR
 
 Build **1 Ekim**'de (ücretsiz planın aylık iOS build hakkı o gün
 yenileniyor). Misafir özelliği ayrı bir 1.0.7 yerine bu build'e alındı —

@@ -30,23 +30,31 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-09-27
+Updated: 2026-10-04
 
 Current task:
-  YOK - AKTIF IS YOK. Siradaki iki is tarihe bagli:
-    1. 1 EKIM: 1.0.6 build'i (asagida, adim adim).
-    2. 1.0.6 build'i ALINDIKTAN SONRA: Faz 52b - IBAN mobil (1.0.7).
-       ONCE DEGIL: EAS build'i calisma klasorunden aliyor; mobil IBAN
-       ekranlari o gun klasorde olursa 1.0.6'ya girer. 52b: expo-clipboard
-       (yeni native paket), hesap ekraninda satir, bakiye kartinda
-       kopyalama, odeme ekraninda alicinin IBAN'i, ekran testleri.
-  Diger adaylar: PROGRESS.md "Sıradaki adaylar" - PLAN DEGIL, secenek.
-  Gorev verilmeden hicbirine baslanmaz (AGENTS.md).
+  1.0.6 (BUILD 25) APP STORE CONNECT'E YUKLENDI (4 Ekim) - KULLANICININ
+  TESTFLIGHT KONTROLU BEKLENIYOR, SONRA INCELEMEYE GONDERIM (kullanici).
+    EAS build fd32d5ed, commit 9451131, 6 dk. Build kaydinda olculdu:
+    "Xcode 26.6 (17F113)", VM "macos-tahoe-26.5-xcode-26.6".
+    Submit e15d2104 "finished" (bir dakikadan kisa; 1.0.5'teki 55 dk Expo
+    kesintisiydi). Apple isliyor - TestFlight'ta 10-30 dk icinde gorunur.
+    Build numarasi 25: 23 ve 24, 27 Eylul'de kota dolunca reddedilen
+    denemelerde harcandi - sorun degil, numara yalnizca artmali.
+  Build'den once Expo'nun 29 Eylul yamalari alindi (9451131): expo
+  57.0.26, expo-constants 57.0.20, expo-router 57.0.24 - ucu de "kullaniciya
+  gorunen degisiklik yok"; expo'nun ios/build/src klasorleri 57.0.25 ile
+  BIREBIR AYNI (sahne olcumleri gecerli). CI yesil.
+  EXPO'DA YENI: EAS'ta Xcode 27.0 ve 27.1 imajlari VAR; SDK 58.0.x
+  yayinda ama "latest" hala 57. Sabitleme 1.0.6'da bilerek duruyor
+  (ADR-058) - kaldirmak SDK 58 isinin parcasi.
 
->>> 1 EKIM 2026: 1.0.6 BUILD GUNU <<<
-  Zamanlanmis gorev: owezy-1-0-6-build-hatirlatma (1 Ekim 10:00,
-  ~/.claude/scheduled-tasks/). YALNIZCA HATIRLATIR, build almaz.
-  Kullanici "build al" deyince:
+  SONRAKI: Faz 52b - IBAN mobil (1.0.7). 1.0.6'da duzeltme gerekirse
+  diye main temiz tutulmali: 52b AYRI DALDA, 1.0.6 onaylanana kadar.
+
+>>> 1.0.6 - BUILD ALINDI (4 Ekim), KALAN ADIMLAR <<<
+  (Hatirlatma gorevi 1 Ekim'de uygulama kapali oldugu icin 4 Ekim'de
+  calisti.) Build icin kullanilan yol, bir sonraki surumde de aynisi:
     eas build --platform ios --profile production --non-interactive --no-wait
     -> build log'undan Xcode 26.6 (17F113) oldugunu DOGRULA (eas.json'da
        image sabit - ADR-058).

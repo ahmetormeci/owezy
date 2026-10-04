@@ -21,6 +21,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-10-04 — 1.0.6 build'i alındı ve App Store Connect'e yüklendi
+
+Build 25, Xcode 26.6 ile (build kaydından okundu); 6 dakikada bitti, yükleme
+bir dakikadan kısa sürdü. İçinde: misafir ve sahiplenme, değerlendirme
+isteği, büyük yazıda düğmeler, sahne yaşam döngüsü, davet ekranında
+Türkçe karakterler, kod ekranında spam ipucu.
+
+Build'den önce Expo'nun 29 Eylül yamaları alındı (`expo` 57.0.26,
+`expo-constants`, `expo-router`) — depo hiç değişmeden CI'ı bir sonraki
+push'ta kırmızıya çevirecekti. Üçü de "kullanıcıya görünen değişiklik yok"
+diyor; `expo`'nun sahne kodu 57.0.25 ile dosya dosya aynı.
+
+İncelemeye gönderim TestFlight kontrolünden sonra, kullanıcıda.
+
+---
+
 ## 2026-09-27 — Postalar junk'a düşüyordu (Faz 53, ADR-060)
 
 Alan adının kimlik kayıtları ölçüldü ve doğru çıktı; sebep büyük ihtimalle
