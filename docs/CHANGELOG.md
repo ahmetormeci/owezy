@@ -21,6 +21,16 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 
 
+## 2026-10-04 — IBAN telefonda (Faz 52b, ADR-059) — `iban-mobil` dalında
+
+Hesap ekranında IBAN eklenip değiştirilebiliyor; bakiye kartında borçlu
+olduğun kişinin satırında "IBAN'ı kopyala", ödeme ekranında alıcının IBAN'ı
+var. Son 7 günde değişmiş bir IBAN kopyalanırken uyarı çıkıyor. Kopyalama
+için `expo-clipboard` eklendi. 1.0.6 incelemede olduğu için iş ayrı bir
+dalda; 1.0.7'ye girecek.
+
+---
+
 ## 2026-10-04 — 1.0.6 build'i alındı ve App Store Connect'e yüklendi
 
 Build 25, Xcode 26.6 ile (build kaydından okundu); 6 dakikada bitti, yükleme

@@ -49,8 +49,18 @@ Current task:
   yayinda ama "latest" hala 57. Sabitleme 1.0.6'da bilerek duruyor
   (ADR-058) - kaldirmak SDK 58 isinin parcasi.
 
-  SONRAKI: Faz 52b - IBAN mobil (1.0.7). 1.0.6'da duzeltme gerekirse
-  diye main temiz tutulmali: 52b AYRI DALDA, 1.0.6 onaylanana kadar.
+  FAZ 52b - IBAN MOBIL: KOD HAZIR, "iban-mobil" DALINDA, COMMIT ONAYI
+  BEKLIYOR. 1.0.6'da duzeltme gerekirse diye main temiz: dal 1.0.6
+  onaylaninca main'e alinir (merge), 1.0.7 ondan sonra.
+    Hesap ekrani IBAN bolumu, bakiye kartinda kopyalama + "IBAN ekle"
+    ipucu, odeme ekraninda alicinin IBAN'i; expo-clipboard (yeni native).
+    Testler: iban.test.tsx 14 (negatif kontrol 4 dusurdu), mobil 98 + 134,
+    tsc, lint, expo-doctor 21/21, expo export temiz.
+    SIMULATORDE GORULMEDI - uc ekran da giris istiyor (ajan giris kodu
+    yazmiyor). Gorsel kontrol: kullanici simulatorde girerse ya da 1.0.7
+    TestFlight'ta.
+  DIKKAT - DAL VARKEN DOKUMAN COMMIT'I: main'deki dokuman degisikligi
+  main'de, 52b dokumanlari dalda. Merge'te docs/ catisabilir - elle birlestir.
 
 >>> 1.0.6 - BUILD ALINDI (4 Ekim), KALAN ADIMLAR <<<
   (Hatirlatma gorevi 1 Ekim'de uygulama kapali oldugu icin 4 Ekim'de

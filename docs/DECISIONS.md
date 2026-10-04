@@ -572,7 +572,7 @@ oluşuyor; DMARC raporları hangi servisin sorun çıkardığını gösterecek.
 ---
 
 ## ADR-059 — IBAN ile ödeme: kullanıcının kendi IBAN'ı, grup arkadaşlarına görünür; değişince e-posta
-**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **52a UYGULANDI: 2026-09-27** (sunucu + web + gizlilik) · 52b (mobil) 1 Ekim'deki 1.0.6 build'inden **sonra**
+**Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **52a UYGULANDI: 2026-09-27** (sunucu + web + gizlilik) · **52b UYGULANDI: 2026-10-04** (mobil, `iban-mobil` dalında; 1.0.7)
 
 **Karar:** Kullanıcı isterse hesabına **tek bir IBAN** ekler. Ortak bir
 grupta olduğu herkes onu görür ve ödeme anında tek dokunuşla kopyalar.
@@ -663,6 +663,21 @@ kullanıcı panelde işaretleyecek (1.0.6 IBAN göstermiyor).
 `expo-clipboard` (tek dokunuş; yeni native paket ama 1.0.7 zaten yeni bir
 build). Hesap ekranında satır, bakiye kartında borçlu olduğun satırda
 kopyalama, ödeme ekranında alıcının IBAN'ı.
+
+**Uygulanan (4 Ekim):**
+- **Hesap ekranı:** kimliğin hemen altında bir IBAN bölümü, ekranın İÇİNDE
+  düzenleniyor (dil, görünüm ve fotoğraf gibi — ayrı ekran ya da diyalog
+  yok). Doğrulama web'le aynı şemadan (`me-schemas.ts`); aynı IBAN yeniden
+  kaydedilirse istek atılmıyor.
+- **Bakiye kartı:** borçlu olduğun satırda "IBAN'ı kopyala" — "Hatırlat" ile
+  aynı yer ve görünüm, yönü ters. Bana borçlu olanın satırında YOK.
+  Kopyalanınca etiket kısa bir süre "IBAN kopyalandı" oluyor; son 7 günde
+  değişmişse bir Alert uyarıyor. Pano yazılamazsa IBAN Alert'te.
+- **"IBAN ekle" ipucu:** bana ödenecek var, IBAN'ım yoksa kartta; hesap
+  ekranına götürüyor. Üye listesi gelmeden çıkmıyor ("yok" ≠ "bilinmiyor").
+- **Ödeme ekranı:** giden ödemede kişi seçilince "Alıcının IBAN'ı", seçilebilir
+  metin + kopyala; son 7 günde değişmişse kalıcı kırmızı satır.
+- Kopyalama tek bileşende (`components/copy-iban.tsx`).
 
 ---
 

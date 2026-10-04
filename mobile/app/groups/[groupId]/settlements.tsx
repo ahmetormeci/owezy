@@ -21,6 +21,8 @@ import { noteSaveAndMaybeAskForReview } from "../../../lib/review-prompt";
 import { useTheme, type Theme } from "../../../lib/theme";
 import { SectionRule } from "../../../components/receipt";
 import { Field, FieldInput, SelectField } from "../../../components/field";
+import { CopyIbanAction } from "../../../components/copy-iban";
+import { formatIban, isIbanRecentlyChanged } from "@/lib/iban";
 
 /**
  * Odeme kaydetme ve kaydedilmis odemeler.
@@ -39,7 +41,13 @@ import { Field, FieldInput, SelectField } from "../../../components/field";
  *
  * DUZENLEME YOK - API'de de yok, yalnizca iptal var.
  */
-type Member = { userId: string; displayName: string };
+type Member = {
+  userId: string;
+  displayName: string;
+  // IBAN (ADR-059): giden odemede alicinin IBAN'i gosteriliyor.
+  iban?: string | null;
+  ibanUpdatedAt?: string | null;
+};
 type Settlement = {
   id: string;
   fromUserId: string;
@@ -110,6 +118,18 @@ export default function SettlementsScreen() {
   for (const member of memberList) nameByUserId[member.userId] = member.displayName;
 
   const currency = balances.state.kind === "ok" ? balances.state.data.currency : "TRY";
+
+  /**
+   * ALICININ IBAN'I (ADR-059). YALNIZCA GIDEN ODEMEDE: gelen odemede alici
+   * sensin. Odeme bankada yapiliyor, burada kaydediliyor - kopyala, ode,
+   * don, kaydet.
+   */
+  const payee =
+    direction === "outgoing"
+      ? memberList.find((member) => member.userId === counterpartyId)
+      : undefined;
+  const payeeIban = payee?.iban ?? null;
+  const payeeIbanRecentlyChanged = isIbanRecentlyChanged(payee?.ibanUpdatedAt);
 
   const loaded = history.state.kind === "ok" ? history.state.data : null;
   const settlements = [...(loaded?.settlements ?? []), ...extra];
@@ -312,6 +332,29 @@ export default function SettlementsScreen() {
               />
             )}
 
+            {payeeIban ? (
+              <View style={s.field}>
+                <Text style={s.fieldLabel}>
+                  {t("ui.recipient_iban").toLocaleUpperCase(locale)}
+                </Text>
+                <View style={s.ibanRow}>
+                  {/* selectable: pano izni sorun cikarirsa uzun basip
+                      kopyalamanin yolu. */}
+                  <Text style={s.ibanValue} selectable numberOfLines={1}>
+                    {formatIban(payeeIban)}
+                  </Text>
+                  <CopyIbanAction
+                    iban={payeeIban}
+                    recentlyChanged={payeeIbanRecentlyChanged}
+                    style={s.ibanAction}
+                  />
+                </View>
+                {payeeIbanRecentlyChanged ? (
+                  <Text style={s.ibanWarning}>{t("ui.iban_recently_changed")}</Text>
+                ) : null}
+              </View>
+            ) : null}
+
             <Field label={t("ui.settlement_note")}>
               <FieldInput
                 style={s.fieldInput}
@@ -436,6 +479,10 @@ function createStyles(theme: Theme) {
     field: { gap: 7 },
     fieldInput: { fontFamily: fonts.body, fontSize: 16, color: theme.foreground, padding: 0 },
     emptyField: { fontFamily: fonts.body, fontSize: 14, color: theme.muted, lineHeight: 20 },
+    ibanRow: { flexDirection: "row", alignItems: "baseline", gap: 12 },
+    ibanValue: { flex: 1, fontFamily: fonts.mono, fontSize: 14, color: theme.foreground },
+    ibanAction: { fontFamily: fonts.medium, fontSize: 13, color: theme.brand },
+    ibanWarning: { fontFamily: fonts.body, fontSize: 12, lineHeight: 17, color: theme.destructive },
 
     segments: { flexDirection: "row", gap: 8 },
     segment: {

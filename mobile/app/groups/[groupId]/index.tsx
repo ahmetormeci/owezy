@@ -34,6 +34,8 @@ import { useTheme, type Theme } from "../../../lib/theme";
 import { apiBaseUrl } from "../../../lib/api";
 import { useSession } from "../../../lib/auth";
 import { CsvExport } from "../../../components/csv-export";
+import { CopyIbanAction } from "../../../components/copy-iban";
+import { isIbanRecentlyChanged } from "@/lib/iban";
 import { ReceiptViewer } from "../../../components/receipt-viewer";
 import { ExpenseComposer } from "../../../components/expense-composer";
 import { RecurringList } from "../../../components/recurring-list";
@@ -134,6 +136,9 @@ type MembersResponse = {
     hasImage?: boolean | null;
     // Hesapsiz uye (ADR-057): hatirlatma dugmesi ona cizilmiyor.
     isGuest?: boolean;
+    // IBAN (ADR-059): borclu oldugum satirda kopyalaniyor.
+    iban?: string | null;
+    ibanUpdatedAt?: string | null;
   }[];
 };
 type MeResponse = { user: { id: string } };
@@ -703,12 +708,28 @@ export default function GroupScreen() {
 
   const nameByUserId: Record<string, string> = {};
   const guestIds = new Set<string>();
+  // IBAN (ADR-059): alacaklinin IBAN'i ve "son 7 gunde degisti mi".
+  const ibanByUserId: Record<string, { iban: string; recentlyChanged: boolean }> = {};
   if (members.state.kind === "ok") {
     for (const member of members.state.data.members) {
       nameByUserId[member.userId] = member.displayName;
       if (member.isGuest) guestIds.add(member.userId);
+      if (member.iban) {
+        ibanByUserId[member.userId] = {
+          iban: member.iban,
+          recentlyChanged: isIbanRecentlyChanged(member.ibanUpdatedAt),
+        };
+      }
     }
   }
+  // Bana odenecek var ama IBAN'im yok: ozelligin kesfedildigi yer (ADR-059).
+  // Uye listesi henuz gelmediyse ipucu CIKMIYOR - "yok" ile "bilinmiyor"
+  // ayni sey degil.
+  const showAddIbanHint =
+    members.state.kind === "ok" &&
+    currentUserId !== null &&
+    iReceive.length > 0 &&
+    !ibanByUserId[currentUserId];
 
   /**
    * Bir satirin ikincil alanlari. Ucu de BURADA bicimleniyor cunku elenip
@@ -990,6 +1011,16 @@ export default function GroupScreen() {
                           bir satira koysaydik ayni kisi kartta iki kez
                           gorunurdu.
                         */}
+                        {/* BORCLU OLDUGUM SATIRDA: alacaklinin IBAN'i varsa
+                            kopyalanabiliyor (ADR-059) - "Hatirlat" ile ayni
+                            yer ve ayni gorunum, yonu ters. */}
+                        {iOwe && ibanByUserId[otherId] ? (
+                          <CopyIbanAction
+                            iban={ibanByUserId[otherId].iban}
+                            recentlyChanged={ibanByUserId[otherId].recentlyChanged}
+                            style={s.remindAction}
+                          />
+                        ) : null}
                         {/* Misafir giris yapamiyor; hatirlatmayi okuyacak
                             kimse yok (ADR-057). Sunucu da reddediyor. */}
                         {!iOwe && !guestIds.has(otherId) ? (
@@ -1015,6 +1046,14 @@ export default function GroupScreen() {
                 </View>
                 {remindError ? (
                   <Text style={s.remindError}>{remindError}</Text>
+                ) : null}
+                {showAddIbanHint ? (
+                  <Pressable onPress={() => router.push("/account")} hitSlop={6}>
+                    <Text style={s.ibanHint}>
+                      {t("ui.add_iban_hint")}{" "}
+                      <Text style={s.ibanHintAction}>{t("ui.add_iban")}</Text>
+                    </Text>
+                  </Pressable>
                 ) : null}
               </>
             ) : null}
@@ -1696,6 +1735,16 @@ function createStyles(theme: Theme) {
       color: "#f0b7a8",
       marginTop: 8,
     },
+    // "IBAN ekle" ipucu: kartin ikincil metni gibi soluk, eylemi bakir -
+    // remindDone / remindAction ile ayni renk dili.
+    ibanHint: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      lineHeight: 17,
+      color: "#8fae9f",
+      marginTop: 12,
+    },
+    ibanHintAction: { color: theme.copperOnCard },
     othersBlock: { gap: 4, marginBottom: 20 },
 
     membersBlock: { marginTop: 24 },
