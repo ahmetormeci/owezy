@@ -33,6 +33,9 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-10-04
 
 Current task:
+  >>> DAL VAR: "iban-mobil" (7701e7e, YALNIZCA YERELDE, push edilmedi) -
+  Faz 52b IBAN mobil, kodu+testleri+dokumanlari hazir. 1.0.6 onaylaninca
+  main'e merge -> 1.0.7. Ayrintisi o dalin CURRENT_TASK'inda. <<<
   1.0.6 (BUILD 25) APP STORE CONNECT'E YUKLENDI (4 Ekim) - KULLANICININ
   TESTFLIGHT KONTROLU BEKLENIYOR, SONRA INCELEMEYE GONDERIM (kullanici).
     EAS build fd32d5ed, commit 9451131, 6 dk. Build kaydinda olculdu:
