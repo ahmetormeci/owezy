@@ -28,8 +28,10 @@ olduğun kişinin satırında "IBAN'ı kopyala", ödeme ekranında alıcının I
 var. Son 7 günde değişmiş bir IBAN kopyalanırken uyarı çıkıyor. Kopyalama
 için `expo-clipboard` eklendi. Önce ayrı bir dalda yazıldı; 1.0.6 build 25
 henüz incelemeye gönderilmemişken bitince kullanıcı tek build'e karar verdi:
-dal `main`'e alındı, 1.0.6 build 26 ile gidiyor. Build 26 Xcode 26.6 ile
-derlendi ve App Store Connect'e yüklendi (4 Ekim).
+dal `main`'e alındı. Build 26 yüklendi (4 Ekim); ertesi gün simülatörde
+yapılan görsel kontrol üç küçük kusur buldu (klavye açıkken "Kaydet" iki
+dokunuş istiyordu, IBAN hatası yazı değişince kalkmıyordu, "Bana ödendi"
+seçiliyken başlık "Kime ödedin?" diyordu) — düzeltildi, 1.0.6 build 27.
 
 ---
 

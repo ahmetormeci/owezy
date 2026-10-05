@@ -508,13 +508,16 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
-## 1.0.6 — BUILD 26 (IBAN DAHİL) YÜKLENDİ (4 Ekim), TESTFLIGHT KONTROLÜ VE İNCELEME BEKLİYOR
+## 1.0.6 — BUILD 27 (IBAN DAHİL + GÖRSEL KONTROL DÜZELTMELERİ), İNCELEME BEKLİYOR
 
 **Build 25 (4 Ekim) TestFlight'ta denendi ve üç kontrolü geçti, ama
 incelemeye GÖNDERİLMEDİ:** IBAN'ın mobil tarafı (52b) o sırada bitti ve
 kullanıcı tek build'e almaya karar verdi (4 Ekim) — tek inceleme turu,
-tek gizlilik anketi güncellemesi, tek TestFlight turu. 1.0.6 sürümünde
-**build 26 seçilecek.**
+tek gizlilik anketi güncellemesi, tek TestFlight turu. **Build 27
+seçilecek** (5 Ekim): simülatördeki görsel kontrol üç küçük kusur buldu
+(PROGRESS Faz 52b), düzeltildi; build 26 kullanılmıyor. TestFlight'ta
+yeniden kontrol GEREKMİYOR: açılış ve kapalıyken davet linki 26'nın
+koduyla simülatörde ölçüldü, 27'de yalnızca iki ekranın JS'i değişti.
 
 Build **1 Ekim**'de (ücretsiz planın aylık iOS build hakkı o gün
 yenileniyor). Misafir özelliği ayrı bir 1.0.7 yerine bu build'e alındı —

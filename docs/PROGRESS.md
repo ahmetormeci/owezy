@@ -2721,7 +2721,7 @@ mobil IBAN ekranları 1 Ekim'de klasörde olsaydı 1.0.6'ya girerdi.
 **Testler:** `src/lib/email.test.ts` yeni (8): belge yapısı, dil, alt bilgi
 (HTML ve düz metin), yanıt adresi, hata fırlatma, IBAN bildirimi.
 
-## Faz 52b — IBAN ile ödeme: mobil · **BİTTİ, 1.0.6'DA (build 26)**
+## Faz 52b — IBAN ile ödeme: mobil · **BİTTİ, 1.0.6'DA (build 27)**
 
 | | |
 |---|---|
@@ -2742,9 +2742,17 @@ IBAN'da uyarı, pano hatası, ipucu var/yok), ödeme ekranı (yalnızca giden,
 uyarı satırı). **Negatif kontrol:** satır koşulu tersine çevrilince 4 test
 düştü. Mobil 98 vitest + 134 jest, expo-doctor 21/21, `expo export` temiz.
 
-**Simülatörde GÖRÜLMEDİ:** üç ekran da giriş istiyor ve ajan giriş kodunu
-forma yazmıyor. Görsel kontrol kullanıcının girişiyle simülatörde ya da
-1.0.7 TestFlight'ta.
+**Simülatörde GÖRÜLDÜ (5 Ekim)** — kullanıcı, yerel build'de geliştirme
+veritabanındaki bir test hesabıyla giriş yapmama izin verdi. Üç ekran da
+tasarıma uygun; panoya boşluksuz IBAN gidiyor (simctl pbpaste ile okundu).
+**Görsel kontrolün bulduğu üç kusur düzeltildi** (testleriyle):
+- Hesap ekranında klavye açıkken "Kaydet"e ilk dokunuş yalnızca klavyeyi
+  kapatıyordu (`keyboardShouldPersistTaps="handled"`) — simülatörde tek
+  dokunuşla kaydettiği görüldü.
+- IBAN hata mesajı yazı değişince kalkmıyordu.
+- Ödeme ekranında "Bana ödendi" seçiliyken alan başlığı "Kime ödedin?"
+  diyordu (IBAN'dan önce de vardı; web'de zaten "Kim ödedi?").
+1.0.6 bu yüzden build 27.
 
 ## Sıradaki adaylar (henüz karar verilmedi)
 

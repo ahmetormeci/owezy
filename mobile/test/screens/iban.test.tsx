@@ -158,6 +158,17 @@ describe("hesap ekrani", () => {
     expect(mockPatch).not.toHaveBeenCalled();
   });
 
+  it("hata mesaji yazi degisince kalkiyor", async () => {
+    await renderAccount();
+    await fireEvent.press(screen.getByText("IBAN ekle"));
+    await fireEvent.changeText(screen.getByTestId("iban-input"), "TR33 0006 1005 1978 6457 8413 27");
+    await fireEvent.press(screen.getByText("Kaydet"));
+    expect(screen.getByText(/Bu geçerli bir IBAN değil/)).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByTestId("iban-input"), "TR33 0006 1005 1978 6457 8413 2");
+    expect(screen.queryByText(/Bu geçerli bir IBAN değil/)).toBeNull();
+  });
+
   it("bosluklu ve kucuk harfli IBAN normalize edilip gidiyor, ekran tazeleniyor", async () => {
     await renderAccount();
     await fireEvent.press(screen.getByText("IBAN ekle"));
@@ -271,6 +282,18 @@ describe("odeme ekrani", () => {
     expect(screen.getByText(IBAN_SPACED)).toBeTruthy();
     await fireEvent.press(screen.getByText("Bana ödendi"));
     expect(screen.queryByText(IBAN_SPACED)).toBeNull();
+  });
+
+  it("gelen odemede alan basligi 'Kim ödedi?' oluyor - 'Kime ödedin?' celisirdi", async () => {
+    mockParams = { groupId: "g1", to: CREDITOR, amount: "25000" };
+    await render(<SettlementsScreen />);
+
+    // Baslik ekranda BUYUK HARFLE ciziliyor; secim alaninin erisilebilirlik
+    // etiketi ise metni oldugu gibi tasiyor ("<baslik>: <secili kisi>").
+    expect(screen.getByLabelText(/^Kime ödedin\?:/)).toBeTruthy();
+    await fireEvent.press(screen.getByText("Bana ödendi"));
+    expect(screen.queryByLabelText(/^Kime ödedin\?:/)).toBeNull();
+    expect(screen.getByLabelText(/^Kim ödedi\?:/)).toBeTruthy();
   });
 
   it("son 7 gunde degismisse kalici uyari satiri var", async () => {

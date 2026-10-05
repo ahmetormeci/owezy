@@ -33,28 +33,41 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-10-04
 
 Current task:
-  1.0.6 = BUILD 26 (IBAN DAHIL) - APP STORE CONNECT'E YUKLENDI (4 Ekim).
-    EAS build 064c24e3, commit 5d7cdd5, 6 dk; kayitta "Xcode 26.6 (17F113)"
-    ve ExpoClipboard hedefi var. Submit f66789a2 "finished". CI yesil.
-  KULLANICI: TestFlight'ta IBAN'in gorsel kontrolu
-  + uc kontrolun kisa tekrari, App Privacy (misafir adlari + IBAN), build
-  26'yi secip incelemeye gonderim.
+  1.0.6 = BUILD 27 (IBAN + gorsel kontrol duzeltmeleri) - build ve App
+  Store Connect'e yukleme bende (5 Ekim). KULLANICI (kendisi yapacagini
+  soyledi, Chrome'la benim yapmami istemedi): App Store Connect'te App
+  Privacy (misafir adlari + IBAN -> Financial Info / Other Financial Info),
+  surumde BUILD 27'yi sec, surum notlarini STORE.md'den guncelle,
+  incelemeye gonder. TestFlight'ta yeniden kontrol GEREKMIYOR (STORE.md).
 
-  NASIL BURAYA GELINDI (4 Ekim):
-    Build 25 (fd32d5ed, Xcode 26.6) TestFlight'ta uc kontrolu GECTI ama
-    incelemeye GONDERILMEDI. Faz 52b (IBAN mobil) o sirada "iban-mobil"
-    dalinda bitti; kullanici tek build'e karar verdi -> dal main'e alindi
-    (0a38fc0), build 26 alinacak. Build 25 kullanilmiyor.
-    Build'den once Expo'nun 29 Eylul yamalari alindi (9451131) - ucu de
-    "kullaniciya gorunen degisiklik yok", expo'nun sahne kodu birebir ayni.
+  5 EKIM GORSEL KONTROL - NASIL YAPILDI (bir dahakine ayni yol):
+    Kullanici izin verdi: yerel build'de, yerel gelistirme sunucusuna bagli
+    bir TEST hesabiyla giris. Production'a dokunulmadi.
+    - Sunucu: RESEND_API_KEY="" npm run dev  (kod e-postasi GITMEZ)
+    - Kod: gelistirme veritabani Verification "sign-in-otp-<email>"
+      (e2e/db-cleanup.ts readOtpFromDatabase ile ayni ayristirma)
+    - Test verisi: uygulamanin KENDI servis fonksiyonlariyla (createGroup,
+      createGroupInvite + acceptGroupInvite, createExpense) - tsx ile
+      --env-file=.env.local --tsconfig tsconfig.json, NODE_OPTIONS
+      --conditions=react-server
+    - SIMULATOR TUZAKLARI: yazma KARAKTER DUSURUYOR (adres "iban@" ya da
+      "iba@" oldu - hangisi yazildiysa onunla devam), sayi tusuna hizli art
+      arda dokunus da dusuruyor (her dokunus arasi ~0.6 sn). Aracin kendi
+      ekran goruntusu olayin GERISINDE kaliyor - "xcrun simctl io <udid>
+      screenshot" ile 1-2 sn sonra al. Uzun metin: simctl pbcopy + klavye
+      ustundeki "Paste from..." onerisi. iOS 26.5 simulatorunde (FCD7F36E)
+      klavye CIKMIYOR ve yazi alana ULASMIYOR - iOS 27 simulatoru kullan
+      ("Owezy Test iOS 27", 28E27032, Claude erisim izni verildi).
+    - Imzasiz build'de Keychain kalici degil: uygulamayi YENIDEN BASLATMA
+      ya da yeniden KURMA oturumu dusurur - giris tekrar gerekir.
+    GELISTIRME VERITABANINDA KALAN TEST VERISI: iban@ / iba@ / iban-te@ /
+    iban-test-b@ / iban-test-c@owezy.test ve "IBAN testi: ..." gruplari.
+    Zararsiz, istenirse silinebilir.
+
+  Build 25 (TestFlight'ta denendi) ve 26 KULLANILMIYOR.
   EXPO'DA YENI: EAS'ta Xcode 27.0 ve 27.1 imajlari VAR; SDK 58.0.x
   yayinda ama "latest" hala 57. Sabitleme 1.0.6'da bilerek duruyor
   (ADR-058) - kaldirmak SDK 58 isinin parcasi.
-
-  FAZ 52b OZETI: hesap ekraninda IBAN bolumu, bakiye kartinda kopyalama +
-  "IBAN ekle" ipucu, odeme ekraninda alicinin IBAN'i; expo-clipboard.
-  iban.test.tsx 14 (negatif kontrol 4 dusurdu). SIMULATORDE GORULMEDI
-  (giris gerekiyor) - gorsel kontrol build 26'nin TestFlight'inda.
 
 >>> 1.0.6 - BUILD ALINDI (4 Ekim), KALAN ADIMLAR <<<
   (Hatirlatma gorevi 1 Ekim'de uygulama kapali oldugu icin 4 Ekim'de
@@ -77,7 +90,7 @@ Current task:
     aciliyor mu. Simulatorde olculemeyen tam bu uc.
   GONDERIMDE KULLANICI: App Privacy anketi (misafir ADLARI + IBAN ->
   Financial Info / Other Financial Info - kategoriyi panelde sec, tahmin
-  etme) + appreview@ parola kontrolu + surumde BUILD 26'yi sec.
+  etme) + appreview@ parola kontrolu + surumde BUILD 27'yi sec.
 
 ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
   1. TEKRARLAYAN HARCAMA canlida gercekten uretim yaptigi HIC GORULMEDI.

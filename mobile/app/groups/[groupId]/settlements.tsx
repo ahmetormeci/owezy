@@ -312,13 +312,20 @@ export default function SettlementsScreen() {
             {counterparties.length === 0 ? (
               <View style={s.field}>
                 <Text style={s.fieldLabel}>
-                  {t("ui.settlement_counterparty").toLocaleUpperCase(locale)}
+                  {(direction === "outgoing"
+                    ? t("ui.settlement_counterparty")
+                    : t("ui.who_paid")
+                  ).toLocaleUpperCase(locale)}
                 </Text>
                 <Text style={s.emptyField}>{t("ui.no_one_to_settle_with")}</Text>
               </View>
             ) : (
               <SelectField
-                label={t("ui.settlement_counterparty")}
+                // Yone gore: "Bana odendi" secilince "Kime odedin?" demek
+                // celisiyordu (web'de zaten boyleydi, record-settlement-dialog).
+                label={
+                  direction === "outgoing" ? t("ui.settlement_counterparty") : t("ui.who_paid")
+                }
                 value={
                   counterparties.find((member) => member.userId === counterpartyId)
                     ?.displayName ?? "—"

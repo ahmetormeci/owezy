@@ -265,7 +265,10 @@ export default function AccountScreen() {
     // Yerlesik baslik cubugu: bu bir YONETIM ekrani, tek bir "kaydet"i yok.
     // Ozel cubuk yalnizca form ekranlarinda (bkz. members.tsx yorumu).
     <SafeAreaView style={s.screen} edges={["left", "right"]}>
-      <ScrollView contentContainerStyle={s.content}>
+      {/* keyboardShouldPersistTaps: IBAN alani acikken "Kaydet"e ilk dokunus
+          yalnizca klavyeyi kapatiyordu - iki kez basmak gerekiyordu.
+          Simulatorde goruldu (5 Ekim). */}
+      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         {state.kind === "loading" ? (
           <ActivityIndicator color={theme.brand} />
         ) : state.kind === "error" ? (
@@ -324,7 +327,11 @@ export default function AccountScreen() {
                   testID="iban-input"
                   style={s.ibanInput}
                   value={ibanText}
-                  onChangeText={setIbanText}
+                  onChangeText={(text) => {
+                    setIbanText(text);
+                    // Eski hata, duzeltilmis yazinin altinda kalmasin.
+                    setIbanError(null);
+                  }}
                   placeholder="TR00 0000 0000 0000 0000 0000 00"
                   autoCapitalize="characters"
                   autoCorrect={false}
