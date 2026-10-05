@@ -30,15 +30,22 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-10-04
+Updated: 2026-10-05
 
 Current task:
-  1.0.6 = BUILD 27 (IBAN + gorsel kontrol duzeltmeleri) - build ve App
-  Store Connect'e yukleme bende (5 Ekim). KULLANICI (kendisi yapacagini
-  soyledi, Chrome'la benim yapmami istemedi): App Store Connect'te App
+  1.0.6 = BUILD 27 (IBAN + gorsel kontrol duzeltmeleri) - APP STORE
+  CONNECT'E YUKLENDI (5 Ekim). EAS build 2fc50a2e (commit a0e9fe4, kayitta
+  "Xcode 26.6 (17F113)"), submit b16b54fa "finished". CI yesil.
+  SIRADA YALNIZCA KULLANICI VAR (kendisi yapacagini soyledi, Chrome'la
+  benim yapmami istemedi): App Store Connect'te App
   Privacy (misafir adlari + IBAN -> Financial Info / Other Financial Info),
   surumde BUILD 27'yi sec, surum notlarini STORE.md'den guncelle,
   incelemeye gonder. TestFlight'ta yeniden kontrol GEREKMIYOR (STORE.md).
+  appreview@ kontrolu: hesap ve giris akisi 1.0.5 onayindan beri
+  DEGISMEDI - istege bagli. Yaparsa kullanici yapar (parola gerekiyor).
+
+  1.0.6 YAYINA CIKINCA BENIM ISIM: bes ulkede (us/ca/gb/au/nz) aramayi
+  apps.apple.com/<cc>/iphone/search?term=owezy ile yeniden olc.
 
   5 EKIM GORSEL KONTROL - NASIL YAPILDI (bir dahakine ayni yol):
     Kullanici izin verdi: yerel build'de, yerel gelistirme sunucusuna bagli
@@ -69,7 +76,7 @@ Current task:
   yayinda ama "latest" hala 57. Sabitleme 1.0.6'da bilerek duruyor
   (ADR-058) - kaldirmak SDK 58 isinin parcasi.
 
->>> 1.0.6 - BUILD ALINDI (4 Ekim), KALAN ADIMLAR <<<
+>>> 1.0.6 - BUILD YOLU (bir sonraki surumde de aynisi) <<<
   (Hatirlatma gorevi 1 Ekim'de uygulama kapali oldugu icin 4 Ekim'de
   calisti.) Build icin kullanilan yol, bir sonraki surumde de aynisi:
     eas build --platform ios --profile production --non-interactive --no-wait

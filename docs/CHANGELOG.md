@@ -32,6 +32,8 @@ dal `main`'e alındı. Build 26 yüklendi (4 Ekim); ertesi gün simülatörde
 yapılan görsel kontrol üç küçük kusur buldu (klavye açıkken "Kaydet" iki
 dokunuş istiyordu, IBAN hatası yazı değişince kalkmıyordu, "Bana ödendi"
 seçiliyken başlık "Kime ödedin?" diyordu) — düzeltildi, 1.0.6 build 27.
+Build 27 Xcode 26.6 ile derlendi ve App Store Connect'e yüklendi (5 Ekim);
+incelemeye gönderim kullanıcıda.
 
 ---
 

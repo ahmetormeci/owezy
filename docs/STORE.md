@@ -508,7 +508,7 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
-## 1.0.6 — BUILD 27 (IBAN DAHİL + GÖRSEL KONTROL DÜZELTMELERİ), İNCELEME BEKLİYOR
+## 1.0.6 — BUILD 27 YÜKLENDİ (5 Ekim; IBAN DAHİL + GÖRSEL KONTROL DÜZELTMELERİ), İNCELEMEYE GÖNDERİM KULLANICIDA
 
 **Build 25 (4 Ekim) TestFlight'ta denendi ve üç kontrolü geçti, ama
 incelemeye GÖNDERİLMEDİ:** IBAN'ın mobil tarafı (52b) o sırada bitti ve
