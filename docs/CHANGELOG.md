@@ -8,18 +8,15 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-10-05 — 1.0.6 incelemeye gönderildi
 
+Build 27; kullanıcı App Store Connect'te gizlilik anketini (misafir adları +
+IBAN), build seçimini ve iki dildeki sürüm notlarını (STORE.md) yapıp
+incelemeye gönderdi. Sürüm notunda misafir, misafir linki, IBAN,
+"değerlendir" satırı ve büyük yazıda düğmeler var; sahne düzeni (görünmez)
+ile küçük metin düzeltmeleri bilerek yazılmadı.
 
-
-
-
-
-
-
-
-
-
-
+---
 
 ## 2026-10-04 — IBAN telefonda (Faz 52b, ADR-059) — 1.0.6'ya alındı
 

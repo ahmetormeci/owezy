@@ -33,16 +33,14 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-10-05
 
 Current task:
-  1.0.6 = BUILD 27 (IBAN + gorsel kontrol duzeltmeleri) - APP STORE
-  CONNECT'E YUKLENDI (5 Ekim). EAS build 2fc50a2e (commit a0e9fe4, kayitta
-  "Xcode 26.6 (17F113)"), submit b16b54fa "finished". CI yesil.
-  SIRADA YALNIZCA KULLANICI VAR (kendisi yapacagini soyledi, Chrome'la
-  benim yapmami istemedi): App Store Connect'te App
-  Privacy (misafir adlari + IBAN -> Financial Info / Other Financial Info),
-  surumde BUILD 27'yi sec, surum notlarini STORE.md'den guncelle,
-  incelemeye gonder. TestFlight'ta yeniden kontrol GEREKMIYOR (STORE.md).
-  appreview@ kontrolu: hesap ve giris akisi 1.0.5 onayindan beri
-  DEGISMEDI - istege bagli. Yaparsa kullanici yapar (parola gerekiyor).
+  1.0.6 = BUILD 27 - INCELEMEDE (5 Ekim). Kullanici App Store Connect
+  adimlarini (App Privacy, build 27, surum notlari) kendisi yapip
+  incelemeye gonderdi. Surum notlari STORE.md'deki halleriyle (TR + EN).
+  SIRADA APPLE VAR. Onay gelince kullanici yayina alir (ya da otomatik
+  yayin seciliyse kendiliginden cikar). Reddedilirse gerekce panelde -
+  kullanici iletir, birlikte bakilir.
+  Yayinda mi: itunes.apple.com/lookup?bundleId=net.owezy.app&country=us
+  -> "version" 1.0.6 olunca yayinda (5 Ekim: hala 1.0.5).
 
   1.0.6 YAYINA CIKINCA BENIM ISIM: bes ulkede (us/ca/gb/au/nz) aramayi
   apps.apple.com/<cc>/iphone/search?term=owezy ile yeniden olc.
