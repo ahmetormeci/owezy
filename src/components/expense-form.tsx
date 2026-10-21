@@ -16,11 +16,13 @@ import {
   formatMoneyForInput,
   parseMoney,
   parsePercentageToBasisPoints,
+  sumWrittenAmounts,
   type Locale,
 } from "@/lib/money";
 import { guessCategory } from "@/lib/expense-category-guess";
 import {
   inferBasisPoints,
+  MAX_SPLIT_AMOUNT,
   splitByItems,
   splitByPercentage,
   splitEqually,
@@ -229,6 +231,16 @@ export function ExpenseForm({
         }))
       : [{ description: "", amountText: "", userIds: [] }],
   );
+  /**
+   * TUTAR, ELLE YAZILANA KADAR KALEMLERI TAKIP EDIYOR (21 Ekim). Gerekcesi
+   * mobildeki ayni durumun yaninda (expenses/new.tsx): kalem toplami altta
+   * gorunuyor ama yukari yazilmiyordu. Elle yazilinca duruyor (bahsis ve
+   * indirim, ADR-052), bos birakip cikinca yeniden basliyor.
+   *
+   * DUZENLEMEDE BASTAN KAPALI: kayitli tutar kullanicinin onceki karari;
+   * bir kalemi duzeltti diye onu ezmek o karari geri almak olurdu.
+   */
+  const [amountFollowsItems, setAmountFollowsItems] = useState(!isEditing);
 
   /**
    * Optimistic locking (ADR-032) icin iki parca durum.
@@ -251,6 +263,11 @@ export function ExpenseForm({
   const preview = useMemo<{ shares: SplitShare[] } | { error: string } | null>(() => {
     if (amount === null || amount <= 0 || selected.length === 0) {
       return null;
+    }
+    // split.ts'in kendi mesaji ham sayiyi yaziyor ("2147483647"); kullanici
+    // sinirini kendi para biriminde gormeli.
+    if (amount > MAX_SPLIT_AMOUNT) {
+      return { error: t("ui.amount_too_large", { max: formatMoney(MAX_SPLIT_AMOUNT, currency, locale) }) };
     }
 
     try {
@@ -320,7 +337,7 @@ export function ExpenseForm({
       }
       return { error: t("split.failed") };
     }
-  }, [amount, selected, splitType, items, t]);
+  }, [amount, selected, splitType, items, t, currency, locale]);
 
   /** Kalem toplami - hepsi gecerliyse. Bir tanesi bile bos ise null. */
   const itemsTotal =
@@ -332,14 +349,27 @@ export function ExpenseForm({
         }, 0)
       : null;
 
+  /**
+   * KALEMLER HEP BURADAN DEGISIYOR ki tutar takibi hicbir yolu kacirmasin.
+   * Takip edilmiyorsa tutara dokunulmuyor - kullanicinin yazdigi kalir.
+   */
+  function changeItems(next: ItemDraft[]) {
+    setItems(next);
+    if (amountFollowsItems) writeItemsTotal(next);
+  }
+
+  /** Tutar alanina kalemlerin toplamini yazar; okunabilen kalem yoksa bosaltir. */
+  function writeItemsTotal(list: ItemDraft[]) {
+    const total = sumWrittenAmounts(list.map((item) => item.amountText));
+    setAmountText(total === null ? "" : formatMoneyForInput(total, locale));
+  }
+
   function updateItem(index: number, changes: Partial<ItemDraft>) {
-    setItems((current) =>
-      current.map((item, at) => (at === index ? { ...item, ...changes } : item)),
-    );
+    changeItems(items.map((item, at) => (at === index ? { ...item, ...changes } : item)));
   }
 
   function removeItem(index: number) {
-    setItems((current) => current.filter((_, at) => at !== index));
+    changeItems(items.filter((_, at) => at !== index));
   }
 
   function toggleItemMember(index: number, userId: string) {
@@ -430,6 +460,10 @@ export function ExpenseForm({
     }
     if (amount === null || amount <= 0) {
       setError(t("ui.amount_required"));
+      return;
+    }
+    if (amount > MAX_SPLIT_AMOUNT) {
+      setError(t("ui.amount_too_large", { max: formatMoney(MAX_SPLIT_AMOUNT, currency, locale) }));
       return;
     }
     if (splitType === "ITEMIZED") {
@@ -629,7 +663,16 @@ export function ExpenseForm({
         <Input
           id="amount"
           value={amountText}
-          onChange={(event) => setAmountText(event.target.value)}
+          onChange={(event) => {
+            setAmountText(event.target.value);
+            setAmountFollowsItems(false);
+          }}
+          onBlur={(event) => {
+            // Bos birakilip cikildiysa takip yeniden basliyor.
+            if (event.target.value.trim() !== "") return;
+            setAmountFollowsItems(true);
+            if (splitType === "ITEMIZED") writeItemsTotal(items);
+          }}
           placeholder={t("ui.amount_placeholder")}
           inputMode="decimal"
         />
@@ -696,7 +739,13 @@ export function ExpenseForm({
             id="splitType"
             className={selectClassName}
             value={splitType}
-            onChange={(event) => setSplitType(event.target.value as SplitType)}
+            onChange={(event) => {
+              const next = event.target.value as SplitType;
+              setSplitType(next);
+              // Kalemlere donulduyse ve tutar takip ediliyorsa, once
+              // girilmis kalemler tutara hemen yansisin.
+              if (next === "ITEMIZED" && amountFollowsItems) writeItemsTotal(items);
+            }}
           >
             {(Object.keys(EXPENSE_SPLIT_TYPE_CODES) as SplitType[]).map((value) => (
               <option key={value} value={value}>

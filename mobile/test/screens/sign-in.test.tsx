@@ -252,7 +252,7 @@ describe("ikinci faktor adimi", () => {
     await fireEvent.press(screen.getByText("Yedek kod kullan"));
 
     await screen.findByText("YEDEK KOD");
-    expect((codeField().props as { value: string }).value).toBe("");
+    expect(codeField()).toHaveDisplayValue("");
   });
 
   it("CIKIS KAPISI var ve meydan okumayi da atiyor", async () => {

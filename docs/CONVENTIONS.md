@@ -245,6 +245,18 @@ kalıcılığını gösteremez. Doğrulama simülatörde: giriş → çıkış �
 **uygulamayı öldürüp yeniden açmak**, iki durumda da. Sonuncusu belirteç
 saklamasının tek gerçek kanıtı.
 
+**Metin alanına `value` VERİLMEZ — `FieldInput` ya da `StableTextInput`.**
+Çıplak `<TextInput value={...}>` "kontrollü" bir alan: her tuş uygulamaya
+gidip `value` olarak telefona geri geliyor ve hızlı yazınca geri gelen eski
+değer telefonun yazdığının üstüne yazılıyor — harf düşüyor, imleç kayıyor
+(ölçüm ADR-061'de). `StableTextInput` aynı `value`/`onChangeText` arayüzünü
+koruyor ama yazılanı telefona bırakıyor; telefona yalnızca uygulamanın
+**kendi** değiştirdiği değeri yazıyor. Şartı: `onChangeText` metni
+**değiştirmeden** saklamalı — büyük harfe çeviren ya da biçimlendiren bir
+alan bu bileşeni kullanmamalı. Yazının boyuna göre büyümesi gereken alan
+(rakamın yanında para birimi duran tutarlar) `FieldInput grow` kullanır:
+iOS'ta alan kendi yazısına göre büyümüyor, ipucunun genişliğinde kalıyor.
+
 **Paylaşılan saf modüller `@/lib/...` ile import edilir.** Takma ad
 `mobile/tsconfig.json`'daki `paths` alanından çözülüyor; Metro depo kökünü
 `watchFolders` ile izliyor (`mobile/metro.config.js`). Mobil tarafın kendi

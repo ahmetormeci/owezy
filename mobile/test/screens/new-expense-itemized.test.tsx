@@ -149,3 +149,91 @@ describe("gonderim", () => {
     expect(mockPost).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * TUTAR, ELLE YAZILANA KADAR KALEMLERI TAKIP EDIYOR (21 Ekim).
+ *
+ * Kullanici "100 cay, 200 kahve" yazdiktan sonra 300'u tutara bir kez daha
+ * yaziyordu. Simdi tutar kalemleri izliyor - ama yalnizca kullanici ona
+ * dokunana kadar: ustteki tutar ODENEN, aradaki fark bahsis/indirim
+ * (ADR-052) ve takip hep sursaydi o fark hic yazilamazdi.
+ */
+describe("tutar kalemleri takip ediyor", () => {
+  it("tutar BOSKEN kalemlerin toplami yaziliyor - bos satir eklemek onu SILMIYOR", async () => {
+    await render(<NewExpenseScreen />);
+    await fireEvent.press(screen.getByText("kalem kalem"));
+
+    await fireEvent.changeText(screen.getByTestId("item-amount-0"), "100");
+    expect(screen.getByTestId("amount")).toHaveDisplayValue("100");
+
+    await fireEvent.press(screen.getByText("KALEM EKLE"));
+    expect(screen.getByTestId("amount")).toHaveDisplayValue("100");
+
+    await fireEvent.changeText(screen.getByTestId("item-amount-1"), "200");
+    expect(screen.getByTestId("amount")).toHaveDisplayValue("300");
+  });
+
+  it("ELLE YAZILAN TUTAR EZILMIYOR - fark bahsis olarak gorunuyor", async () => {
+    await render(<NewExpenseScreen />);
+    await fireEvent.press(screen.getByText("kalem kalem"));
+    await fireEvent.changeText(screen.getByTestId("item-amount-0"), "100");
+
+    await fireEvent.changeText(screen.getByTestId("amount"), "150");
+    await fireEvent.changeText(screen.getByTestId("item-amount-0"), "120");
+
+    expect(screen.getByTestId("amount")).toHaveDisplayValue("150");
+    expect(screen.getByText("Bahşiş / servis")).toBeTruthy();
+  });
+
+  it("BOS BIRAKIP CIKINCA takip yeniden basliyor - kaydedilen tutar kalemlerin toplami", async () => {
+    await render(<NewExpenseScreen />);
+    await fireEvent.changeText(screen.getByTestId("description"), "Kahvaltı");
+    await fireEvent.press(screen.getByText("kalem kalem"));
+    await fireEvent.changeText(screen.getByTestId("item-name-0"), "Çay");
+    await fireEvent.changeText(screen.getByTestId("item-amount-0"), "100");
+    await fireEvent.press(screen.getByText("Veli"));
+
+    await fireEvent.changeText(screen.getByTestId("amount"), "150");
+    await fireEvent.changeText(screen.getByTestId("amount"), "");
+    await fireEvent(screen.getByTestId("amount"), "blur");
+
+    await fireEvent.press(screen.getByTestId("save"));
+    await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(1));
+    // NEGATIF KONTROL: takip yeniden baslamasaydi tutar bos kalir ve
+    // "tutar gerekli" hatasiyla hic gonderilmezdi.
+    expect(mockPost.mock.calls[0][1].amount).toBe(10000);
+  });
+
+  it("TUTAR ONCE YAZILDIYSA kalemler onu ezmiyor", async () => {
+    // Tutar once yazildi, sonra kalemlere gecildi: kullanicinin karari.
+    await render(<NewExpenseScreen />);
+    await fireEvent.changeText(screen.getByTestId("amount"), "330");
+    await fireEvent.press(screen.getByText("kalem kalem"));
+    await fireEvent.changeText(screen.getByTestId("item-amount-0"), "300");
+
+    expect(screen.getByTestId("amount")).toHaveDisplayValue("330");
+  });
+});
+
+/**
+ * SINIRIN USTUNDE BIR TUTAR EKRANI COKERTIYORDU (21 Ekim, simulatorde).
+ *
+ * Esit bolusum onizlemesi cizim sirasinda splitEqually'yi cagiriyor ve o,
+ * 2.147.483.647 kurusun ustunde hata firlatiyor. Hata yakalanmadigi icin
+ * "123456789" yazmak uygulamayi kapatiyordu.
+ */
+describe("tutar siniri", () => {
+  it("SINIRIN USTU ekrani cokertmiyor; kaydette anlasilir mesaj ve GONDERIM YOK", async () => {
+    await render(<NewExpenseScreen />);
+    await fireEvent.changeText(screen.getByTestId("description"), "Ev");
+
+    // NEGATIF KONTROL: koruma olmasaydi bu satir cizimde firlatirdi.
+    await fireEvent.changeText(screen.getByTestId("amount"), "123456789");
+    await fireEvent.press(screen.getByTestId("save"));
+
+    await waitFor(() =>
+      expect(screen.getByText("Tutar en fazla 21.474.836,47 ₺ olabilir.")).toBeTruthy(),
+    );
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+});

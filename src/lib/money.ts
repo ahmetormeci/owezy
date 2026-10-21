@@ -280,6 +280,26 @@ export function formatMoneyForInput(
 }
 
 /**
+ * YAZILMIS TUTARLARIN TOPLAMI: okunabilenlerin. Hicbiri okunamiyorsa null.
+ *
+ * Kalem kalem bolusumde tutar alani, kullanici ona elle dokunana kadar
+ * kalemlerin toplamini gosteriyor. Bos ya da yarim yazilmis bir satir
+ * toplami SILMEMELI: "100 cay" yazilip yeni satir eklenince tutar 100'de
+ * kalmali. Sifir ve eksi sayilmiyor - bir kalemde gecerli tutar degiller.
+ */
+export function sumWrittenAmounts(texts: string[]): number | null {
+  let total = 0;
+  let found = false;
+  for (const text of texts) {
+    const value = parseMoney(text);
+    if (value === null || value <= 0) continue;
+    total += value;
+    found = true;
+  }
+  return found ? total : null;
+}
+
+/**
  * Yuzde alanini doldurur: 3333 -> "33,33". parsePercentageToBasisPoints'in
  * tersi. Yuzde isareti YOK - o, kullanicinin yazmadigi ve yazmasi da
  * beklenmeyen bir karakter; alanin yaninda etiket olarak duruyor.

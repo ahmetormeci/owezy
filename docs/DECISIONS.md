@@ -530,6 +530,72 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-061 — Mobilde metin alanları kontrolsüz: yazılanı telefon tutar, uygulama dinler
+**Tarih:** 2026-10-21 · **Durum:** Kabul edildi · **UYGULANDI: 2026-10-21** (telefona 1.0.7 ile)
+
+**Bağlam:** Kullanıcı tutar alanına hızlı "123" yazınca bazen "1"in
+gitmediğini, bazen ekranda "23" ile "32" arasında gidip geldiğini bildirdi.
+
+**Ölçülen (simülatörde, iOS 27, Release build):**
+
+| | Önce | Sonra |
+|---|---|---|
+| Apple'ın kendi alanı (Ayarlar araması), 2 × 31 karakter | 62/62 | — |
+| Giriş e-postası, klavye açılırken 31 karakter | **7/31** | 31/31 |
+| Giriş e-postası "iban@owezy.test" | **"iban@owezy."** | tam |
+| Harcama tutarı "123456789" (klavye açıkken) | **12.345.678** — "9" düştü | tam |
+| Harcama tutarı "123456789" (dokunur dokunmaz) | **12.345** — dört rakam düştü | tam |
+
+Apple'ın alanı aynı yazma aracıyla hiçbir şey düşürmediği için sorun
+simülatörde değil bizde. Docs'ta yıllanmış "simülatörde yazma karakter
+düşürüyor" tuzağı da bu hataymış.
+
+**Sebep:** React Native'de `value` verilen alan "kontrollü": her tuş
+uygulamaya gidiyor, ekran yeniden çiziliyor ve `value` telefona GERİ
+gönderiliyor. Geri gelen değer hızlı yazının gerisinde kalınca telefonun o
+an yazdığının üstüne yazılıyor. Harcama ekranı en ağır ekran (her tuşta
+bölüşüm satırları yeniden hesaplanıyor), gidiş-dönüş orada en uzun.
+
+**Karar:** `mobile/components/field.tsx` → `StableTextInput`. `TextInput`'a
+`value` değil `defaultValue` veriliyor; yazılanı telefon tutuyor, uygulama
+`onChangeText` ile yalnızca dinliyor. Dışarıdan gelen `value` yine kabul
+ediliyor ama telefona yalnızca **uygulamanın kendisi** değiştirdiğinde
+yazılıyor — "telefonun en son bildirdiği metinle aynı değilse":
+- boşken (fiş tutarı, kalem toplamı): `defaultValue` değişiyor, telefona
+  ulaşıyor (simülatörde görüldü);
+- odaktaysa ya da eski `defaultValue`'yla aynıysa: alan `key` ile yeniden
+  kuruluyor, odaktaysa odak geri veriliyor;
+- odaktayken boşaltma (gönderilen yorum): `clear()` — klavye kapanmıyor.
+`FieldInput` bunu kullanıyor; giriş parolası ve harcama düzenleme alanları
+da ona geçti. Uygulamada `value` alan çıplak bir `TextInput` kalmadı.
+
+**Bedeli / şartı:** çağıranın `onChangeText`'i metni değiştirmeden saklamalı
+(bugün hepsi öyle). Metni dönüştüren bir alan her tuşu "dışarıdan gelmiş"
+sayar ve yeniden kurulur — öyle bir alan bu bileşeni kullanmamalı.
+
+**Aynı ölçümde çıkan iki kusur daha, ikisi de düzeltildi:**
+- **Tutar alanı büyümüyordu.** iOS'ta alan kendi yazısına göre değil
+  ipucunun ("120.50") genişliğinde kalıyordu; 7+ karakterde baştaki
+  rakamlar sola kayıp görünmez oluyordu ("1250,50" yazan "250,50" görüyordu
+  — kullanıcının "1'i yazamıyorum"unun bir kısmı büyük ihtimalle bu).
+  `FieldInput grow`: genişliği aynı yazı tipiyle çizilen görünmez bir
+  `<Text>` belirliyor, alan onun üstüne oturuyor; odaktayken imleç payı.
+  Harcama ekle, harcama düzenle ve ödeme ekranlarındaki tutarlar.
+- **21.474.836,47 ₺'nin üstünde bir tutar harcama ekranını çökertiyordu**
+  (`MAX_SPLIT_AMOUNT`). Eşit bölüşüm önizlemesi çizim sırasında
+  `splitEqually`'yi çağırıyor, o da hata fırlatıyor; yakalanmadığı için
+  uygulama kapanıyordu. Rakamlar düştüğü sürece pek görülmüyordu — düzeltme
+  sonrası ilk ölçümde çıktı. Önizleme sınırın üstünde hesap yapmıyor,
+  kaydette "Tutar en fazla 21.474.836,47 ₺ olabilir." Web'de çökme yoktu
+  (önizleme hatayı yakalıyor) ama mesaj ham sayıydı; o da aynı cümleye
+  döndü.
+
+**Reddedilen:** `@expo/ui`'nin yerel durumlu `TextInput`'u (Expo'nun
+önerdiği titreşimsiz yol) — yeni bir bileşen ve yazı tipi/placeholder
+çiziminin baştan kurulması demekti; sorun `defaultValue` ile kapanıyor.
+
+---
+
 ## ADR-060 — Giden posta: tam belge, kimlik satırı, gerçek yanıt adresi; DMARC raporları Cloudflare'de
 **Tarih:** 2026-09-27 · **Durum:** Kabul edildi · **UYGULANDI: 2026-09-27**
 
@@ -1345,6 +1411,24 @@ paylar üretildiği için çakışma **doğru** anlatılıyor ("payları değiş
 Kalemlerin kendisi farkta görünmüyor; bu bir eksik ve açıkça yazılıyor — ama
 kullanıcının kaybettiği bir bilgi yok, çünkü çakışmadan sonra formdaki
 kalemler olduğu gibi duruyor.
+
+
+### Ek (21 Ekim): tutar, elle yazılana kadar kalem toplamını izliyor
+
+Kullanıcı "100 çay, 200 kahve" yazdıktan sonra 300'ü tutar alanına bir kez
+daha yazıyordu; kalem toplamı altta görünüyor ama yukarı yazılmıyordu.
+**Tutar ödenen, kalemler onun dökümü** kuralı (bahşiş/indirim farkı) aynen
+duruyor — yalnızca başlangıç değeri değişti:
+- Kullanıcı tutara dokunmadıkça tutar alanı **okunabilen kalemlerin
+  toplamını** gösteriyor (`sumWrittenAmounts`): boş ya da yarım bir satır
+  toplamı silmiyor.
+- **Elle yazılınca takip duruyor**; fark bahşiş/indirim satırında.
+- **Boş bırakıp alandan çıkınca yeniden başlıyor — silerken değil.**
+  Silerken başlasaydı yeni bir tutar yazmak için alanı boşaltan kullanıcının
+  önüne toplam geri gelir, yazdığı onun arkasına eklenirdi.
+- Fişten okunan tutar elle yazılmış sayılıyor (fişin toplamı ödenendir);
+  fişten seçilen kalemler aktarılınca takip yeniden açık.
+- **Web'de düzenlemede kapalı:** kayıtlı tutar kullanıcının önceki kararı.
 
 ---
 

@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react-native";
-import { FieldInput } from "./field";
+import { useState } from "react";
+import { fireEvent, render, screen } from "@testing-library/react-native";
+import { FieldInput, StableTextInput } from "./field";
 
 /**
  * BU DOSYA NEYI KORUYOR: placeholder'in GORSELI ile ANLAMININ ayri
@@ -65,7 +66,7 @@ describe("FieldInput", () => {
     expect(
       screen.getByText("Uzun bir ipucu", { includeHiddenElements: true }).props.numberOfLines,
     ).toBe(1);
-    single.unmount();
+    await single.unmount();
 
     await render(
       <FieldInput value="" placeholder="Uzun bir ipucu" multiline onChangeText={() => {}} />,
@@ -73,5 +74,62 @@ describe("FieldInput", () => {
     expect(
       screen.getByText("Uzun bir ipucu", { includeHiddenElements: true }).props.numberOfLines,
     ).toBeUndefined();
+  });
+});
+
+/**
+ * BU BOLUM NEYI KORUYOR: hizli yazinca harf dusmesini (21 Ekim).
+ *
+ * Alan "kontrollu" iken her tus uygulamaya gidip value olarak telefona
+ * GERI geliyordu; geri gelen eski deger telefonun o an yazdiginin ustune
+ * yaziliyordu. Simulatorde "123456789"dan "12345" kaldi. Telefonun kendisi
+ * burada yok - korunan sey, o yarisin hic kurulmamasi: deger telefona
+ * yalnizca uygulamanin KENDISI degistirdiginde gidiyor.
+ */
+describe("StableTextInput", () => {
+  function Echo() {
+    const [text, setText] = useState("");
+    return <StableTextInput testID="f" value={text} onChangeText={setText} />;
+  }
+
+  it("DEGER TELEFONA GERI GONDERILMIYOR - value yok, defaultValue var", async () => {
+    await render(<StableTextInput testID="f" value="12" onChangeText={() => {}} />);
+
+    // NEGATIF KONTROL: value dolu olsaydi alan yine kontrollu olurdu ve
+    // yaris geri gelirdi.
+    expect(screen.getByTestId("f").props.value).toBeUndefined();
+    expect(screen.getByTestId("f").props.defaultValue).toBe("12");
+  });
+
+  it("YAZILAN GERI GELINCE alan yeniden kurulmuyor", async () => {
+    await render(<Echo />);
+    const before = screen.getByTestId("f");
+
+    await fireEvent.changeText(before, "123");
+
+    // Ayni ornek: yazarken alan sokulup takilsaydi klavye kapanip acilirdi.
+    expect(screen.getByTestId("f")).toBe(before);
+    expect(screen.getByTestId("f")).toHaveDisplayValue("123");
+  });
+
+  it("UYGULAMA DEGISTIRINCE yeni deger gorunuyor - fis tutari, kalem toplami", async () => {
+    const view = await render(<StableTextInput testID="f" value="" onChangeText={() => {}} />);
+
+    await view.rerender(<StableTextInput testID="f" value="42" onChangeText={() => {}} />);
+
+    expect(screen.getByTestId("f")).toHaveDisplayValue("42");
+  });
+
+  it("ESKI DEGERE DONUS de gorunuyor - prop degismese bile", async () => {
+    // Bos baslayan alana yazildi, sonra uygulama onu yine bosaltti
+    // (gonderilen yorum). defaultValue "" -> "" degismedigi icin bu ancak
+    // alani yeniden kurarak telefona ulasiyor.
+    const view = await render(<StableTextInput testID="f" value="" onChangeText={() => {}} />);
+    await fireEvent.changeText(screen.getByTestId("f"), "5");
+    await view.rerender(<StableTextInput testID="f" value="5" onChangeText={() => {}} />);
+
+    await view.rerender(<StableTextInput testID="f" value="" onChangeText={() => {}} />);
+
+    expect(screen.getByTestId("f")).toHaveDisplayValue("");
   });
 });

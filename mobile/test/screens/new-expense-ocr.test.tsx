@@ -103,7 +103,7 @@ describe("fisten tutar okuma", () => {
     await render(<NewExpenseScreen />);
     await attachReceipt();
 
-    await waitFor(() => expect(screen.getByTestId("amount").props.value).toBe("366,68"));
+    await waitFor(() => expect(screen.getByTestId("amount")).toHaveDisplayValue("366,68"));
   });
 
   it("OKUNDUGUNU SOYLUYOR - sessizce doldurmuyor", async () => {
@@ -153,7 +153,7 @@ describe("fisten tutar okuma", () => {
     await attachReceipt();
 
     await waitFor(() => expect(mockPick).toHaveBeenCalled());
-    expect(screen.getByTestId("amount").props.value).toBe("120");
+    expect(screen.getByTestId("amount")).toHaveDisplayValue("120");
     expect(screen.queryByText("Fişteki toplamdan okundu")).toBeNull();
   });
 
@@ -171,7 +171,7 @@ describe("fisten tutar okuma", () => {
     await attachReceipt();
 
     await waitFor(() => expect(mockPick).toHaveBeenCalled());
-    expect(screen.getByTestId("amount").props.value).toBe("");
+    expect(screen.getByTestId("amount")).toHaveDisplayValue("");
     expect(screen.queryByText(/okundu/)).toBeNull();
   });
 

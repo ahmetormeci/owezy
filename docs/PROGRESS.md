@@ -2582,7 +2582,7 @@ build'inde görülecek.
 ---
 
 
-## Faz 49 — Değerlendirme isteği · **BİTTİ, 1.0.6 BUILD'İNİ BEKLİYOR**
+## Faz 49 — Değerlendirme isteği · **BİTTİ, 1.0.6'DA YAYINDA**
 
 | | |
 |---|---|
@@ -2606,7 +2606,7 @@ göstermediği. StoreKit bunu bildirmiyor; TestFlight'ta pencere hiç
 çıkmıyor.
 
 
-## Faz 50a — Hesapsız üye (misafir) · **BİTTİ, WEB'DE; MOBİLİ 1.0.6'DA (1 EKİM BUILD'İ)**
+## Faz 50a — Hesapsız üye (misafir) · **BİTTİ, WEB'DE; MOBİLİ 1.0.6'DA YAYINDA**
 
 | | |
 |---|---|
@@ -2637,7 +2637,7 @@ fazla 20 aktif misafir; son gerçek üye ayrılınca grup arşivlenir. Ayrıntı
 ADR-057.
 
 
-## Faz 50b — Misafiri sahiplenme · **BİTTİ, WEB'DE; MOBİLİ 1.0.6'DA (1 EKİM BUILD'İ)**
+## Faz 50b — Misafiri sahiplenme · **BİTTİ, WEB'DE; MOBİLİ 1.0.6'DA YAYINDA**
 
 | | |
 |---|---|
@@ -2661,7 +2661,7 @@ indi, sınır 15 saniye.
 davet durumu), mobil ekran +6, E2E +2 (sahiplenme akışı; zaten üye olanın
 reddi) ve veritabanı testine iki yeni kural. Negatif kontrol: dokuzdan dokuz.
 
-## Faz 51 — iOS sahne yaşam döngüsü (UIScene) · **BİTTİ, 1.0.6 BUILD'İNİ BEKLİYOR**
+## Faz 51 — iOS sahne yaşam döngüsü (UIScene) · **BİTTİ, 1.0.6'DA YAYINDA**
 
 | | |
 |---|---|
@@ -2689,7 +2689,7 @@ bunun için.
 **Testler:** mobil vitest 98, jest 120, tsc, lint, expo-doctor 21/21 —
 değişmedi (değişiklik yalnızca native yapılandırma).
 
-## Faz 52a — IBAN ile ödeme: sunucu + web · **BİTTİ, WEB'DE CANLI (ef501a5); MOBİLİ 52b, 1.0.7**
+## Faz 52a — IBAN ile ödeme: sunucu + web · **BİTTİ, WEB'DE CANLI (ef501a5); MOBİLİ 52b, 1.0.6'DA**
 
 | | |
 |---|---|
@@ -2721,7 +2721,7 @@ mobil IBAN ekranları 1 Ekim'de klasörde olsaydı 1.0.6'ya girerdi.
 **Testler:** `src/lib/email.test.ts` yeni (8): belge yapısı, dil, alt bilgi
 (HTML ve düz metin), yanıt adresi, hata fırlatma, IBAN bildirimi.
 
-## Faz 52b — IBAN ile ödeme: mobil · **BİTTİ, 1.0.6'DA (build 27)**
+## Faz 52b — IBAN ile ödeme: mobil · **BİTTİ, 1.0.6'DA YAYINDA (build 27)**
 
 | | |
 |---|---|
@@ -2753,6 +2753,41 @@ tasarıma uygun; panoya boşluksuz IBAN gidiyor (simctl pbpaste ile okundu).
 - Ödeme ekranında "Bana ödendi" seçiliyken alan başlığı "Kime ödedin?"
   diyordu (IBAN'dan önce de vardı; web'de zaten "Kim ödedi?").
 1.0.6 bu yüzden build 27.
+
+## Faz 54 — Tutar alanı: hızlı yazma, genişlik, kalem toplamı · **BİTTİ, WEB KISMI PUSH İLE CANLI; MOBİLİ 1.0.7**
+
+Kullanıcının bildirdiği iki şey (21 Ekim): tutara hızlı "123" yazınca "1"
+gidiyor ya da rakamlar yer değiştiriyordu; kalem kalem eklerken toplam
+tutara yazılmıyordu.
+
+| | |
+|---|---|
+| Hızlı yazınca harf düşmesi | Mobilde bütün metin alanları kontrolsüz — `StableTextInput` (ADR-061) |
+| Tutar alanı büyümüyordu | `FieldInput grow` — harcama ekle/düzenle ve ödeme ekranları |
+| 21 milyon ₺ üstü tutar uygulamayı kapatıyordu | Önizleme sınırda duruyor, kaydette mesaj (mobil + web) |
+| Kalem toplamı tutara yazılmıyordu | Tutar elle yazılana kadar kalemleri izliyor (mobil + web, ADR-052 eki) |
+
+**Simülatörde önce ve sonra ölçüldü** (iOS 27, Release, yerel sunucu, test
+hesabı — kullanıcının izniyle): tablo ADR-061'de. Kalem takibi de orada
+görüldü: 100 → boş satır eklenince 100 kalıyor → 300; elle 3000 yazılınca
+kalem değişse de 3000, fark "İndirim"; silip çıkınca 5300'e döndü; alan
+odaktayken boş kaldı. Ödeme ve düzenleme ekranlarında da hızlı yazılanın
+tamamı geldi ve göründü.
+
+**Testler:** `components/field-input.test.tsx` (+4: value gönderilmiyor,
+yazılan geri gelince yeniden kurulmuyor, dışarıdan değişiklik görünüyor,
+eski değere dönüş görünüyor), `test/screens/new-expense-itemized.test.tsx`
+(+5: takip, elle yazılan ezilmiyor, boş bırakıp çıkınca yeniden başlıyor,
+önce yazılan tutar korunuyor, sınır), `src/lib/money.test.ts` (+4,
+`sumWrittenAmounts`), `e2e/itemized.spec.ts` (+1, web'de takip). Değeri
+`props.value`'dan okuyan 6 test `toHaveDisplayValue`'ya geçti.
+**Negatif kontroller:** sınır koruması kaldırılınca sınır testi, takip
+kaldırılınca iki takip testi, alan yeniden kontrollü yapılınca "value
+gönderilmiyor" testi düştü. Mobil 145 jest; web 861 vitest; tam E2E.
+
+**Yan bulgu:** `field-input.test.tsx`'teki beklenmeyen bir `unmount()`
+(RNTL 14'te asenkron) sonraki testlerin `screen`'ini bozuyordu — yeni
+testler yalnızca birlikte koşunca düşüyordu; `await` eklendi.
 
 ## Sıradaki adaylar (henüz karar verilmedi)
 

@@ -7,6 +7,7 @@ import {
   formatSignedMoney,
   parseMoney,
   parsePercentageToBasisPoints,
+  sumWrittenAmounts,
 } from "@/lib/money";
 
 describe("formatMoney", () => {
@@ -328,5 +329,25 @@ describe("formatBasisPointsForInput", () => {
         basisPoints,
       );
     }
+  });
+});
+
+describe("sumWrittenAmounts", () => {
+  it("kalemleri kurus olarak topluyor", () => {
+    expect(sumWrittenAmounts(["100", "200,50"])).toBe(30050);
+  });
+
+  it("BOS ya da YARIM satir toplami silmiyor - yeni satir eklenince tutar kalir", () => {
+    expect(sumWrittenAmounts(["100", ""])).toBe(10000);
+    expect(sumWrittenAmounts(["100", "abc"])).toBe(10000);
+  });
+
+  it("sifir ve eksi sayilmiyor", () => {
+    expect(sumWrittenAmounts(["100", "0", "-50"])).toBe(10000);
+  });
+
+  it("hicbiri okunamiyorsa null - tutar alani bosalir", () => {
+    expect(sumWrittenAmounts([""])).toBeNull();
+    expect(sumWrittenAmounts([])).toBeNull();
   });
 });

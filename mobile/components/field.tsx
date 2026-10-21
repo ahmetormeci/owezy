@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import {
   Modal,
   Pressable,
@@ -51,6 +51,103 @@ export function Field({
 }
 
 /**
+ * YAZILANI TELEFON TUTAR, UYGULAMA YALNIZCA DINLER.
+ *
+ * GERCEKTEN YASANDI (21 Ekim): kullanici tutar alanina hizli "123"
+ * yazinca bazen "1" gitti, bazen ekranda "23" ile "32" arasinda gidip
+ * geldi. Simulatorde olculdu: Apple'in kendi alanina hizla yazilan 62
+ * karakterin 62'si geldi; Owezy'nin tutar alanina yazilan "123456789"dan
+ * "12345" kaldi, giris ekraninda "iban@owezy.test"ten "iban@owezy." kaldi.
+ *
+ * SEBEP "KONTROLLU" ALAN. TextInput'a value verilince her tus uygulamaya
+ * gidiyor, ekran yeniden ciziliyor ve value telefona GERI gonderiliyor.
+ * Hizli yazinca geri gelen deger tuslarin gerisinde kaliyor ve telefonun
+ * o an yazdiginin USTUNE yaziliyor: harf duser, imlec kayar.
+ *
+ * COZUM: TextInput'a value degil defaultValue veriliyor - yazilani
+ * telefon tutuyor, uygulama onChangeText ile yalnizca DINLIYOR. Disaridan
+ * gelen value yine kabul ediliyor ama telefona ancak uygulamanin KENDISI
+ * degistirdiginde yaziliyor: fisten okunan tutar, kalem toplami,
+ * gonderilince bosalan yorum.
+ *
+ * "KENDISI MI DEGISTIRDI": value, telefonun en son bildirdigi metinle
+ * ayni degilse. Bu, cagiranlarin onChangeText'te metni DEGISTIRMEDEN
+ * saklamasina dayaniyor - bugun hepsi oyle. Metni donusturen (buyuk harf,
+ * bicimlendirme) bir alan bu bileseni kullanmamali: her tus disaridan
+ * gelmis sayilir.
+ */
+export function StableTextInput({
+  value,
+  onChangeText,
+  onFocus,
+  onBlur,
+  ...rest
+}: Omit<TextInputProps, "value" | "defaultValue"> & { value: string }) {
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
+  /** Telefonun en son bildirdigi metin. */
+  const reported = useRef(value);
+  const focused = useRef(false);
+  /**
+   * key DEGISINCE alan yeniden kuruluyor; text onun defaultValue'su.
+   * focus: yeniden kurulan alan odaktaydiysa odak ona geri veriliyor.
+   */
+  const [mount, setMount] = useState({ key: 0, text: value, focus: false });
+  const mountedText = useRef(value);
+
+  useLayoutEffect(() => {
+    if (value === reported.current) return;
+    reported.current = value;
+
+    if (value === "" && focused.current) {
+      // Gonderilen yorum gibi: bosaltmak icin yeniden kurmak klavyeyi
+      // kapatip acardi. clear() odagi birakmadan siliyor.
+      inputRef.current?.clear();
+      mountedText.current = "";
+      setMount((current) => ({ ...current, text: "" }));
+      return;
+    }
+
+    /**
+     * BOSTAKI ALAN: defaultValue'yu degistirmek telefona yazmaya yetiyor.
+     * Iki durumda yetmiyor ve alan yeniden kuruluyor:
+     *   - ODAKTAYSA: kullanici yazarken disaridan yazmak tam da duzeltilen
+     *     yaris olurdu.
+     *   - YENI DEGER ESKI defaultValue'yla AYNIYSA: prop degismedigi icin
+     *     telefona hic ulasmazdi.
+     */
+    const remount = focused.current || value === mountedText.current;
+    mountedText.current = value;
+    setMount((current) =>
+      remount
+        ? { key: current.key + 1, text: value, focus: focused.current }
+        : { ...current, text: value },
+    );
+  }, [value]);
+
+  return (
+    <TextInput
+      {...rest}
+      key={mount.key}
+      ref={inputRef}
+      defaultValue={mount.text}
+      autoFocus={mount.focus}
+      onChangeText={(text) => {
+        reported.current = text;
+        onChangeText?.(text);
+      }}
+      onFocus={(event) => {
+        focused.current = true;
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        focused.current = false;
+        onBlur?.(event);
+      }}
+    />
+  );
+}
+
+/**
  * PLACEHOLDER'I KENDIMIZ CIZIYORUZ, iOS'a birakmiyoruz.
  *
  * GERCEKTEN YASANDI (11 Eylul): kullanici yayinlanmis 1.0.4'te aciklama
@@ -82,13 +179,50 @@ export function FieldInput({
   placeholder,
   style,
   multiline,
+  grow = false,
+  onFocus,
+  onBlur,
   ...rest
-}: TextInputProps & { value: string }) {
+}: TextInputProps & {
+  value: string;
+  /**
+   * Alan yazinin boyuna gore buyusun - buyuk tutar alanlari icin: rakamin
+   * hemen yaninda para birimi duruyor.
+   */
+  grow?: boolean;
+}) {
   const theme = useTheme();
   const s = useMemo(() => styles(theme), [theme]);
+  const [focused, setFocused] = useState(false);
 
   return (
-    <View style={s.inputWrap}>
+    <View style={grow ? s.growWrap : s.inputWrap}>
+      {grow ? (
+        /**
+         * GENISLIGI BU GORUNMEZ METIN BELIRLIYOR, alanin kendisi degil.
+         *
+         * GERCEKTEN YASANDI (21 Ekim, simulatorde): alan kendi yazisina
+         * gore buyumuyordu, ipucunun ("120.50") genisliginde kaliyordu.
+         * Yedi karakterden uzun bir tutarda bastaki rakamlar sola kayip
+         * gorunmez oluyordu - "1250,50" yazan "250,50" goruyordu. Kayitta
+         * eksik yoktu ama ekranda "1 yazilmadi" gibi duruyordu.
+         *
+         * Ayni yazi tipiyle cizilen bir <Text> her zaman dogru olculuyor;
+         * alan onun ustune oturuyor.
+         *
+         * SONDAKI BOSLUK YALNIZCA ODAKTA: imlecin ve hizli bir tusun payi.
+         * Odak disinda da dursaydi rakam ile para birimi arasindaki aralik
+         * iki katina cikiyordu.
+         */
+        <Text
+          style={[style, s.sizer]}
+          numberOfLines={1}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          {`${value || placeholder || ""}${focused ? " " : ""}`}
+        </Text>
+      ) : null}
       {placeholder && value === "" ? (
         /**
          * pointerEvents="none" SART: metin girisin USTUNDE duruyor ve
@@ -130,12 +264,20 @@ export function FieldInput({
        * <Text>. transparent oldugu icin iOS'un bozuk cizimi ekranda
        * gorunmuyor - hatanin kendisi de boylece denklemden cikiyor.
        */}
-      <TextInput
+      <StableTextInput
         value={value}
-        style={style}
+        style={grow ? [style, s.growInput] : style}
         multiline={multiline}
         placeholder={placeholder}
         placeholderTextColor="transparent"
+        onFocus={(event) => {
+          setFocused(true);
+          onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          setFocused(false);
+          onBlur?.(event);
+        }}
         {...rest}
       />
     </View>
@@ -231,6 +373,10 @@ function styles(theme: Theme) {
   return StyleSheet.create({
     field: { gap: 7 },
     inputWrap: { position: "relative" },
+    // grow: kutu olcu metninin boyunda; satir daralirsa o da daraliyor.
+    growWrap: { position: "relative", flexShrink: 1 },
+    sizer: { opacity: 0 },
+    growInput: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
     placeholder: {
       position: "absolute",
       left: 0,

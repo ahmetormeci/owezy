@@ -23,9 +23,9 @@ import { guessCategory } from "@/lib/expense-category-guess";
 import { guessReceiptAmount } from "@/lib/receipt-amount";
 import { groupIntoLines, type TextBlock } from "@/lib/receipt-blocks";
 import { readReceiptItems, sumItems, type ReceiptItemGuess } from "@/lib/receipt-items";
-import { splitEqually } from "@/lib/split";
+import { MAX_SPLIT_AMOUNT, splitEqually } from "@/lib/split";
 import { Field, FieldInput, SelectField } from "../../../../components/field";
-import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
+import { formatMoney, formatMoneyForInput, parseMoney, sumWrittenAmounts } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
 import { noteSaveAndMaybeAskForReview } from "../../../../lib/review-prompt";
@@ -149,6 +149,26 @@ export default function NewExpenseScreen() {
     { description: "", amountText: "", userIds: [] },
   ]);
   /**
+   * TUTAR, ELLE YAZILANA KADAR KALEMLERI TAKIP EDIYOR (21 Ekim).
+   *
+   * Kullanici "100 cay, 200 kahve" yazdiktan sonra 300'u tutar alanina bir
+   * kez daha yazmak zorundaydi: kalem toplami altta gorunuyordu ama yukari
+   * yazilmiyordu. Simdi tutar alani, kullanici ona dokunana kadar
+   * kalemlerin toplamini gosteriyor.
+   *
+   * ELLE YAZILINCA DURUYOR: ustteki tutar ODENEN, kalemler onun dokumu.
+   * 300'luk kalemlere 330 odendiyse 30 bahsis herkese yedigi oranda
+   * dagiliyor (ADR-052) - takip hep sursaydi bu yazilamazdi.
+   *
+   * BOS BIRAKIP CIKINCA YENIDEN BASLIYOR, silerken DEGIL. Silerken
+   * baslasaydi, yeni bir tutar yazmak icin alani bosaltan kullanicinin
+   * onune toplam geri gelir, yazdigi onun arkasina eklenirdi.
+   *
+   * Fisten okunan tutar da elle yazilmis sayiliyor: fisin toplami odenen
+   * tutardir, kalemler onu ezmemeli.
+   */
+  const [amountFollowsItems, setAmountFollowsItems] = useState(true);
+  /**
    * KATEGORI. Kullanici SECMEDIYSE null kaliyor ve gonderilmiyor - sunucu o
    * zaman aciklamadan kendisi tahmin ediyor (ADR-028: karari sunucu verir).
    * Tahmin ekranda GORUNUYOR ama secim olarak yazilmiyor: gorunen ile
@@ -259,6 +279,7 @@ export default function NewExpenseScreen() {
         const guess = guessReceiptAmount(lines.map((line) => line.text));
         if (guess) {
           setAmountText(formatMoneyForInput(guess.amount, locale));
+          setAmountFollowsItems(false);
           setReadFrom(guess.source);
           setReceiptTotal(guess.amount);
         }
@@ -315,6 +336,9 @@ export default function NewExpenseScreen() {
      * kaydedilirdi. Bir ekran testi tam bunu yakaladi.
      */
     setAmountText(formatMoneyForInput(chosenTotal, locale));
+    // Tutar artik kalemlerin toplami; kullanici bir kalemi duzeltirse
+    // tutar da onu izlemeli.
+    setAmountFollowsItems(true);
     setSplitType("ITEMIZED");
     setFoundItems(null);
     setPickedItems({});
@@ -405,7 +429,14 @@ export default function NewExpenseScreen() {
    * yazildigi dahil. Ayni dosyayi iki istemci de kullaniyor.
    */
   const equalShares = useMemo(() => {
+    /**
+     * SINIRIN USTU ICIN ONIZLEME YOK. splitEqually o tutarda hata firlatiyor
+     * ve bu hesap cizim sirasinda yapildigi icin hata EKRANI cokertiyordu:
+     * 21 milyon liranin ustunde bir tutar yazmak uygulamayi kapatiyordu
+     * (21 Ekim, simulatorde). Kaydette anlasilir bir mesaj cikiyor.
+     */
     if (splitType !== "EQUAL" || amount === null || amount <= 0) return null;
+    if (amount > MAX_SPLIT_AMOUNT) return null;
     if (participants.length === 0) return null;
     const rows = splitEqually({
       amount,
@@ -424,10 +455,23 @@ export default function NewExpenseScreen() {
         }, 0)
       : null;
 
+  /**
+   * KALEMLER HEP BURADAN DEGISIYOR ki tutar takibi hicbir yolu kacirmasin.
+   * Takip edilmiyorsa tutara dokunulmuyor - kullanicinin yazdigi kalir.
+   */
+  function changeItems(next: ItemDraft[]) {
+    setItems(next);
+    if (amountFollowsItems) writeItemsTotal(next);
+  }
+
+  /** Tutar alanina kalemlerin toplamini yazar; okunabilen kalem yoksa bosaltir. */
+  function writeItemsTotal(list: ItemDraft[]) {
+    const total = sumWrittenAmounts(list.map((item) => item.amountText));
+    setAmountText(total === null ? "" : formatMoneyForInput(total, locale));
+  }
+
   function updateItem(index: number, changes: Partial<ItemDraft>) {
-    setItems((current) =>
-      current.map((item, at) => (at === index ? { ...item, ...changes } : item)),
-    );
+    changeItems(items.map((item, at) => (at === index ? { ...item, ...changes } : item)));
   }
 
   function toggleItemMember(index: number, userId: string) {
@@ -461,6 +505,10 @@ export default function NewExpenseScreen() {
     }
     if (amount === null || amount <= 0) {
       setError(t(amountText.trim() === "" ? "ui.amount_required" : "ui.amount_unreadable"));
+      return;
+    }
+    if (amount > MAX_SPLIT_AMOUNT) {
+      setError(t("ui.amount_too_large", { max: formatMoney(MAX_SPLIT_AMOUNT, currency, locale) }));
       return;
     }
     if (!payer) {
@@ -675,9 +723,19 @@ export default function NewExpenseScreen() {
             <View style={s.amountRow}>
               <FieldInput
                 testID="amount"
+                grow
                 style={s.amountInput}
                 value={amountText}
-                onChangeText={setAmountText}
+                onChangeText={(text) => {
+                  setAmountText(text);
+                  setAmountFollowsItems(false);
+                }}
+                onBlur={() => {
+                  // Bos birakilip cikildiysa takip yeniden basliyor.
+                  if (amountTextRef.current.trim() !== "") return;
+                  setAmountFollowsItems(true);
+                  if (splitType === "ITEMIZED") writeItemsTotal(items);
+                }}
                 keyboardType="decimal-pad"
                 placeholder={t("ui.amount_placeholder")}
                 editable={!busy}
@@ -767,7 +825,12 @@ export default function NewExpenseScreen() {
                   <Pressable
                     key={type}
                     style={[s.segment, active && s.segmentOn]}
-                    onPress={() => setSplitType(type)}
+                    onPress={() => {
+                      setSplitType(type);
+                      // Kalemlere donulduyse ve tutar takip ediliyorsa, once
+                      // girilmis kalemler tutara hemen yansisin.
+                      if (type === "ITEMIZED" && amountFollowsItems) writeItemsTotal(items);
+                    }}
                     disabled={busy}
                   >
                     <Text style={[s.segmentText, active && s.segmentTextOn]}>
@@ -813,9 +876,7 @@ export default function NewExpenseScreen() {
                       {items.length > 1 ? (
                         <Pressable
                           hitSlop={8}
-                          onPress={() =>
-                            setItems((current) => current.filter((_, at) => at !== index))
-                          }
+                          onPress={() => changeItems(items.filter((_, at) => at !== index))}
                           disabled={busy}
                         >
                           <Text style={s.itemRemove}>×</Text>

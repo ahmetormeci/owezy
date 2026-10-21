@@ -508,7 +508,41 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
-## 1.0.6 — BUILD 27 İNCELEMEDE (5 Ekim'de gönderildi; IBAN DAHİL + GÖRSEL KONTROL DÜZELTMELERİ)
+## 1.0.7 — BİRİKEN (build alınmadı)
+
+| | |
+|---|---|
+| Hızlı yazınca harf/rakam düşmesi (bütün alanlar) | Faz 54 · ADR-061 |
+| Tutar alanı yazısına göre büyüyor | Faz 54 · ADR-061 |
+| 21 milyon ₺ üstü tutarda çökme | Faz 54 · ADR-061 |
+| Kalem kalem: tutar kalem toplamını izliyor | Faz 54 · ADR-052 eki · web'de push ile canlı |
+
+Yeni native paket YOK — yalnızca JS. App Privacy değişmiyor.
+
+### Sürüm notu taslağı — 1.0.7 Türkçe
+
+```
+• Tutara hızlı yazarken rakamların kaybolması ya da yer değiştirmesi
+  düzeltildi.
+• Uzun tutarların baştaki rakamları artık görünüyor.
+• Kalem kalem eklerken toplam, tutar alanına kendiliğinden yazılıyor.
+  Bahşiş ya da indirim varsa tutarı kendin değiştirebilirsin.
+• Çok büyük bir tutar yazınca uygulamanın kapanması düzeltildi.
+```
+
+### Sürüm notu taslağı — 1.0.7 İngilizce
+
+```
+• Typing an amount quickly no longer drops or swaps digits.
+• Long amounts now show their first digits.
+• When you add items one by one, their total fills in the amount.
+  Change it yourself for a tip or a discount.
+• Typing a very large amount no longer closes the app.
+```
+
+---
+
+## 1.0.6 — YAYINDA (21 Ekim'de görüldü; build 27, IBAN DAHİL)
 
 **Build 25 (4 Ekim) TestFlight'ta denendi ve üç kontrolü geçti, ama
 incelemeye GÖNDERİLMEDİ:** IBAN'ın mobil tarafı (52b) o sırada bitti ve
@@ -589,7 +623,25 @@ kullanıcının kararı (27 Eylül): bir build hakkı kazanılıyor.
 
 ---
 
-## BEŞ ÜLKEDE ARAMADA GÖRÜNMÜYOR (25 Eylül, ölçüldü)
+## BEŞ ÜLKEDE ARAMA — 21 EKİM'DE DÜZELMİŞ (1.0.6 yayında)
+
+Aynı yolla yeniden ölçüldü (`apps.apple.com/<ülke>/iphone/search`):
+
+| Mağaza | "owezy" | "owezy split expenses" |
+|---|---|---|
+| US | 1. | 1. |
+| CA | 6. | 3. |
+| GB | 7. | 3. |
+| AU | 7. | 4. |
+| NZ | 3. | 2. |
+| TR (kontrol) | 1. | 1. |
+
+Beşinde de çıkıyor. Neyin düzelttiği bilinmiyor (1.0.6 dizini yenilemiş
+olabilir; Apple'a bildirim gönderildi mi bilinmiyor). "owezy" aramasında
+üstteki "Ozzy" uygulamaları hâlâ önde — markanın adı yakın bir kelimeye
+benziyor.
+
+### Geçmiş: BEŞ ÜLKEDE ARAMADA GÖRÜNMÜYORDU (25 Eylül, ölçüldü)
 
 Kullanıcının Kanada'daki bir tanıdığı (iPhone 17 Pro, Kanada hesabı)
 "owezy" aramasında uygulamayı ilk 10'da **göremedi**; doğrudan link

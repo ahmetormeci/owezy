@@ -9,7 +9,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../lib/auth";
@@ -17,7 +16,7 @@ import { apiBaseUrl } from "../lib/api";
 import { useTranslate } from "../lib/i18n";
 import { useTheme, type Theme } from "../lib/theme";
 import { Cap } from "../components/receipt";
-import { FieldInput } from "../components/field";
+import { FieldInput, StableTextInput } from "../components/field";
 
 // NEDEN KENDI EKRANIMIZ: mobilde hazir bir giris bileseni kullanmiyoruz;
 // akisi kendimiz kuruyoruz. Web'deki src/components/sign-in-form.tsx ile
@@ -269,7 +268,7 @@ export default function SignInScreen() {
             {step === "password" ? (
               <>
                 <Cap>{t("ui.password")}</Cap>
-                <TextInput
+                <StableTextInput
                   testID="password"
                   style={s.input}
                   value={password}

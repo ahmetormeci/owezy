@@ -133,7 +133,7 @@ describe("fisten cikan kalemler", () => {
      * Fisin toplamini birakip kalemleri de yazmak SUM(kalem) = tutar
      * degismezini kirardi (ADR-052) ve kayit sunucuda reddedilirdi.
      */
-    await waitFor(() => expect(screen.getByTestId("amount").props.value).toBe("128,90"));
+    await waitFor(() => expect(screen.getByTestId("amount")).toHaveDisplayValue("128,90"));
   });
 
   it("SECINCE bolusum KALEM KALEM'e geciyor ve kalemler forma giriyor", async () => {

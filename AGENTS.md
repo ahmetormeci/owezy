@@ -132,12 +132,14 @@ Bunlar tartışılmış ve karara bağlanmıştır (gerekçeler DECISIONS.md'de)
   Belirtisi yanıltıcı: Playwright "Process from config.webServer was not able
   to start" diyor, sanki testlerde bir sorun varmış gibi. Gerçek satır bir
   üstte: `⨯ Another next dev server is already running.`
-- **iOS simülatöründe mobil uygulamayı denerken iki tuzak var** (Faz 27.4'te
-  ikisi de yaşandı). `xcrun simctl boot` cihazı başlatır ama **görünür bir
-  pencere açmaz** — kullanıcı hiçbir şey yazamaz. `open -a Simulator` da
-  çalıştırılmalı. İkincisi: uzun metinleri tek seferde yazdırmak **karakter
-  düşürüyor** (31 karakterlik bir e-postanın 14'ü gitti ve hata "geçersiz
-  e-posta" gibi göründü). Kısa parçalar hâlinde yaz ve her adımda ekran
+- **iOS simülatöründe mobil uygulamayı denerken:** `xcrun simctl boot`
+  cihazı başlatır ama **görünür bir pencere açmaz** — kullanıcı hiçbir şey
+  yazamaz; pencereyi açmak gerekir. Yazarken **karakter düşmesi** (31
+  karakterlik bir e-postanın 14'ü gitmişti) aylarca simülatörün kusuru
+  sanıldı — **değildi**: uygulamanın kontrollü metin alanlarının hatasıydı,
+  telefonda da oluyordu ve 21 Ekim'de düzeltildi (ADR-061). Simülatörde
+  bir alan yine harf düşürürse **önce uygulamadan şüphelen**; karşılaştırma
+  için aynı metni Ayarlar'ın arama kutusuna yaz. Yazdıktan sonra ekran
   görüntüsüyle doğrula.
 
 - E2E çıktısındaki `[WebServer]` satırları dev sunucusunun stderr'i: tarayıcı

@@ -30,22 +30,32 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-10-05
+Updated: 2026-10-21
 
 Current task:
-  1.0.6 = BUILD 27 - INCELEMEDE (5 Ekim). Kullanici App Store Connect
-  adimlarini (App Privacy, build 27, surum notlari) kendisi yapip
-  incelemeye gonderdi. Surum notlari STORE.md'deki halleriyle (TR + EN).
-  SIRADA APPLE VAR. Onay gelince kullanici yayina alir (ya da otomatik
-  yayin seciliyse kendiliginden cikar). Reddedilirse gerekce panelde -
-  kullanici iletir, birlikte bakilir.
-  Yayinda mi: itunes.apple.com/lookup?bundleId=net.owezy.app&country=us
-  -> "version" 1.0.6 olunca yayinda (5 Ekim: hala 1.0.5).
+  FAZ 54 - TUTAR ALANI VE KALEM TOPLAMI: COMMIT'LENDI VE PUSH'LANDI
+  (21 Ekim, kullanicinin istegiyle). Kullanicinin bildirdigi iki sey:
+    1. Tutara hizli "123" yazinca "1" gidiyor, "23"/"32" gidip geliyordu.
+    2. Kalem kalem eklerken toplam tutara yazilmiyordu.
+  Yapilan (ayrinti PROGRESS Faz 54, ADR-061, ADR-052 eki):
+    - Mobilde butun metin alanlari kontrolsuz (StableTextInput) - hizli
+      yazinca harf dusmesi bitti. Simulatorde once/sonra olculdu.
+    - Tutar alanlari yazinin boyuna gore buyuyor (FieldInput grow).
+    - 21 milyon TL ustu tutar harcama ekranini cokertiyordu - duzeldi.
+    - Kalem kalem: tutar, elle yazilana kadar kalem toplamini izliyor
+      (web + mobil).
+  Dogrulama: mobil tsc/lint/145 jest; web tsc/lint/861 vitest; tam E2E
+  73 gecti 1 atlandi (16.8 dk - ilk deneme E2E veritabani UYKUDA oldugu
+  icin P1001 ile hic baslamadi; nc ile port acilinca yeniden).
+  Web kismi (kalem takibi + sinir mesaji) push ile canliya cikiyor -
+  dogrulama: GitHub deployments API (asagida). SIRADAKI ADIM: telefona
+  1.0.7 ile gider - build kullanicinin kararinda (EAS kotasi). Surum notu
+  taslagi STORE.md "1.0.7".
 
-  1.0.6 YAYINA CIKINCA BENIM ISIM: bes ulkede (us/ca/gb/au/nz) aramayi
-  apps.apple.com/<cc>/iphone/search?term=owezy ile yeniden olc.
+  1.0.6 YAYINDA (lookup 21 Ekim). Bes ulke aramasi 21 Ekim'de olculdu:
+  bes ulkede de cikiyor (STORE.md).
 
-  5 EKIM GORSEL KONTROL - NASIL YAPILDI (bir dahakine ayni yol):
+  SIMULATORDE GIRISLI KONTROL - NASIL YAPILIR (5 ve 21 Ekim'de boyle):
     Kullanici izin verdi: yerel build'de, yerel gelistirme sunucusuna bagli
     bir TEST hesabiyla giris. Production'a dokunulmadi.
     - Sunucu: RESEND_API_KEY="" npm run dev  (kod e-postasi GITMEZ)
@@ -55,14 +65,18 @@ Current task:
       createGroupInvite + acceptGroupInvite, createExpense) - tsx ile
       --env-file=.env.local --tsconfig tsconfig.json, NODE_OPTIONS
       --conditions=react-server
-    - SIMULATOR TUZAKLARI: yazma KARAKTER DUSURUYOR (adres "iban@" ya da
-      "iba@" oldu - hangisi yazildiysa onunla devam), sayi tusuna hizli art
-      arda dokunus da dusuruyor (her dokunus arasi ~0.6 sn). Aracin kendi
-      ekran goruntusu olayin GERISINDE kaliyor - "xcrun simctl io <udid>
-      screenshot" ile 1-2 sn sonra al. Uzun metin: simctl pbcopy + klavye
-      ustundeki "Paste from..." onerisi. iOS 26.5 simulatorunde (FCD7F36E)
-      klavye CIKMIYOR ve yazi alana ULASMIYOR - iOS 27 simulatoru kullan
-      ("Owezy Test iOS 27", 28E27032, Claude erisim izni verildi).
+    - SIMULATOR TUZAKLARI: "yazma karakter dusuruyor" UYGULAMANIN hatasiydi
+      (ADR-061), simulatorun degil - 21 Ekim'den sonra 31 karakter tek
+      seferde geliyor. Klavye acilirken yer degistiren dugmeye HEMEN
+      dokunma (dokunus bosa gidiyor); yazar yazmaz "Kaydet"e basmak
+      otomasyon hizinda yazidan once islenebiliyor. Aracin kendi ekran
+      goruntusu olayin GERISINDE kaliyor - "xcrun simctl io <udid>
+      screenshot" ile 1-2 sn sonra al. iOS 26.5 simulatorunde (FCD7F36E)
+      klavye CIKMIYOR - iOS 27 simulatoru kullan ("Owezy Test iOS 27",
+      28E27032). iOS Simulator aracinda HER KOMUTTA device VER: verilmeyince
+      21 Ekim'de bir dokunus BASKA projenin simulatorune (4FC4379D) gitti.
+      "open -a Simulator" bu makinede (Xcode 27.1) uygulamayi bulamiyor;
+      panel icin aracin attach'i yetiyor.
     - Imzasiz build'de Keychain kalici degil: uygulamayi YENIDEN BASLATMA
       ya da yeniden KURMA oturumu dusurur - giris tekrar gerekir.
     GELISTIRME VERITABANINDA KALAN TEST VERISI: iban@ / iba@ / iban-te@ /
@@ -284,10 +298,10 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     (mobil .env.local localhost:3000'e bakiyor), sonra cd mobile && npx
     expo start --go ve xcrun simctl openurl booted "exp://127.0.0.1:8081".
     Native modul (fis OCR) Expo Go'da CALISMAZ.
-  - MOBILDE GIRISI AJAN YAPAMAZ: iki yol da kimlik bilgisi istiyor
-    (parola ya da tek seferlik kod) ve forma yazmak yasak. Kullanici bir
-    kez girmeli. Metin yazdirmak karakter dusurebiliyor - kisa parcalar,
-    her adimda ekran goruntusu.
+  - MOBILDE GIRIS: kimlik bilgisi forma yazilmaz. TEK ISTISNA kullanicinin
+    o is icin verdigi izin: yerel build + yerel sunucu + gelistirme
+    veritabanindaki TEST hesabi (yukaridaki yol). Production ya da gercek
+    hesap ASLA.
   - TEK GRUPLU KULLANICI gruplar listesini hic gormuyor (Redirect) ve GERI
     DUGMESI YOK. Grup ekranindan bir sey kaldirirken "geri dugmesi
     karsilar" denmez.

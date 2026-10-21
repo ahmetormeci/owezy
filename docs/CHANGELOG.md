@@ -8,6 +8,21 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-10-21 — Tutar alanı: hızlı yazma, genişlik, kalem toplamı (Faz 54, ADR-061)
+
+Kullanıcı tutara hızlı yazınca rakamların düştüğünü ya da yer
+değiştirdiğini bildirdi. Simülatörde ölçüldü: sebep mobil metin alanlarının
+"kontrollü" olması — geri gelen eski değer telefonun yazdığını eziyordu.
+Bütün mobil alanlar `StableTextInput`'a geçti. Aynı ölçüm iki kusur daha
+buldu: tutar alanı yazısına göre büyümüyordu (baştaki rakamlar görünmez
+oluyordu) ve 21 milyon ₺ üstü bir tutar harcama ekranını çökertiyordu —
+ikisi de düzeltildi. Ayrıca kalem kalem eklerken tutar, elle yazılana kadar
+kalemlerin toplamını izliyor (mobil + web). "Simülatörde yazma karakter
+düşürüyor" tuzağı da bu hataymış; AGENTS.md düzeltildi. 1.0.6 yayında;
+beş ülkede arama yeniden ölçüldü — beşinde de çıkıyor (STORE.md).
+
+---
+
 ## 2026-10-05 — 1.0.6 incelemeye gönderildi
 
 Build 27; kullanıcı App Store Connect'te gizlilik anketini (misafir adları +

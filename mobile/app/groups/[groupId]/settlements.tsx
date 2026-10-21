@@ -259,6 +259,7 @@ export default function SettlementsScreen() {
             <Text style={s.fieldLabel}>{t("ui.amount").toLocaleUpperCase(locale)}</Text>
             <View style={s.amountRow}>
               <FieldInput
+                grow
                 style={s.amountInput}
                 value={amountText}
                 onChangeText={setAmountText}

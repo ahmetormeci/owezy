@@ -92,7 +92,7 @@ describe("OCR modulu yokken", () => {
 
     // Fis eklendi ama tutar OKUNMADI - ve hicbir hata gosterilmedi.
     // OCR bir kolaylik; yoksa kullanici tutari elle yaziyor.
-    expect(screen.getByTestId("amount").props.value).toBe("");
+    expect(screen.getByTestId("amount")).toHaveDisplayValue("");
     expect(screen.queryByText("Fişteki toplamdan okundu")).toBeNull();
   });
 });

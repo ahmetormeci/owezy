@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,7 +21,7 @@ import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
 import { useTheme, type Theme } from "../../../../lib/theme";
 import { SectionRule } from "../../../../components/receipt";
-import { Field, SelectField } from "../../../../components/field";
+import { Field, FieldInput, SelectField, StableTextInput } from "../../../../components/field";
 import { ReceiptPhoto } from "../../../../components/receipt-photo";
 import { ExpenseComments } from "../../../../components/expense-comments";
 
@@ -458,7 +457,8 @@ export default function ExpenseScreen() {
             <Text style={s.fieldLabel}>{t("ui.amount").toLocaleUpperCase(locale)}</Text>
             <View style={s.amountRow}>
               {canEdit ? (
-                <TextInput
+                <FieldInput
+                  grow
                   testID="amount"
                   style={[s.amountInput, !canEditAmount && s.amountLocked]}
                   value={amountText}
@@ -482,7 +482,7 @@ export default function ExpenseScreen() {
           <View style={s.fields}>
             {canEdit ? (
               <Field label={t("ui.description")}>
-                <TextInput
+                <StableTextInput
                   testID="description"
                   style={s.fieldInput}
                   value={description}

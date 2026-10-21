@@ -140,4 +140,41 @@ test.describe("kalem kalem bolusum", () => {
     await expect(editedSecond.getByRole("checkbox", { name: "testuser2" })).toBeChecked();
     await expect(editedSecond.getByRole("checkbox", { name: "testuser1" })).not.toBeChecked();
   });
+
+  /**
+   * TUTAR, ELLE YAZILANA KADAR KALEMLERI TAKIP EDIYOR (21 Ekim).
+   *
+   * Kullanici "100 cay, 200 kahve" yazdiktan sonra 300'u tutara bir kez
+   * daha yaziyordu. Simdi tutar kalemleri izliyor; elle yazilinca duruyor
+   * (fark bahsis ya da indirim, ADR-052), bos birakip cikinca yeniden
+   * basliyor. Birim testler mobil ekrani sinadi; burasi webdeki formun
+   * ayni kurala uydugunu gosteriyor.
+   */
+  test("tutar elle yazilana kadar kalem toplamini izliyor", async ({ browser }) => {
+    const owner = await pageAs(browser, "owner");
+    await createGroupAndOpen(owner, uniqueGroupName("takip"));
+    await owner.getByRole("link", { name: "Harcama ekle" }).click();
+
+    const amount = owner.getByLabel("Tutar", { exact: true });
+    await owner.getByLabel("Nasıl bölünecek?").selectOption("ITEMIZED");
+
+    await owner.getByLabel("Tutar 1", { exact: true }).fill("100");
+    await expect(amount).toHaveValue("100");
+    // Bos bir satir toplami SILMIYOR.
+    await owner.getByRole("button", { name: "Kalem ekle" }).click();
+    await expect(amount).toHaveValue("100");
+    await owner.getByLabel("Tutar 2", { exact: true }).fill("200");
+    await expect(amount).toHaveValue("300");
+
+    // Elle yazilan tutar ezilmiyor; aradaki fark bahsis.
+    await amount.fill("330");
+    await owner.getByLabel("Tutar 2", { exact: true }).fill("210");
+    await expect(amount).toHaveValue("330");
+    await expect(owner.getByText("Bahşiş / servis")).toBeVisible();
+
+    // Bos birakip cikinca takip yeniden basliyor.
+    await amount.fill("");
+    await amount.blur();
+    await expect(amount).toHaveValue("310");
+  });
 });
