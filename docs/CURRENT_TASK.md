@@ -56,11 +56,14 @@ Current task:
   29 Eylul'dekiyle ayni durum. YAMALAR ALINDI, COMMIT'LENDI VE PUSH'LANDI
   (21 Ekim, kullanicinin istegiyle): npx expo install --fix -> expo-doctor 21/21, tsc, lint,
   145 jest, expo export temiz; native parcalar degistigi icin simulatorde
-  Release build + acilis + kapaliyken owezy:// linki denendi. 1.0.7 BUILD'I ALINIYOR
-  (21 Ekim, kullanicinin istegiyle; app.json 1.0.7). Build bitince: log'da
-  Xcode 26.6 (17F113) dogrula; submit kullaniciya sorulur. TestFlight'ta
-  KULLANICI: acilis, kapaliyken davet linki, bildirime dokununca grup
-  (Expo yamalari native parcalari degistirdi). Surum notu STORE.md "1.0.7".
+  Release build + acilis + kapaliyken owezy:// linki denendi. 1.0.7 BUILD 28 APP STORE
+  CONNECT'TE (21 Ekim): EAS 73244045, commit 6910d2f, log'da Xcode 26.6
+  (17F113); submit c3ec53e4 FINISHED. SIRADA KULLANICI, TestFlight'ta:
+  acilis, kapaliyken davet linki, bildirime dokununca grup (Expo yamalari
+  native parcalari degistirdi). Kullanici 21 Ekim'de "denedim, sorun yok"
+  dedi ama o an 1.0.7 TestFlight'ta DEGILDI - 1.0.7'de denendigi
+  dogrulanmadan "gecti" yazilmaz. Sonra incelemeye gonderim (kullanici,
+  panelde); surum notu STORE.md "1.0.7".
 
   1.0.6 YAYINDA (lookup 21 Ekim). Bes ulke aramasi 21 Ekim'de olculdu:
   bes ulkede de cikiyor (STORE.md).

@@ -26,6 +26,9 @@ yamasını yayınlamıştı (expo 57.0.26 → 57.0.30 vb.). Yamalar alındı;
 native parçalar değiştiği için simülatörde açılış ve uygulama kapalıyken
 davet linki denendi.
 
+1.0.7 build 28 alındı (Xcode 26.6) ve App Store Connect'e yüklendi;
+TestFlight kontrolü kullanıcıda.
+
 ---
 
 ## 2026-10-05 — 1.0.6 incelemeye gönderildi
