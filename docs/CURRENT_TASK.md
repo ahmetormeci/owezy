@@ -47,8 +47,14 @@ Current task:
   Dogrulama: mobil tsc/lint/145 jest; web tsc/lint/861 vitest; tam E2E
   73 gecti 1 atlandi (16.8 dk - ilk deneme E2E veritabani UYKUDA oldugu
   icin P1001 ile hic baslamadi; nc ile port acilinca yeniden).
-  Web kismi (kalem takibi + sinir mesaji) push ile canliya cikiyor -
-  dogrulama: GitHub deployments API (asagida). SIRADAKI ADIM: telefona
+  010c3f2: Vercel production deploy SUCCESS (21 Ekim 05:30) - web kismi
+  (kalem takibi + sinir mesaji) CANLI. CI KIRMIZI ama koddan degil: kod
+  adimlari (web + mobil tsc/lint/test) yesil, DUSEN expo-doctor - Expo 9
+  paketin yamasini yayinlamis (expo 57.0.26->57.0.30, expo-router
+  57.0.24->57.0.28, expo-notifications, expo-constants, expo-linking,
+  expo-sharing, expo-splash-screen, expo-image-manipulator, jest-expo).
+  29 Eylul'dekiyle ayni durum; yamalar KULLANICININ ONAYINDA (kod
+  degisikligi). 1.0.7 build'inden ONCE alinmali. SIRADAKI ADIM: telefona
   1.0.7 ile gider - build kullanicinin kararinda (EAS kotasi). Surum notu
   taslagi STORE.md "1.0.7".
 
