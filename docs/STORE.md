@@ -508,7 +508,7 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
-## 1.0.7 — BİRİKEN (build alınmadı)
+## 1.0.7 — BUILD ALINIYOR (21 Ekim, kullanıcının isteğiyle)
 
 | | |
 |---|---|

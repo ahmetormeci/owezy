@@ -56,9 +56,11 @@ Current task:
   29 Eylul'dekiyle ayni durum. YAMALAR ALINDI, COMMIT'LENDI VE PUSH'LANDI
   (21 Ekim, kullanicinin istegiyle): npx expo install --fix -> expo-doctor 21/21, tsc, lint,
   145 jest, expo export temiz; native parcalar degistigi icin simulatorde
-  Release build + acilis + kapaliyken owezy:// linki denendi. SIRADAKI ADIM: telefona
-  1.0.7 ile gider - build kullanicinin kararinda (EAS kotasi). Surum notu
-  taslagi STORE.md "1.0.7".
+  Release build + acilis + kapaliyken owezy:// linki denendi. 1.0.7 BUILD'I ALINIYOR
+  (21 Ekim, kullanicinin istegiyle; app.json 1.0.7). Build bitince: log'da
+  Xcode 26.6 (17F113) dogrula; submit kullaniciya sorulur. TestFlight'ta
+  KULLANICI: acilis, kapaliyken davet linki, bildirime dokununca grup
+  (Expo yamalari native parcalari degistirdi). Surum notu STORE.md "1.0.7".
 
   1.0.6 YAYINDA (lookup 21 Ekim). Bes ulke aramasi 21 Ekim'de olculdu:
   bes ulkede de cikiyor (STORE.md).
