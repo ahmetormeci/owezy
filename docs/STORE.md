@@ -516,8 +516,9 @@ veritabanında**, üretime dokunulmadı.
 | Tutar alanı yazısına göre büyüyor | Faz 54 · ADR-061 |
 | 21 milyon ₺ üstü tutarda çökme | Faz 54 · ADR-061 |
 | Kalem kalem: tutar kalem toplamını izliyor | Faz 54 · ADR-052 eki · web'de push ile canlı |
+| 9 Expo paketinin yaması (expo 57.0.30, expo-router 57.0.28, expo-notifications 57.0.23 …) | 21 Ekim — CI'ı yeniden yeşile çevirdi; native parçalar değişti, TestFlight'ta açılış + kapalıyken davet linki + bildirim yine denenmeli |
 
-Yeni native paket YOK — yalnızca JS. App Privacy değişmiyor.
+Yeni native paket YOK; var olanların yamaları var. App Privacy değişmiyor.
 
 ### Sürüm notu taslağı — 1.0.7 Türkçe
 

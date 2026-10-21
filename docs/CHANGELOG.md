@@ -21,6 +21,11 @@ kalemlerin toplamını izliyor (mobil + web). "Simülatörde yazma karakter
 düşürüyor" tuzağı da bu hataymış; AGENTS.md düzeltildi. 1.0.6 yayında;
 beş ülkede arama yeniden ölçüldü — beşinde de çıkıyor (STORE.md).
 
+Push sonrası CI'da yalnızca `expo-doctor` kırmızıydı: Expo 9 paketin
+yamasını yayınlamıştı (expo 57.0.26 → 57.0.30 vb.). Yamalar alındı;
+native parçalar değiştiği için simülatörde açılış ve uygulama kapalıyken
+davet linki denendi.
+
 ---
 
 ## 2026-10-05 — 1.0.6 incelemeye gönderildi

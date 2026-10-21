@@ -53,8 +53,10 @@ Current task:
   paketin yamasini yayinlamis (expo 57.0.26->57.0.30, expo-router
   57.0.24->57.0.28, expo-notifications, expo-constants, expo-linking,
   expo-sharing, expo-splash-screen, expo-image-manipulator, jest-expo).
-  29 Eylul'dekiyle ayni durum; yamalar KULLANICININ ONAYINDA (kod
-  degisikligi). 1.0.7 build'inden ONCE alinmali. SIRADAKI ADIM: telefona
+  29 Eylul'dekiyle ayni durum. YAMALAR ALINDI, COMMIT'LENDI VE PUSH'LANDI
+  (21 Ekim, kullanicinin istegiyle): npx expo install --fix -> expo-doctor 21/21, tsc, lint,
+  145 jest, expo export temiz; native parcalar degistigi icin simulatorde
+  Release build + acilis + kapaliyken owezy:// linki denendi. SIRADAKI ADIM: telefona
   1.0.7 ile gider - build kullanicinin kararinda (EAS kotasi). Surum notu
   taslagi STORE.md "1.0.7".
 
