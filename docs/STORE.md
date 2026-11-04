@@ -508,12 +508,14 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
-## 1.0.7 — BUILD 28 APP STORE CONNECT'TE (21 Ekim), TESTFLIGHT KONTROLÜ KULLANICIDA
+## 1.0.7 — BUILD 28 TESTFLIGHT'TA GEÇTİ (4 Kasım), İNCELEMEYE GÖNDERİM KULLANICIDA
 
 EAS build `73244045` (commit 6910d2f, log'da Xcode 26.6 (17F113), imaj
-`macos-tahoe-26.5-xcode-26.6`), submit `c3ec53e4` FINISHED. TestFlight'ta
-kullanıcı dener: açılış, kapalıyken davet linki, bildirime dokununca grup.
-İncelemeye gönderim bu kontrolden SONRA, kullanıcı panelde yapar.
+`macos-tahoe-26.5-xcode-26.6`), submit `c3ec53e4` FINISHED (21 Ekim).
+**TestFlight kontrolü geçti (4 Kasım):** kullanıcı build 28'i telefonda
+denedi — açılış, kapalıyken davet linki, bildirime dokununca grup; sorun
+yok. Sırada: kullanıcı panelde incelemeye gönderir — **build 28**'i seçer,
+aşağıdaki iki sürüm notunu girer; App Privacy değişmiyor.
 
 
 | | |

@@ -8,6 +8,20 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-04 — 1.0.7 TestFlight'ta geçti; Expo'da yeni yamalar, SDK 58 "latest"
+
+Kullanıcı build 28'i telefonda denedi: açılış, uygulama kapalıyken davet
+linki, bildirime dokununca grup — sorun yok. İncelemeye gönderim
+kullanıcıda (build 28, sürüm notu STORE.md). Aynı gün ölçüldü:
+`expo-doctor` yine 20/21 — Expo dört paketin yamasını yayınlamış (expo
+57.0.31, expo-notifications, expo-router, expo-sharing); alınmadıkça CI'da
+bu adım kırmızı. Expo SDK 58 artık npm'de "latest". İkisi de kullanıcı
+kararı. Dış dünya ölçümü (DNS, canlı sayfalar, mağaza, ortam adları)
+CURRENT_TASK'ta yenilendi; beş ülke maddesi açık listeden çıktı (21
+Ekim'de beşinde de çıkıyordu).
+
+---
+
 ## 2026-10-21 — Tutar alanı: hızlı yazma, genişlik, kalem toplamı (Faz 54, ADR-061)
 
 Kullanıcı tutara hızlı yazınca rakamların düştüğünü ya da yer

@@ -2754,7 +2754,7 @@ tasarıma uygun; panoya boşluksuz IBAN gidiyor (simctl pbpaste ile okundu).
   diyordu (IBAN'dan önce de vardı; web'de zaten "Kim ödedi?").
 1.0.6 bu yüzden build 27.
 
-## Faz 54 — Tutar alanı: hızlı yazma, genişlik, kalem toplamı · **BİTTİ, WEB KISMI PUSH İLE CANLI; MOBİLİ 1.0.7**
+## Faz 54 — Tutar alanı: hızlı yazma, genişlik, kalem toplamı · **BİTTİ, WEB KISMI PUSH İLE CANLI; MOBİLİ 1.0.7 (TestFlight'ta geçti, 4 Kasım)**
 
 Kullanıcının bildirdiği iki şey (21 Ekim): tutara hızlı "123" yazınca "1"
 gidiyor ya da rakamlar yer değiştiriyordu; kalem kalem eklerken toplam

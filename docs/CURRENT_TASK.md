@@ -30,43 +30,34 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-10-21
+Updated: 2026-11-04
 
 Current task:
-  FAZ 54 - TUTAR ALANI VE KALEM TOPLAMI: COMMIT'LENDI VE PUSH'LANDI
-  (21 Ekim, kullanicinin istegiyle). Kullanicinin bildirdigi iki sey:
-    1. Tutara hizli "123" yazinca "1" gidiyor, "23"/"32" gidip geliyordu.
-    2. Kalem kalem eklerken toplam tutara yazilmiyordu.
-  Yapilan (ayrinti PROGRESS Faz 54, ADR-061, ADR-052 eki):
-    - Mobilde butun metin alanlari kontrolsuz (StableTextInput) - hizli
-      yazinca harf dusmesi bitti. Simulatorde once/sonra olculdu.
-    - Tutar alanlari yazinin boyuna gore buyuyor (FieldInput grow).
-    - 21 milyon TL ustu tutar harcama ekranini cokertiyordu - duzeldi.
-    - Kalem kalem: tutar, elle yazilana kadar kalem toplamini izliyor
-      (web + mobil).
-  Dogrulama: mobil tsc/lint/145 jest; web tsc/lint/861 vitest; tam E2E
-  73 gecti 1 atlandi (16.8 dk - ilk deneme E2E veritabani UYKUDA oldugu
-  icin P1001 ile hic baslamadi; nc ile port acilinca yeniden).
-  010c3f2: Vercel production deploy SUCCESS (21 Ekim 05:30) - web kismi
-  (kalem takibi + sinir mesaji) CANLI. CI KIRMIZI ama koddan degil: kod
-  adimlari (web + mobil tsc/lint/test) yesil, DUSEN expo-doctor - Expo 9
-  paketin yamasini yayinlamis (expo 57.0.26->57.0.30, expo-router
-  57.0.24->57.0.28, expo-notifications, expo-constants, expo-linking,
-  expo-sharing, expo-splash-screen, expo-image-manipulator, jest-expo).
-  29 Eylul'dekiyle ayni durum. YAMALAR ALINDI, COMMIT'LENDI VE PUSH'LANDI
-  (21 Ekim, kullanicinin istegiyle): npx expo install --fix -> expo-doctor 21/21, tsc, lint,
-  145 jest, expo export temiz; native parcalar degistigi icin simulatorde
-  Release build + acilis + kapaliyken owezy:// linki denendi. 1.0.7 BUILD 28 APP STORE
-  CONNECT'TE (21 Ekim): EAS 73244045, commit 6910d2f, log'da Xcode 26.6
-  (17F113); submit c3ec53e4 FINISHED. SIRADA KULLANICI, TestFlight'ta:
-  acilis, kapaliyken davet linki, bildirime dokununca grup (Expo yamalari
-  native parcalari degistirdi). Kullanici 21 Ekim'de "denedim, sorun yok"
-  dedi ama o an 1.0.7 TestFlight'ta DEGILDI - 1.0.7'de denendigi
-  dogrulanmadan "gecti" yazilmaz. Sonra incelemeye gonderim (kullanici,
-  panelde); surum notu STORE.md "1.0.7".
+  1.0.7 - TESTFLIGHT'TA GECTI (4 Kasim). Kullanici build 28'i telefonda
+  denedi: acilis, uygulama kapaliyken davet linki, bildirime dokununca
+  grup - "sorun yok".
+  SIRADA KULLANICI: App Store Connect'te incelemeye gonderim.
+    - Surumde BUILD 28'i sec.
+    - Surum notu STORE.md "1.0.7" (TR + EN).
+    - App Privacy DEGISMIYOR (yeni veri turu yok).
+    - appreview@ parola kontrolu (asagida GONDERIM KONTROL LISTESI 3).
+  Build 28: EAS 73244045, commit 6910d2f, Xcode 26.6 (17F113), submit
+  c3ec53e4. Icerik: Faz 54 (ADR-061, ADR-052 eki) + 21 Ekim'deki 9 Expo
+  yamasi. Faz 54'un web kismi 010c3f2 ile zaten canlida.
 
-  1.0.6 YAYINDA (lookup 21 Ekim). Bes ulke aramasi 21 Ekim'de olculdu:
-  bes ulkede de cikiyor (STORE.md).
+  1.0.6 YAYINDA (lookup 4 Kasim: us/tr 1.0.6, 2026-10-05). Bes ulke
+  aramasi 21 Ekim'de olculdu: bes ulkede de cikiyor (STORE.md).
+
+  EXPO - 4 KASIM OLCUMU (ikisi de KULLANICI KARARI):
+    - expo-doctor YINE KIRMIZI (20/21): 4 yeni yama - expo 57.0.31,
+      expo-notifications 57.0.24, expo-router 57.0.29, expo-sharing
+      57.0.24. Bundan sonraki her push'ta CI'da expo-doctor duser.
+      Yamalari almak KOD commit'i (package.json + lock) - sor. 1.0.7'yi
+      etkilemez (build cikti); alinirsa bir sonraki build'e girer.
+    - SDK 58 ARTIK "latest" (npm dist-tags: latest 58.0.23, sdk-57
+      57.0.31). 21 Ekim'de EAS'ta Xcode 27.0 ve 27.1 imajlari vardi.
+      Sabitleme 1.0.7'de de bilerek duruyor (ADR-058) - kaldirmak SDK 58
+      isinin parcasi.
 
   SIMULATORDE GIRISLI KONTROL - NASIL YAPILIR (5 ve 21 Ekim'de boyle):
     Kullanici izin verdi: yerel build'de, yerel gelistirme sunucusuna bagli
@@ -96,33 +87,22 @@ Current task:
     iban-test-b@ / iban-test-c@owezy.test ve "IBAN testi: ..." gruplari.
     Zararsiz, istenirse silinebilir.
 
-  Build 25 (TestFlight'ta denendi) ve 26 KULLANILMIYOR.
-  EXPO'DA YENI: EAS'ta Xcode 27.0 ve 27.1 imajlari VAR; SDK 58.0.x
-  yayinda ama "latest" hala 57. Sabitleme 1.0.6'da bilerek duruyor
-  (ADR-058) - kaldirmak SDK 58 isinin parcasi.
-
->>> 1.0.6 - BUILD YOLU (bir sonraki surumde de aynisi) <<<
-  (Hatirlatma gorevi 1 Ekim'de uygulama kapali oldugu icin 4 Ekim'de
-  calisti.) Build icin kullanilan yol, bir sonraki surumde de aynisi:
+>>> BUILD YOLU (her surumde) <<<
     eas build --platform ios --profile production --non-interactive --no-wait
+    (eas global degil: npx --yes eas-cli ...)
     -> build log'undan Xcode 26.6 (17F113) oldugunu DOGRULA (eas.json'da
        image sabit - ADR-058).
-    -> submit ISTENIRSE eas submit (1.0.5'te ~55 dk surdu, normaldi).
-       eas submit YALNIZCA App Store Connect'e YUKLER -> TestFlight'ta
-       gorunur. INCELEMEYE GONDERME ayri adim: kullanici panelde,
-       TestFlight kontrolunden SONRA.
-  Surum app.json'da ZATEN 1.0.6. Surum notu iki dilde STORE.md.
-  1.0.6'da: misafir (50a) + sahiplenme (50b) + degerlendirme istegi (49)
-  + buyuk yazida dugme kirpilmasi + sahne yasam dongusu (51) + davet
-  ekraninda Turkce karakterler + kod ekraninda "spam klasorune bak" (53)
-  + IBAN mobil (52b).
+    -> submit ISTENIRSE eas submit (1.0.7'de yarim dakika, 1.0.5'te ~55 dk;
+       ikisi de normal). eas submit YALNIZCA App Store Connect'e YUKLER ->
+       TestFlight'ta gorunur. INCELEMEYE GONDERME ayri adim: kullanici
+       panelde, TestFlight kontrolunden SONRA.
+  Surum app.json'da elle artirilir; build numarasi EAS'ta (remote,
+  autoIncrement). Surum notu iki dilde STORE.md.
   >>> INCELEMEYE GONDERMEDEN ONCE TESTFLIGHT - SART (Faz 51) <<<
     Telefonda: (1) aciliyor mu, (2) uygulama KAPALIYKEN davet linkine
     dokununca davet ekrani geliyor mu, (3) bildirime dokununca grup
-    aciliyor mu. Simulatorde olculemeyen tam bu uc.
-  GONDERIMDE KULLANICI: App Privacy anketi (misafir ADLARI + IBAN ->
-  Financial Info / Other Financial Info - kategoriyi panelde sec, tahmin
-  etme) + appreview@ parola kontrolu + surumde BUILD 27'yi sec.
+    aciliyor mu. Simulatorde olculemeyen tam bu uc. "Gecti" yalnizca
+    kullanici O BUILD'de denedikten sonra yazilir.
 
 ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
   1. TEKRARLAYAN HARCAMA canlida gercekten uretim yaptigi HIC GORULMEDI.
@@ -131,41 +111,36 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      uretmesini gormek. Iki dakikalik yol: web'de "Bunu tekrarla" ile
      baslangici BUGUN olan bir harcama kur -> Vercel -> Cron Jobs -> Run
      -> harcama dusmeli. Kosu ozeti Runtime Logs'ta "[cron/recurring]".
-  2. BES ULKEDE (us/ca/gb/au/nz) ARAMADA YOK. Apple'a bildirim
-     (developer.apple.com/contact -> Distribution) gonderildi mi
-     BILINMIYOR. 1.0.6 yayina cikinca yeniden olc - gercek arama sayfasiyla:
-     apps.apple.com/<cc>/iphone/search?term=owezy (iTunes Search API
-     gercek aramayi YANSITMIYOR). Uygulama YALNIZCA iPhone icin
-     (supportsTablet: false) - iPad'de ya da Mac'te aramada zaten CIKMAZ;
-     sikayet gelirse once cihazi sor.
-  3. YORUM E2E TESTI 60 sn butcenin sinirinda (43-46 sn). test.slow()
+  2. YORUM E2E TESTI 60 sn butcenin sinirinda (43-46 sn). test.slow()
      onerildi - KULLANICI KARARI.
-  4. 2FA KOPRUSU (ADR-045): mobil 1.0 icin gecici sunucu yamasi. 1.0'da
+  3. 2FA KOPRUSU (ADR-045): mobil 1.0 icin gecici sunucu yamasi. 1.0'da
      kimse kalmadiysa kaldirilir - kullanici App Store Connect ->
      Analytics'te surume gore oturumlara bakacak. Dogrulama yolu asagida.
-  5. DMARC RAPORLARI (Cloudflare -> Email -> DMARC Management) birkac gun
-     icinde dolacak: junk sorununu hangi servis cikariyor (ADR-060).
-  6. SDK 58: kararli cikinca ayri is (ADR-058). Son tarih NISAN 2027
-     (Apple, iOS 27 SDK). Xcode 27'ye gecilen gun uygulama yeniden
-     boyutlandirilabilir oluyor - duzen farkli genisliklerde denenmeli.
+  4. DMARC RAPORLARI (Cloudflare -> Email -> DMARC Management): 27
+     Eylul'den beri doluyor, HENUZ BAKILMADI. Junk sorununu hangi servis
+     cikariyor (ADR-060).
+  5. EXPO YAMALARI (4 Kasim, yukarida) - alinsin mi.
+  6. SDK 58: artik "latest" (4 Kasim). Ayri is (ADR-058). Son tarih
+     NISAN 2027 (Apple, iOS 27 SDK). Xcode 27'ye gecilen gun uygulama
+     yeniden boyutlandirilabilir oluyor - duzen farkli genisliklerde
+     denenmeli.
 
-DIS DUNYA - 27 EYLUL OLCUMU:
+DIS DUNYA - 4 KASIM OLCUMU:
   DMARC    v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r;
            rua=mailto:...@dmarc-reports.cloudflare.net   (Cloudflare raporlari)
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
-  MAGAZA   1.0.5 | 2026-09-26 | puan 0   (us ve tr)
-  CI       da03c4c success
+  MAGAZA   1.0.6 | 2026-10-05 | puan 0   (us ve tr)
+  CI       30d628c success (21 Ekim) - sonraki push'ta expo-doctor duser
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
            R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
   PANEL    olculemez: Resend takibi KAPALI, Cloudflare DMARC ACIK - kullanici
            27 Eylul'de yapti ve DMARC'taki rua bunu dogruluyor.
 
-CANLIDA OLAN (web) - MOBIL KARSILIGI 1.0.6'DA:
-  Faz 49 degerlendirme istegi (yalnizca mobil) · Faz 50a/50b misafir ·
-  Faz 51 sahne (yalnizca mobil) · Faz 53 posta · Faz 52a IBAN (web'de
-  canli, ef501a5) - mobili 52b de 1.0.6'da.
+CANLIDA OLAN (web) - MOBIL KARSILIGI 1.0.7'DE:
+  Faz 54 kalem takibi + 21 milyon sinir mesaji (010c3f2). Hizli yazma ve
+  tutar alaninin buyumesi yalnizca mobil.
 
 AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):
   - MISAFIR (ADR-057): isGuest isaretli, tek gruba bagli User; giris
@@ -177,6 +152,11 @@ AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):
     posta; son 7 gunde degismisse odeyene uyari. Misafirde ve silinmis
     hesapta IBAN yok - veritabani zorluyor.
   - DESTEKLENEN PARA BIRIMI YALNIZCA TRY VE USD (money.ts).
+  - UYGULAMA YALNIZCA iPhone ICIN (supportsTablet: false): iPad'de ya da
+    Mac'te magaza aramasinda CIKMAZ - "bulamiyorum" sikayetinde once
+    cihazi sor. Arama olcumu gercek sayfayla:
+    apps.apple.com/<cc>/iphone/search?term=owezy (iTunes Search API
+    gercek aramayi YANSITMIYOR).
   - PRODUCTION'DA GERCEK KULLANICI VAR. Production'a dokunan her betik once
     OKUYUP saymali, sonra yazmali. Production DATABASE_URL bu makineye
     GETIRILMEZ.
@@ -199,8 +179,8 @@ GONDERIM KONTROL LISTESI (her surum):
      mu - 1.0.3 bu kontrol atlandigi icin reddedildi (Guideline 2.1).
   4. App Privacy anketi degisti mi (yeni veri turu = yeni satir). Girili
      olanlar: Identifiers -> Device ID (push), User Content -> Photos or
-     Videos (fis, profil). 1.0.6'da misafir ADLARI ve Financial Info ->
-     Other Financial Info (IBAN) eklenecek.
+     Videos (fis, profil); 1.0.6'da eklendi: misafir ADLARI ve Financial
+     Info -> Other Financial Info (IBAN).
   5. Incelemeye gonder. Ekran kaydi gerekirse FIZIKSEL CIHAZDA (Apple'in
      ret metni acikca istiyor; simulator kaydi kullanilamadi).
   App Review Information dolu ve oyle kalmali (demo hesap + Notes; Notes
@@ -238,7 +218,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     basarisizken de 0 donuyor.
 
   E2E
-  - Tam kosu ~17 dk, 73 test (72 + 1 bilerek atlanan 2FA kopru testi).
+  - Tam kosu ~17 dk, 74 test (73 + 1 bilerek atlanan 2FA kopru testi).
     KOSU SURERKEN PROJE DOSYALARINA DOKUNMA. Sema degistiyse once
     npm run db:migrate:e2e. Tek seferlik kodlar veritabanindan okunuyor.
   - ONCE MAKINEYI TEMIZLE: 3000'deki dev sunucusu, Metro, simulatorler.
@@ -343,10 +323,10 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     spec'in kendisi. Okuma: DesignSync get_file, dogrudan projectId ile
     (list_projects BOS doner).
 
-TESTLER - NE NEREDE (27 Eylul):
-  KOK      npm test                  857 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      98 vitest + 120 jest
-  E2E      npm run test:e2e           72 + 1 bilerek atlanan, ~17 dk
+TESTLER - NE NEREDE (21 Ekim):
+  KOK      npm test                  861 birim (vitest, src/**)
+  MOBIL    cd mobile && npm test      98 vitest + 145 jest
+  E2E      npm run test:e2e           73 + 1 bilerek atlanan, ~17 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.
   Mobil testler KOKTEN kosmuyor: agacta iki ayri React kopyasi var.
