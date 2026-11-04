@@ -8,11 +8,11 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
-## 2026-11-04 — 1.0.7 TestFlight'ta geçti; Expo'da yeni yamalar, SDK 58 "latest"
+## 2026-11-04 — 1.0.7 incelemede; Expo'da yeni yamalar, SDK 58 "latest"
 
 Kullanıcı build 28'i telefonda denedi: açılış, uygulama kapalıyken davet
-linki, bildirime dokununca grup — sorun yok. İncelemeye gönderim
-kullanıcıda (build 28, sürüm notu STORE.md). Aynı gün ölçüldü:
+linki, bildirime dokununca grup — sorun yok. Aynı gün incelemeye gönderdi
+(build 28, sürüm notu STORE.md). Aynı gün ölçüldü:
 `expo-doctor` yine 20/21 — Expo dört paketin yamasını yayınlamış (expo
 57.0.31, expo-notifications, expo-router, expo-sharing); alınmadıkça CI'da
 bu adım kırmızı. Expo SDK 58 artık npm'de "latest". İkisi de kullanıcı

@@ -33,14 +33,13 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-04
 
 Current task:
-  1.0.7 - TESTFLIGHT'TA GECTI (4 Kasim). Kullanici build 28'i telefonda
-  denedi: acilis, uygulama kapaliyken davet linki, bildirime dokununca
-  grup - "sorun yok".
-  SIRADA KULLANICI: App Store Connect'te incelemeye gonderim.
-    - Surumde BUILD 28'i sec.
-    - Surum notu STORE.md "1.0.7" (TR + EN).
-    - App Privacy DEGISMIYOR (yeni veri turu yok).
-    - appreview@ parola kontrolu (asagida GONDERIM KONTROL LISTESI 3).
+  1.0.7 - INCELEMEDE (kullanici 4 Kasim'da gonderdi). Once TestFlight'ta
+  gecti (4 Kasim): acilis, uygulama kapaliyken davet linki, bildirime
+  dokununca grup - "sorun yok". BEKLENIYOR: Apple'in karari. Yayina
+  cikti mi: itunes.apple.com/lookup?bundleId=net.owezy.app&country=us
+  -> version 1.0.7. Ret gelirse ret metnini kullanicidan iste; duzeltme
+  build'i gerekirse main'den alinir - main'e o zamana kadar yalnizca
+  build'e girmesinde sakinca olmayan sey konmali.
   Build 28: EAS 73244045, commit 6910d2f, Xcode 26.6 (17F113), submit
   c3ec53e4. Icerik: Faz 54 (ADR-061, ADR-052 eki) + 21 Ekim'deki 9 Expo
   yamasi. Faz 54'un web kismi 010c3f2 ile zaten canlida.
