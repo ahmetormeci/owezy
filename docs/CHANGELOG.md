@@ -20,6 +20,14 @@ kararı. Dış dünya ölçümü (DNS, canlı sayfalar, mağaza, ortam adları)
 CURRENT_TASK'ta yenilendi; beş ülke maddesi açık listeden çıktı (21
 Ekim'de beşinde de çıkıyordu).
 
+DMARC raporlarına ilk kez bakıldı (son 7 gün): tek kayıt, ve bizim değil.
+Microsoft'un Azure ağındaki ters DNS'i olmayan bir adresten (20.110.252.109)
+`owezy.net` adına gönderilmiş, SPF ve DKIM'den kalmış, Outlook.com
+raporlamış. Bizim postalarımız yalnızca Amazon SES'ten çıkıyor; büyük
+olasılıkla sahte posta denemesi ve `p=reject` onu durdurdu. Not: DMARC
+raporu postanın gereksiz klasörüne düşüp düşmediğini göstermiyor, yalnızca
+kimlik kontrolünü.
+
 ---
 
 ## 2026-10-21 — Tutar alanı: hızlı yazma, genişlik, kalem toplamı (Faz 54, ADR-061)

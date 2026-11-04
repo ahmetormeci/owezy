@@ -116,9 +116,19 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
   3. 2FA KOPRUSU (ADR-045): mobil 1.0 icin gecici sunucu yamasi. 1.0'da
      kimse kalmadiysa kaldirilir - kullanici App Store Connect ->
      Analytics'te surume gore oturumlara bakacak. Dogrulama yolu asagida.
-  4. DMARC RAPORLARI (Cloudflare -> Email -> DMARC Management): 27
-     Eylul'den beri doluyor, HENUZ BAKILMADI. Junk sorununu hangi servis
-     cikariyor (ADR-060).
+  4. DMARC RAPORLARI - 4 KASIM'DA BAKILDI (Cloudflare -> Email -> DMARC
+     Management, son 7 gun): tek kayit, 3 Kasim. Kaynak Microsoft
+     20.110.252.109 (Azure, Virginia, ters DNS YOK - Outlook'un kendi
+     posta sunucusu degil), envelope from "<>", SPF ve DKIM fail,
+     raporlayan Outlook.com. BIZIM DEGIL: bizim postalarimiz yalnizca
+     Amazon SES'ten (send.owezy.net) cikiyor. Buyuk olasilikla sahte posta
+     denemesi; p=reject isini yapti. 7 gunde bizim postamiz HIC
+     gorunmedi (az posta; oturum acik kalan kullaniciya kod gitmiyor).
+     Istege bagli: araligi 30 gune cekip Amazon SES "pass" gormek.
+     DMARC RAPORU JUNK'A DUSMEYI GOSTERMEZ - yalnizca kimlik kontrolunu.
+     Ekrandaki "SPF policy: Fail" kokteki "v=spf1 -all" (kokten kimse
+     gondermiyor - ayar, hata degil); "BIMI: No/Fail" bilerek kurulmadi
+     (ADR-060).
   5. EXPO YAMALARI (4 Kasim, yukarida) - alinsin mi.
   6. SDK 58: artik "latest" (4 Kasim). Ayri is (ADR-058). Son tarih
      NISAN 2027 (Apple, iOS 27 SDK). Xcode 27'ye gecilen gun uygulama
