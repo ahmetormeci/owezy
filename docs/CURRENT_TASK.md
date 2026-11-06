@@ -38,39 +38,25 @@ Current task:
   (ADR-061, ADR-052 eki) + 21 Ekim'deki 9 Expo yamasi. Siradaki surum
   icin bekleyen bir is YOK.
 
-  6 KASIM - COMMIT'LENDI VE PUSH'LANDI (kullanicinin istegiyle):
-    - EXPO YAMALARI (4 Kasim'da alinan set): expo 57.0.31,
-      expo-notifications 57.0.24, expo-router 57.0.29, expo-sharing
-      57.0.24 (alt paketlerde react-native-gesture-handler 3.2.1 -> 3.4.0
-      - NATIVE). expo-doctor 21/21 (4 Kasim), tsc, lint, 98 vitest + 145
-      jest, expo export temiz. Simulatorde Release build (iOS 27): acilis,
-      kapaliyken owezy://join/... davet ekrani, dokunus/gecis, 31 karakter
-      tek seferde.
-    - YORUM E2E TESTINE test.slow() (e2e/comments.spec.ts): yalnizca o
-      testin butcesi 60 -> 180 sn. Tam kosu 73 gecti 1 atlandi (22.5 dk);
-      bu kosuda yorum testi 72 SN surdu - eski sinirla kod saglamken
-      dusecekti.
-  6 KASIM - COMMIT BEKLIYOR (ikisi de kullanicinin istegiyle):
-  A) CI MAILLERI BITTI - ADR-062 (kullanici onayladi): expo-doctor CI'da
-     surum kontrolu KAPALI kosuyor (kalan 20 kontrol durdurucu); surum
-     kontrolu en sonda "Expo yamalari (uyari, durdurmaz)" adiminda SARI
-     uyari; "Mobil paket derleniyor mu" tanilamadan ONCEYE alindi.
-     Olculdu: expo install --check guncel agacta exit 0, yamasiz commit'te
-     exit 1; yamasiz commit'te anahtarli doctor 20/20; uyari betigi iki
-     yolda da exit 0; ci.yml js-yaml ile gecerli. CI'DA HENUZ KOSMADI -
-     push'tan sonra adim adim bak.
-  B) IKINCI YAMA SETI ALINDI: 53377c9 push'landiginda Expo 8 pakete daha yama yayinlamisti,
-  CI yine expo-doctor'dan dustu. Alinan: expo 57.0.32,
-  expo-build-properties 57.0.23, expo-image-manipulator 57.0.22,
-  expo-image-picker 57.0.21, expo-notifications 57.0.25, expo-router
-  57.0.30, expo-sharing 57.0.25, expo-splash-screen 57.0.11 (kilitte
-  expo-constants 57.0.23, expo-modules-core 57.0.25 - NATIVE). expo-doctor
-  21/21, tsc, lint, 98 vitest + 145 jest, expo export temiz. Simulatorde
-  Release build (iOS 27): kapaliyken owezy://join/... davet ekrani,
-  dokunus/gecis, 31 karakter tek seferde. FOTOGRAF SECME/ISLEME
-  (expo-image-picker/-manipulator) simulatorde DENENMEDI - giris
-  gerektiriyor; bir sonraki surumun TestFlight'inda fis/profil fotografi
-  denenmeli.
+  6 KASIM - HEPSI COMMIT'LENDI VE PUSH'LANDI (kullanicinin istegiyle):
+    - 53377c9: Expo'nun 4 Kasim yamalari (react-native-gesture-handler
+      3.4.0 - NATIVE) + yorum E2E testine test.slow() (yalnizca o testin
+      butcesi 60 -> 180 sn; tam kosu 73/1, yorum testi 72 SN surdu).
+    - c52d10f: CI MAILLERI BITTI - ADR-062. expo-doctor CI'da surum
+      kontrolu KAPALI (kalan 20 kontrol durdurucu); surum kontrolu en
+      sonda "Expo yamalari (uyari, durdurmaz)" adiminda SARI uyari; "Mobil
+      paket derleniyor mu" tanilamadan ONCE. CI'DA GORULDU: 15 adimin
+      hepsi yesil, kosu success; yamalar guncel oldugu icin Expo uyarisi
+      YOK (dogru). Ayni commit'te Expo'nun 6 Kasim yamalari (expo
+      57.0.32, expo-router 57.0.30, expo-image-picker 57.0.21,
+      expo-image-manipulator 57.0.22, expo-splash-screen 57.0.11, kilitte
+      expo-modules-core 57.0.25 - NATIVE). Simulatorde Release build:
+      kapaliyken davet linki, dokunus, 31 karakter. FOTOGRAF SECME/ISLEME
+      simulatorde DENENMEDI (giris gerektiriyor) - bir sonraki surumun
+      TestFlight'inda fis/profil fotografi denenmeli.
+    - GitHub'in kendi iki notu (kosuyu etkilemiyor): actions/checkout@v4
+      ve setup-node@v4 Node 20 hedefliyor, GitHub onlari Node 24'te
+      kosturuyor; ubuntu-latest Ubuntu 26'ya geciyor.
 
   EXPO - 4 KASIM OLCUMU:
     - SDK 58 ARTIK "latest" (npm dist-tags: latest 58.0.23, sdk-57
@@ -157,7 +143,7 @@ DIS DUNYA - 4 KASIM OLCUMU:
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (6 Kasim, us ve tr)
-  CI       636a2cb failure - YALNIZCA expo-doctor (Expo yamalari)
+  CI       c52d10f success (6 Kasim) - ADR-062'den sonraki ilk kosu
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
            R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
