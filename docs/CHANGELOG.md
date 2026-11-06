@@ -8,6 +8,24 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-06 — Web güvenlik güncellemesi: Next 16.4.5; better-auth bilerek 1.7.1'de (ADR-063)
+
+Next.js 16.3.2'yi etkileyen kritik açıklar (22 Ekim) yalnızca 16.4.1 ve
+sonrasında kapatılmış; 16.4.5'e geçildi. Zorlamasız `npm audit fix`
+Sentry, zod, shadcn ve alt paketleri güncelledi; Prisma CLI 7.10.1'e
+çıkınca istemci ve Neon bağdaştırıcısı da 7.10.1'e hizalandı. Canlıya
+giden paketlerde açık 36'dan (4 kritik, 16 yüksek) 12'ye indi; yüksek
+kalmadı. **Tam E2E bir şeyi yakaladı:** audit fix better-auth'u 1.7.18'e
+çıkarmıştı, ve 1.7.3'ten beri `Account.issuer` yazılmıyor — bizim şemada
+zorunlu. Tip kontrolü, lint, 861 birim testi ve üretim derlemesi geçti;
+yalnızca E2E'nin kayıt adımı 500 aldı. Canlıya gitseydi yeni kayıt
+tamamen bozulurdu. better-auth 1.7.1'e geri alınıp tam sürümle sabitlendi
+(ADR-063) — 1.7.1'in açıkları kullanmadığımız eklentilerde. Yükseltme bir
+veritabanı göçü gerektiriyor; ayrı iş. Doğrulama: tam E2E 73/1 ve 2FA
+köprüsü yolu (11/11).
+
+---
+
 ## 2026-11-06 — CI'daki iki action Node 24 sürümüne geçti (v4 → v7)
 
 GitHub her koşuda "Node.js 20 is deprecated" uyarısı basıyordu:

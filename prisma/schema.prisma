@@ -644,6 +644,11 @@ model Account {
   // DOGRU KAYNAK CALISMA ZAMANI: @better-auth/core'daki getAuthTables()
   // kendi ayarlarimizla cagrilip dort modelin tamami karsilastirildi.
   // Eksik olan yalnizca buydu.
+  //
+  // YALNIZCA better-auth 1.7.0-1.7.2 YAZIYOR. 1.7.3+ yazmiyor ve bu NOT
+  // NULL sutunla her kayit "Argument issuer is missing" ile duser. Bu
+  // yuzden better-auth 1.7.1'de sabit (ADR-063); yukseltmeden ONCE bu
+  // alan nullable yapilmali.
   issuer String
 
   accountId             String

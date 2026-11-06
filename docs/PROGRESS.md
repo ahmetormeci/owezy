@@ -2321,7 +2321,8 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 | Talimat dosyalarındaki tekrarların temizlenmesi, PROJECT.md'deki bayat bilgiler (tek dil, eski test sayıları) ve hedefli E2E koşusu tarifi | `f700fbe` |
 | `npm audit fix`: 12 → 6 açık, 19 yama seviyesi güncelleme (`package.json` değişmedi) | `430e378` |
 | Next 16.2.11 → 16.3.2: kalan `postcss` ve `sharp` açıkları kapandı, 6 → 3 | *(bu commit)* |
-| Expo yamaları CI'ı artık kırmızıya boyamıyor: sürüm kontrolü uyarı, kalan `expo-doctor` kontrolleri durdurucu, paket derlemesi tanılamadan önce (ADR-062, 6 Kasım) | *(bu commit)* |
+| Expo yamaları CI'ı artık kırmızıya boyamıyor: sürüm kontrolü uyarı, kalan `expo-doctor` kontrolleri durdurucu, paket derlemesi tanılamadan önce (ADR-062, 6 Kasım) | `c52d10f` |
+| Web güvenlik güncellemesi: Next 16.3.2 → 16.4.5 (kritik açıklar), zorlamasız `npm audit fix`, Prisma 7.10.1'e hizalı; better-auth 1.7.1'de sabit (ADR-063). Canlıya giden paketlerde açık 36 → 12, yüksek/kritik etkileyen yok (6 Kasım) | *(bu commit)* |
 
 ---
 

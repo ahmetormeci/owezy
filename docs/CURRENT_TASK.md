@@ -33,7 +33,40 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-06
 
 Current task:
-  AKTIF GOREV YOK. Son biten (6 Kasim): CI'daki iki action v4 -> v7
+  WEB GUVENLIK GUNCELLEMESI - COMMIT BEKLIYOR (6 Kasim, kullanicinin
+  onayiyla). Sebep: Next 16.3.2'yi etkileyen KRITIK aciklar (22 Ekim:
+  GHSA-673q "use cache" RCE, GHSA-2464 Image Optimization SVG RCE) -
+  yalnizca 16.4.1+'da kapali, 16.3 serisine yama YOK. Kodda "use cache",
+  next/og, cacheComponents yok; next/image var. Next "kullanmasaniz da
+  guncelleyin" diyor.
+    - next + eslint-config-next 16.3.2 -> 16.4.5 (16.4.5 ek guvenlik
+      yamalari da getiriyor).
+    - npm audit fix (ZORLAMASIZ): @sentry/nextjs 10.78.0, zod 4.6.7,
+      shadcn 4.23.0, vitest 4.1.12, alt paketler.
+    - prisma CLI audit fix ile 7.10.1'e cikti -> @prisma/client ve
+      @prisma/adapter-neon da 7.10.1'e HIZALANDI (CLI ile istemci ayni
+      surumde olmali).
+    - BETTER-AUTH 1.7.1'DE TUTULDU, TAM SURUMLE SABIT (ADR-063): audit fix
+      1.7.18'e cikarmisti ve E2E kurulumu "Argument issuer is missing" ile
+      DUSTU - 1.7.3+ Account.issuer yazmiyor, semamizda zorunlu. Canliya
+      gitseydi YENI KAYIT tamamen bozulurdu. 1.7.1'in aciklari (Magic Link
+      + sosyal giris / OAuth Proxy / drizzle adaptoru) bizim ayarlarda
+      YOK. Yukseltme = veritabani gocu, ayri is, KULLANICI KARARI.
+    - AGENTS.md: next dev Next blogunun basligini "#" -> "##" yapti
+      (Next'in kendi yazdigi blok - commit'e dahil).
+  Canliya giden paketlerde (npm audit --omit=dev): 36 acik (4 kritik, 16
+  yuksek) -> 12 (1 "kritik" = better-auth, bizi etkilemiyor; 0 yuksek).
+  Kalan orta/dusukler Sentry'nin derleme eklentileri ve shadcn CLI'inin
+  bagimliliklari - calisan uygulamaya girmiyor.
+  Dogrulama: tsc, lint, 861 birim, npm run build, TAM E2E 73 gecti 1
+  atlandi (16.8 dk, sunucu hatasi yok), 2FA KOPRUSU yolu (asagida) -
+  two-factor.spec 11/11, kopru testi dahil; gecici degisiklikler geri
+  alindi. Mobil bu ise DAHIL DEGIL (uyarilar Expo'nun araclarinda).
+  Sentry'nin yeni uyarisi (dev sunucusu): withSentryConfig'i
+  "@sentry/nextjs/config"tan al (v11'de eski yol kalkacak) ve
+  disableLogger kullanim disi - ikisi de simdilik yalnizca uyari.
+
+  ONCEKI (6 Kasim): CI'daki iki action v4 -> v7
   (cfe29ab, kullanicinin istegiyle push'landi). ci.yml: actions/checkout@v7
   ve actions/setup-node@v7 - ikisi de node24, ana surum etiketi (SHA
   degil, kullanici secti). Ayrinti CHANGELOG 2026-11-06.
@@ -129,7 +162,11 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      Ekrandaki "SPF policy: Fail" kokteki "v=spf1 -all" (kokten kimse
      gondermiyor - ayar, hata degil); "BIMI: No/Fail" bilerek kurulmadi
      (ADR-060).
-  4. SDK 58: artik "latest" (4 Kasim). Ayri is (ADR-058). Son tarih
+  4. BETTER-AUTH YUKSELTMESI (ADR-063): 1.7.1'de sabit. 1.7.7+ icin
+     Account.issuer gocu gerekiyor (NOT NULL kaldir + issuer/accountId
+     benzersiz indeksini dusur - 1.7 yukseltme rehberi). Bizi etkileyen
+     acik YOK; KULLANICI KARARI.
+  5. SDK 58: artik "latest" (4 Kasim). Ayri is (ADR-058). Son tarih
      NISAN 2027 (Apple, iOS 27 SDK). Xcode 27'ye gecilen gun uygulama
      yeniden boyutlandirilabilir oluyor - duzen farkli genisliklerde
      denenmeli.
@@ -271,6 +308,14 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     E2E sunucusunun kendi CRON_SECRET'i playwright.config.ts webServer.env.
 
   WEB
+  - BAGIMLILIK GUNCELLEMESINDEN SONRA TAM E2E SART: better-auth 1.7.18
+    tsc/lint/861 birim testi/build'den GECTI, yalnizca E2E kurulumu
+    yakaladi (kayit 500). npm audit fix "guvenli" sayilmaz.
+  - ARKA PLAN GOREVI CALISMA KOPYASI (.claude/worktrees/...) proje
+    klasorunun ICINDE: varken "npm run lint" o kopyayi da tariyor ve
+    oradan hata veriyor. Bizim kodu olcmek icin:
+      npx eslint --ignore-pattern '.claude/**' .
+    (.claude/ gitignore'da - CI gormuyor.)
   - KIMLIKLI SAYFAYI GORMEK: e2e/ altina GECICI bir spec -> pageAs(browser,
     "owner") -> page.screenshot(). Diyalogda screenshot({ animations:
     "disabled" }) - yoksa kare yari saydam. Koyu tema: page.emulateMedia(

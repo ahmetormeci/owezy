@@ -530,6 +530,45 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-063 — better-auth 1.7.1'de, tam sürümle sabit; yükseltme `Account.issuer` göçünü bekliyor
+**Tarih:** 2026-11-06 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-06**
+
+**Bağlam:** Web güvenlik güncellemesinde zorlamasız `npm audit fix`
+better-auth'u `^1.7.1` aralığında 1.7.18'e çıkardı. Tip kontrolü, lint,
+861 birim testi ve üretim derlemesi geçti; **tam E2E'nin kurulum adımı
+düştü**: kayıt 500, sunucuda `Argument issuer is missing`. Sebep:
+better-auth 1.7.0–1.7.2 hesap satırına zorunlu bir `issuer` yazıyordu ve
+şemamız ona göre kuruldu (`20260825200000_add_account_issuer`, NOT NULL).
+1.7.3 bu alanı bıraktı — kütüphanenin kendi hata metni ve 1.7 yükseltme
+rehberi bunu söylüyor. Canlıya gitseydi yeni kayıt tamamen bozulurdu.
+
+**Karar:** better-auth `1.7.1`'de, `package.json`'da **tam sürümle**
+(`"1.7.1"`, `^` yok) sabit. Bir sonraki `npm audit fix` ya da `npm update`
+onu sessizce yükseltemesin diye.
+
+**Neden şimdilik güvenli:** 1.7.1'i etkileyen üç açık (27 Ekim) ölçüldü:
+- GHSA-965c (kritik): Magic Link **ve** sosyal/Generic OAuth girişi
+  birlikte açıksa. Bizde ikisi de yok.
+- GHSA-r4xp (yüksek): OAuth Proxy eklentisi. Bizde yok.
+- GHSA-44jh (düşük): drizzle bağdaştırıcısı. Biz Prisma kullanıyoruz.
+Kullandığımız eklentiler: `emailOTP`, `twoFactor`, `bearer`
+(`src/lib/better-auth.ts`). `npm audit` better-auth'u "kritik" saymaya
+devam edecek — bu ADR o satırın cevabı.
+
+**Yükseltme yolu (ayrı iş, kullanıcı kararı):** 1.7 yükseltme rehberine
+göre: (1) yinelenen `(providerId, accountId)` var mı bak — bizde yalnızca
+`credential` sağlayıcısı var, beklenmiyor; (2) `Account.issuer`'ı
+**nullable** yap ve `issuer + accountId` benzersiz indeksini düşür (geri
+alınabilir; sütunu silmek ayrı temizlik); (3) better-auth'u yükselt;
+(4) tam E2E + 2FA köprüsü yolu + yeni kayıt ve mevcut hesapla giriş.
+Göç önce gelmeli: eski kod (1.7.1) `issuer` yazmaya devam eder, nullable
+sütun ikisini de kabul eder — yayın sırası güvenli.
+
+**Ders:** bağımlılık güncellemesinden sonra tam E2E şart; "zorlamasız
+audit fix" veritabanı sözleşmesini değiştiren bir yama getirebiliyor.
+
+---
+
 ## ADR-062 — Expo'nun yama sürümü kontrolü CI'ı durdurmaz, uyarı verir
 **Tarih:** 2026-11-06 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-06**
 

@@ -347,7 +347,7 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260813120000_add_expense_description_fold` | `Expense.descriptionFold` — `GENERATED ALWAYS ... STORED`. Türkçe harfleri ASCII'ye indirip küçülten arama sütunu; değeri Postgres üretiyor, Prisma bilmiyor |
 | `20260825090000_add_expense_version` | `Expense.version` (`INTEGER NOT NULL DEFAULT 1`). Optimistic locking sayacı — bkz. [DECISIONS.md](DECISIONS.md) ADR-032 |
 | `20260825170000_add_better_auth` | `Session`, `Account`, `Verification` tabloları; `User.clerkId` nullable oldu, `User.email` UNIQUE oldu, `User.emailVerified` eklendi |
-| `20260825200000_add_account_issuer` | `Account.issuer`. Better Auth hesap satırına zorunlu bir issuer yazıyor (`local:credential`); sütun şemada yoktu çünkü şema eski bir CLI sürümüyle üretilmişti |
+| `20260825200000_add_account_issuer` | `Account.issuer`. Better Auth hesap satırına zorunlu bir issuer yazıyor (`local:credential`); sütun şemada yoktu çünkü şema eski bir CLI sürümüyle üretilmişti. **Yalnızca 1.7.0–1.7.2 yazıyor**; 1.7.3+ yazmıyor — better-auth yükseltmesi bu sütun için göç ister (ADR-063) |
 | `20260826020000_drop_clerk_columns` | `User.clerkId` ve `User.clerkUpdatedAt` düştü (Faz 25.7). E-postanın UNIQUE kısıtı kalıyor ve asıl kimlik kısıtı artık o |
 | `20260826040000_add_rate_limit` | `RateLimit` — Better Auth'un kendi hız sınırı tablosu |
 | `20260826060000_add_api_rate_limit` | `ApiRateLimit` — `/api/v1` yazma bütçesi |
