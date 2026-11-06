@@ -33,8 +33,10 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-06
 
 Current task:
-  BETTER-AUTH 1.7.18 + SENTRY AYAR ADLARI - COMMIT'LENDI VE PUSH'LANDI
-  (6 Kasim, kullanicinin istegiyle). CI ve yayin sonucu: SONRAKI ADIM.
+  BETTER-AUTH 1.7.18 + SENTRY AYAR ADLARI - ad647b3, PUSH'LANDI, CANLIDA
+  (6 Kasim, kullanicinin istegiyle). CI 42229060798 success; Production
+  13:53:45Z success - goc production'a uygulandi (vercel-build gocu
+  basarisiz olsaydi yayin da basarisiz olurdu). /, /sign-in, /support 200.
     1. better-auth 1.7.1 -> 1.7.18 (ADR-063 eki). Once goc
        20261106120000_relax_account_issuer: Account.issuer DROP NOT NULL
        (sutun ve eski veri duruyor). Gelistirme ve E2E veritabanina
@@ -55,8 +57,8 @@ Current task:
   giris 200 + Bearer, yanlis parola 401; 1.7.18 ile yeni kayit.
   Mobil bu ise DAHIL DEGIL: better-auth'u import etmiyor, ayni uclari
   HTTP ile cagiriyor (auth.spec'teki Bearer testi o yolu kosuyor).
-  SONRAKI ADIM: CI kosusu ve Production yayini bu commit'in SHA'siyla
-  olculecek (asagidaki tuzak). Yayin success = goc production'da.
+  SONRAKI ADIM: yok - is bitti. Siradaki is kullanicinin secimi (ACIK
+  KALANLAR).
 
   ONCEKI (6 Kasim): web guvenlik guncellemesi 6cd7fef - Next 16.4.5
   (kritik aciklar), zorlamasiz audit fix, Prisma 7.10.1. CI 42222956026
@@ -163,9 +165,9 @@ DIS DUNYA - 6 KASIM OLCUMU:
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
-  CI       6cd7fef success (kosu 42222956026) - onceki 80bc9e0, 3e3adf2
+  CI       ad647b3 success (kosu 42229060798) - onceki 6cd7fef, 80bc9e0
            de success
-  YAYIN    6cd7fef Production success 13:08:47Z - dokuman commit'leri de
+  YAYIN    ad647b3 Production success 13:53:45Z - dokuman commit'leri de
            production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,

@@ -2323,7 +2323,7 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 | Next 16.2.11 → 16.3.2: kalan `postcss` ve `sharp` açıkları kapandı, 6 → 3 | `4a562ab` |
 | Expo yamaları CI'ı artık kırmızıya boyamıyor: sürüm kontrolü uyarı, kalan `expo-doctor` kontrolleri durdurucu, paket derlemesi tanılamadan önce (ADR-062, 6 Kasım) | `c52d10f` |
 | Web güvenlik güncellemesi: Next 16.3.2 → 16.4.5 (kritik açıklar), zorlamasız `npm audit fix`, Prisma 7.10.1'e hizalı; better-auth 1.7.1'de sabit (ADR-063). Canlıya giden paketlerde açık 36 → 12, yüksek/kritik etkileyen yok (6 Kasım) | `6cd7fef` |
-| better-auth 1.7.1 → 1.7.18: önce `Account.issuer` boş bırakılabilir (`20261106120000`), sonra yükseltme; sürüm yine tam sabit (ADR-063 eki). Sentry: `@sentry/nextjs/config` ve `disableLogger` → `bundleSizeOptimizations.excludeDebugStatements` — ölçüldü, bundle aynı (6 Kasım) | *(bu commit)* |
+| better-auth 1.7.1 → 1.7.18: önce `Account.issuer` boş bırakılabilir (`20261106120000`), sonra yükseltme; sürüm yine tam sabit (ADR-063 eki). Sentry: `@sentry/nextjs/config` ve `disableLogger` → `bundleSizeOptimizations.excludeDebugStatements` — ölçüldü, bundle aynı (6 Kasım) | `ad647b3` |
 
 ---
 
