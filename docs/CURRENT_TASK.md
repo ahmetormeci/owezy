@@ -33,36 +33,27 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-06
 
 Current task:
-  BETTER-AUTH 1.7.18 + SENTRY AYAR ADLARI - ad647b3, PUSH'LANDI, CANLIDA
-  (6 Kasim, kullanicinin istegiyle). CI 42229060798 success; Production
-  13:53:45Z success - goc production'a uygulandi (vercel-build gocu
-  basarisiz olsaydi yayin da basarisiz olurdu). /, /sign-in, /support 200.
-    1. better-auth 1.7.1 -> 1.7.18 (ADR-063 eki). Once goc
-       20261106120000_relax_account_issuer: Account.issuer DROP NOT NULL
-       (sutun ve eski veri duruyor). Gelistirme ve E2E veritabanina
-       UYGULANDI. Production'a Vercel uygulayacak: vercel-build gocu yeni
-       koddan ONCE calistiriyor, goc duserse build da duser - yani
-       "Production success" = goc uygulandi. Surum yine TAM sabit
-       ("1.7.18"). 1.7.18'in getAuthTables() cikisi semayla
-       karsilastirildi: tek fark issuer.
-    2. Sentry: withSentryConfig "@sentry/nextjs/config"tan; disableLogger
-       -> bundleSizeOptimizations.excludeDebugStatements. OLCULDU: ayar
-       Turbopack'te CALISIYOR (yokken +7,6 KB); yeni adla boyut ayni
-       (1.411.226 bayt). Derlemede uyari kalmadi.
-    3. AGENTS.md: "-g kurulumu eler" notu OLCUMLE CELISIYORDU (Playwright
-       1.62.1'de setup -g ile de calisiyor; --list gosteriyor) - duzeltildi.
+  BRACE-EXPANSION ACIGI KAPANDI - COMMIT BEKLIYOR (6 Kasim, kullanicinin
+  istegiyle). KOD commit'i (package-lock.json): push yalnizca kullanici
+  isteyince.
+    - brace-expansion 1.1.18 -> 1.1.21 (GHSA-q2hr, -qhr7, -6j4f: DoS).
+      Yalnizca ESLint 9'un minimatch@3'u kullaniyor; canliya girmiyordu.
+    - YOL: "npm update brace-expansion" - kilit dosyasinda 3 satir, baska
+      paket DEGISMEDI, package.json degismedi. "npm audit fix" bilerek
+      kullanilmadi: kopyada denendi, ayni sonucu verdi ama ADR-063'teki
+      gibi baska paketleri de oynatabilen komut; dar yol yeterliydi.
+      (Kopyada --package-lock-only ile Tailwind'in wasm32 yedeginin 6
+      paket kaydi da ekleniyordu - gercek kurulumda cikmiyor.)
+    - npm audit: butun agacta 0 kritik / 0 YUKSEK (17: 15 orta, 2 dusuk);
+      canliya giden 0/0 (10).
   Dogrulama: tsc, lint, 861 birim, build; TAM E2E 73 gecti 1 atlandi
-  (16.9 dk, yeni sunucu hatasi yok); 2FA KOPRUSU yolu 11/11 (gecici
-  degisiklikler geri alindi); 1.7.1 donemi gibi issuer'i DOLU hesapla
-  giris 200 + Bearer, yanlis parola 401; 1.7.18 ile yeni kayit.
-  Mobil bu ise DAHIL DEGIL: better-auth'u import etmiyor, ayni uclari
-  HTTP ile cagiriyor (auth.spec'teki Bearer testi o yolu kosuyor).
-  SONRAKI ADIM: yok - is bitti. Siradaki is kullanicinin secimi (ACIK
-  KALANLAR).
+  (16.8 dk; sunucu logunda yalnizca bilinen 4 "destination stream" satiri).
+  SONRAKI ADIM: commit/push istenirse -> CI ve Production bu commit'in
+  SHA'siyla olculur.
 
-  ONCEKI (6 Kasim): web guvenlik guncellemesi 6cd7fef - Next 16.4.5
-  (kritik aciklar), zorlamasiz audit fix, Prisma 7.10.1. CI 42222956026
-  success, Production 13:08Z success. Ayrinti CHANGELOG 2026-11-06.
+  ONCEKI (6 Kasim): better-auth 1.7.18 + Sentry ayar adlari ad647b3 -
+  Account.issuer nullable gocu production'da (yayin 13:53Z success), CI
+  42229060798 success. Ayrinti CHANGELOG ve ADR-063 eki.
   UBUNTU 26 (GitHub notu, dokunulmadi): ubuntu-latest 19 Ekim'den beri
     kademeli olarak Ubuntu 26'ya geciyor (actions/runner-images#14748).
     Adimlar kendi Node'unu kuruyor ve yalnizca npm kullaniyor - risk dusuk.
@@ -150,11 +141,7 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      Ekrandaki "SPF policy: Fail" kokteki "v=spf1 -all" (kokten kimse
      gondermiyor - ayar, hata degil); "BIMI: No/Fail" bilerek kurulmadi
      (ADR-060).
-  4. brace-expansion: butun agacta kalan TEK yuksek acik (DoS), yalnizca
-     ESLint 9'un minimatch@3'u uzerinden - gelistirme araci, canliya
-     girmiyor. npm audit fix kapatabilir; denenmedi (= tam E2E). Canliya
-     giden paketlerde 0 kritik / 0 yuksek. KULLANICI KARARI.
-  5. SDK 58: artik "latest" (4 Kasim). Ayri is (ADR-058). Son tarih
+  4. SDK 58: artik "latest" (4 Kasim). Ayri is (ADR-058). Son tarih
      NISAN 2027 (Apple, iOS 27 SDK). Xcode 27'ye gecilen gun uygulama
      yeniden boyutlandirilabilir oluyor - duzen farkli genisliklerde
      denenmeli.

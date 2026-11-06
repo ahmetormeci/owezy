@@ -8,6 +8,19 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-06 — Son yüksek açık kapandı: `brace-expansion` 1.1.21
+
+Bütün paket ağacında kalan tek yüksek açık `brace-expansion` ≤1.1.20'deki
+DoS açıklarıydı (GHSA-q2hr, GHSA-qhr7, GHSA-6j4f). Paket yalnızca ESLint
+9'un `minimatch@3`'ü üzerinden geliyordu; canlı uygulamaya girmiyordu.
+`npm audit fix` yerine **`npm update brace-expansion`** kullanıldı:
+kilit dosyasında üç satır değişti, başka paket oynamadı. Sebep ADR-063'ün
+dersi: `audit fix` aynı anda başka paketleri de yükseltebiliyor. Sonuç:
+bütün ağaçta 0 kritik, 0 yüksek. Doğrulama: tsc, lint, 861 birim, build,
+tam E2E 73/1.
+
+---
+
 ## 2026-11-06 — better-auth 1.7.18'e çıktı; Sentry ayarları yeni adlarında
 
 **better-auth 1.7.1 → 1.7.18 (ADR-063'ün yükseltme yolu).** Önce göç:
