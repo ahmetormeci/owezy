@@ -22,6 +22,11 @@ test.describe("harcamaya yorum", () => {
   test("iki kisi ayni harcama uzerinde yazisir, silmeyi yalnizca yazan yapar", async ({
     browser,
   }) => {
+    // Iki oturumlu uzun akis (grup, harcama, davet, katilma, yazisma) tek
+    // basina 43-46 sn suruyor; 60 sn butcede makine biraz yavaslayinca kod
+    // saglamken dusuyordu (27 Eylul). test.slow() yalnizca BU testin
+    // butcesini uce katlar - playwright.config'teki genel butce degismiyor.
+    test.slow();
     const owner = await pageAs(browser, "owner");
     const member = await pageAs(browser, "member");
     const groupName = uniqueGroupName("yorum");

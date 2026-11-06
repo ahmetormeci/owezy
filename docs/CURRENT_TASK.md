@@ -30,29 +30,33 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-11-04
+Updated: 2026-11-06
 
 Current task:
-  1.0.7 - INCELEMEDE (kullanici 4 Kasim'da gonderdi). Once TestFlight'ta
-  gecti (4 Kasim): acilis, uygulama kapaliyken davet linki, bildirime
-  dokununca grup - "sorun yok". BEKLENIYOR: Apple'in karari. Yayina
-  cikti mi: itunes.apple.com/lookup?bundleId=net.owezy.app&country=us
-  -> version 1.0.7. Ret gelirse ret metnini kullanicidan iste; duzeltme
-  build'i gerekirse main'den alinir - main'e o zamana kadar yalnizca
-  build'e girmesinde sakinca olmayan sey konmali.
-  Build 28: EAS 73244045, commit 6910d2f, Xcode 26.6 (17F113), submit
-  c3ec53e4. Icerik: Faz 54 (ADR-061, ADR-052 eki) + 21 Ekim'deki 9 Expo
-  yamasi. Faz 54'un web kismi 010c3f2 ile zaten canlida.
+  1.0.7 YAYINDA (lookup 6 Kasim: us/tr 1.0.7, 2026-11-05T06:09Z). Build
+  28: EAS 73244045, commit 6910d2f, Xcode 26.6 (17F113). Icerik: Faz 54
+  (ADR-061, ADR-052 eki) + 21 Ekim'deki 9 Expo yamasi. Siradaki surum
+  icin bekleyen bir is YOK.
 
-  1.0.6 YAYINDA (lookup 4 Kasim: us/tr 1.0.6, 2026-10-05). Bes ulke
-  aramasi 21 Ekim'de olculdu: bes ulkede de cikiyor (STORE.md).
-
-  EXPO - 4 KASIM OLCUMU (ikisi de KULLANICI KARARI):
-    - expo-doctor YINE KIRMIZI (20/21): 4 yeni yama - expo 57.0.31,
+  6 KASIM - COMMIT'LENDI VE PUSH'LANDI (kullanicinin istegiyle):
+    - EXPO YAMALARI (4 Kasim'da alinan set): expo 57.0.31,
       expo-notifications 57.0.24, expo-router 57.0.29, expo-sharing
-      57.0.24. Bundan sonraki her push'ta CI'da expo-doctor duser.
-      Yamalari almak KOD commit'i (package.json + lock) - sor. 1.0.7'yi
-      etkilemez (build cikti); alinirsa bir sonraki build'e girer.
+      57.0.24 (alt paketlerde react-native-gesture-handler 3.2.1 -> 3.4.0
+      - NATIVE). expo-doctor 21/21 (4 Kasim), tsc, lint, 98 vitest + 145
+      jest, expo export temiz. Simulatorde Release build (iOS 27): acilis,
+      kapaliyken owezy://join/... davet ekrani, dokunus/gecis, 31 karakter
+      tek seferde.
+    - YORUM E2E TESTINE test.slow() (e2e/comments.spec.ts): yalnizca o
+      testin butcesi 60 -> 180 sn. Tam kosu 73 gecti 1 atlandi (22.5 dk);
+      bu kosuda yorum testi 72 SN surdu - eski sinirla kod saglamken
+      dusecekti.
+  CI YINE KIRMIZI KALACAK: 6 Kasim'da Expo 8 pakete daha yama yayinladi
+  (expo 57.0.32, expo-build-properties 57.0.23, expo-constants 57.0.23,
+  expo-image-manipulator 57.0.22, expo-image-picker 57.0.21,
+  expo-notifications 57.0.25, expo-router 57.0.30, expo-sharing 57.0.25).
+  Almak KULLANICI KARARI; alinirsa ayni dogrulama (simulator dahil).
+
+  EXPO - 4 KASIM OLCUMU:
     - SDK 58 ARTIK "latest" (npm dist-tags: latest 58.0.23, sdk-57
       57.0.31). 21 Ekim'de EAS'ta Xcode 27.0 ve 27.1 imajlari vardi.
       Sabitleme 1.0.7'de de bilerek duruyor (ADR-058) - kaldirmak SDK 58
@@ -104,18 +108,17 @@ Current task:
     kullanici O BUILD'de denedikten sonra yazilir.
 
 ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
+  0. EXPO'NUN 6 KASIM YAMALARI (yukarida) - alinsin mi.
   1. TEKRARLAYAN HARCAMA canlida gercekten uretim yaptigi HIC GORULMEDI.
      CRON_SECRET TANIMLI VE DOGRULANDI (10 Eylul: Vercel -> Cron Jobs ->
      Run -> 200) - soru o DEGIL. Eksik olan gercek bir sablonun
      uretmesini gormek. Iki dakikalik yol: web'de "Bunu tekrarla" ile
      baslangici BUGUN olan bir harcama kur -> Vercel -> Cron Jobs -> Run
      -> harcama dusmeli. Kosu ozeti Runtime Logs'ta "[cron/recurring]".
-  2. YORUM E2E TESTI 60 sn butcenin sinirinda (43-46 sn). test.slow()
-     onerildi - KULLANICI KARARI.
-  3. 2FA KOPRUSU (ADR-045): mobil 1.0 icin gecici sunucu yamasi. 1.0'da
+  2. 2FA KOPRUSU (ADR-045): mobil 1.0 icin gecici sunucu yamasi. 1.0'da
      kimse kalmadiysa kaldirilir - kullanici App Store Connect ->
      Analytics'te surume gore oturumlara bakacak. Dogrulama yolu asagida.
-  4. DMARC RAPORLARI - 4 KASIM'DA BAKILDI (Cloudflare -> Email -> DMARC
+  3. DMARC RAPORLARI - 4 KASIM'DA BAKILDI (Cloudflare -> Email -> DMARC
      Management, son 7 gun): tek kayit, 3 Kasim. Kaynak Microsoft
      20.110.252.109 (Azure, Virginia, ters DNS YOK - Outlook'un kendi
      posta sunucusu degil), envelope from "<>", SPF ve DKIM fail,
@@ -128,8 +131,7 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      Ekrandaki "SPF policy: Fail" kokteki "v=spf1 -all" (kokten kimse
      gondermiyor - ayar, hata degil); "BIMI: No/Fail" bilerek kurulmadi
      (ADR-060).
-  5. EXPO YAMALARI (4 Kasim, yukarida) - alinsin mi.
-  6. SDK 58: artik "latest" (4 Kasim). Ayri is (ADR-058). Son tarih
+  4. SDK 58: artik "latest" (4 Kasim). Ayri is (ADR-058). Son tarih
      NISAN 2027 (Apple, iOS 27 SDK). Xcode 27'ye gecilen gun uygulama
      yeniden boyutlandirilabilir oluyor - duzen farkli genisliklerde
      denenmeli.
@@ -139,17 +141,15 @@ DIS DUNYA - 4 KASIM OLCUMU:
            rua=mailto:...@dmarc-reports.cloudflare.net   (Cloudflare raporlari)
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
-  MAGAZA   1.0.6 | 2026-10-05 | puan 0   (us ve tr)
-  CI       30d628c success (21 Ekim) - sonraki push'ta expo-doctor duser
+  MAGAZA   1.0.7 | 2026-11-05 | (6 Kasim, us ve tr)
+  CI       636a2cb failure - YALNIZCA expo-doctor (Expo yamalari)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
            R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
   PANEL    olculemez: Resend takibi KAPALI, Cloudflare DMARC ACIK - kullanici
            27 Eylul'de yapti ve DMARC'taki rua bunu dogruluyor.
 
-CANLIDA OLAN (web) - MOBIL KARSILIGI 1.0.7'DE:
-  Faz 54 kalem takibi + 21 milyon sinir mesaji (010c3f2). Hizli yazma ve
-  tutar alaninin buyumesi yalnizca mobil.
+CANLIDA OLAN: web ve mobil (1.0.7) esit - mobilde bekleyen ozellik yok.
 
 AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):
   - MISAFIR (ADR-057): isGuest isaretli, tek gruba bagli User; giris
@@ -227,7 +227,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     basarisizken de 0 donuyor.
 
   E2E
-  - Tam kosu ~17 dk, 74 test (73 + 1 bilerek atlanan 2FA kopru testi).
+  - Tam kosu ~17-23 dk, 74 test (73 + 1 bilerek atlanan 2FA kopru testi).
     KOSU SURERKEN PROJE DOSYALARINA DOKUNMA. Sema degistiyse once
     npm run db:migrate:e2e. Tek seferlik kodlar veritabanindan okunuyor.
   - ONCE MAKINEYI TEMIZLE: 3000'deki dev sunucusu, Metro, simulatorler.
@@ -335,7 +335,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
 TESTLER - NE NEREDE (21 Ekim):
   KOK      npm test                  861 birim (vitest, src/**)
   MOBIL    cd mobile && npm test      98 vitest + 145 jest
-  E2E      npm run test:e2e           73 + 1 bilerek atlanan, ~17 dk
+  E2E      npm run test:e2e           73 + 1 bilerek atlanan, ~17-23 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.
   Mobil testler KOKTEN kosmuyor: agacta iki ayri React kopyasi var.

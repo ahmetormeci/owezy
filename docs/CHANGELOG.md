@@ -8,15 +8,31 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
-## 2026-11-04 — 1.0.7 incelemede; Expo'da yeni yamalar, SDK 58 "latest"
+## 2026-11-05 — 1.0.7 yayında
+
+Mağaza kaydı 5 Kasım 06:09 UTC'de 1.0.7'yi gösteriyor (ABD ve Türkiye):
+hızlı yazınca rakam düşmesi, büyüyen tutar alanı, kalem toplamı ve büyük
+tutarda çökme düzeltmesi artık telefonlarda. 4 Kasım'da alınan Expo
+yamaları ile yorum testinin ek süresi 6 Kasım'da commit'lendi; Expo o
+arada 8 pakete daha yama yayınlamıştı, CI'daki expo-doctor adımı bu yüzden
+yine kırmızı.
+
+---
+
+## 2026-11-04 — 1.0.7 incelemede; Expo yamaları alındı; yorum testine ek süre
 
 Kullanıcı build 28'i telefonda denedi: açılış, uygulama kapalıyken davet
 linki, bildirime dokununca grup — sorun yok. Aynı gün incelemeye gönderdi
 (build 28, sürüm notu STORE.md). Aynı gün ölçüldü:
 `expo-doctor` yine 20/21 — Expo dört paketin yamasını yayınlamış (expo
 57.0.31, expo-notifications, expo-router, expo-sharing); alınmadıkça CI'da
-bu adım kırmızı. Expo SDK 58 artık npm'de "latest". İkisi de kullanıcı
-kararı. Dış dünya ölçümü (DNS, canlı sayfalar, mağaza, ortam adları)
+bu adım kırmızı — 636a2cb'de öyle oldu. Kullanıcının isteğiyle yamalar
+alındı: alt paketlerde native bir modül de değişti
+(react-native-gesture-handler 3.2.1 → 3.4.0), bu yüzden simülatörde Release
+build ile açılış, uygulama kapalıyken davet linki, dokunuş ve yazma
+denendi. Yorum E2E testine `test.slow()` eklendi (yalnızca o testin
+bütçesi 60 → 180 sn); aynı günkü tam koşuda test 72 sn sürdü. Expo SDK 58
+artık npm'de "latest" — geçiş ayrı iş, kullanıcı kararı. Dış dünya ölçümü (DNS, canlı sayfalar, mağaza, ortam adları)
 CURRENT_TASK'ta yenilendi; beş ülke maddesi açık listeden çıktı (21
 Ekim'de beşinde de çıkıyordu).
 

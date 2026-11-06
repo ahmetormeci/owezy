@@ -2754,7 +2754,7 @@ tasarıma uygun; panoya boşluksuz IBAN gidiyor (simctl pbpaste ile okundu).
   diyordu (IBAN'dan önce de vardı; web'de zaten "Kim ödedi?").
 1.0.6 bu yüzden build 27.
 
-## Faz 54 — Tutar alanı: hızlı yazma, genişlik, kalem toplamı · **BİTTİ, WEB KISMI PUSH İLE CANLI; MOBİLİ 1.0.7 (TestFlight'ta geçti, 4 Kasım)**
+## Faz 54 — Tutar alanı: hızlı yazma, genişlik, kalem toplamı · **BİTTİ, 1.0.7'DE YAYINDA (5 Kasım)**
 
 Kullanıcının bildirdiği iki şey (21 Ekim): tutara hızlı "123" yazınca "1"
 gidiyor ya da rakamlar yer değiştiriyordu; kalem kalem eklerken toplam
@@ -2803,9 +2803,14 @@ karar vermemiştir.
 | **Birden fazla ödeyen** | "Hesabı ikimiz ödedik". Settle Up ücretsiz veriyor. `Expense.paidById` tek alan |
 | **Birden fazla para birimi** | Yurt dışı tatili. Kur kaynağı gerekiyor (dış servis → gizlilik beyanı) |
 | **Apple / Google ile giriş** | Kayıt sürtünmesi; Google eklenirse Apple girişi de zorunlu (4.8) |
-| **Yorum E2E testi bütçesinin sınırında** | `comments.spec.ts` "iki kişi yazışır" tek başına 43–46 sn, bütçe 60 sn. 27 Eylül tam koşusunda bir sayfa geçişi takılınca sınırı aştı (grup sayfası 15 sn açılmadı); hemen ardından değişikliksiz tam koşu temiz geçti (69/1). Sebep 50b değil: davet yolunu kullanan diğer testlerin süreleri iki koşuda aynı. Öneri: bu teste `test.slow()` ve ölçümü yanına — playwright.config'teki "bütçe değişmiyor" kararına dokunmadan, yalnızca bu uzun çok kişili akış için. **Karar kullanıcının** |
 | **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
+> **Yorum E2E testi listeden çıktı (4 Kasım, kullanıcının kararıyla):**
+> `comments.spec.ts` "iki kişi yazışır" testine `test.slow()` eklendi —
+> yalnızca bu testin bütçesi 60 → 180 sn; playwright.config'teki genel bütçe
+> ve iddia başına bekleme değişmedi. Eklendiği günkü tam koşuda test **72 sn**
+> sürdü: eski sınırla kod sağlamken düşecekti.
+>
 > **Android SORULDU VE BIRAKILDI (27 Eylül, kullanıcının kararı).** Engel
 > kod değil, Google'ın yeni kişisel hesaplara koyduğu kural: yayından önce
 > 12 test kullanıcısıyla 14 gün kesintisiz kapalı test. Kullanıcının eski bir
