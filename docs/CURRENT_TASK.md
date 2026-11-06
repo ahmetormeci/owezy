@@ -219,6 +219,11 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
   - <SHA> TAM 40 KARAKTER OLMALI: kisa SHA ile hem runs?head_sha= hem
     deployments?sha= HATA VERMEDEN BOS doner (0 / []) - "kosu yok",
     "yayin yok" sanilir. Tam hali: git rev-parse <kisa>.
+  - YETKISIZ GITHUB API'SI SAATTE 60 ISTEK (IP basina). 30 sn'de bir soran
+    bekleme dongusu + kontroller iki push'u dogrularken butceyi bitirdi;
+    sonraki istek "API rate limit exceeded" doner, sifirlanma ~1 saat.
+    Dongude 60 sn+ bekle, kontrolleri tek istekte topla. Kalan butce:
+      curl -s https://api.github.com/rate_limit   (bu uc butceden yemez)
   - DOKUMAN COMMIT'I OTOMATIK PUSH EDILIR ve altinda bekleyen kod
     commit'ini de goturur. Dokuman commit'inden once:
       git log --oneline origin/main..HEAD
