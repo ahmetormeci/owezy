@@ -50,11 +50,27 @@ Current task:
       testin butcesi 60 -> 180 sn. Tam kosu 73 gecti 1 atlandi (22.5 dk);
       bu kosuda yorum testi 72 SN surdu - eski sinirla kod saglamken
       dusecekti.
-  CI YINE KIRMIZI KALACAK: 6 Kasim'da Expo 8 pakete daha yama yayinladi
-  (expo 57.0.32, expo-build-properties 57.0.23, expo-constants 57.0.23,
-  expo-image-manipulator 57.0.22, expo-image-picker 57.0.21,
-  expo-notifications 57.0.25, expo-router 57.0.30, expo-sharing 57.0.25).
-  Almak KULLANICI KARARI; alinirsa ayni dogrulama (simulator dahil).
+  6 KASIM - COMMIT BEKLIYOR (ikisi de kullanicinin istegiyle):
+  A) CI MAILLERI BITTI - ADR-062 (kullanici onayladi): expo-doctor CI'da
+     surum kontrolu KAPALI kosuyor (kalan 20 kontrol durdurucu); surum
+     kontrolu en sonda "Expo yamalari (uyari, durdurmaz)" adiminda SARI
+     uyari; "Mobil paket derleniyor mu" tanilamadan ONCEYE alindi.
+     Olculdu: expo install --check guncel agacta exit 0, yamasiz commit'te
+     exit 1; yamasiz commit'te anahtarli doctor 20/20; uyari betigi iki
+     yolda da exit 0; ci.yml js-yaml ile gecerli. CI'DA HENUZ KOSMADI -
+     push'tan sonra adim adim bak.
+  B) IKINCI YAMA SETI ALINDI: 53377c9 push'landiginda Expo 8 pakete daha yama yayinlamisti,
+  CI yine expo-doctor'dan dustu. Alinan: expo 57.0.32,
+  expo-build-properties 57.0.23, expo-image-manipulator 57.0.22,
+  expo-image-picker 57.0.21, expo-notifications 57.0.25, expo-router
+  57.0.30, expo-sharing 57.0.25, expo-splash-screen 57.0.11 (kilitte
+  expo-constants 57.0.23, expo-modules-core 57.0.25 - NATIVE). expo-doctor
+  21/21, tsc, lint, 98 vitest + 145 jest, expo export temiz. Simulatorde
+  Release build (iOS 27): kapaliyken owezy://join/... davet ekrani,
+  dokunus/gecis, 31 karakter tek seferde. FOTOGRAF SECME/ISLEME
+  (expo-image-picker/-manipulator) simulatorde DENENMEDI - giris
+  gerektiriyor; bir sonraki surumun TestFlight'inda fis/profil fotografi
+  denenmeli.
 
   EXPO - 4 KASIM OLCUMU:
     - SDK 58 ARTIK "latest" (npm dist-tags: latest 58.0.23, sdk-57
@@ -108,7 +124,6 @@ Current task:
     kullanici O BUILD'de denedikten sonra yazilir.
 
 ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
-  0. EXPO'NUN 6 KASIM YAMALARI (yukarida) - alinsin mi.
   1. TEKRARLAYAN HARCAMA canlida gercekten uretim yaptigi HIC GORULMEDI.
      CRON_SECRET TANIMLI VE DOGRULANDI (10 Eylul: Vercel -> Cron Jobs ->
      Run -> 200) - soru o DEGIL. Eksik olan gercek bir sablonun
@@ -181,6 +196,10 @@ AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):
     grubu da dev'de. appreview@ dev'de YOK. Dev'e bakmak: npx prisma studio.
 
 GONDERIM KONTROL LISTESI (her surum):
+  0. Expo yamalari (ADR-062 - CI artik bunun icin kirmizi YANMIYOR, sari
+     uyari veriyor): cd mobile && npx expo install --check. Eskiyse
+     npx expo install --fix -> tsc + lint + npm test + expo-doctor +
+     expo export + native parca degistiyse simulatorde Release build.
   1. eas build (imaj Xcode 26.6 - log'dan dogrula). EAS ucretsiz plan AYDA
      15 iOS build: BUILD ALMADAN ONCE SOR, degisiklikleri biriktir.
   2. eas submit -> TestFlight -> kullanicinin telefonunda kontrol.
@@ -206,9 +225,11 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
   PUSH VE CI
   - HER PUSH'TAN SONRA CI'A BAK - dokuman push'u dahil:
       curl -s "https://api.github.com/repos/ahmetormeci/owezy/actions/runs?per_page=5&head_sha=<SHA>"
-    Main HIC commit atilmadan da kirilabiliyor: Expo yama yayinlayinca
-    expo-doctor kapisi duser. Cozum: cd mobile && npx expo install --fix,
-    sonra tsc + lint + npm test + expo-doctor, package.json + lock commit.
+    Expo yama yayinlayinca CI artik KIRILMIYOR (ADR-062): son adim "Expo
+    yamalari (uyari, durdurmaz)" SARI uyari verir. Uyariyi gormek:
+      .../actions/runs/<id>/jobs -> check_run_url -> /annotations
+    Yamalar build oncesi alinir (GONDERIM KONTROL LISTESI 0). CI yine de
+    kirmiziysa sebep GERCEK bir sey - adimlarina bak.
   - DOKUMAN COMMIT'I OTOMATIK PUSH EDILIR ve altinda bekleyen kod
     commit'ini de goturur. Dokuman commit'inden once:
       git log --oneline origin/main..HEAD

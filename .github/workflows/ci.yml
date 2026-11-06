@@ -152,18 +152,11 @@ jobs:
         run: npm test
         working-directory: mobile
 
-      - name: Expo tanilamasi
-        # Bagimliliklarin SDK ile uyumunu ve eksik native es bagimliliklari
-        # kontrol ediyor. Ilk kosuldugunda gercek bir sey buldu: ClerkProvider
-        # expo-web-browser'i kosulsuz require ediyor ama paket yalnizca DOLAYLI
-        # kuruluydu. Expo Go'da sorun cikmiyor, native derlemede native modul
-        # baglanmayabiliyor - yani tam da TestFlight'ta. O paket 25.7'de
-        # Clerk'le birlikte kalkti; kontrol duruyor cunku ayni tuzak native
-        # modul tasiyan HER paket icin gecerli.
-        run: npx expo-doctor
-        working-directory: mobile
-
       - name: Mobil paket derleniyor mu
+        # Expo tanilamasindan ONCE (ADR-062): tanilama duserse bu adim hic
+        # calismiyordu ve gercek bir derleme hatasi o kirmizinin arkasinda
+        # gorunmez kaliyordu.
+        #
         # tsc'nin GOREMEDIGI katman: Metro'nun depo kokunu izleyip "@/lib"
         # takma adini gercekten cozebilmesi, varliklarin bulunmasi, paketin
         # kurulabilmesi. Faz 18'de alti gercek hatanin hicbirini tsc
@@ -179,4 +172,40 @@ jobs:
         # bir uygulamadir; burada da onbellegi kapatip her kosuyu sifirdan
         # derletmek dogrusu.
         run: npx expo export --platform ios --clear --output-dir /tmp/expo-export-ci
+        working-directory: mobile
+
+      - name: Expo tanilamasi
+        # Bagimliliklarin SDK ile uyumunu ve eksik native es bagimliliklari
+        # kontrol ediyor. Ilk kosuldugunda gercek bir sey buldu: ClerkProvider
+        # expo-web-browser'i kosulsuz require ediyor ama paket yalnizca DOLAYLI
+        # kuruluydu. Expo Go'da sorun cikmiyor, native derlemede native modul
+        # baglanmayabiliyor - yani tam da TestFlight'ta. O paket 25.7'de
+        # Clerk'le birlikte kalkti; kontrol duruyor cunku ayni tuzak native
+        # modul tasiyan HER paket icin gecerli.
+        #
+        # SURUM KONTROLU BURADA KAPALI (ADR-062): expo-doctor'in "paketler
+        # Expo'nun SU AN onerdigi surumde mi" kontrolu, Expo her yama
+        # yayinladiginda biz hicbir sey degistirmeden dusuyordu - her push
+        # kirmizi, her kirmizi bir mail, ve arkasindaki adimlar hic
+        # calismiyordu. Kalan 20 kontrol (eksik native es bagimlilik gibi)
+        # eskisi gibi DURDURUCU. Surum kontrolu en sondaki adimda uyari.
+        run: npx expo-doctor
+        working-directory: mobile
+        env:
+          EXPO_DOCTOR_SKIP_DEPENDENCY_VERSION_CHECK: "1"
+
+      - name: Expo yamalari (uyari, durdurmaz)
+        # Expo bu SDK icin yeni yama yayinladiysa burada SARI bir uyari cikar;
+        # kosu yesil kalir, mail gitmez (ADR-062). Yamalar build'den once
+        # alinir: cd mobile && npx expo install --fix, sonra tsc + lint + test
+        # + expo-doctor + simulatorde Release build (native parca degistiyse).
+        # Kontrolun kendisi ag ya da baska bir sebeple calisamazsa da yalnizca
+        # uyari - bu adim hicbir durumda kosuyu dusurmez.
+        run: |
+          if npx expo install --check > /tmp/expo-check.txt 2>&1; then
+            cat /tmp/expo-check.txt
+          else
+            cat /tmp/expo-check.txt
+            echo "::warning title=Expo yamalari::Expo bu SDK icin yeni yamalar yayinlamis (ya da kontrol calisamadi). Build'den once: cd mobile && npx expo install --fix"
+          fi
         working-directory: mobile

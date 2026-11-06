@@ -189,10 +189,12 @@ kural [CONVENTIONS.md](CONVENTIONS.md) "Mobil" bölümünde.
 **Otomatik testi yok, ama CI artık ona da bakıyor.** E2E ve birim testleri
 hâlâ yalnızca web'i kapsıyor; mobilin **davranışını** doğrulayan hiçbir şey
 yok ve doğrulama iOS Simulator'da elle yapılıyor. CI (Faz 20) mobil tarafta
-dört şey koşuyor: bağımlılık kurulumu, `tsc`, `expo-doctor` ve
-`expo export`. Sonuncusu tip sisteminin göremediği katmanı kapsıyor —
+bağımlılık kurulumu, `tsc`, lint, testler, `expo export` ve `expo-doctor`
+koşuyor. `expo export` tip sisteminin göremediği katmanı kapsıyor —
 Metro'nun depo kökü üzerinden `@/lib` takma adını gerçekten çözebilmesi ve
-paketin kurulabilmesi.
+paketin kurulabilmesi. `expo-doctor`'ın "Expo'nun en son yamasında mıyız"
+kontrolü CI'ı durdurmuyor, uyarı veriyor (ADR-062); yamalar build'den önce
+alınıyor.
 
 Mobil adımlar **ayrı bir job değil**: mobil `tsc`, kökün üretilmiş Prisma
 client'ına bağlı (paylaşılan modüllerden ikisi `@prisma/client`'tan tip

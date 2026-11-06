@@ -8,6 +8,21 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-06 — Expo yamaları artık CI'ı kırmızıya boyamıyor (ADR-062)
+
+Kullanıcı üç gündür GitHub'dan "run failed" maili aldığını söyledi. Sebep
+kod değil: Expo her yama yayınladığında `expo-doctor`'ın sürüm kontrolü
+düşüyor, her push kırmızı bitiyordu (29 Eylül, 21 Ekim, 4 ve 6 Kasım). CI
+değişti: sürüm kontrolü ayrı ve durdurmayan bir adımda sarı uyarı; kalan 20
+`expo-doctor` kontrolü durdurucu; "mobil paket derleniyor mu" tanılamadan
+önce — tanılama düşünce hiç çalışmıyordu. Yamalar build öncesi alınıyor
+(gönderim listesinin yeni ilk adımı). Aynı gün Expo'nun 8 yeni yaması da
+alındı; simülatörde Release build ile açılış, kapalıyken davet linki,
+dokunuş ve yazma denendi. Fotoğraf seçme/işleme simülatörde denenmedi —
+bir sonraki TestFlight'ta.
+
+---
+
 ## 2026-11-05 — 1.0.7 yayında
 
 Mağaza kaydı 5 Kasım 06:09 UTC'de 1.0.7'yi gösteriyor (ABD ve Türkiye):

@@ -530,6 +530,53 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-062 — Expo'nun yama sürümü kontrolü CI'ı durdurmaz, uyarı verir
+**Tarih:** 2026-11-06 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-06**
+
+**Bağlam:** CI'daki "Expo tanılaması" adımı (`npx expo-doctor`, ADR-018'in
+mobil uzantısı) içinde, kurulu paketlerin Expo'nun **şu an** önerdiği
+sürümde olup olmadığına bakan bir kontrol var. Expo SDK 57 için neredeyse
+her hafta yama yayınlıyor; yama çıktığı an bu kontrol, biz hiçbir şeye
+dokunmadan düşüyordu. Sonuç: her push kırmızı — doküman push'ları dahil —
+ve kullanıcıya her seferinde "run failed" maili. 29 Eylül, 21 Ekim, 4 ve 6
+Kasım'da yaşandı. Üstüne, bu adım düşünce arkasındaki "mobil paket
+derleniyor mu" adımı hiç çalışmıyordu: gerçek bir derleme hatası o
+kırmızının arkasında görünmez kalabilirdi.
+
+**Karar:**
+- `expo-doctor` CI'da `EXPO_DOCTOR_SKIP_DEPENDENCY_VERSION_CHECK=1` ile
+  koşuyor: **yalnızca** sürüm kontrolü kapalı, kalan 20 kontrol (eksik
+  native eş bağımlılık gibi — bu adımı var eden tuzak) eskisi gibi
+  **durdurucu**.
+- Sürüm kontrolü en sonda ayrı bir adım: `npx expo install --check`. Düşerse
+  koşu yeşil kalır, sayfada **sarı uyarı** çıkar (`::warning::`), mail
+  gitmez. Kontrolün kendisi çalışamazsa da (ağ) yalnızca uyarı.
+- "Mobil paket derleniyor mu" tanılamadan **önceye** alındı.
+- Yamalar **build'den önce** alınır: gönderim kontrol listesinin ilk adımı
+  `npx expo install --check`; eskiyse `--fix` + tsc + lint + test +
+  expo-doctor + simülatörde Release build (native parça değiştiyse).
+
+**Ölçüldü (6 Kasım):** `expo install --check` güncel ağaçta exit 0
+("Dependencies are up to date"), yamasız commit'te (53377c9, ayrı bir
+çalışma ağacında) exit 1 ve dokuz paketi tek tek sayıyor. Aynı yamasız
+commit'te anahtarlı `expo-doctor` 20/20 geçti. Uyarı adımının betiği iki
+yolda da (kontrol geçer / düşer) exit 0.
+
+**Reddedilen:**
+- *GitHub'da hata maillerini kapatmak:* gerçek bir hatada da mail gelmez.
+- *Yamaları otomatik alan bir düzen (Dependabot, Renovate, zamanlanmış iş):*
+  native değişiklik içeren yamalar yine simülatörde denenmeli; açılan
+  öneriler birikir. Tek geliştiricili bu proje için fazla.
+- *Olduğu gibi bırakmak:* sürekli kırmızı, kırmızıyı sıradanlaştırıyor —
+  gerçek bir kırmızı fark edilmez olur.
+
+**Sonuç / bedel:** Main'deki paketler Expo'nun en son yamasının birkaç gün
+gerisinde kalabilir. Bu bir hata değil — yayındaki uygulama build anındaki
+sürümlerle çalışıyor — ve build öncesi kontrol farkı kapatıyor. Uyarıyı
+görmek için CI sayfasına bakmak gerekiyor; mail gelmiyor.
+
+---
+
 ## ADR-061 — Mobilde metin alanları kontrolsüz: yazılanı telefon tutar, uygulama dinler
 **Tarih:** 2026-10-21 · **Durum:** Kabul edildi · **UYGULANDI: 2026-10-21** (telefona 1.0.7 ile)
 
