@@ -2320,9 +2320,10 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 | GitHub Actions CI: `main`'e giden her değişiklikte tip kontrolü, lint ve birim testleri (E2E hariç, gerekçesi ADR-018) | `09d0e91` |
 | Talimat dosyalarındaki tekrarların temizlenmesi, PROJECT.md'deki bayat bilgiler (tek dil, eski test sayıları) ve hedefli E2E koşusu tarifi | `f700fbe` |
 | `npm audit fix`: 12 → 6 açık, 19 yama seviyesi güncelleme (`package.json` değişmedi) | `430e378` |
-| Next 16.2.11 → 16.3.2: kalan `postcss` ve `sharp` açıkları kapandı, 6 → 3 | *(bu commit)* |
+| Next 16.2.11 → 16.3.2: kalan `postcss` ve `sharp` açıkları kapandı, 6 → 3 | `4a562ab` |
 | Expo yamaları CI'ı artık kırmızıya boyamıyor: sürüm kontrolü uyarı, kalan `expo-doctor` kontrolleri durdurucu, paket derlemesi tanılamadan önce (ADR-062, 6 Kasım) | `c52d10f` |
-| Web güvenlik güncellemesi: Next 16.3.2 → 16.4.5 (kritik açıklar), zorlamasız `npm audit fix`, Prisma 7.10.1'e hizalı; better-auth 1.7.1'de sabit (ADR-063). Canlıya giden paketlerde açık 36 → 12, yüksek/kritik etkileyen yok (6 Kasım) | *(bu commit)* |
+| Web güvenlik güncellemesi: Next 16.3.2 → 16.4.5 (kritik açıklar), zorlamasız `npm audit fix`, Prisma 7.10.1'e hizalı; better-auth 1.7.1'de sabit (ADR-063). Canlıya giden paketlerde açık 36 → 12, yüksek/kritik etkileyen yok (6 Kasım) | `6cd7fef` |
+| better-auth 1.7.1 → 1.7.18: önce `Account.issuer` boş bırakılabilir (`20261106120000`), sonra yükseltme; sürüm yine tam sabit (ADR-063 eki). Sentry: `@sentry/nextjs/config` ve `disableLogger` → `bundleSizeOptimizations.excludeDebugStatements` — ölçüldü, bundle aynı (6 Kasım) | *(bu commit)* |
 
 ---
 
@@ -2805,8 +2806,12 @@ karar vermemiştir.
 | **Birden fazla ödeyen** | "Hesabı ikimiz ödedik". Settle Up ücretsiz veriyor. `Expense.paidById` tek alan |
 | **Birden fazla para birimi** | Yurt dışı tatili. Kur kaynağı gerekiyor (dış servis → gizlilik beyanı) |
 | **Apple / Google ile giriş** | Kayıt sürtünmesi; Google eklenirse Apple girişi de zorunlu (4.8) |
-| **`disableLogger` ölçümü** | `next.config.ts:166` Turbopack altında ölü olabilir; ölçülmeden dokunulmayacak |
 
+> **`disableLogger` ölçümü listeden çıktı (6 Kasım):** ayar Turbopack'te
+> ölü DEĞİLMİŞ — kaldırılınca tarayıcıya giden JS 7,6 KB büyüdü. Sentry'nin
+> önerdiği yeni ada (`bundleSizeOptimizations.excludeDebugStatements`)
+> geçildi; boyut eskisiyle aynı. Ayrıntı CHANGELOG 2026-11-06.
+>
 > **Yorum E2E testi listeden çıktı (4 Kasım, kullanıcının kararıyla):**
 > `comments.spec.ts` "iki kişi yazışır" testine `test.slow()` eklendi —
 > yalnızca bu testin bütçesi 60 → 180 sn; playwright.config'teki genel bütçe
@@ -2964,14 +2969,13 @@ kaldı (ADR-054).
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi
-- **`next.config.ts`'teki `disableLogger: true` ölü olabilir.** Derlemede
-  Sentry uyarı veriyor: seçenek kullanımdan kaldırılmış, yerine
-  `webpack.treeshake.removeDebugLogging` öneriliyor **ve ikisi de
-  Turbopack'te desteklenmiyor**. Next 16 varsayılan olarak Turbopack
-  kullandığı için bu satır muhtemelen hiçbir şey yapmıyor. Dokunulmadı:
-  Sentry'nin debug loglarının bundle'dan gerçekten çıkıp çıkmadığını
-  ölçmeden değiştirmek, sessizce bundle büyütebilir. Ölçülüp karar verilmeli
-- **`npm audit`: 3 yüksek açık** (önce 12'ydi). Önce `npm audit fix`, sonra
+- **`npm audit` (6 Kasım ölçümü):** canlıya giden paketlerde (`--omit=dev`)
+  **0 kritik, 0 yüksek**, 10 orta/düşük. Bütün ağaçta 1 yüksek:
+  `brace-expansion` ≤1.1.20 (DoS), yalnızca ESLint'in eski `minimatch`'i
+  üzerinden — geliştirme aracı, uygulamaya girmiyor; `npm audit fix`
+  kapatabilir ama denenmedi (bağımlılık güncellemesi = tam E2E).
+  Aşağıdakiler GEÇMİŞ ölçümler.
+- **`npm audit`: 3 yüksek açık** (Eylül; önce 12'ydi). Önce `npm audit fix`, sonra
   Next 16.3.2 yükseltmesi uygulandı. `npm audit fix` ile kapananlar:
   `brace-expansion`, `fast-uri`, `js-yaml`, `find-my-way`, `valibot` ve
   Prisma'nın alt paketleri kapandı — 19 yama seviyesi güncelleme, hepsi

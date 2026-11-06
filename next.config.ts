@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 /**
  * Her yanita eklenen guvenlik basliklari.
@@ -162,8 +162,20 @@ export default withSentryConfig(nextConfig, {
   // uzatip uyari uretecegi icin tamamen kapatiyoruz.
   sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
 
-  // Sentry'nin kendi debug loglarini bundle'dan cikarir.
-  disableLogger: true,
+  /**
+   * Sentry'nin kendi hata ayiklama yazilarini tarayiciya giden koddan cikarir.
+   * Eski adi "disableLogger"di (Sentry 10'da kullanim disi, 11'de kalkiyor).
+   * Sentry'nin onerdigi yeni ad bu: hem webpack'te hem Turbopack'te calisiyor.
+   *
+   * OLCULDU (6 Kasim, next build, Turbopack): bu ayar yokken tarayiciya
+   * giden JS 7,6 KB buyuyor ve "[Tracing]" gibi hata ayiklama yazilari
+   * 1'den 21'e cikiyor. Yeni adla toplam boyut eski adla ayni cikti
+   * (1.411.226 bayt). Sentry bunu Turbopack'e compiler.define ile
+   * __SENTRY_DEBUG__=false olarak veriyor.
+   *
+   * Bedeli: Sentry.init'e "debug: true" yazilirsa calismaz. Kullanmiyoruz.
+   */
+  bundleSizeOptimizations: { excludeDebugStatements: true },
 
   silent: true,
 });

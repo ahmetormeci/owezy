@@ -633,7 +633,7 @@ model Account {
   id String @id @default(uuid()) @db.Uuid
 
   // Kimligi VEREN taraf ("local:credential", ya da sosyal saglayicilarda
-  // saglayicinin adresi). Better Auth bunu ZORUNLU yaziyor.
+  // saglayicinin adresi). ARTIK KULLANILMIYOR - asagidaki son paragraf.
   //
   // BU ALAN ILK BASTA UNUTULDU ve sebebi kayda deger: sema
   // "@better-auth/cli@1.4.21" ile uretilmisti, kutuphane ise 1.7.1. CLI
@@ -645,11 +645,13 @@ model Account {
   // kendi ayarlarimizla cagrilip dort modelin tamami karsilastirildi.
   // Eksik olan yalnizca buydu.
   //
-  // YALNIZCA better-auth 1.7.0-1.7.2 YAZIYOR. 1.7.3+ yazmiyor ve bu NOT
-  // NULL sutunla her kayit "Argument issuer is missing" ile duser. Bu
-  // yuzden better-auth 1.7.1'de sabit (ADR-063); yukseltmeden ONCE bu
-  // alan nullable yapilmali.
-  issuer String
+  // YALNIZCA better-auth 1.7.0-1.7.2 YAZIYORDU. 1.7.3+ yazmiyor; NOT NULL
+  // kalsaydi her kayit "Argument issuer is missing" ile duserdi (ADR-063).
+  // 6 Kasim'da nullable yapildi, better-auth 1.7.18'e cikti. 1.7.18'in
+  // getAuthTables() cikisinda bu alan YOK. Eski hesaplarda dolu,
+  // yenilerde bos. Sutunu silmek ayri bir temizlik isi: veri tasidigi
+  // icin geri alinamaz, acelesi de yok.
+  issuer String?
 
   accountId             String
   providerId            String

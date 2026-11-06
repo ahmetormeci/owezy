@@ -8,6 +8,33 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-06 — better-auth 1.7.18'e çıktı; Sentry ayarları yeni adlarında
+
+**better-auth 1.7.1 → 1.7.18 (ADR-063'ün yükseltme yolu).** Önce göç:
+`Account.issuer` boş bırakılabilir oldu (`20261106120000`, yalnızca
+`DROP NOT NULL` — sütun ve eski veri duruyor). 1.7.3'ten beri better-auth
+o alanı yazmıyordu; zorunlu kalsaydı her yeni kayıt düşerdi. Yayında göç
+yeni koddan önce uygulanıyor (`vercel-build`), yani sıra güvenli. 1.7.18'in
+kendi tablo listesi şemayla karşılaştırıldı: başka fark yok. Sürüm yine
+tam sabit (`"1.7.18"`): kütüphane bir yama sürümünde veritabanı
+sözleşmesini değiştirdiği için her yükseltme bilerek yapılacak. Canlıya
+giden paketlerde kritik açık kalmadı (12 → 10; 0 kritik, 0 yüksek).
+Doğrulama: tam E2E 73/1, 2FA köprüsü yolu 11/11, ayrıca 1.7.1 döneminden
+kalmış gibi `issuer`'ı dolu hesapla giriş (200 + Bearer belirteci) ve
+1.7.18 ile yeni kayıt.
+
+**Sentry: iki kullanım dışı uyarı kapandı.** `withSentryConfig` artık
+`@sentry/nextjs/config`'ten geliyor (eski yol Sentry 11'de kalkıyor);
+`disableLogger` yerine Sentry'nin önerdiği
+`bundleSizeOptimizations.excludeDebugStatements`. **Ölçüldü:**
+"Turbopack'te ölü olabilir" varsayımı yanlıştı — ayar yokken tarayıcıya
+giden JS 7,6 KB büyüyor ve Sentry'nin hata ayıklama yazıları 1'den 21'e
+çıkıyor. Yeni adla toplam boyut eskisiyle bayt bayt aynı (1.411.226).
+Sentry bunu Turbopack'e `compiler.define` ile `__SENTRY_DEBUG__=false`
+olarak geçiriyor. PROGRESS'teki "`disableLogger` ölçümü" adayı kapandı.
+
+---
+
 ## 2026-11-06 — Web güvenlik güncellemesi: Next 16.4.5; better-auth bilerek 1.7.1'de (ADR-063)
 
 Next.js 16.3.2'yi etkileyen kritik açıklar (22 Ekim) yalnızca 16.4.1 ve

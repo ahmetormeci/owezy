@@ -531,7 +531,7 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 ---
 
 ## ADR-063 — better-auth 1.7.1'de, tam sürümle sabit; yükseltme `Account.issuer` göçünü bekliyor
-**Tarih:** 2026-11-06 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-06**
+**Tarih:** 2026-11-06 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-06** · **YÜKSELTME YAPILDI: 2026-11-06 → 1.7.18 (ek aşağıda)**
 
 **Bağlam:** Web güvenlik güncellemesinde zorlamasız `npm audit fix`
 better-auth'u `^1.7.1` aralığında 1.7.18'e çıkardı. Tip kontrolü, lint,
@@ -566,6 +566,38 @@ sütun ikisini de kabul eder — yayın sırası güvenli.
 
 **Ders:** bağımlılık güncellemesinden sonra tam E2E şart; "zorlamasız
 audit fix" veritabanı sözleşmesini değiştiren bir yama getirebiliyor.
+
+**Ek (6 Kasım, aynı gün): yükseltme yapıldı — 1.7.18, yine tam sürümle.**
+Kullanıcının kararıyla yukarıdaki yol izlendi:
+1. Yinelenen `(providerId, accountId)`: geliştirme veritabanında 0 (tek
+   sağlayıcı `credential`). Production bu makineden ölçülemez; orada da tek
+   sağlayıcı `credential` ve her kullanıcıya tek hesap satırı yazılıyor.
+2. Göç `20261106120000_relax_account_issuer`: yalnızca `DROP NOT NULL`.
+   Sütun ve eski veri duruyor. Rehberin düşür dediği `issuer + accountId`
+   indeksi bizde hiç oluşturulmamıştı.
+3. 1.7.18'in kendi tablo listesi (`getAuthTables()`, bizim ayarlarımızla)
+   şemayla karşılaştırıldı: tek fark `issuer` (1.7.18'de yok). 2FA'nın
+   yeni alanları (`verified`, `failedVerificationCount`, `lockedUntil`)
+   şemada zaten vardı.
+4. Doğrulama: tsc, lint, 861 birim, build; tam E2E 73 geçti 1 atlandı
+   (16.9 dk); 2FA köprüsü yolu 11/11. **Eski hesap:** E2E hesaplarına
+   1.7.1'in yazdığı `issuer` değeri yazılıp 1.7.18 ile parolayla girildi —
+   200 + `set-auth-token`, Bearer ile oturum doğru kullanıcıya çıktı, yanlış
+   parola 401, `issuer` yerinde kaldı. **Yeni kayıt:** E2E kurulumu üç
+   kullanıcıyı 1.7.18 ile kaydetti; `issuer` boş.
+
+Yayın sırası güvenli: `vercel-build` göçü yeni koddan ÖNCE uyguluyor; o
+arada çalışan 1.7.1 `issuer` yazmaya devam eder, boş bırakılabilir sütun
+bunu da kabul eder.
+
+**Tam sürüm sabitlemesi SÜRÜYOR (`"1.7.18"`, `^` yok).** Sebep aynı:
+better-auth bir YAMA sürümünde veritabanı sözleşmesini değiştirdi (1.7.3).
+Her yükseltme bilerek yapılmalı ve tam E2E'den geçmeli. Bedeli: güvenlik
+yamaları kendiliğinden gelmiyor — `npm audit` better-auth için açık
+gösterirse bu ADR'deki yol yeniden izlenir.
+
+**Kalan temizlik (acelesi yok):** `Account.issuer` sütununu silmek. Veri
+taşıdığı için geri alınamaz; kimse okumuyor.
 
 ---
 

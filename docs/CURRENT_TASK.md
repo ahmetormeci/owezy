@@ -33,48 +33,34 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-06
 
 Current task:
-  WEB GUVENLIK GUNCELLEMESI - COMMIT BEKLIYOR (6 Kasim, kullanicinin
-  onayiyla). Sebep: Next 16.3.2'yi etkileyen KRITIK aciklar (22 Ekim:
-  GHSA-673q "use cache" RCE, GHSA-2464 Image Optimization SVG RCE) -
-  yalnizca 16.4.1+'da kapali, 16.3 serisine yama YOK. Kodda "use cache",
-  next/og, cacheComponents yok; next/image var. Next "kullanmasaniz da
-  guncelleyin" diyor.
-    - next + eslint-config-next 16.3.2 -> 16.4.5 (16.4.5 ek guvenlik
-      yamalari da getiriyor).
-    - npm audit fix (ZORLAMASIZ): @sentry/nextjs 10.78.0, zod 4.6.7,
-      shadcn 4.23.0, vitest 4.1.12, alt paketler.
-    - prisma CLI audit fix ile 7.10.1'e cikti -> @prisma/client ve
-      @prisma/adapter-neon da 7.10.1'e HIZALANDI (CLI ile istemci ayni
-      surumde olmali).
-    - BETTER-AUTH 1.7.1'DE TUTULDU, TAM SURUMLE SABIT (ADR-063): audit fix
-      1.7.18'e cikarmisti ve E2E kurulumu "Argument issuer is missing" ile
-      DUSTU - 1.7.3+ Account.issuer yazmiyor, semamizda zorunlu. Canliya
-      gitseydi YENI KAYIT tamamen bozulurdu. 1.7.1'in aciklari (Magic Link
-      + sosyal giris / OAuth Proxy / drizzle adaptoru) bizim ayarlarda
-      YOK. Yukseltme = veritabani gocu, ayri is, KULLANICI KARARI.
-    - AGENTS.md: next dev Next blogunun basligini "#" -> "##" yapti
-      (Next'in kendi yazdigi blok - commit'e dahil).
-  Canliya giden paketlerde (npm audit --omit=dev): 36 acik (4 kritik, 16
-  yuksek) -> 12 (1 "kritik" = better-auth, bizi etkilemiyor; 0 yuksek).
-  Kalan orta/dusukler Sentry'nin derleme eklentileri ve shadcn CLI'inin
-  bagimliliklari - calisan uygulamaya girmiyor.
-  Dogrulama: tsc, lint, 861 birim, npm run build, TAM E2E 73 gecti 1
-  atlandi (16.8 dk, sunucu hatasi yok), 2FA KOPRUSU yolu (asagida) -
-  two-factor.spec 11/11, kopru testi dahil; gecici degisiklikler geri
-  alindi. Mobil bu ise DAHIL DEGIL (uyarilar Expo'nun araclarinda).
-  Sentry'nin yeni uyarisi (dev sunucusu): withSentryConfig'i
-  "@sentry/nextjs/config"tan al (v11'de eski yol kalkacak) ve
-  disableLogger kullanim disi - ikisi de simdilik yalnizca uyari.
+  BETTER-AUTH 1.7.18 + SENTRY AYAR ADLARI - COMMIT'LENDI VE PUSH'LANDI
+  (6 Kasim, kullanicinin istegiyle). CI ve yayin sonucu: SONRAKI ADIM.
+    1. better-auth 1.7.1 -> 1.7.18 (ADR-063 eki). Once goc
+       20261106120000_relax_account_issuer: Account.issuer DROP NOT NULL
+       (sutun ve eski veri duruyor). Gelistirme ve E2E veritabanina
+       UYGULANDI. Production'a Vercel uygulayacak: vercel-build gocu yeni
+       koddan ONCE calistiriyor, goc duserse build da duser - yani
+       "Production success" = goc uygulandi. Surum yine TAM sabit
+       ("1.7.18"). 1.7.18'in getAuthTables() cikisi semayla
+       karsilastirildi: tek fark issuer.
+    2. Sentry: withSentryConfig "@sentry/nextjs/config"tan; disableLogger
+       -> bundleSizeOptimizations.excludeDebugStatements. OLCULDU: ayar
+       Turbopack'te CALISIYOR (yokken +7,6 KB); yeni adla boyut ayni
+       (1.411.226 bayt). Derlemede uyari kalmadi.
+    3. AGENTS.md: "-g kurulumu eler" notu OLCUMLE CELISIYORDU (Playwright
+       1.62.1'de setup -g ile de calisiyor; --list gosteriyor) - duzeltildi.
+  Dogrulama: tsc, lint, 861 birim, build; TAM E2E 73 gecti 1 atlandi
+  (16.9 dk, yeni sunucu hatasi yok); 2FA KOPRUSU yolu 11/11 (gecici
+  degisiklikler geri alindi); 1.7.1 donemi gibi issuer'i DOLU hesapla
+  giris 200 + Bearer, yanlis parola 401; 1.7.18 ile yeni kayit.
+  Mobil bu ise DAHIL DEGIL: better-auth'u import etmiyor, ayni uclari
+  HTTP ile cagiriyor (auth.spec'teki Bearer testi o yolu kosuyor).
+  SONRAKI ADIM: CI kosusu ve Production yayini bu commit'in SHA'siyla
+  olculecek (asagidaki tuzak). Yayin success = goc production'da.
 
-  ONCEKI (6 Kasim): CI'daki iki action v4 -> v7
-  (cfe29ab, kullanicinin istegiyle push'landi). ci.yml: actions/checkout@v7
-  ve actions/setup-node@v7 - ikisi de node24, ana surum etiketi (SHA
-  degil, kullanici secti). Ayrinti CHANGELOG 2026-11-06.
-  CI'DA GORULDU (kosu 42219689524): success, 18 adimin hepsi success, ~2
-  dk. "Node.js 20 is deprecated" uyarisi GITTI - kalan tek not Ubuntu 26.
-  npm onbellegi v4'un kaydettiginden geri geldi: sureler d310353'teki
-  (v4, onbellek isabetli) kosuyla ayni - kurulum 21 sn, kayit 0 sn.
-  Production yayini success; / ve /support 200.
+  ONCEKI (6 Kasim): web guvenlik guncellemesi 6cd7fef - Next 16.4.5
+  (kritik aciklar), zorlamasiz audit fix, Prisma 7.10.1. CI 42222956026
+  success, Production 13:08Z success. Ayrinti CHANGELOG 2026-11-06.
   UBUNTU 26 (GitHub notu, dokunulmadi): ubuntu-latest 19 Ekim'den beri
     kademeli olarak Ubuntu 26'ya geciyor (actions/runner-images#14748).
     Adimlar kendi Node'unu kuruyor ve yalnizca npm kullaniyor - risk dusuk.
@@ -162,10 +148,10 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      Ekrandaki "SPF policy: Fail" kokteki "v=spf1 -all" (kokten kimse
      gondermiyor - ayar, hata degil); "BIMI: No/Fail" bilerek kurulmadi
      (ADR-060).
-  4. BETTER-AUTH YUKSELTMESI (ADR-063): 1.7.1'de sabit. 1.7.7+ icin
-     Account.issuer gocu gerekiyor (NOT NULL kaldir + issuer/accountId
-     benzersiz indeksini dusur - 1.7 yukseltme rehberi). Bizi etkileyen
-     acik YOK; KULLANICI KARARI.
+  4. brace-expansion: butun agacta kalan TEK yuksek acik (DoS), yalnizca
+     ESLint 9'un minimatch@3'u uzerinden - gelistirme araci, canliya
+     girmiyor. npm audit fix kapatabilir; denenmedi (= tam E2E). Canliya
+     giden paketlerde 0 kritik / 0 yuksek. KULLANICI KARARI.
   5. SDK 58: artik "latest" (4 Kasim). Ayri is (ADR-058). Son tarih
      NISAN 2027 (Apple, iOS 27 SDK). Xcode 27'ye gecilen gun uygulama
      yeniden boyutlandirilabilir oluyor - duzen farkli genisliklerde
@@ -177,9 +163,9 @@ DIS DUNYA - 6 KASIM OLCUMU:
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
-  CI       cfe29ab success (6 Kasim, action'lar v7) - onceki d310353 ve
-           c52d10f de success
-  YAYIN    cfe29ab Production success 12:42:45Z - dokuman commit'leri de
+  CI       6cd7fef success (kosu 42222956026) - onceki 80bc9e0, 3e3adf2
+           de success
+  YAYIN    6cd7fef Production success 13:08:47Z - dokuman commit'leri de
            production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
@@ -311,6 +297,9 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
   - BAGIMLILIK GUNCELLEMESINDEN SONRA TAM E2E SART: better-auth 1.7.18
     tsc/lint/861 birim testi/build'den GECTI, yalnizca E2E kurulumu
     yakaladi (kayit 500). npm audit fix "guvenli" sayilmaz.
+  - CI/YAYIN OLCERKEN SHA'YI ESLESTIR: actions/runs listesinden en
+    yeniyi degil, head_sha'si commit'inki olani al; deployments?sha= tam
+    SHA ister. Bir izleyici eski bir kosuyu "bu commit" diye okudu (6 Kasim).
   - ARKA PLAN GOREVI CALISMA KOPYASI (.claude/worktrees/...) proje
     klasorunun ICINDE: varken "npm run lint" o kopyayi da tariyor ve
     oradan hata veriyor. Bizim kodu olcmek icin:
