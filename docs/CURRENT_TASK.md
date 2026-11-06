@@ -33,25 +33,15 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-06
 
 Current task:
-  CI'DAKI IKI ACTION v4 -> v7 (6 Kasim). COMMIT'LENDI, PUSH BEKLIYOR - kod
-  commit'i (.github/workflows/ci.yml), kullanici isteyince push'lanir.
-    - actions/checkout@v7 (su an 7.0.1) ve actions/setup-node@v7 (su an
-      7.1.0): action.yml'lerinde "using: node24". v4'ler node20'ydi;
-      GitHub onlari zorla Node 24'te kosturup her kosuda "Node.js 20 is
-      deprecated" uyarisi basiyordu. with: girdileri (node-version 24,
-      cache npm, iki lock'lu cache-dependency-path) DEGISMEDI.
-    - Etiket (@v7), commit SHA'si DEGIL - kullanici secti. Gerekce ve
-      v5/v6/v7 kirici degisikliklerinin tek tek bize dokunmadigi:
-      CHANGELOG 2026-11-06.
-    - Yerelde: YAML ayristi (14 adim), tsc 0, lint 0, npm test 861/861.
-      Is akisinin kendisi yerelde denenemiyor - asil sinav CI kosusu.
-  PUSH'TAN SONRA DOGRULA (TAM SHA ile - asagidaki tuzak):
-    - runs?head_sha=<SHA> -> success. Onceki kosuda (c52d10f) 18 adim:
-      Set up job + bizim 14 + Post Node kur + Post Depoyu al + Complete job.
-    - .../actions/runs/<id>/jobs -> check_run_url -> /annotations:
-      "Node.js 20 is deprecated" uyarisi GITMIS olmali. Ubuntu 26 notu
-      kalabilir.
-    - Sonucu buraya ve CHANGELOG'a bir dokuman commit'iyle yaz.
+  AKTIF GOREV YOK. Son biten (6 Kasim): CI'daki iki action v4 -> v7
+  (cfe29ab, kullanicinin istegiyle push'landi). ci.yml: actions/checkout@v7
+  ve actions/setup-node@v7 - ikisi de node24, ana surum etiketi (SHA
+  degil, kullanici secti). Ayrinti CHANGELOG 2026-11-06.
+  CI'DA GORULDU (kosu 42219689524): success, 18 adimin hepsi success, ~2
+  dk. "Node.js 20 is deprecated" uyarisi GITTI - kalan tek not Ubuntu 26.
+  npm onbellegi v4'un kaydettiginden geri geldi: sureler d310353'teki
+  (v4, onbellek isabetli) kosuyla ayni - kurulum 21 sn, kayit 0 sn.
+  Production yayini success; / ve /support 200.
   UBUNTU 26 (GitHub notu, dokunulmadi): ubuntu-latest 19 Ekim'den beri
     kademeli olarak Ubuntu 26'ya geciyor (actions/runner-images#14748).
     Adimlar kendi Node'unu kuruyor ve yalnizca npm kullaniyor - risk dusuk.
@@ -150,8 +140,9 @@ DIS DUNYA - 6 KASIM OLCUMU:
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
-  CI       d310353 success, c52d10f success (ikisi de 6 Kasim)
-  YAYIN    d310353 Production success 10:05:40Z - dokuman commit'leri de
+  CI       cfe29ab success (6 Kasim, action'lar v7) - onceki d310353 ve
+           c52d10f de success
+  YAYIN    cfe29ab Production success 12:42:45Z - dokuman commit'leri de
            production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,

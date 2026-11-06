@@ -26,9 +26,13 @@ aynı. Ana sürüm etiketi bilerek, commit SHA'sı değil: SHA kendiliğinden
 güncellenmez ve Dependabot ADR-062'de reddedildi. Aynı uyarıdaki
 "ubuntu-latest Ubuntu 26'ya geçiyor" notuna dokunulmadı. Yerelde YAML
 ayrıştı, tsc/lint/861 birim testi geçti — ama hiçbiri iş akışını
-sınamıyor; asıl sınav CI koşusu. Yolda bir tuzak çıktı: GitHub
-API'si kısa SHA ile `runs?head_sha=` ve `deployments?sha=` sorgusunda
-hatasız boş dönüyor.
+sınamıyor; asıl sınav CI koşusuydu. **CI'da görüldü** (`cfe29ab`, koşu
+42219689524): 18 adımın hepsi yeşil, ~2 dakika; Node 20 uyarısı gitti,
+geriye yalnızca Ubuntu 26 notu kaldı. npm önbelleği v4'ün kaydettiğinden
+geri geldi — süreler v4'teki önbellek isabetli koşuyla (`d310353`) aynı.
+Production yayını başarılı. Yolda bir tuzak çıktı: GitHub API'si kısa
+SHA ile `runs?head_sha=` ve `deployments?sha=` sorgusunda hatasız boş
+dönüyor.
 
 ---
 
