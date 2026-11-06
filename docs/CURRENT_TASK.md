@@ -33,30 +33,37 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-06
 
 Current task:
+  CI'DAKI IKI ACTION v4 -> v7 (6 Kasim). COMMIT'LENDI, PUSH BEKLIYOR - kod
+  commit'i (.github/workflows/ci.yml), kullanici isteyince push'lanir.
+    - actions/checkout@v7 (su an 7.0.1) ve actions/setup-node@v7 (su an
+      7.1.0): action.yml'lerinde "using: node24". v4'ler node20'ydi;
+      GitHub onlari zorla Node 24'te kosturup her kosuda "Node.js 20 is
+      deprecated" uyarisi basiyordu. with: girdileri (node-version 24,
+      cache npm, iki lock'lu cache-dependency-path) DEGISMEDI.
+    - Etiket (@v7), commit SHA'si DEGIL - kullanici secti. Gerekce ve
+      v5/v6/v7 kirici degisikliklerinin tek tek bize dokunmadigi:
+      CHANGELOG 2026-11-06.
+    - Yerelde: YAML ayristi (14 adim), tsc 0, lint 0, npm test 861/861.
+      Is akisinin kendisi yerelde denenemiyor - asil sinav CI kosusu.
+  PUSH'TAN SONRA DOGRULA (TAM SHA ile - asagidaki tuzak):
+    - runs?head_sha=<SHA> -> success. Onceki kosuda (c52d10f) 18 adim:
+      Set up job + bizim 14 + Post Node kur + Post Depoyu al + Complete job.
+    - .../actions/runs/<id>/jobs -> check_run_url -> /annotations:
+      "Node.js 20 is deprecated" uyarisi GITMIS olmali. Ubuntu 26 notu
+      kalabilir.
+    - Sonucu buraya ve CHANGELOG'a bir dokuman commit'iyle yaz.
+  UBUNTU 26 (GitHub notu, dokunulmadi): ubuntu-latest 19 Ekim'den beri
+    kademeli olarak Ubuntu 26'ya geciyor (actions/runner-images#14748).
+    Adimlar kendi Node'unu kuruyor ve yalnizca npm kullaniyor - risk dusuk.
+    Kosu bir gun bu yuzden duserse tek satirlik cikis: runs-on: ubuntu-24.04.
+
   1.0.7 YAYINDA (lookup 6 Kasim: us/tr 1.0.7, 2026-11-05T06:09Z). Build
   28: EAS 73244045, commit 6910d2f, Xcode 26.6 (17F113). Icerik: Faz 54
-  (ADR-061, ADR-052 eki) + 21 Ekim'deki 9 Expo yamasi. Siradaki surum
-  icin bekleyen bir is YOK.
-
-  6 KASIM - HEPSI COMMIT'LENDI VE PUSH'LANDI (kullanicinin istegiyle):
-    - 53377c9: Expo'nun 4 Kasim yamalari (react-native-gesture-handler
-      3.4.0 - NATIVE) + yorum E2E testine test.slow() (yalnizca o testin
-      butcesi 60 -> 180 sn; tam kosu 73/1, yorum testi 72 SN surdu).
-    - c52d10f: CI MAILLERI BITTI - ADR-062. expo-doctor CI'da surum
-      kontrolu KAPALI (kalan 20 kontrol durdurucu); surum kontrolu en
-      sonda "Expo yamalari (uyari, durdurmaz)" adiminda SARI uyari; "Mobil
-      paket derleniyor mu" tanilamadan ONCE. CI'DA GORULDU: 15 adimin
-      hepsi yesil, kosu success; yamalar guncel oldugu icin Expo uyarisi
-      YOK (dogru). Ayni commit'te Expo'nun 6 Kasim yamalari (expo
-      57.0.32, expo-router 57.0.30, expo-image-picker 57.0.21,
-      expo-image-manipulator 57.0.22, expo-splash-screen 57.0.11, kilitte
-      expo-modules-core 57.0.25 - NATIVE). Simulatorde Release build:
-      kapaliyken davet linki, dokunus, 31 karakter. FOTOGRAF SECME/ISLEME
-      simulatorde DENENMEDI (giris gerektiriyor) - bir sonraki surumun
-      TestFlight'inda fis/profil fotografi denenmeli.
-    - GitHub'in kendi iki notu (kosuyu etkilemiyor): actions/checkout@v4
-      ve setup-node@v4 Node 20 hedefliyor, GitHub onlari Node 24'te
-      kosturuyor; ubuntu-latest Ubuntu 26'ya geciyor.
+  (ADR-061, ADR-052 eki) + 21 Ekim'deki 9 Expo yamasi.
+  SIRADAKI SURUMDE DENENECEK: 6 Kasim Expo yamalarinda expo-image-picker
+  ve expo-image-manipulator da vardi (NATIVE). Fotograf secme/isleme
+  simulatorde DENENMEDI (giris gerektiriyor) - bir sonraki surumun
+  TestFlight'inda fis ve profil fotografi denenmeli.
 
   EXPO - 4 KASIM OLCUMU:
     - SDK 58 ARTIK "latest" (npm dist-tags: latest 58.0.23, sdk-57
@@ -137,13 +144,15 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      yeniden boyutlandirilabilir oluyor - duzen farkli genisliklerde
      denenmeli.
 
-DIS DUNYA - 4 KASIM OLCUMU:
+DIS DUNYA - 6 KASIM OLCUMU:
   DMARC    v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r;
            rua=mailto:...@dmarc-reports.cloudflare.net   (Cloudflare raporlari)
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
-  MAGAZA   1.0.7 | 2026-11-05 | (6 Kasim, us ve tr)
-  CI       c52d10f success (6 Kasim) - ADR-062'den sonraki ilk kosu
+  MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
+  CI       d310353 success, c52d10f success (ikisi de 6 Kasim)
+  YAYIN    d310353 Production success 10:05:40Z - dokuman commit'leri de
+           production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
            R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
@@ -216,6 +225,9 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
       .../actions/runs/<id>/jobs -> check_run_url -> /annotations
     Yamalar build oncesi alinir (GONDERIM KONTROL LISTESI 0). CI yine de
     kirmiziysa sebep GERCEK bir sey - adimlarina bak.
+  - <SHA> TAM 40 KARAKTER OLMALI: kisa SHA ile hem runs?head_sha= hem
+    deployments?sha= HATA VERMEDEN BOS doner (0 / []) - "kosu yok",
+    "yayin yok" sanilir. Tam hali: git rev-parse <kisa>.
   - DOKUMAN COMMIT'I OTOMATIK PUSH EDILIR ve altinda bekleyen kod
     commit'ini de goturur. Dokuman commit'inden once:
       git log --oneline origin/main..HEAD

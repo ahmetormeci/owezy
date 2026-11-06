@@ -51,10 +51,16 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        # @v7 (checkout ve setup-node): Node 24'te kosan surum. @v4'ler Node
+        # 20 hedefliyordu; GitHub onlari zorla Node 24'te kosturup her kosuda
+        # "Node.js 20 is deprecated" uyarisi basiyordu. Ana surum ETIKETI
+        # bilerek, commit SHA'si degil: v7.x duzeltmeleri kendiliginden
+        # geliyor (checkout 7.0.1 uc duzeltme getirdi, biri guvenlik).
+        uses: actions/checkout@v7
 
       - name: Node kur
-        uses: actions/setup-node@v4
+        # @v7: ustteki notla ayni sebep. Asagidaki uc girdi v7'de degismedi.
+        uses: actions/setup-node@v7
         with:
           # Yerel gelistirme surumuyle ayni tutuluyor (v24). CI ile yerelin
           # farkli Node surumlerinde olmasi, "bende calisiyordu" hatalarinin

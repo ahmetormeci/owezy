@@ -8,6 +8,30 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-06 — CI'daki iki action Node 24 sürümüne geçti (v4 → v7)
+
+GitHub her koşuda "Node.js 20 is deprecated" uyarısı basıyordu:
+`actions/checkout@v4` ve `actions/setup-node@v4` Node 20 için yazılmış,
+GitHub onları zorla Node 24'te koşturuyor. İkisi de `@v7`'ye alındı;
+`action.yml`'lerinde `using: node24` doğrulandı. v5 de uyarıyı
+kapatırdı ama güvenlik düzeltmeleri önce son ana sürüme geliyor ve
+atlamanın bedeli aynı. v4 → v7 arasındaki kırıcı değişiklikler tek tek
+okundu, hiçbiri bize dokunmuyor: checkout v6 kimlik bilgisini ayrı dosyaya
+yazıyor (checkout'tan sonra git komutu yok), v7 `pull_request_target` /
+`workflow_run`'da fork PR'ını reddediyor (kullanmıyoruz); setup-node v5
+`packageManager` alanı varsa önbelleği kendisi açıyor (alan yok, `cache:
+npm` zaten açık), v6 `always-auth`'u, v7 sahte `NODE_AUTH_TOKEN`'ı
+kaldırdı (ikisi de kullanılmıyor). Önbellek anahtarının biçimi iki sürümde
+aynı. Ana sürüm etiketi bilerek, commit SHA'sı değil: SHA kendiliğinden
+güncellenmez ve Dependabot ADR-062'de reddedildi. Aynı uyarıdaki
+"ubuntu-latest Ubuntu 26'ya geçiyor" notuna dokunulmadı. Yerelde YAML
+ayrıştı, tsc/lint/861 birim testi geçti — ama hiçbiri iş akışını
+sınamıyor; asıl sınav CI koşusu. Yolda bir tuzak çıktı: GitHub
+API'si kısa SHA ile `runs?head_sha=` ve `deployments?sha=` sorgusunda
+hatasız boş dönüyor.
+
+---
+
 ## 2026-11-06 — Expo yamaları artık CI'ı kırmızıya boyamıyor (ADR-062)
 
 Kullanıcı üç gündür GitHub'dan "run failed" maili aldığını söyledi. Sebep
