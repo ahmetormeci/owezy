@@ -34,7 +34,8 @@ Updated: 2026-11-07
 
 Current task:
   HARCAMA FORMU: KAYITTAN SONRAKI GEREKSIZ router.refresh() KALDIRILDI -
-  DOGRULANDI, COMMIT YOK (7 Kasim, kullanicinin istegiyle, secenek A). KOD commit'i (src/components/expense-form.tsx).
+  YAYINDA (7 Kasim, kullanicinin istegiyle, secenek A). Commit 396460e:
+  CI 42317657889 success, Production 00:21:19Z success.
     - Teknik borctaki "Kaydediliyor...'da takiliyor" OLCULDU: takilma yok,
       bekleme var. push + hemen refresh iki istek gonderiyordu, Next ekrani
       ikisi bitince degistiriyordu; sunucu sayfayi iki kez uretiyordu.
@@ -56,7 +57,9 @@ Current task:
   Hata kayit isteginin ICINDE, gezinmeden ONCE - kaldirilan satir kayit
   BASARILI olunca calisiyordu. Test TEK BASINA gecti (27,0 sn; once 27,8).
   Iki tam kosuda her test en az bir kez gecti.
-  SONRAKI ADIM: commit (kullanici isteyince) -> push oncesi kullaniciya sor.
+  SONRAKI ADIM: yok - kullanicinin yeni gorevi bekleniyor. Acik isler
+  asagida (cron, 2FA koprusu, DMARC, SDK 58); kod tarafinda adaylar
+  PROGRESS teknik borcta (composer refresh'i, duz metin OTP, issuer).
 
   ONCEKI (6 Kasim): brace-expansion 1.1.21 6770601 (CI 42280342314,
   yayin 19:31:47Z success) - butun agacta 0 kritik / 0 yuksek. Ondan once
@@ -159,9 +162,9 @@ DIS DUNYA - 6 KASIM OLCUMU:
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
-  CI       6770601 success (kosu 42280342314) - onceki ad647b3, 6cd7fef
-           de success
-  YAYIN    6770601 Production success 19:31:47Z - dokuman commit'leri de
+  CI       396460e success (kosu 42317657889, 7 Kasim) - onceki
+           6770601, ad647b3 de success
+  YAYIN    396460e Production success 2026-11-07 00:21:19Z - dokuman commit'leri de
            production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
