@@ -35,7 +35,10 @@ Updated: 2026-11-07
 Current task:
   VERITABANI SIZINTISINA KARSI IKI DUZELTME (7 Kasim, kullanicinin
   istegiyle; secimler: A = "encrypted", gecis (i) = kabul, bearer da
-  eklensin). IKI AYRI KOD commit'i, ikisi de COMMIT YOK.
+  eklensin). YAYINDA: 9e9c7a2 (kodlar) + 0558fe0 (bearer), birlikte push;
+  CI 42321905971 success, Production 2026-11-07 01:04:07Z success (Vercel
+  yalnizca 0558fe0'i yayinladi, 9e9c7a2 onun icinde). Canlida hesapsiz
+  kontrol: / 200, /api/v1/groups belirtecsiz 401, sahte ham belirtecle 401.
     1. TEK SEFERLIK KODLAR SIFRELI (ADR-064) - src/lib/better-auth.ts
        storeOTP: "encrypted"; e2e/db-cleanup.ts readOtpFromDatabase
        cozuyor ve duz degerde DUSUYOR. "hashed" reddedildi (anahtarsiz
@@ -54,8 +57,9 @@ Current task:
   duzenleme PUT'u 500, P2028 (5 sn transaction siniri, 5560 ms; E2E
   veritabani yavas). Iki degisikligin dokunmadigi yol; test TEK BASINA
   gecti (34,1 sn).
-  SONRAKI ADIM: kullanici "commitle ve pushla" dedi -> iki ayri commit,
-  push, CI + Production SHA ile olcum.
+  SONRAKI ADIM: yok - kullanicinin yeni gorevi bekleniyor. Imzali yolun
+  canlida olcumu hesap ister (production'a giris YAPILMAZ): kullanicinin
+  telefonundaki uygulama oturumu acik kalip gruplari yukluyorsa tamam.
 
   ONCEKI (7 Kasim): harcama formundaki gereksiz router.refresh()
   kaldirildi 396460e (CI 42317657889, yayin 00:21:19Z success). Ondan
@@ -159,9 +163,9 @@ DIS DUNYA - 6 KASIM OLCUMU:
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
-  CI       396460e success (kosu 42317657889, 7 Kasim) - onceki
-           6770601, ad647b3 de success
-  YAYIN    396460e Production success 2026-11-07 00:21:19Z - dokuman commit'leri de
+  CI       0558fe0 success (kosu 42321905971, 7 Kasim) - onceki
+           396460e, 6770601 de success
+  YAYIN    0558fe0 Production success 2026-11-07 01:04:07Z - dokuman commit'leri de
            production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
