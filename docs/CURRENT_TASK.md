@@ -146,6 +146,9 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
        SELECT count(*) FROM "User"
        WHERE "twoFactorEnabled" = true AND "deletedAt" IS NULL;
      0 ya da yalnizca kendisi -> kopru silinebilir. Dogrulama yolu asagida.
+     SAYILDI (7 Kasim): 1 hesap ve KULLANICININ KENDISI (Session.userAgent
+     ile de bakilabiliyor: iOS'ta "Owezy/<build> CFNetwork/..."; 1.0 =
+     build 9, 1.0.7 = build 28). Kopru silinebilir - silme onay bekliyor.
   3. DMARC RAPORLARI - 4 KASIM'DA BAKILDI (Cloudflare -> Email -> DMARC
      Management, son 7 gun): tek kayit, 3 Kasim. Kaynak Microsoft
      20.110.252.109 (Azure, Virginia, ters DNS YOK - Outlook'un kendi
@@ -160,6 +163,15 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      e-posta koduyla giris iste (2FA acik olsa da kod GIDER, engel kod
      girilince), Gmail'de postayi ac -> sag ustteki uc nokta -> "Orijinali
      goster": SPF, DKIM, DMARC uclu PASS ise madde kapanir.
+     KAPANDI (7 Kasim): kullanicinin kutusu Microsoft (Mac Mail'de),
+     Authentication-Results mx.microsoft.com: spf=pass
+     (smtp.mailfrom=send.owezy.net), dkim=pass header.d=owezy.net VE
+     header.d=amazonses.com, dmarc=pass, compauth=pass reason=100. KIMLIK
+     DOGRU. Posta YINE Junk'ta; Mac Mail'in "gereksiz" seridi yok -> postayi
+     Microsoft'un sunucusu tasidi. Sebep kimlik degil, Microsoft'un spam
+     suzgeci (itibar/icerik). Nedeni ayni postadaki X-Forefront-Antispam-
+     Report (SCL, SFV, CAT) ve X-Microsoft-Antispam (BCL) satirlari soyler.
+     Mac Mail'de basliklar: Goruntu -> Ileti -> Tum Basliklar (shift-cmd-H).
      DMARC RAPORU JUNK'A DUSMEYI GOSTERMEZ - yalnizca kimlik kontrolunu.
      Ekrandaki "SPF policy: Fail" kokteki "v=spf1 -all" (kokten kimse
      gondermiyor - ayar, hata degil); "BIMI: No/Fail" bilerek kurulmadi
