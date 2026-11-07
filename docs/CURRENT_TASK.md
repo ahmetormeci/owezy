@@ -322,6 +322,11 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     bos degerlerle donup "exit 0" ile bitiyor: "bitti" bildirimi OLCUM
     DEGIL. Ciktiyi oku; python'u heredoc ile ver, tek tirnakli satir ici
     kod yazma. Kimliksiz API saatte 60 istek - her tur 2+ istek harciyor.
+  - ARKA PLAN GOREVININ "failed/completed" DURUMU = ZINCIRDEKI SON KOMUTUN
+    KODU, testlerin sonucu DEGIL. 7 Kasim: 73/73 gecen E2E "failed" gorundu
+    (son komut grep -c "P2028" -> 0 eslesme -> kod 1); testi dusen kosular
+    "completed" gorundu (son komut tail). Sonucu ciktidan oku; yeni betikte
+    zinciri gercek kodla bitir (ornek: ...; exit $KOD).
   - ARKA PLAN GOREVI CALISMA KOPYASI (.claude/worktrees/...) proje
     klasorunun ICINDE: varken "npm run lint" o kopyayi da tariyor ve
     oradan hata veriyor. Bizim kodu olcmek icin:
