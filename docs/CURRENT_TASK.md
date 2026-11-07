@@ -33,37 +33,21 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-07
 
 Current task:
-  VERITABANI SIZINTISINA KARSI IKI DUZELTME (7 Kasim, kullanicinin
-  istegiyle; secimler: A = "encrypted", gecis (i) = kabul, bearer da
-  eklensin). YAYINDA: 9e9c7a2 (kodlar) + 0558fe0 (bearer), birlikte push;
-  CI 42321905971 success, Production 2026-11-07 01:04:07Z success (Vercel
-  yalnizca 0558fe0'i yayinladi, 9e9c7a2 onun icinde). Canlida hesapsiz
-  kontrol: / 200, /api/v1/groups belirtecsiz 401, sahte ham belirtecle 401.
-    1. TEK SEFERLIK KODLAR SIFRELI (ADR-064) - src/lib/better-auth.ts
-       storeOTP: "encrypted"; e2e/db-cleanup.ts readOtpFromDatabase
-       cozuyor ve duz degerde DUSUYOR. "hashed" reddedildi (anahtarsiz
-       SHA-256, 10^6 olasilik). Teknik borctaki "yeniden gonderimde ilk
-       kod olur" bedeli yoktu: zaten oyleydi (resendStrategy "rotate").
-       Dogrulama: tsc; password-reset.spec 6/6. Negatif kontrol: ayar
-       kaldirilinca test "SIFRESIZ duruyor" diye dustu.
-    2. BEARER IMZASI ZORUNLU (ADR-065) - bearer({ requireSignature: true }).
-       OLCULDU: ayar yokken veritabanindaki ham Session.token ile istek
-       200 (HERKESIN oturumu kullanilabiliyordu), ayarla 401. Mobil
-       kirilmiyor: belirteci yalnizca set-auth-token'dan aliyor ve o imzali
-       (b3156e9, 26 Agustos - magazadaki 1.0'dan once). e2e/auth.spec.ts
-       ucunu de olcuyor. auth.spec + two-factor.spec 15/15 (1 bilerek atlandi).
-  Dogrulama (iki degisiklik birlikte): tsc, lint, 861 birim GECTI. TAM E2E
-  (19,0 dk) 72 gecti, 1 DUSTU, 1 atlandi - expenses.spec:106: harcama
-  duzenleme PUT'u 500, P2028 (5 sn transaction siniri, 5560 ms; E2E
-  veritabani yavas). Iki degisikligin dokunmadigi yol; test TEK BASINA
-  gecti (34,1 sn).
-  CANLIDA IMZALI YOL: kullanici 7 Kasim'da telefonda dogruladi - oturum
-  acik, gruplar yukleniyor (production'a biz giris YAPMAYIZ).
-  SONRAKI ADIM: yok - kullanicinin yeni gorevi bekleniyor.
+  MOBIL 1.0 ICIN 2FA CEREZ KOPRUSU KALDIRILDI (7 Kasim, kullanicinin
+  onayiyla) - KOD commit'i, COMMIT YOK. Olcut: production'da 2FA acik tek
+  hesap kullanicinin kendisi (Neon SQL Editor, kullanici saydi), o da
+  1.0.7'de. route.ts eski haline (toNextJsHandler) dondu; kopru dosyasi,
+  10 birim testi, atlanan E2E testi silindi. ADR-045 eki.
+  Dogrulama: tsc, lint, 851 birim GECTI (861 - 10). TAM E2E 73/73 GECTI
+  (16,5 dk, atlanan yok, sunucu kaydinda P2028 yok).
+  SONRAKI ADIM: kullanici "commitle ve pushla" dedi -> commit, push, CI +
+  Production SHA ile olcum.
 
-  ONCEKI (7 Kasim): harcama formundaki gereksiz router.refresh()
-  kaldirildi 396460e (CI 42317657889, yayin 00:21:19Z success). Ondan
-  once brace-expansion 6770601. Ayrinti CHANGELOG.
+  ONCEKI (7 Kasim): veritabani sizintisina karsi iki duzeltme -
+  9e9c7a2 (tek seferlik kodlar sifreli, ADR-064) ve 0558fe0 (Bearer yalnizca
+  imzali, ADR-065); CI 42321905971, yayin 01:04:07Z success. Kullanici
+  telefonda dogruladi: oturum acik, gruplar yukleniyor. Ondan once
+  396460e (harcama formu router.refresh). Ayrinti CHANGELOG.
   UBUNTU 26 (GitHub notu, dokunulmadi): ubuntu-latest 19 Ekim'den beri
     kademeli olarak Ubuntu 26'ya geciyor (actions/runner-images#14748).
     Adimlar kendi Node'unu kuruyor ve yalnizca npm kullaniyor - risk dusuk.
@@ -137,18 +121,11 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      grup ekrani ise yalnizca uygulama ICINDE ekrana donulunce tazeleniyor
      (useFocusEffect); uygulamaya geri gelince ya da asagi cekince
      tazelenmiyor. PROGRESS teknik borc.
-  2. 2FA KOPRUSU (ADR-045): mobil 1.0 icin gecici sunucu yamasi. 1.0'da
-     kimse kalmadiysa kaldirilir. App Store Connect Analytics yolu
-     BULUNAMADI (7 Kasim, kullanici) ve kucuk uygulamada guvenilmez de:
-     yalnizca paylasima izin verenleri sayiyor, az cihazi gizliyor. YENI
-     YOL - kopru yalnizca 2FA'si ACIK birine yariyor; kullanici Neon SQL
-     Editor'de production'da sayacak:
-       SELECT count(*) FROM "User"
-       WHERE "twoFactorEnabled" = true AND "deletedAt" IS NULL;
-     0 ya da yalnizca kendisi -> kopru silinebilir. Dogrulama yolu asagida.
-     SAYILDI (7 Kasim): 1 hesap ve KULLANICININ KENDISI (Session.userAgent
-     ile de bakilabiliyor: iOS'ta "Owezy/<build> CFNetwork/..."; 1.0 =
-     build 9, 1.0.7 = build 28). Kopru silinebilir - silme onay bekliyor.
+  2. (KAPANDI 7 Kasim) 2FA KOPRUSU kaldirildi (ADR-045 eki). Yol, benzer
+     sorular icin: App Store Connect Analytics kucuk uygulamada surume gore
+     sayamiyor; production'da Neon SQL Editor'de sayilir (kullanici yapar)
+     ve Session.userAgent cihazi soyler - iOS'ta "Owezy/<build>
+     CFNetwork/...", 1.0 = build 9, 1.0.7 = build 28.
   3. DMARC RAPORLARI - 4 KASIM'DA BAKILDI (Cloudflare -> Email -> DMARC
      Management, son 7 gun): tek kayit, 3 Kasim. Kaynak Microsoft
      20.110.252.109 (Azure, Virginia, ters DNS YOK - Outlook'un kendi
@@ -289,7 +266,8 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     basarisizken de 0 donuyor.
 
   E2E
-  - Tam kosu ~17-23 dk, 74 test (73 + 1 bilerek atlanan 2FA kopru testi).
+  - Tam kosu ~17-23 dk, 73 test, atlanan yok (2FA kopru testi 7 Kasim'da
+    kopruyle birlikte silindi).
     KOSU SURERKEN PROJE DOSYALARINA DOKUNMA. Sema degistiyse once
     npm run db:migrate:e2e. Tek seferlik kodlar veritabanindan okunuyor.
   - ONCE MAKINEYI TEMIZLE: 3000'deki dev sunucusu, Metro, simulatorler.
@@ -410,13 +388,6 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     Bildirimler ekraninda izin ver -> IKINCI BIR HESAPLA ortak gruba
     harcama ekle -> bildirim dusmeli; TUTAR VE ISIM GORUNMEMELI.
 
-  2FA KOPRUSU - DOGRULAMA YOLU (kopru durdukca gecerli, ADR-045):
-    1. src/lib/better-auth.ts -> advanced'a: useSecureCookies: true
-    2. e2e/two-factor.spec.ts -> ilgili test.skip'i test yap
-    3. npx playwright test e2e/two-factor.spec.ts
-    4. IKISINI DE GERI AL
-  Olculdu (4 Eylul): kopru acikken 200 + set-auth-token, kapaliyken 401.
-
   TASARIM KAYNAGI (ADR-048): kullanicinin Claude Design projesi
     2f16cec7-532e-466b-8493-4cc5a7792d07 "Owezy mobil ve web tasarimi",
     dosya design_handoff_owezy_kagit_petrol/Owezy Urun Tasarimi.dc.html,
@@ -425,9 +396,9 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     (list_projects BOS doner).
 
 TESTLER - NE NEREDE (21 Ekim):
-  KOK      npm test                  861 birim (vitest, src/**)
+  KOK      npm test                  851 birim (vitest, src/**)
   MOBIL    cd mobile && npm test      98 vitest + 145 jest
-  E2E      npm run test:e2e           73 + 1 bilerek atlanan, ~17-23 dk
+  E2E      npm run test:e2e           73, ~17-23 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.
   Mobil testler KOKTEN kosmuyor: agacta iki ayri React kopyasi var.

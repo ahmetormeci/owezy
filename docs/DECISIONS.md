@@ -2162,7 +2162,7 @@ adı da "Silinen kullanıcı" oluyor ve kimse onu geri getiremiyor.
 ---
 
 ## ADR-045 — Çerez adı ortama göre değişir; tahmin edilmez, sunucuya sorulur
-**Tarih:** 2026-09-04 · **Durum:** Kabul edildi
+**Tarih:** 2026-09-04 · **Durum:** Kabul edildi · **SUNUCU KÖPRÜSÜ KALDIRILDI: 2026-11-07** (ek aşağıda)
 
 **Karar:** Better Auth çerezleri **adlarının tamamıyla** taşınır. Bir çerez
 adı koda sabit yazılmaz ve bir başlık içinde **alt dize araması** ile
@@ -2223,6 +2223,23 @@ veriyor, undici'nin `Request` yapıcısı ise girdiyi gerçek bir `Request` san�
 sınıfı:** doğru şey ölçüldü, yanlış ortamda. Kural buradan genişliyor:
 sunucu kodu sunucuda denenir; bir satırın Node'da çalışması, onun Next'in
 rota işleyicisinde çalıştığını göstermez.
+
+### Ek (2026-11-07) — köprü kaldırıldı
+
+Ölçüt "1.0.1 gönderildi" değil, "eski sürümde köprüye ihtiyacı olan kimse
+kalmadı" idi. App Store Connect Analytics bu soruyu küçük bir uygulamada
+cevaplayamıyor (yalnızca paylaşıma izin verenleri sayıyor, az cihazı
+gizliyor). Soru daraltıldı: köprü yalnızca **2FA'sı açık** biri 1.0'dan
+**yeni giriş** yaparken işe yarıyor. Kullanıcı production'da Neon SQL
+Editor'de saydı: 2FA açık **tek hesap**, kullanıcının kendisi — ve o 1.0.7
+kullanıyor. 1.0 mağazadan artık indirilemiyor.
+
+Kaldırılanlar: `src/lib/two-factor-cookie-bridge.ts` ve 10 birim testi,
+`e2e/two-factor.spec.ts`'teki bilerek atlanan köprü testi; `route.ts`
+köprüden önceki hâline (`toNextJsHandler`, git'teki eski hâli aynen) döndü.
+Böylece `__Secure-` önekinin garantisi o iki uçta da yeniden tam. Mobil
+değişmedi — 1.0.1'den beri adı tam eşleşmeyle okuyor. Kalan kural (adı
+sunucuya sor, tahmin etme) geçerli.
 
 ---
 

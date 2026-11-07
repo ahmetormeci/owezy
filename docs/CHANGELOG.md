@@ -8,6 +8,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-07 — Mobil 1.0 için 2FA çerez köprüsü kaldırıldı
+
+Faz 36'da (4 Eylül) mağazadaki 1.0'ın 2FA girişini kurtarmak için konan
+geçici köprü silindi (ADR-045 eki). Ölçüt "1.0'da köprüye ihtiyacı olan
+kimse kalmadı" idi; App Store Connect Analytics bunu küçük bir uygulamada
+gösteremiyor. Soru daraltıldı: köprü yalnızca 2FA'sı açık biri 1.0'dan yeni
+giriş yaparken işe yarıyor. Kullanıcı production'da saydı: 2FA açık **tek
+hesap**, kendisi (1.0.7).
+
+`route.ts` köprüden önceki tek satırına döndü; köprü dosyası, 10 birim testi
+ve bilerek atlanan E2E testi silindi (birim 861 → 851, E2E 74 → 73, atlanan
+yok). Köprü `__Secure-` önekinin garantisini iki uçta gevşetiyordu; artık
+gevşetmiyor. Mobil değişmedi.
+
+---
+
 ## 2026-11-07 — Bearer yalnızca imzalı belirteci kabul ediyor
 
 Kod saklama incelenirken bulundu: `bearer()` eklentisi, mobilin gönderdiği

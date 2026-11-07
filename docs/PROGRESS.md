@@ -1384,7 +1384,7 @@ yoktu. Testlerle kapsandı.
 
 ---
 
-## Faz 36 — 2FA girişi mobilde kırıktı · **BİTTİ**
+## Faz 36 — 2FA girişi mobilde kırıktı · **BİTTİ** · sunucu köprüsü 7 Kasım'da kaldırıldı
 
 1.0 yayına girdikten saatler sonra çıktı: **2FA açık hesaplar iOS
 uygulamasına hiç giremiyordu.** İkinci adımda "Doğrulama süresi doldu"
@@ -2328,6 +2328,7 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 | Harcama formu: kayıttan sonraki gereksiz `router.refresh()` kaldırıldı — sunucu sayfayı iki kez üretiyordu, ekran ikisini de bekliyordu; artık tek istek (ölçüldü, 7 Kasım) | `396460e` |
 | Tek seferlik kodlar veritabanında şifreli (`storeOTP: "encrypted"`); `"hashed"` anahtarsız SHA-256 olduğu için reddedildi. E2E okuyucusu kodu çözüyor ve düz değerde düşüyor (ADR-064, 7 Kasım) | `9e9c7a2` |
 | Bearer yalnızca imzalı belirteci kabul ediyor (`requireSignature: true`): veritabanındaki ham `Session.token` ile istek 200 dönüyordu, artık 401; mobil zaten imzalı değeri gönderiyor (ADR-065, 7 Kasım, ölçüldü) | `0558fe0` |
+| Mobil 1.0 için geçici 2FA çerez köprüsü kaldırıldı: production'da 2FA açık tek hesap kullanıcının kendisi (Neon'da sayıldı), `route.ts` eski hâline döndü (ADR-045 eki, 7 Kasım) | *(bu commit)* |
 
 ---
 
@@ -2919,13 +2920,6 @@ depo seçilmedi, görüntü kendi ucumuzdan servis ediliyor ve CSP olduğu gibi
 kaldı (ADR-054).
 
 ## Bilinen teknik borç
-
-- **`src/lib/two-factor-cookie-bridge.ts` GEÇİCİ ve silinmeli.** Mağazadaki
-  mobil 1.0'ın 2FA çerezini karşılamak için var (Faz 36, ADR-045). 1.0.1
-  yaygınlaşınca köprü, testi ve `route.ts`'teki sarmalayıcı kaldırılıp dosya
-  eski hâline (yalnızca `toNextJsHandler`) dönmeli. **Erken kaldırılmamalı:**
-  kaldırıldığı anda güncellemeyi almamış her telefon yeniden kırılır. Ölçüt
-  "1.0.1 gönderildi" değil, "eski sürüm pratikte kalmadı".
 
 - **Mobilde liste, uygulamaya geri dönünce yenilenmiyor; aşağı çekip
   yenileme de yok.** 7 Kasım'da canlıda görüldü: cron'un ürettiği harcama
