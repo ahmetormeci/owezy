@@ -33,37 +33,23 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-07
 
 Current task:
-  HARCAMA FORMU: KAYITTAN SONRAKI GEREKSIZ router.refresh() KALDIRILDI -
-  YAYINDA (7 Kasim, kullanicinin istegiyle, secenek A). Commit 396460e:
-  CI 42317657889 success, Production 00:21:19Z success.
-    - Teknik borctaki "Kaydediliyor...'da takiliyor" OLCULDU: takilma yok,
-      bekleme var. push + hemen refresh iki istek gonderiyordu, Next ekrani
-      ikisi bitince degistiriyordu; sunucu sayfayi iki kez uretiyordu.
-      Ayrinti CHANGELOG 2026-11-07, gerekce koddaki yorumda.
-    - Olcum (ayni E2E testi, --trace on, 3-4 kosu): kayittan sonra TEK
-      istek (once iki); POST sonrasi bekleme ort. 1,90 -> 1,72 sn.
-    - expense-composer.tsx'teki ayni ikiliye BILEREK dokunulmadi
-      (PROGRESS teknik borc).
-  Dogrulama: tsc, lint, 861 birim GECTI. TAM E2E 71 gecti, 2 DUSTU, 1
-  atlandi (22,3 dk) - recurring.spec:36 ve reminders.spec:46, ikisi de
-  60 sn test butcesini asti. KOD DEGIL: makinede oyun acikti (yuk ~5),
-  ortanca test %16, formu kullanmayan testler 2-3 kat yavasladi (gecersiz
-  tutar 7->19 sn, bolusum onizlemesi 8->24 sn). Iki test TEK BASINA
-  gecti (46,5 / 42,8 sn).
-  TAM E2E TEKRARI (oyun kapali, 19,0 dk): 72 gecti, 1 DUSTU, 1 atlandi -
-  notifications.spec:59. Sebep SUNUCU KAYDINDA: harcama POST'u 500,
-  P2028 "Unable to start a transaction in the given time" (veritabani 2 sn
-  icinde yanit vermedi; ayni dakikalarda grup sayfasi 10 sn'de acildi).
-  Hata kayit isteginin ICINDE, gezinmeden ONCE - kaldirilan satir kayit
-  BASARILI olunca calisiyordu. Test TEK BASINA gecti (27,0 sn; once 27,8).
-  Iki tam kosuda her test en az bir kez gecti.
-  SONRAKI ADIM: yok - kullanicinin yeni gorevi bekleniyor. Acik isler
-  asagida (cron, 2FA koprusu, DMARC, SDK 58); kod tarafinda adaylar
-  PROGRESS teknik borcta (composer refresh'i, duz metin OTP, issuer).
+  VERITABANI SIZINTISINA KARSI IKI DUZELTME (7 Kasim, kullanicinin
+  istegiyle; secimler: A = "encrypted", gecis (i) = kabul, bearer da
+  eklensin). IKI AYRI KOD commit'i, ikisi de COMMIT YOK.
+    1. TEK SEFERLIK KODLAR SIFRELI (ADR-064) - src/lib/better-auth.ts
+       storeOTP: "encrypted"; e2e/db-cleanup.ts readOtpFromDatabase
+       cozuyor ve duz degerde DUSUYOR. "hashed" reddedildi (anahtarsiz
+       SHA-256, 10^6 olasilik). Teknik borctaki "yeniden gonderimde ilk
+       kod olur" bedeli yoktu: zaten oyleydi (resendStrategy "rotate").
+       Dogrulama: tsc; password-reset.spec 6/6. Negatif kontrol: ayar
+       kaldirilinca test "SIFRESIZ duruyor" diye dustu.
+    2. BEARER IMZASI ZORUNLU - sirada.
+  SONRAKI ADIM: bearer({ requireSignature: true }) + E2E negatif testi ->
+  tsc, lint, birim, TAM E2E -> iki ayri commit (kullanici isteyince).
 
-  ONCEKI (6 Kasim): brace-expansion 1.1.21 6770601 (CI 42280342314,
-  yayin 19:31:47Z success) - butun agacta 0 kritik / 0 yuksek. Ondan once
-  better-auth 1.7.18 + Sentry ayar adlari ad647b3. Ayrinti CHANGELOG.
+  ONCEKI (7 Kasim): harcama formundaki gereksiz router.refresh()
+  kaldirildi 396460e (CI 42317657889, yayin 00:21:19Z success). Ondan
+  once brace-expansion 6770601. Ayrinti CHANGELOG.
   UBUNTU 26 (GitHub notu, dokunulmadi): ubuntu-latest 19 Ekim'den beri
     kademeli olarak Ubuntu 26'ya geciyor (actions/runner-images#14748).
     Adimlar kendi Node'unu kuruyor ve yalnizca npm kullaniyor - risk dusuk.
@@ -87,8 +73,9 @@ Current task:
     Kullanici izin verdi: yerel build'de, yerel gelistirme sunucusuna bagli
     bir TEST hesabiyla giris. Production'a dokunulmadi.
     - Sunucu: RESEND_API_KEY="" npm run dev  (kod e-postasi GITMEZ)
-    - Kod: gelistirme veritabani Verification "sign-in-otp-<email>"
-      (e2e/db-cleanup.ts readOtpFromDatabase ile ayni ayristirma)
+    - Kod: gelistirme veritabani Verification "sign-in-otp-<email>".
+      7 Kasim'dan beri SIFRELI (ADR-064): readOtpFromDatabase'in yaptigi
+      gibi better-auth/crypto symmetricDecrypt + BETTER_AUTH_SECRET
     - Test verisi: uygulamanin KENDI servis fonksiyonlariyla (createGroup,
       createGroupInvite + acceptGroupInvite, createExpense) - tsx ile
       --env-file=.env.local --tsconfig tsconfig.json, NODE_OPTIONS

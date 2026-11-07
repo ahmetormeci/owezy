@@ -2326,6 +2326,7 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 | better-auth 1.7.1 → 1.7.18: önce `Account.issuer` boş bırakılabilir (`20261106120000`), sonra yükseltme; sürüm yine tam sabit (ADR-063 eki). Sentry: `@sentry/nextjs/config` ve `disableLogger` → `bundleSizeOptimizations.excludeDebugStatements` — ölçüldü, bundle aynı (6 Kasım) | `ad647b3` |
 | `brace-expansion` 1.1.18 → 1.1.21 (`npm update brace-expansion`, yalnızca o paket): bütün ağaçta yüksek açık kalmadı (6 Kasım) | `6770601` |
 | Harcama formu: kayıttan sonraki gereksiz `router.refresh()` kaldırıldı — sunucu sayfayı iki kez üretiyordu, ekran ikisini de bekliyordu; artık tek istek (ölçüldü, 7 Kasım) | `396460e` |
+| Tek seferlik kodlar veritabanında şifreli (`storeOTP: "encrypted"`); `"hashed"` anahtarsız SHA-256 olduğu için reddedildi. E2E okuyucusu kodu çözüyor ve düz değerde düşüyor (ADR-064, 7 Kasım) | *(bu commit)* |
 
 ---
 
@@ -2942,21 +2943,6 @@ kaldı (ADR-054).
   bir dis etkendi. **Bir daha olursa once bu madde okunmali** ve zaman
   kodda aranmamali; dogrudan "temiz agacta da oluyor mu" sorusuyla
   baslanmali - o soru bir turu bastan eliyor.
-
-- **Tek seferlik kodlar veritabanında DÜZ METİN duruyor.** `emailOTP`
-  eklentisinin `storeOTP` varsayılanı `"plain"` ve değiştirmedik (ölçüldü:
-  `email-otp/otp-token.mjs`). `Verification.value` alanında kodun kendisi
-  yazıyor — yani veritabanına okuma erişimi olan biri (sızmış bir yedek,
-  salt-okunur bir replika) o an uçuşta olan bir kodla giriş yapabilir. Kod 5
-  dakika yaşıyor, ama yine de bir kimlik bilgisi.
-
-  **`"hashed"` bedava değil, karar gerekiyor:** `tryReuseOTP` hash'li bir
-  kodu geri okuyamıyor, yani "kodu yeniden gönder" diyen kullanıcıya **yeni**
-  bir kod gidiyor ve **ilk e-postadaki kod ölüyor**. İki e-postası olan
-  kullanıcı yanlış olanı deneyebilir. Takas ölçülmeden değiştirilmemeli.
-
-  **Değiştirilirse `e2e/db-cleanup.ts`'teki `readOtpFromDatabase` de
-  değişmek zorunda** — iki E2E dosyası kodu oradan okuyor.
 
 - **Satır içi giriş (`expense-composer.tsx`) hâlâ `router.push` + hemen
   ardından `router.refresh()` çağırıyor.** Harcama formundaki aynı ikili 7

@@ -235,6 +235,8 @@ gerçek denemede düştü.
   (`"local:credential"`), 1.7.18'e geçilirken zorunluluğu kaldırıldı
   (ADR-063). Eski hesaplarda dolu, yenilerde boş; kimse okumuyor.
 - **Verification** — tek seferlik kodlar ve süreli doğrulama kayıtları.
+  Kodlar **şifreli** (`storeOTP: "encrypted"`, `BETTER_AUTH_SECRET` ile;
+  ADR-064); `value` biçimi `<şifreli kod>:<deneme sayısı>`.
 
 `id` sütunları `@default(uuid())` ve bu **gerekliydi**: belgeler Better Auth'un
 varsayılan olarak UUID ürettiğini söylüyor ama kaynak öyle demiyor — gerçek

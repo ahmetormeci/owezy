@@ -8,6 +8,27 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-07 — Tek seferlik kodlar veritabanında şifreli
+
+Giriş, e-posta doğrulama ve parola sıfırlama kodları `Verification.value`'da
+**düz metin** duruyordu (`emailOTP`'nin `storeOTP` varsayılanı `"plain"`).
+Veritabanını okuyabilen biri o an geçerli bir kodla girebilirdi. Artık
+`storeOTP: "encrypted"`: kod `BETTER_AUTH_SECRET` ile şifreleniyor —
+Better Auth'un 2FA sırları için zaten kullandığı yöntem (ADR-064).
+
+`"hashed"` **reddedildi**: anahtarsız SHA-256, 6 haneli kodun 10⁶ olasılığı
+bir saniyenin altında denenir. Teknik borç kaydındaki "hashed seçilirse
+yeniden gönderimde ilk kod ölür" bedeli de yoktu — yeniden gönderim zaten
+yeni kod üretiyordu (`resendStrategy` varsayılanı `"rotate"`).
+
+E2E kodu veritabanından okuyor; okuyucu (`e2e/db-cleanup.ts`) artık aynı
+anahtarla çözüyor ve değer düz rakamsa **düşüyor**. Negatif kontrol: ayar
+kaldırılınca test "SIFRESIZ duruyor" diyerek düştü. Geçiş: yayından önceki
+5 dakikada gönderilip girilmemiş kodlar çözülemez, kullanıcı yeni kod ister
+(kullanıcının kararıyla kabul edildi).
+
+---
+
 ## 2026-11-07 — Harcama formu: kayıttan sonra sayfa bir kez üretiliyor
 
 Teknik borçtaki "form Kaydediliyor...'da takılabiliyor" maddesi **ölçüldü**:

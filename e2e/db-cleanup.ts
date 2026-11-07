@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { symmetricDecrypt } from "better-auth/crypto";
 
 // Her kosu E2E veritabanina yeni grup, harcama ve davet birakiyor. Birikince
 // hem sorgular yavasliyor hem de "hangi kayit hangi kosudan kaldi" belirsizlesiyor.
@@ -119,9 +120,14 @@ export async function clearRateLimits() {
  * (email-otp/utils.mjs, routes.mjs). Better Auth bunu degistirirse test
  * duser - ama SESSIZCE yanlis gecmez, "kod bulunamadi" diye bagirir.
  *
- * KODUN DUZ METIN DURMASI DA BIR OLCUM: emailOTP eklentisinin storeOTP
- * varsayilani "plain". Bunu degistirmedik (o ayri bir karar, PROGRESS'te
- * duruyor) - ama degistirilirse burasi da degismek zorunda.
+ * KOD SIFRELI DURUYOR (storeOTP: "encrypted", ADR-064) ve burada sunucunun
+ * kendi yoluyla cozuluyor: Better Auth'un symmetricDecrypt'i, ayni
+ * BETTER_AUTH_SECRET. Test sureci de E2E sunucusu da anahtari .env.local'dan
+ * aliyor (playwright.config.ts bunu ezmiyor).
+ *
+ * NEGATIF KONTROL BURADA: deger duz rakamlardan olusuyorsa kod sifrelenmeden
+ * yazilmis demektir - biri ayari geri aldiysa testler bunu SOYLEYEREK duser.
+ * Sifreli deger onaltilik ve en az 46 bayt; 6 haneli bir kodla karismaz.
  */
 export async function readOtpFromDatabase(type: string, email: string): Promise<string> {
   const connectionString = process.env.E2E_DATABASE_URL;
@@ -140,10 +146,22 @@ export async function readOtpFromDatabase(type: string, email: string): Promise<
     if (!row) {
       throw new Error(`${email} icin "${type}" kodu bulunamadi.`);
     }
-    // Son iki nokta ustusteye gore ayiriyoruz: kodun kendisi rakamlardan
-    // olusuyor ama bicim degisirse ilk ":" yanlis yerde olabilir.
+    // Son iki nokta ustusteye gore ayiriyoruz: deneme sayisi en sonda ve
+    // bicim degisirse ilk ":" yanlis yerde olabilir.
     const separator = row.value.lastIndexOf(":");
-    return separator === -1 ? row.value : row.value.slice(0, separator);
+    const stored = separator === -1 ? row.value : row.value.slice(0, separator);
+
+    if (/^\d+$/.test(stored)) {
+      throw new Error(
+        `"${type}" kodu veritabaninda SIFRESIZ duruyor. better-auth.ts'deki ` +
+          'storeOTP: "encrypted" kaldirilmis olabilir (ADR-064).',
+      );
+    }
+    const secret = process.env.BETTER_AUTH_SECRET;
+    if (!secret) {
+      throw new Error("BETTER_AUTH_SECRET yok; sifreli kod cozulemez.");
+    }
+    return await symmetricDecrypt({ key: secret, data: stored });
   } finally {
     await prisma.$disconnect();
   }

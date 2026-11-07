@@ -530,6 +530,55 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-064 — Tek seferlik kodlar veritabanında şifreli (`storeOTP: "encrypted"`)
+**Tarih:** 2026-11-07 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-07**
+
+**Bağlam:** `emailOTP` eklentisinin `storeOTP` varsayılanı `"plain"`.
+Giriş, e-posta doğrulama, parola sıfırlama ve e-posta değiştirme kodları
+`Verification.value`'da olduğu gibi duruyordu. Veritabanını okuyabilen biri
+(sızmış bir yedek, salt-okunur bir replika, Neon paneline erişim) o an
+geçerli bir kodla — 5 dakika boyunca — girebiliyordu.
+
+**Seçenekler:**
+- `"hashed"`: anahtarsız SHA-256 (`email-otp/utils.mjs`,
+  `defaultKeyHasher`). 6 haneli kodun yalnızca 10⁶ olasılığı var; hepsinin
+  özeti bir saniyenin altında hesaplanır ve kod geri bulunur. Koruyormuş
+  gibi görünüp korumuyor — **reddedildi**.
+- Anahtarlı özet (HMAC, `storeOTP: { hash }`): koruması `"encrypted"` ile
+  aynı (ikisi de `BETTER_AUTH_SECRET`'a dayanıyor) ama geri çözülemiyor;
+  E2E kodu veritabanından okuyamaz olurdu. Artısı yok — reddedildi.
+- **`"encrypted"`**: `BETTER_AUTH_SECRET` ile XChaCha20-Poly1305
+  (`crypto/index.mjs`). Better Auth 2FA sırlarını ve yedek kodları zaten
+  böyle saklıyor (`storeBackupCodes` varsayılanı `"encrypted"`) — **seçildi**.
+
+**Düzeltilen yanlış varsayım:** teknik borç kaydı, `"hashed"`ın bedelinin
+"kodu yeniden gönder" deyince yeni kod gitmesi ve ilk kodun ölmesi olduğunu
+söylüyordu. Eski kodun yeniden gönderilmesi yalnızca
+`resendStrategy: "reuse"` ile oluyor; varsayılan `"rotate"` ve bizde
+ayarlanmamış (`routes.mjs`, `resolveOTP`). Yeni kod **zaten** gidiyordu.
+Kullanıcının gördüğü hiçbir şey değişmedi.
+
+**Geçiş (kullanıcının kararı: kabul):** yayından önceki 5 dakikada
+üretilmiş, henüz girilmemiş düz bir kod yeni sürümde çözülemez; doğrulama
+hata verir (kod kayıttan düşürüldükten sonra) ve kullanıcı yeni kod ister.
+Koddan okundu, ölçülmedi. Eski düz kodu tanıyan bir geçiş kodu yazılmadı:
+pencere 5 dakika, geçiş kodu kendi riskini taşırdı.
+
+**Sınır:** yalnızca "veritabanı sızdı, anahtar sızmadı" durumunu kapatıyor
+— en olası sızıntı da bu. Anahtar da sızarsa (Vercel ortam değişkenleri)
+kod çözülebilir; o durumda zaten oturum çerezleri de imzalanabilir.
+
+**Test:** `e2e/db-cleanup.ts` `readOtpFromDatabase` kodu aynı anahtarla
+çözüyor ve değer düz rakamlardan oluşuyorsa düşüyor. Negatif kontrol: ayar
+kaldırılınca `password-reset.spec` "SIFRESIZ duruyor" diyerek düştü.
+
+**Anahtar değişirse:** `BETTER_AUTH_SECRET` değişirse uçuştaki kodlar (en
+çok 5 dk) çözülemez — kabul edilebilir. `BETTER_AUTH_SECRETS` (çoklu
+anahtar) açılırsa saklama biçimi `$ba$<sürüm>$...` olur; E2E okuyucusu o
+zaman güncellenmeli.
+
+---
+
 ## ADR-063 — better-auth 1.7.1'de, tam sürümle sabit; yükseltme `Account.issuer` göçünü bekliyor
 **Tarih:** 2026-11-06 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-06** · **YÜKSELTME YAPILDI: 2026-11-06 → 1.7.18 (ek aşağıda)**
 

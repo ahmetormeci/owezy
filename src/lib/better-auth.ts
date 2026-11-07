@@ -248,6 +248,29 @@ export const auth = betterAuth({
       expiresIn: OTP_EXPIRES_IN_SECONDS,
 
       /**
+       * KOD VERITABANINA SIFRELI YAZILIYOR (ADR-064). Varsayilan "plain":
+       * Verification.value'da kodun kendisi duruyordu ve veritabanini
+       * okuyabilen biri (sizmis yedek, panel erisimi) o an gecerli bir kodla
+       * girebiliyordu.
+       *
+       * "encrypted" = BETTER_AUTH_SECRET ile XChaCha20-Poly1305
+       * (crypto/index.mjs). Better Auth 2FA sirlarini ve yedek kodlari zaten
+       * boyle sakliyor; ayni anahtar, ayni yontem.
+       *
+       * "hashed" SECILMEDI cunku koruma DEGIL: anahtarsiz SHA-256 ve 6
+       * haneli kodun yalnizca 1 milyon olasiligi var - hepsinin ozeti bir
+       * saniyenin altinda hesaplanir, kod geri bulunur.
+       *
+       * Kullanicinin gordugu bir sey degismiyor. "Kodu yeniden gonder" zaten
+       * YENI kod uretiyordu (resendStrategy varsayilani "rotate").
+       *
+       * E2E kodu veritabanindan okuyor: e2e/db-cleanup.ts readOtpFromDatabase
+       * ayni anahtarla cozuyor ve degerin duz kod OLMADIGINI da dogruluyor -
+       * bu satir silinirse E2E duser.
+       */
+      storeOTP: "encrypted",
+
+      /**
        * KAYITTA DOGRULAMA KODU GONDERILIYOR - ve bu kozmetik degil, BIR VERI
        * KAYBINI KAPATIYOR.
        *
