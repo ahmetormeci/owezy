@@ -30,30 +30,37 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-11-06
+Updated: 2026-11-07
 
 Current task:
-  BRACE-EXPANSION ACIGI KAPANDI - YAYINDA (6 Kasim, kullanicinin
-  istegiyle). Commit 6770601: CI 42280342314 success, Production
-  19:31:47Z success.
-    - brace-expansion 1.1.18 -> 1.1.21 (GHSA-q2hr, -qhr7, -6j4f: DoS).
-      Yalnizca ESLint 9'un minimatch@3'u kullaniyor; canliya girmiyordu.
-    - YOL: "npm update brace-expansion" - kilit dosyasinda 3 satir, baska
-      paket DEGISMEDI, package.json degismedi. "npm audit fix" bilerek
-      kullanilmadi: kopyada denendi, ayni sonucu verdi ama ADR-063'teki
-      gibi baska paketleri de oynatabilen komut; dar yol yeterliydi.
-      (Kopyada --package-lock-only ile Tailwind'in wasm32 yedeginin 6
-      paket kaydi da ekleniyordu - gercek kurulumda cikmiyor.)
-    - npm audit: butun agacta 0 kritik / 0 YUKSEK (17: 15 orta, 2 dusuk);
-      canliya giden 0/0 (10).
-  Dogrulama: tsc, lint, 861 birim, build; TAM E2E 73 gecti 1 atlandi
-  (16.8 dk; sunucu logunda yalnizca bilinen 4 "destination stream" satiri).
-  SONRAKI ADIM: yok - kullanicinin yeni gorevi bekleniyor. Acik isler
-  asagida (cron, 2FA koprusu, DMARC, SDK 58).
+  HARCAMA FORMU: KAYITTAN SONRAKI GEREKSIZ router.refresh() KALDIRILDI -
+  DOGRULANDI, COMMIT YOK (7 Kasim, kullanicinin istegiyle, secenek A). KOD commit'i (src/components/expense-form.tsx).
+    - Teknik borctaki "Kaydediliyor...'da takiliyor" OLCULDU: takilma yok,
+      bekleme var. push + hemen refresh iki istek gonderiyordu, Next ekrani
+      ikisi bitince degistiriyordu; sunucu sayfayi iki kez uretiyordu.
+      Ayrinti CHANGELOG 2026-11-07, gerekce koddaki yorumda.
+    - Olcum (ayni E2E testi, --trace on, 3-4 kosu): kayittan sonra TEK
+      istek (once iki); POST sonrasi bekleme ort. 1,90 -> 1,72 sn.
+    - expense-composer.tsx'teki ayni ikiliye BILEREK dokunulmadi
+      (PROGRESS teknik borc).
+  Dogrulama: tsc, lint, 861 birim GECTI. TAM E2E 71 gecti, 2 DUSTU, 1
+  atlandi (22,3 dk) - recurring.spec:36 ve reminders.spec:46, ikisi de
+  60 sn test butcesini asti. KOD DEGIL: makinede oyun acikti (yuk ~5),
+  ortanca test %16, formu kullanmayan testler 2-3 kat yavasladi (gecersiz
+  tutar 7->19 sn, bolusum onizlemesi 8->24 sn). Iki test TEK BASINA
+  gecti (46,5 / 42,8 sn).
+  TAM E2E TEKRARI (oyun kapali, 19,0 dk): 72 gecti, 1 DUSTU, 1 atlandi -
+  notifications.spec:59. Sebep SUNUCU KAYDINDA: harcama POST'u 500,
+  P2028 "Unable to start a transaction in the given time" (veritabani 2 sn
+  icinde yanit vermedi; ayni dakikalarda grup sayfasi 10 sn'de acildi).
+  Hata kayit isteginin ICINDE, gezinmeden ONCE - kaldirilan satir kayit
+  BASARILI olunca calisiyordu. Test TEK BASINA gecti (27,0 sn; once 27,8).
+  Iki tam kosuda her test en az bir kez gecti.
+  SONRAKI ADIM: commit (kullanici isteyince) -> push oncesi kullaniciya sor.
 
-  ONCEKI (6 Kasim): better-auth 1.7.18 + Sentry ayar adlari ad647b3 -
-  Account.issuer nullable gocu production'da (yayin 13:53Z success), CI
-  42229060798 success. Ayrinti CHANGELOG ve ADR-063 eki.
+  ONCEKI (6 Kasim): brace-expansion 1.1.21 6770601 (CI 42280342314,
+  yayin 19:31:47Z success) - butun agacta 0 kritik / 0 yuksek. Ondan once
+  better-auth 1.7.18 + Sentry ayar adlari ad647b3. Ayrinti CHANGELOG.
   UBUNTU 26 (GitHub notu, dokunulmadi): ubuntu-latest 19 Ekim'den beri
     kademeli olarak Ubuntu 26'ya geciyor (actions/runner-images#14748).
     Adimlar kendi Node'unu kuruyor ve yalnizca npm kullaniyor - risk dusuk.
@@ -283,6 +290,18 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     E2E sunucusunun kendi CRON_SECRET'i playwright.config.ts webServer.env.
 
   WEB
+  - E2E YAVASSA ONCE MAKINEYE BAK: uptime + ps -A -o %cpu,comm | sort -rn.
+    7 Kasim'da oyun acikti: ayni kod 71/2 dustu (60 sn butce), formu hic
+    kullanmayan testler de 2-3 kat yavasladi. Dusen testi tek basina kostur;
+    gecerse sebep ortam. Iki kosunun test surelerini karsilastirmak en
+    hizli ayirac: herkes yavasladiysa ortam, yalnizca biri ise kod.
+  - E2E'DE 500 + P2028 "Unable to start a transaction in the given time":
+    transaction'in BASLAMA bekleme sinirini (Prisma varsayilani 2 sn) E2E
+    veritabaninin (Neon us-east-1, uzak) yavas anlari asiyor. Toplam sure
+    siniri (5 sn, groups.ts/guests.ts'deki 15 sn) BASKA bir sey. 7 Kasim'da
+    bir kez goruldu (notifications.spec:59), tek basina gecti. Production'da
+    uygulama ve veritabani ayni bolgede. Sik tekrarlarsa maxWait konusulur -
+    karar yok.
   - BAGIMLILIK GUNCELLEMESINDEN SONRA TAM E2E SART: better-auth 1.7.18
     tsc/lint/861 birim testi/build'den GECTI, yalnizca E2E kurulumu
     yakaladi (kayit 500). npm audit fix "guvenli" sayilmaz.

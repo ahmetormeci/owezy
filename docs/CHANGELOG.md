@@ -8,6 +8,36 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-07 — Harcama formu: kayıttan sonra sayfa bir kez üretiliyor
+
+Teknik borçtaki "form Kaydediliyor...'da takılabiliyor" maddesi **ölçüldü**:
+takılma yok, bekleme var. E2E ortamında "Kaydet"ten grup sayfasına 3,3–4,0
+sn: ~1,6–2,1 sn POST, ~1,8–1,9 sn sayfanın sunucuda üretilmesi.
+`router.push` ile hemen ardından gelen `router.refresh()` iki istek
+gönderiyordu (gezinme ~15 KB, refresh bütün ağaç ~26 KB). İkisi **aynı
+anda** gidiyor ve Next sayfayı ancak ikisi de bitince değiştiriyor
+(`app-router-instance.js`: istekler sıraya giriyor, ekran en sonuncuyu
+bekliyor). Bazı koşularda gezinme isteği yarıda bırakılıp refresh'in
+cevabı kullanılıyordu.
+
+26 Ağustos'taki test düşmesi de bununla açıklanıyor: o gün iddia sınırı
+5 sn'ydi, iş ~4 sn sürüyor. Eylül'de sınır 15 sn olunca düşme durdu.
+
+**`expense-form.tsx`'ten `router.refresh()` kaldırıldı.** Gereksizdi: grup
+sayfası dinamik ve Next 16 dinamik sayfayı her gezinmede taze çekiyor
+(`staleTimes.dynamic` = 0). Refresh'in ek getirdiği tek şey ortak başlık —
+okunmamış bildirim sayısı ve grup listesi — ve harcama kaydetmek ikisini de
+değiştirmiyor (bildirim ekleyene gitmiyor; gruplar `joinedAt`'e göre).
+Ölçüm, aynı test, 3–4 koşu: kayıttan sonra **tek istek** (önce iki);
+POST sonrası bekleme ortalama 1,90 → 1,72 sn. Süre kazancı küçük, asıl
+kazanç sunucunun her kayıtta sayfayı bir kez üretmesi.
+
+Satır içi giriş (`expense-composer.tsx`) aynı ikiliyi kullanıyor ama
+**bilerek dokunulmadı**: o kullanıcıyı bulunduğu sayfaya geri gönderiyor ve
+orada refresh'in gerekip gerekmediği ayrıca ölçülmeli.
+
+---
+
 ## 2026-11-06 — Son yüksek açık kapandı: `brace-expansion` 1.1.21
 
 Bütün paket ağacında kalan tek yüksek açık `brace-expansion` ≤1.1.20'deki

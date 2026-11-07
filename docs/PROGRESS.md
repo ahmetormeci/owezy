@@ -2325,6 +2325,7 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 | Web güvenlik güncellemesi: Next 16.3.2 → 16.4.5 (kritik açıklar), zorlamasız `npm audit fix`, Prisma 7.10.1'e hizalı; better-auth 1.7.1'de sabit (ADR-063). Canlıya giden paketlerde açık 36 → 12, yüksek/kritik etkileyen yok (6 Kasım) | `6cd7fef` |
 | better-auth 1.7.1 → 1.7.18: önce `Account.issuer` boş bırakılabilir (`20261106120000`), sonra yükseltme; sürüm yine tam sabit (ADR-063 eki). Sentry: `@sentry/nextjs/config` ve `disableLogger` → `bundleSizeOptimizations.excludeDebugStatements` — ölçüldü, bundle aynı (6 Kasım) | `ad647b3` |
 | `brace-expansion` 1.1.18 → 1.1.21 (`npm update brace-expansion`, yalnızca o paket): bütün ağaçta yüksek açık kalmadı (6 Kasım) | `6770601` |
+| Harcama formu: kayıttan sonraki gereksiz `router.refresh()` kaldırıldı — sunucu sayfayı iki kez üretiyordu, ekran ikisini de bekliyordu; artık tek istek (ölçüldü, 7 Kasım) | *(bu commit)* |
 
 ---
 
@@ -2957,16 +2958,13 @@ kaldı (ADR-054).
   **Değiştirilirse `e2e/db-cleanup.ts`'teki `readOtpFromDatabase` de
   değişmek zorunda** — iki E2E dosyası kodu oradan okuyor.
 
-- **Harcama formu kaydettikten sonra "Kaydediliyor..."da takılabiliyor.**
-  26 Ağustos'ta iki E2E testi bu yüzden düştü, aynı koşu tekrarlandığında
-  geçti. Playwright'ın sayfa görüntüsü sebebi açıkça gösteriyor: POST
-  **başarılı** (toast "Harcama eklendi" çıkmış), ama ardından gelen gezinme
-  tamamlanmamış — düğme devre dışı, sayfa formda kalmış.
-  `expense-form.tsx:352-353` `router.push(...)` çağırıp **hemen ardından**
-  `router.refresh()` çağırıyor. Kullanıcı tarafında görünen hâli: kayıt
-  gitti ama ekran öyle söylemiyor. Aynı aile: giriş formlarındaki donma
-  (25.7'de düzeltildi). Ölçülmeden değiştirilmemeli — `refresh()` kaldırılırsa
-  fişin güncellenmemesi riski var
+- **Satır içi giriş (`expense-composer.tsx`) hâlâ `router.push` + hemen
+  ardından `router.refresh()` çağırıyor.** Harcama formundaki aynı ikili 7
+  Kasım'da ölçüldü ve kaldırıldı (takılma değil, sayfanın iki kez
+  üretilmesiydi — CHANGELOG 2026-11-07). Satır içi giriş bilerek
+  bırakıldı: kullanıcıyı **bulunduğu** sayfaya geri gönderiyor, orada
+  refresh'in gerekip gerekmediği ayrıca ölçülmeli. Ölçüm yolu: aynı E2E
+  testini `--trace on` ile koştur, kayıttan sonraki `_rsc=` isteklerini say.
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi

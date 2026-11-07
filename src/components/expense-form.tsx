@@ -518,8 +518,19 @@ export function ExpenseForm({
       // Fiste yalnizca acik ay tam gorunuyor; gecmis bir aya harcama ekleyip
       // varsayilan aya donseydik kullanici kaydettigi satiri goremezdi ve
       // kaydin gitmedigini sanirdi. expenseDate zaten "YYYY-MM-DD".
+      //
+      // ARDINDAN router.refresh() YOK ve bu bilerek (7 Kasim). Eskiden vardi;
+      // OLCULDU: refresh, gezinmeyle AYNI ANDA butun sayfayi (basligi da)
+      // yeniden istiyordu ve Next sayfayi ancak IKISI de bitince
+      // degistiriyordu - sunucu her kayitta sayfayi iki kez uretiyordu,
+      // form "Kaydediliyor..."da onu bekliyordu.
+      // Gereksizdi: grup sayfasi dinamik ve Next 16 dinamik sayfayi her
+      // gezinmede sunucudan taze cekiyor (staleTimes.dynamic = 0). Refresh'in
+      // ek getirdigi tek sey ortak baslik (okunmamis bildirim sayisi, grup
+      // listesi) ve harcama kaydetmek ikisini de degistirmiyor: bildirim
+      // ekleyene gitmiyor, gruplar katilma tarihine gore sirali.
+      // Basliga dokunan bir sey kaydedilmeye baslarsa refresh geri gelmeli.
       router.push(`/groups/${groupId}?month=${expenseDate.slice(0, 7)}`);
-      router.refresh();
     } catch (submitError) {
       // Cakisma (ADR-032) diger hatalardan ayri ele aliniyor: kullanicinin
       // formda yazdiklari OLDUGU GIBI duruyor, biz yalnizca arada ne olmus
