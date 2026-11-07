@@ -43,9 +43,19 @@ Current task:
        kod olur" bedeli yoktu: zaten oyleydi (resendStrategy "rotate").
        Dogrulama: tsc; password-reset.spec 6/6. Negatif kontrol: ayar
        kaldirilinca test "SIFRESIZ duruyor" diye dustu.
-    2. BEARER IMZASI ZORUNLU - sirada.
-  SONRAKI ADIM: bearer({ requireSignature: true }) + E2E negatif testi ->
-  tsc, lint, birim, TAM E2E -> iki ayri commit (kullanici isteyince).
+    2. BEARER IMZASI ZORUNLU (ADR-065) - bearer({ requireSignature: true }).
+       OLCULDU: ayar yokken veritabanindaki ham Session.token ile istek
+       200 (HERKESIN oturumu kullanilabiliyordu), ayarla 401. Mobil
+       kirilmiyor: belirteci yalnizca set-auth-token'dan aliyor ve o imzali
+       (b3156e9, 26 Agustos - magazadaki 1.0'dan once). e2e/auth.spec.ts
+       ucunu de olcuyor. auth.spec + two-factor.spec 15/15 (1 bilerek atlandi).
+  Dogrulama (iki degisiklik birlikte): tsc, lint, 861 birim GECTI. TAM E2E
+  (19,0 dk) 72 gecti, 1 DUSTU, 1 atlandi - expenses.spec:106: harcama
+  duzenleme PUT'u 500, P2028 (5 sn transaction siniri, 5560 ms; E2E
+  veritabani yavas). Iki degisikligin dokunmadigi yol; test TEK BASINA
+  gecti (34,1 sn).
+  SONRAKI ADIM: kullanici "commitle ve pushla" dedi -> iki ayri commit,
+  push, CI + Production SHA ile olcum.
 
   ONCEKI (7 Kasim): harcama formundaki gereksiz router.refresh()
   kaldirildi 396460e (CI 42317657889, yayin 00:21:19Z success). Ondan
@@ -289,9 +299,11 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     transaction'in BASLAMA bekleme sinirini (Prisma varsayilani 2 sn) E2E
     veritabaninin (Neon us-east-1, uzak) yavas anlari asiyor. Toplam sure
     siniri (5 sn, groups.ts/guests.ts'deki 15 sn) BASKA bir sey. 7 Kasim'da
-    bir kez goruldu (notifications.spec:59), tek basina gecti. Production'da
-    uygulama ve veritabani ayni bolgede. Sik tekrarlarsa maxWait konusulur -
-    karar yok.
+    ARKA ARKAYA IKI tam kosuda birer kez: notifications.spec:59 (baslama,
+    2 sn) ve expenses.spec:106 (toplam, 5560 ms, harcama duzenleme). Ikisi
+    de tek basina gecti. Production'da uygulama ve veritabani ayni bolgede.
+    Tekrarlamaya devam ederse sinirlar ya da E2E veritabaninin yeri
+    konusulur - karar yok.
   - BAGIMLILIK GUNCELLEMESINDEN SONRA TAM E2E SART: better-auth 1.7.18
     tsc/lint/861 birim testi/build'den GECTI, yalnizca E2E kurulumu
     yakaladi (kayit 500). npm audit fix "guvenli" sayilmaz.

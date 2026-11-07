@@ -106,6 +106,23 @@ test.describe("kimlik dogrulama", () => {
       });
       expect(cevap.status()).toBe(200);
       expect(await cevap.json()).toMatchObject({ ok: true, groups: expect.any(Array) });
+
+      // IMZASIZ HAM BELIRTEC REDDEDILIYOR (ADR-065). Mobilin aldigi deger
+      // "<Session.token>.<HMAC imzasi>" (better-call crypto.mjs
+      // signCookieValue); imzayi yalnizca BETTER_AUTH_SECRET'i bilen
+      // uretebilir. Noktadan onceki kisim ise veritabaninda Session.token
+      // sutununda DUZ duran degerin ta kendisi. requireSignature kapaliyken
+      // bearer eklentisi o ham degeri de kabul edip kendisi imzaliyordu -
+      // yani veritabanini okuyabilen biri herkesin oturumunu kullanabilirdi.
+      // Ilk iddia ayni zamanda mobil uyumunun olcumu: mobil ZATEN imzali
+      // degeri aliyor, yani zorunlu imza onu kirmiyor.
+      const signed = decodeURIComponent(token!);
+      expect(signed).toContain(".");
+      const raw = signed.slice(0, signed.indexOf("."));
+      const hamCevap = await api.get("/api/v1/groups", {
+        headers: { Authorization: `Bearer ${raw}` },
+      });
+      expect(hamCevap.status()).toBe(401);
     } finally {
       await api.dispose();
     }

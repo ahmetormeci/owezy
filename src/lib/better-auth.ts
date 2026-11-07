@@ -382,6 +382,21 @@ export const auth = betterAuth({
       twoFactorTable: "TwoFactor",
     }),
 
-    bearer(),
+    /**
+     * YALNIZCA IMZALI BELIRTEC (ADR-065). Mobilin giriste aldigi deger
+     * (set-auth-token) "<Session.token>.<HMAC imzasi>"; imzayi yalnizca
+     * BETTER_AUTH_SECRET'i bilen uretebilir.
+     *
+     * requireSignature varsayilani false ve o hal TEHLIKELIYDI: eklenti
+     * noktasiz HAM bir belirteci de kabul edip kendisi imzaliyordu
+     * (bearer/index.mjs). Ham belirtec veritabaninda Session.token
+     * sutununda duz duruyor - yani veritabanini okuyabilen biri, oturumu
+     * acik HERKESIN hesabini Bearer basligiyla kullanabiliyordu. OLCULDU:
+     * ayar yokken ham belirtec 200, ayarla 401 (e2e/auth.spec.ts).
+     *
+     * Mobil KIRILMIYOR: zaten imzali degeri sakliyor ve gonderiyor
+     * (mobile/lib/auth.tsx set-auth-token) - ayni test bunu da olcuyor.
+     */
+    bearer({ requireSignature: true }),
   ],
 });

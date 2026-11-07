@@ -8,6 +8,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-07 — Bearer yalnızca imzalı belirteci kabul ediyor
+
+Kod saklama incelenirken bulundu: `bearer()` eklentisi, mobilin gönderdiği
+imzalı belirtecin yanında **imzasız ham** belirteci de kabul ediyordu
+(`requireSignature` varsayılanı `false`). Ham belirteç veritabanında
+`Session.token`'da düz duruyor — veritabanını okuyabilen biri oturumu açık
+herkesin hesabını kullanabilirdi. **Ölçüldü:** ham belirteçle istek 200
+dönüyordu; `bearer({ requireSignature: true })` ile 401 (ADR-065).
+
+Mobil kırılmıyor: belirteci yalnızca girişteki `set-auth-token`
+başlığından alıyor ve o değer imzalı — 26 Ağustos'tan, yani mağazadaki
+1.0'dan beri. `e2e/auth.spec.ts` üçünü birden ölçüyor: imzalı 200, ham 401,
+mobilin aldığı değer imzalı.
+
+---
+
 ## 2026-11-07 — Tek seferlik kodlar veritabanında şifreli
 
 Giriş, e-posta doğrulama ve parola sıfırlama kodları `Verification.value`'da

@@ -228,7 +228,9 @@ eski bir CLI sürümüyle üretildi, `Account.issuer` atlandı ve kayıt formu i
 gerçek denemede düştü.
 
 - **Session** — açık oturumlar. Mobil bunu `Authorization: Bearer` ile taşıyor,
-  web çerezle; ikisi de aynı tabloya bakıyor (ADR-029).
+  web çerezle; ikisi de aynı tabloya bakıyor (ADR-029). `token` düz duruyor
+  ama **tek başına işe yaramıyor**: çerez de Bearer da imzalı değer
+  istiyor (`<token>.<HMAC>`, ADR-065).
 - **Account** — giriş yöntemleri. Parolayla kayıt olan kullanıcının parola
   hash'i burada (`providerId: "credential"`). `issuer` artık **boş
   bırakılabilir** ve yazılmıyor: yalnızca better-auth 1.7.0–1.7.2 yazıyordu

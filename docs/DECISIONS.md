@@ -530,6 +530,42 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-065 — Bearer yalnızca imzalı belirteci kabul eder (`requireSignature: true`)
+**Tarih:** 2026-11-07 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-07**
+
+**Bağlam:** ADR-064 incelenirken bulundu. Mobil oturumu
+`Authorization: Bearer` ile taşıyor (ADR-029). Girişte aldığı değer
+(`set-auth-token`) imzalı çerez değeri: `<Session.token>.<HMAC imzası>`
+(better-call `signCookieValue`); imzayı yalnızca `BETTER_AUTH_SECRET`'i
+bilen üretebilir. Ama `bearer()` eklentisinin `requireSignature`
+varsayılanı `false`: noktasız **ham** bir belirteci de kabul edip kendisi
+imzalıyordu (`bearer/index.mjs`). Ham belirteç veritabanında
+`Session.token` sütununda düz duruyor. Yani veritabanını okuyabilen biri,
+kod beklemeden, oturumu açık **herkesin** hesabını kullanabiliyordu
+(oturumlar 7 gün, kullanıldıkça uzuyor). ADR-064'teki kod açığından büyük:
+kod 5 dakika yaşıyor ve yalnızca o an kod isteyeni etkiliyor.
+
+**Ölçüldü (yerel E2E):** ayar yokken ham belirteçle `/api/v1/groups` →
+**200**; `bearer({ requireSignature: true })` ile → **401**. İmzalı
+belirteç iki durumda da 200.
+
+**Karar:** `bearer({ requireSignature: true })`. Kullanıcının kararıyla,
+ADR-064'ten ayrı bir commit.
+
+**Mobil kırılmıyor:** uygulama belirteci yalnızca `set-auth-token`
+başlığından alıp saklıyor (`mobile/lib/auth.tsx`, `accept`) ve bu, Better
+Auth'a geçilen ilk mobil commit'ten beri böyle (`b3156e9`, 26 Ağustos —
+mağazadaki 1.0'dan önce). Yani mağazadaki her sürümün tuttuğu belirteç
+imzalı. Aynı E2E testi bunu da ölçüyor: mobilin aldığı değer nokta içeriyor.
+
+**Test:** `e2e/auth.spec.ts` "api cerezsiz Bearer token ile calisiyor":
+imzalı → 200, imzadan ayrılmış ham değer → 401. Negatif kontrol: test,
+ayar yokken 401 yerine 200 alıp düştü.
+
+**Sınır:** ADR-064 ile aynı — anahtar da sızarsa imza üretilebilir.
+
+---
+
 ## ADR-064 — Tek seferlik kodlar veritabanında şifreli (`storeOTP: "encrypted"`)
 **Tarih:** 2026-11-07 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-07**
 

@@ -175,7 +175,9 @@ sözleşmeyi konuşuyor, o yüzden 25.5'te mobilin istek katmanı yerinde kaldı
 **Kimlik doğrulamayı da aynı sunucudan alıyor.** Mobil `/api/auth` uçlarını
 `mobile/lib/auth.tsx` içinden düz `fetch` ile çağırıyor; Better Auth'un
 istemci kütüphanesi kullanılmıyor. Belirteç `set-auth-token` başlığından
-okunup `expo-secure-store`'a yazılıyor.
+okunup `expo-secure-store`'a yazılıyor. Bu değer **imzalı** ve sunucu
+yalnızca imzalıyı kabul ediyor (`requireSignature: true`, ADR-065) —
+veritabanındaki ham `Session.token` tek başına oturum açmıyor.
 
 **Saf modülleri paylaşıyor, React bileşenlerini PAYLAŞMIYOR.** `money.ts`,
 `split.ts`, `messages.ts`, `dates.ts`, `expense-category-guess.ts`,

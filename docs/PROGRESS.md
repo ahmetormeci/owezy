@@ -2326,7 +2326,8 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 | better-auth 1.7.1 → 1.7.18: önce `Account.issuer` boş bırakılabilir (`20261106120000`), sonra yükseltme; sürüm yine tam sabit (ADR-063 eki). Sentry: `@sentry/nextjs/config` ve `disableLogger` → `bundleSizeOptimizations.excludeDebugStatements` — ölçüldü, bundle aynı (6 Kasım) | `ad647b3` |
 | `brace-expansion` 1.1.18 → 1.1.21 (`npm update brace-expansion`, yalnızca o paket): bütün ağaçta yüksek açık kalmadı (6 Kasım) | `6770601` |
 | Harcama formu: kayıttan sonraki gereksiz `router.refresh()` kaldırıldı — sunucu sayfayı iki kez üretiyordu, ekran ikisini de bekliyordu; artık tek istek (ölçüldü, 7 Kasım) | `396460e` |
-| Tek seferlik kodlar veritabanında şifreli (`storeOTP: "encrypted"`); `"hashed"` anahtarsız SHA-256 olduğu için reddedildi. E2E okuyucusu kodu çözüyor ve düz değerde düşüyor (ADR-064, 7 Kasım) | *(bu commit)* |
+| Tek seferlik kodlar veritabanında şifreli (`storeOTP: "encrypted"`); `"hashed"` anahtarsız SHA-256 olduğu için reddedildi. E2E okuyucusu kodu çözüyor ve düz değerde düşüyor (ADR-064, 7 Kasım) | `9e9c7a2` |
+| Bearer yalnızca imzalı belirteci kabul ediyor (`requireSignature: true`): veritabanındaki ham `Session.token` ile istek 200 dönüyordu, artık 401; mobil zaten imzalı değeri gönderiyor (ADR-065, 7 Kasım, ölçüldü) | *(bu commit)* |
 
 ---
 
