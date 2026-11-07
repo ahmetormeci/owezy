@@ -57,9 +57,9 @@ Current task:
   duzenleme PUT'u 500, P2028 (5 sn transaction siniri, 5560 ms; E2E
   veritabani yavas). Iki degisikligin dokunmadigi yol; test TEK BASINA
   gecti (34,1 sn).
-  SONRAKI ADIM: yok - kullanicinin yeni gorevi bekleniyor. Imzali yolun
-  canlida olcumu hesap ister (production'a giris YAPILMAZ): kullanicinin
-  telefonundaki uygulama oturumu acik kalip gruplari yukluyorsa tamam.
+  CANLIDA IMZALI YOL: kullanici 7 Kasim'da telefonda dogruladi - oturum
+  acik, gruplar yukleniyor (production'a biz giris YAPMAYIZ).
+  SONRAKI ADIM: yok - kullanicinin yeni gorevi bekleniyor.
 
   ONCEKI (7 Kasim): harcama formundaki gereksiz router.refresh()
   kaldirildi 396460e (CI 42317657889, yayin 00:21:19Z success). Ondan
@@ -130,15 +130,22 @@ Current task:
     kullanici O BUILD'de denedikten sonra yazilir.
 
 ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
-  1. TEKRARLAYAN HARCAMA canlida gercekten uretim yaptigi HIC GORULMEDI.
-     CRON_SECRET TANIMLI VE DOGRULANDI (10 Eylul: Vercel -> Cron Jobs ->
-     Run -> 200) - soru o DEGIL. Eksik olan gercek bir sablonun
-     uretmesini gormek. Iki dakikalik yol: web'de "Bunu tekrarla" ile
-     baslangici BUGUN olan bir harcama kur -> Vercel -> Cron Jobs -> Run
-     -> harcama dusmeli. Kosu ozeti Runtime Logs'ta "[cron/recurring]".
+  1. (KAPANDI 7 Kasim) TEKRARLAYAN HARCAMA canlida URETTI: kullanici
+     sablon kurdu, Vercel -> Cron Jobs -> Run, harcama dustu. Mobilde
+     listeye "3-5 dk sonra" dustu - sebep cron DEGIL: ilk donem cron
+     kosunca HEMEN yaziliyor (recurring.ts createRecurringExpense), mobil
+     grup ekrani ise yalnizca uygulama ICINDE ekrana donulunce tazeleniyor
+     (useFocusEffect); uygulamaya geri gelince ya da asagi cekince
+     tazelenmiyor. PROGRESS teknik borc.
   2. 2FA KOPRUSU (ADR-045): mobil 1.0 icin gecici sunucu yamasi. 1.0'da
-     kimse kalmadiysa kaldirilir - kullanici App Store Connect ->
-     Analytics'te surume gore oturumlara bakacak. Dogrulama yolu asagida.
+     kimse kalmadiysa kaldirilir. App Store Connect Analytics yolu
+     BULUNAMADI (7 Kasim, kullanici) ve kucuk uygulamada guvenilmez de:
+     yalnizca paylasima izin verenleri sayiyor, az cihazi gizliyor. YENI
+     YOL - kopru yalnizca 2FA'si ACIK birine yariyor; kullanici Neon SQL
+     Editor'de production'da sayacak:
+       SELECT count(*) FROM "User"
+       WHERE "twoFactorEnabled" = true AND "deletedAt" IS NULL;
+     0 ya da yalnizca kendisi -> kopru silinebilir. Dogrulama yolu asagida.
   3. DMARC RAPORLARI - 4 KASIM'DA BAKILDI (Cloudflare -> Email -> DMARC
      Management, son 7 gun): tek kayit, 3 Kasim. Kaynak Microsoft
      20.110.252.109 (Azure, Virginia, ters DNS YOK - Outlook'un kendi
@@ -147,7 +154,12 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      Amazon SES'ten (send.owezy.net) cikiyor. Buyuk olasilikla sahte posta
      denemesi; p=reject isini yapti. 7 gunde bizim postamiz HIC
      gorunmedi (az posta; oturum acik kalan kullaniciya kod gitmiyor).
-     Istege bagli: araligi 30 gune cekip Amazon SES "pass" gormek.
+     7 Kasim: aralik 30 gune cekildi, YINE TEK KAYIT. Rapor yalnizca
+     postamizi alan VE rapor gonderen saglayicidan gelir (Gmail, Outlook
+     evet; iCloud hayir) - az posta, rapor yok. Daha hizli yol: owezy.net'te
+     e-posta koduyla giris iste (2FA acik olsa da kod GIDER, engel kod
+     girilince), Gmail'de postayi ac -> sag ustteki uc nokta -> "Orijinali
+     goster": SPF, DKIM, DMARC uclu PASS ise madde kapanir.
      DMARC RAPORU JUNK'A DUSMEYI GOSTERMEZ - yalnizca kimlik kontrolunu.
      Ekrandaki "SPF policy: Fail" kokteki "v=spf1 -all" (kokten kimse
      gondermiyor - ayar, hata degil); "BIMI: No/Fail" bilerek kurulmadi

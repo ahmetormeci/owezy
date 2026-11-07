@@ -2927,6 +2927,15 @@ kaldı (ADR-054).
   kaldırıldığı anda güncellemeyi almamış her telefon yeniden kırılır. Ölçüt
   "1.0.1 gönderildi" değil, "eski sürüm pratikte kalmadı".
 
+- **Mobilde liste, uygulamaya geri dönünce yenilenmiyor; aşağı çekip
+  yenileme de yok.** 7 Kasım'da canlıda görüldü: cron'un ürettiği harcama
+  (veritabanına anında yazıldı) mobil listeye "3–5 dk sonra" düştü. Grup
+  ekranı yalnızca uygulama **içinde** başka ekrandan dönülünce tazeleniyor
+  (`useFocusEffect`, `mobile/app/groups/[groupId]/index.tsx`); uygulamada
+  hiçbir yerde `AppState` (arka plandan dönüş) ya da `RefreshControl`
+  (aşağı çek) yok. Başka bir telefondan eklenen harcama da aynı şekilde
+  gecikir. Düzeltme yeni bir iOS build'i ister.
+
 - **E2E bir kez ACIKLANAMAYAN sekilde yavasladi ve sonra kendiliginden
   duzeldi.** 27 Agustos: ayni test kumesi 10 dk -> 26 dk -> 1.6 saat diye
   uzadi, tek tek testler 15 DAKIKA surdu (oysa test zaman asimi 60 sn) ve
