@@ -34,14 +34,15 @@ Updated: 2026-11-07
 
 Current task:
   MOBIL 1.0 ICIN 2FA CEREZ KOPRUSU KALDIRILDI (7 Kasim, kullanicinin
-  onayiyla) - KOD commit'i, COMMIT YOK. Olcut: production'da 2FA acik tek
+  onayiyla) - YAYINDA: 563c336, CI 42365542267 success, Production
+  2026-11-07 10:49:45Z success. Canlida hesapsiz kontrol: / 200,
+  /api/auth/get-session 200 (null), verify-totp cerezsiz 401. Olcut: production'da 2FA acik tek
   hesap kullanicinin kendisi (Neon SQL Editor, kullanici saydi), o da
   1.0.7'de. route.ts eski haline (toNextJsHandler) dondu; kopru dosyasi,
   10 birim testi, atlanan E2E testi silindi. ADR-045 eki.
   Dogrulama: tsc, lint, 851 birim GECTI (861 - 10). TAM E2E 73/73 GECTI
   (16,5 dk, atlanan yok, sunucu kaydinda P2028 yok).
-  SONRAKI ADIM: kullanici "commitle ve pushla" dedi -> commit, push, CI +
-  Production SHA ile olcum.
+  SONRAKI ADIM: yok - kullanicinin yeni gorevi bekleniyor.
 
   ONCEKI (7 Kasim): veritabani sizintisina karsi iki duzeltme -
   9e9c7a2 (tek seferlik kodlar sifreli, ADR-064) ve 0558fe0 (Bearer yalnizca
@@ -164,9 +165,9 @@ DIS DUNYA - 6 KASIM OLCUMU:
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
-  CI       0558fe0 success (kosu 42321905971, 7 Kasim) - onceki
-           396460e, 6770601 de success
-  YAYIN    0558fe0 Production success 2026-11-07 01:04:07Z - dokuman commit'leri de
+  CI       563c336 success (kosu 42365542267, 7 Kasim) - onceki
+           0558fe0, 396460e de success
+  YAYIN    563c336 Production success 2026-11-07 10:49:45Z - dokuman commit'leri de
            production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,

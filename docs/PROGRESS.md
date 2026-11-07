@@ -2328,7 +2328,7 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 | Harcama formu: kayıttan sonraki gereksiz `router.refresh()` kaldırıldı — sunucu sayfayı iki kez üretiyordu, ekran ikisini de bekliyordu; artık tek istek (ölçüldü, 7 Kasım) | `396460e` |
 | Tek seferlik kodlar veritabanında şifreli (`storeOTP: "encrypted"`); `"hashed"` anahtarsız SHA-256 olduğu için reddedildi. E2E okuyucusu kodu çözüyor ve düz değerde düşüyor (ADR-064, 7 Kasım) | `9e9c7a2` |
 | Bearer yalnızca imzalı belirteci kabul ediyor (`requireSignature: true`): veritabanındaki ham `Session.token` ile istek 200 dönüyordu, artık 401; mobil zaten imzalı değeri gönderiyor (ADR-065, 7 Kasım, ölçüldü) | `0558fe0` |
-| Mobil 1.0 için geçici 2FA çerez köprüsü kaldırıldı: production'da 2FA açık tek hesap kullanıcının kendisi (Neon'da sayıldı), `route.ts` eski hâline döndü (ADR-045 eki, 7 Kasım) | *(bu commit)* |
+| Mobil 1.0 için geçici 2FA çerez köprüsü kaldırıldı: production'da 2FA açık tek hesap kullanıcının kendisi (Neon'da sayıldı), `route.ts` eski hâline döndü (ADR-045 eki, 7 Kasım) | `563c336` |
 
 ---
 
