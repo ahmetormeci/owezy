@@ -33,17 +33,18 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-13
 
 Current task:
-  IKI KOD COMMIT'I HAZIR, PUSH EDILMEDI (13 Kasim, kullanicinin istegiyle):
+  IKI KOD COMMIT'I PUSH EDILDI (13 Kasim, kullanicinin istegiyle) - CI
+  43492010771 success, Production 2026-11-13 19:26:00Z success. CI'daki
+  Expo yamasi uyarisi KALKTI (kalan tek uyari Ubuntu 26 notu).
     a3d76a8  mobilde liste tazeleme (ADR-066, asagida)
-    sonraki  bes Expo SDK 57 yamasi (expo 57.0.33, expo-constants,
+    ea9d384  bes Expo SDK 57 yamasi (expo 57.0.33, expo-constants,
              expo-linking, expo-router, expo-sharing). Beraberinde gelen
              expo-modules-core 57.0.26 iOS'ta derleme yolunu degistiriyor
              (hazir xcframework yerine her zaman kaynaktan) -> simulatorde
              Release build: acilis, giris, 18 karakter tek seferde, gezinme,
              disa aktar (paylasim penceresi), asagi cekme. CHANGELOG 13 Kasim.
-  SONRAKI ADIM: PUSH ICIN KULLANICIYA SOR (kod commit'leri). Push'tan sonra
-  CI ve Production yayinini dogrula. Magazaya cikmasi YENI iOS BUILD
-  ister - BUILD ALMADAN ONCE SOR. Bu build'in TestFlight'inda ek olarak:
+  SONRAKI ADIM: telefonlara cikmasi YENI iOS BUILD ister - BUILD ALMADAN
+  ONCE SOR (EAS kotasi). Bu build'in TestFlight'inda ek olarak:
   ASAGI CEKIP YENILEME ve uygulamaya geri donunce liste tazeleniyor mu.
 
   ADR-066 (8 Kasim): Kullanici tasarim sorularina "a, a, a" dedi. Arka
@@ -209,9 +210,9 @@ DIS DUNYA - 13 KASIM OLCUMU (8 Kasim'dakiyle ayni):
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
-  CI       972dc84 success (kosu 42386247677, 7 Kasim) - onceki
-           fb59f28, 563c336 de success
-  YAYIN    972dc84 Production success 2026-11-07 15:25:13Z - dokuman commit'leri de
+  CI       ea9d384 success (kosu 43492010771, 13 Kasim) - onceki
+           972dc84, fb59f28 de success
+  YAYIN    ea9d384 Production success 2026-11-13 19:26:00Z - dokuman commit'leri de
            production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
