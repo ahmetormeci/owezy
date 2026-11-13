@@ -530,6 +530,89 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-066 — Mobilde liste tazeleme: öne gelince, açıkken bildirim gelince, aşağı çekince; başarısız tazeleme veriyi silmez
+**Tarih:** 2026-11-08 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-08 (kodda; mağazaya yeni iOS build'iyle çıkar)**
+
+**Bağlam:** Kullanıcı bildirdi: zamanlanmış görevin ürettiği tekrarlayan
+harcama web'de anında görünüyor, telefondaki listeye ise 3-5 dakika sonra
+düşüyor. Kök neden: mobil ekranlar yalnızca **uygulama içi** gezinmede
+(`useFocusEffect`) tazeleniyordu. `AppState` ve `RefreshControl` hiçbir
+yerde yoktu; telefonun ana ekranından uygulamaya dönmek bir odaklanma
+sayılmıyor, yani hiçbir şey yeniden çekilmiyordu. Gecikme, kullanıcının o
+arada bir ekrana girip çıkmasıydı.
+
+**Kararlar** (kullanıcı tasarım sorularına "a, a, a" dedi):
+
+1. **Öne gelince tazele.** `app/_layout.tsx` AppState'i dinliyor ve
+   yalnızca **gerçek arka plandan dönüşte** sinyal yayıyor. iOS'ta Denetim
+   Merkezi ve Face ID `active → inactive → active` üretiyor; gerçek dönüş
+   `background → active` (RN `RCTAppState.mm`). **Bildirim perdesi iOS
+   27'de uygulamayı arka plana atıyor** (simülatörün sistem günlüğünde
+   `UIApplicationWillEnterForegroundNotification`): perde kapanınca
+   tazeleme oluyor. Hata değil — bildirimlere bakıp dönen kişi güncel
+   liste bekler.
+   Karar saf bir fonksiyonda: `mobile/lib/refresh-signal.ts`,
+   `createForegroundDetector` ("arka planda bulundu mu" bayrağı; araya bir
+   `inactive` girse de dönüş kaçmıyor).
+2. **Yalnızca görünen ekran tazelenir.** Ekranlar sinyale
+   `useForegroundRefresh` ile **odaktayken** abone (`mobile/lib/screen-refresh.ts`);
+   yığında altta kalanlar, kullanıcı onlara dönünce kendi odaklanma
+   tazelemesiyle güncelleniyor.
+3. **Açıkken bildirim gelince de** (S3-a): `addNotificationReceivedListener`
+   aynı sinyali yayıyor. Bant düşüp altındaki listenin değişmemesi
+   ortadan kalktı. Zildeki sayı da aynı sinyalle tazeleniyor.
+4. **Aşağı çekip yenileme:** gruplar, grup, bildirimler, ödeşme, üyeler.
+   Gösterge **yalnızca kullanıcı çekince** dönüyor — otomatik tazelemede
+   `refreshing` açılsaydı iOS listeyi aşağı itip ekranı kendiliğinden
+   oynatırdı. Gösterge `refresh()`'in sözü çözülünce kapanıyor: tahmini
+   süre ya da "istek sürüyor mu" bayrağı ya erken ya geç kapanırdı.
+5. **Başarısız tazeleme veriyi silmez** (S1-a). `useApiGet`'e ikinci bir
+   yol eklendi: `refresh()` hata olursa eldeki veriyi koruyor ve
+   `refreshError`'ı dolduruyor; ekran üstte `RefreshNotice` gösteriyor
+   ("Güncellenemedi; gördüklerin eski olabilir." + sebep + Tekrar dene).
+   `reload()` **değişmedi** (hata → hata ekranı): "Tekrar dene" ve
+   işlem sonrası yenilemeler onu kullanıyor. Gerekçe: öne gelince tazeleme
+   eklenince, metroda uygulamayı açan kişinin elindeki liste "Bağlantı
+   yok" sayfasına dönüşürdü — tazelemeden önce olmayan bir kayıp.
+6. **Grup ekranında tek `refreshAll`, aylar yerinde** (S2-a). Geri dönüş,
+   öne gelme ve aşağı çekme aynı fonksiyonu çağırıyor. Eskiden geri
+   dönüşte `setMonths({})` vardı: açık ay bir an spinner'a düşüyor, açılmış
+   eski aylar kapanıyordu. Artık yüklü her ayın ilk sayfası yeniden
+   isteniyor, cevap gelene kadar eski satırlar duruyor. **Bedel:** "daha
+   fazla yükle" ile açılmış sayfalar ilk sayfaya dönüyor. Süzgeç sonuçları
+   ve tekrarlayan harcamalar bölümü (`refreshKey`) de tazeleniyor.
+
+**Kapsam dışı — form ekranları:** harcama ekleme/düzenleme, grup düzenleme,
+harcama detayı. Orada tazeleme, yazılmakta olanın üzerine sunucudaki eski
+hali yazabilirdi. Bedeli: harcama detayındaki yorumlar öne gelince
+kendiliğinden yenilenmiyor (ekrandan çıkıp girince yenileniyor). **Ödeşme
+ekranı bir form ama dahil:** tutar, karşı taraf, not ve yön yerel state;
+sunucu verisinden türemiyorlar (kod okunarak doğrulandı). IBAN akışında
+("kopyala, bankaya git, öde, dön, kaydet", ADR-059) bankadan dönüş tam bu an.
+
+**Test:** `mobile/lib/refresh-signal.test.ts` (geçiş dizileri),
+`mobile/lib/use-api.test.tsx` (refresh/reload farkı, sözün zamanı),
+`mobile/test/screens/foreground-refresh.test.tsx` (gerçek `useApiGet` ile
+gruplar listesi: sinyal, odak dışı, hata uyarısı, aşağı çekme göstergesi),
+`mobile/test/screens/group-refresh.test.tsx` (aylar cevap beklenirken
+boşalmıyor). **Negatif kontroller:** `setMonths({})` geri konunca grup
+testlerinin ikisi de, `refresh` hatada veriyi korumayınca birim ve ekran
+testlerinden dördü düştü.
+
+**Simülatörde doğrulandı (8 Kasım):** yerel Release build, yerel sunucu,
+geliştirme veritabanındaki test hesabı; sunucu günlüğündeki isteklerle
+ölçüldü:
+- **Arka plandan dönüş:** yalnızca açık grup ekranının sorguları ve zil
+  gitti; yeni harcama göründü, açık ay (Ekim) açık kaldı.
+- **Denetim Merkezi aç/kapa:** hiç istek gitmedi.
+- **Aşağı çekme:** yeni harcama geldi, gösterge kapandı.
+- **Sunucu kapalıyken aşağı çekme:** liste ve bakiye kaldı, uyarı sebebiyle
+  birlikte çıktı. Sunucu açılıp uyarıya dokununca uyarı kalktı.
+- **Uygulama açıkken bildirim** (`simctl push`): iOS bildirimi uygulamaya
+  teslim etti (`willPresentNotification`), liste ve zil tazelendi.
+
+---
+
 ## ADR-065 — Bearer yalnızca imzalı belirteci kabul eder (`requireSignature: true`)
 **Tarih:** 2026-11-07 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-07**
 

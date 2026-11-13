@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,6 +31,7 @@ import { formatBasisPoints, formatMoney, formatSignedMoney } from "@/lib/money";
 import type { Locale } from "@/lib/locale";
 import { useLocale, useTranslate, type Translator } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
+import { useForegroundRefresh, usePullToRefresh } from "../../../lib/screen-refresh";
 import { useTheme, type Theme } from "../../../lib/theme";
 import { apiBaseUrl } from "../../../lib/api";
 import { useSession } from "../../../lib/auth";
@@ -39,6 +41,7 @@ import { isIbanRecentlyChanged } from "@/lib/iban";
 import { ReceiptViewer } from "../../../components/receipt-viewer";
 import { ExpenseComposer } from "../../../components/expense-composer";
 import { RecurringList } from "../../../components/recurring-list";
+import { RefreshNotice } from "../../../components/refresh-notice";
 import { FieldInput } from "../../../components/field";
 import {
   Receipt,
@@ -315,51 +318,6 @@ export default function GroupScreen() {
     summary.reload();
   }, [summary]);
 
-  /**
-   * Ekrana GERI DONULDUGUNDE tazele.
-   *
-   * Harcama detayinda bir kayit duzenlenip ya da silinip geri gelindiginde fis
-   * eski veriyi gosterirdi. Ilk odaklanma ATLANIYOR: mount aninda veri zaten
-   * cekiliyor, ikinci bir istek bosuna olurdu.
-   */
-  const firstFocus = useRef(true);
-  /**
-   * BES SORGUNUN HEPSI tazeleniyor, yalnizca ozet degil.
-   *
-   * Once ozet ve bildirim sayaci tazeleniyordu ve EKSIKTI - simulatorde
-   * goruldu: grup adi "Tatil2026" olarak kaydedildi, ekrana donuldu, baslik
-   * hala "Tatil" diyordu. Ayni acik uyeler ve bakiyeler icin de vardi: uye
-   * cikarilip geri gelindiginde liste eskisini gosterirdi.
-   *
-   * Bu ekrandan gidilen HER yer buradaki verilerden birini degistirebiliyor
-   * (harcama, odesme, uye, davet, grup adi, bildirim). "Hangisi degisti"
-   * sorusunu ekranin bilmesinin yolu yok; web'de karsiligi router.refresh()
-   * ve o da hepsini yeniden cekiyor.
-   *
-   * MALIYET GORUNMUYOR: useApiGet ayni adres tazelenirken ELDEKI VERIYI
-   * koruyor, yani spinner'a dusen bir ekran olmuyor.
-   *
-   * Bagimliliklar nesneler degil UZERLERINDEKI KARARLI fonksiyonlar: nesneler
-   * her cizimde yeniden uretiliyor ve efekt bosuna yeniden kurulurdu.
-   */
-  const reloadSummary = summary.reload;
-  const reloadGroup = group.reload;
-  const reloadMembers = members.reload;
-  const reloadBalances = balances.reload;
-  useFocusEffect(
-    useCallback(() => {
-      if (firstFocus.current) {
-        firstFocus.current = false;
-        return;
-      }
-      setMonths({});
-      reloadSummary();
-      reloadGroup();
-      reloadMembers();
-      reloadBalances();
-    }, [reloadSummary, reloadGroup, reloadMembers, reloadBalances]),
-  );
-
   const toggleMonth = useCallback(
     (month: string) => {
       if (months[month]) {
@@ -518,6 +476,114 @@ export default function GroupScreen() {
       clearTimeout(timer);
     };
   }, [isFiltered, filterSuffix, groupId, get, t, retry]);
+
+  /**
+   * BUTUN EKRANI TAZELE. Uc yerden cagriliyor: ekrana GERI DONULUNCE,
+   * uygulama ARKA PLANDAN ONE GELINCE ve ASAGI CEKINCE. Tek fonksiyon
+   * bilerek - ayni isi uc ayri yoldan yapan kod zamanla ayrisir.
+   *
+   * BUTUN SORGULAR tazeleniyor, yalnizca ozet degil. Once ozet ve bildirim
+   * sayaci tazeleniyordu ve EKSIKTI - simulatorde goruldu: grup adi
+   * "Tatil2026" olarak kaydedildi, ekrana donuldu, baslik hala "Tatil"
+   * diyordu. Ayni acik uyeler ve bakiyeler icin de vardi: uye cikarilip geri
+   * gelindiginde liste eskisini gosterirdi. Bu ekrandan gidilen HER yer
+   * buradaki verilerden birini degistirebiliyor (harcama, odesme, uye, davet,
+   * grup adi, bildirim). "Hangisi degisti" sorusunu ekranin bilmesinin yolu
+   * yok; web'de karsiligi router.refresh() ve o da hepsini yeniden cekiyor.
+   *
+   * AYLAR YERINDE TAZELENIYOR, SIFIRLANMIYOR. Onceden burada setMonths({})
+   * vardi: acik ay bir an spinner'a dusuyor, kullanicinin actigi eski aylar
+   * kapaniyordu. Asagi cekip yenilemede bu, listenin parmagin altindan
+   * kaybolmasi demekti. Artik yuklu her ayin ILK SAYFASI yeniden isteniyor
+   * ve cevap gelene kadar eski satirlar duruyor. Bedeli: "daha fazla yukle"
+   * ile acilmis sonraki sayfalar ilk sayfaya donuyor.
+   *
+   * Suzgec aciksa sonuclari da tazeleniyor (retry). Tekrarlayan harcamalar
+   * bolumu de (recurringKey): zamanlanmis gorev calisinca "sonraki tarih"
+   * degisiyor - kullanicinin bildirdigi gecikmenin kaynagi da o gorevdi.
+   *
+   * GORUNEN MALIYET YOK: refresh ayni adres tazelenirken eldeki veriyi
+   * koruyor, basarisiz olursa da koruyor ve ustte bir uyari cikiyor
+   * (RefreshNotice).
+   *
+   * Bagimliliklar nesneler degil UZERLERINDEKI KARARLI fonksiyonlar: nesneler
+   * her cizimde yeniden uretiliyor. Aylar da ayni sebeple REF'ten okunuyor:
+   * months'u bagimliliga koymak, her ay yuklendiginde odaklanma efektini
+   * yeniden kurar ve ekrani yeniden tazelerdi - sonsuz istek dongusu.
+   */
+  const refreshSummary = summary.refresh;
+  const refreshGroup = group.refresh;
+  const refreshMembers = members.refresh;
+  const refreshBalances = balances.refresh;
+  const monthsRef = useRef(months);
+  useEffect(() => {
+    monthsRef.current = months;
+  });
+  const [recurringKey, setRecurringKey] = useState(0);
+
+  /** Bir ayin ILK SAYFASINI, eldeki satirlari silmeden yeniden ceker. */
+  const refreshMonth = useCallback(
+    async (month: string) => {
+      try {
+        const result = await get<ExpensesResponse>(
+          `/api/v1/groups/${groupId}/expenses?limit=20&month=${month}`,
+        );
+        // Basarisizsa eski satirlar kaliyor; ayni anda ozet de basarisiz
+        // olmus oluyor ve uyariyi o gosteriyor.
+        if (!result.ok) return;
+        setMonths((current) => {
+          const state = current[month];
+          // Kullanici bu arada ayi KAPATTIYSA geri acilmiyor; "daha fazla"
+          // YUKLENIYORSA onun sonucu ezilmiyor.
+          if (!state || state.loading) return current;
+          return {
+            ...current,
+            [month]: {
+              expenses: result.data.expenses,
+              nextCursor: result.data.nextCursor,
+              loading: false,
+              error: false,
+            },
+          };
+        });
+      } catch {
+        // Ag hatasi: eski satirlar yerinde kaliyor.
+      }
+    },
+    [get, groupId],
+  );
+
+  const refreshAll = useCallback(async () => {
+    setRetry((n) => n + 1);
+    setRecurringKey((n) => n + 1);
+    await Promise.all([
+      refreshSummary(),
+      refreshGroup(),
+      refreshMembers(),
+      refreshBalances(),
+      ...Object.keys(monthsRef.current).map(refreshMonth),
+    ]);
+  }, [refreshSummary, refreshGroup, refreshMembers, refreshBalances, refreshMonth]);
+
+  /**
+   * Ekrana GERI DONULDUGUNDE tazele.
+   *
+   * Harcama detayinda bir kayit duzenlenip ya da silinip geri gelindiginde fis
+   * eski veriyi gosterirdi. Ilk odaklanma ATLANIYOR: mount aninda veri zaten
+   * cekiliyor, ikinci bir istek bosuna olurdu.
+   */
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      void refreshAll();
+    }, [refreshAll]),
+  );
+  useForegroundRefresh(refreshAll);
+  const pull = usePullToRefresh(refreshAll);
 
   /** Suzulmus listenin devami. Ay penceresi YOK: arama butun gecmiste calisiyor. */
   const loadMoreFound = useCallback(async () => {
@@ -884,7 +950,27 @@ export default function GroupScreen() {
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={s.scroll}
+        keyboardShouldPersistTaps="handled"
+        testID="group-scroll"
+        refreshControl={
+          <RefreshControl
+            refreshing={pull.refreshing}
+            onRefresh={pull.onRefresh}
+            tintColor={theme.brand}
+          />
+        }
+      >
+        <RefreshNotice
+          text={
+            summary.refreshError ??
+            group.refreshError ??
+            members.refreshError ??
+            balances.refreshError
+          }
+          onRetry={() => void refreshAll()}
+        />
         {/*
           BASLIK BLOGU. Grup adi serif, yanindaki para birimi bakir bir
           etiket, sagda uyelerin bas harfleri bindirmeli.
@@ -1373,6 +1459,7 @@ export default function GroupScreen() {
           groupId={groupId}
           currency={currency}
           currentUserId={currentUserId}
+          refreshKey={recurringKey}
         />
 
         {/* UYELER VE BAKIYELER. Bu da web'de fisin altinda duruyordu ve

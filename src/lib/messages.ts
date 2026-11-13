@@ -542,6 +542,8 @@ export const MESSAGES_TR = {
   "ui.delete_account_confirm": "Evet, hesabımı sil",
   "ui.delete_account_done": "Hesabın silindi.",
   "ui.try_again": "Tekrar dene",
+  // Mobil: tazeleme basarisiz, eldeki veri ekranda kaldi.
+  "ui.refresh_failed": "Güncellenemedi; gördüklerin eski olabilir.",
   "ui.you": "Sen",
   // Hesapsiz uye (ADR-057)
   "ui.guest": "misafir",
@@ -1381,6 +1383,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.delete_account_confirm": "Yes, delete my account",
   "ui.delete_account_done": "Your account has been deleted.",
   "ui.try_again": "Try again",
+  "ui.refresh_failed": "Couldn't refresh; what you see may be out of date.",
   "ui.you": "You",
   // Guest members (ADR-057)
   "ui.guest": "guest",

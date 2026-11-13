@@ -2329,6 +2329,7 @@ kanıtı. Ayrıca kök tsc/lint/535 birim ve dört mobil CI adımı.
 | Tek seferlik kodlar veritabanında şifreli (`storeOTP: "encrypted"`); `"hashed"` anahtarsız SHA-256 olduğu için reddedildi. E2E okuyucusu kodu çözüyor ve düz değerde düşüyor (ADR-064, 7 Kasım) | `9e9c7a2` |
 | Bearer yalnızca imzalı belirteci kabul ediyor (`requireSignature: true`): veritabanındaki ham `Session.token` ile istek 200 dönüyordu, artık 401; mobil zaten imzalı değeri gönderiyor (ADR-065, 7 Kasım, ölçüldü) | `0558fe0` |
 | Mobil 1.0 için geçici 2FA çerez köprüsü kaldırıldı: production'da 2FA açık tek hesap kullanıcının kendisi (Neon'da sayıldı), `route.ts` eski hâline döndü (ADR-045 eki, 7 Kasım) | `563c336` |
+| Mobilde liste tazeleme: arka plandan dönünce ve açıkken bildirim gelince görünen ekran tazeleniyor, beş liste ekranında aşağı çekip yenileme var, başarısız tazeleme listeyi silmiyor, grup ekranında aylar yerinde tazeleniyor. Simülatörde beş senaryo ölçüldü. **Mağazaya yeni iOS build'iyle çıkar** (ADR-066, 8 Kasım) | _commit bekliyor_ |
 
 ---
 
@@ -2921,14 +2922,10 @@ kaldı (ADR-054).
 
 ## Bilinen teknik borç
 
-- **Mobilde liste, uygulamaya geri dönünce yenilenmiyor; aşağı çekip
-  yenileme de yok.** 7 Kasım'da canlıda görüldü: cron'un ürettiği harcama
-  (veritabanına anında yazıldı) mobil listeye "3–5 dk sonra" düştü. Grup
-  ekranı yalnızca uygulama **içinde** başka ekrandan dönülünce tazeleniyor
-  (`useFocusEffect`, `mobile/app/groups/[groupId]/index.tsx`); uygulamada
-  hiçbir yerde `AppState` (arka plandan dönüş) ya da `RefreshControl`
-  (aşağı çek) yok. Başka bir telefondan eklenen harcama da aynı şekilde
-  gecikir. Düzeltme yeni bir iOS build'i ister.
+- **Harcama detayındaki yorumlar öne gelince kendiliğinden yenilenmiyor.**
+  ADR-066 form ekranlarını bilerek dışarıda bıraktı (yazılanın üzerine
+  sunucudaki eski hâl yazılmasın); harcama detayı da bu grupta. Yorumlar
+  ekrandan çıkıp girince yenileniyor.
 
 - **E2E bir kez ACIKLANAMAYAN sekilde yavasladi ve sonra kendiliginden
   duzeldi.** 27 Agustos: ayni test kumesi 10 dk -> 26 dk -> 1.6 saat diye

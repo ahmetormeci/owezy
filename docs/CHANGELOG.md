@@ -8,6 +8,33 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-08 — Mobilde liste öne gelince, açıkken bildirim gelince ve aşağı çekince tazeleniyor
+
+7 Kasım'da canlıda görüldü: cron'un ürettiği harcama web'de anında
+görünüyor, telefondaki listeye ise 3–5 dakika sonra düşüyordu. Sebep cron
+değildi; mobil ekranlar yalnızca uygulama **içinde** bir ekrana dönülünce
+tazeleniyordu. Telefonun ana ekranından uygulamaya dönmek bir şey
+tetiklemiyordu ve aşağı çekip yenileme yoktu (ADR-066).
+
+Artık:
+- **Arka plandan dönünce** yalnızca görünen ekran tazeleniyor. Denetim
+  Merkezi ve Face ID gibi yarı aktif anlar tetiklemiyor.
+- **Uygulama açıkken bildirim gelince** de tazeleniyor; zildeki sayı da.
+- **Aşağı çekip yenileme** gruplar, grup, bildirimler, ödeşme ve üyeler
+  ekranlarında var.
+- **Tazeleme başarısız olursa liste kalıyor**, üstte "Güncellenemedi"
+  uyarısı sebebiyle çıkıyor. Eskiden ekran hata sayfasına dönerdi.
+- **Grup ekranında aylar yerinde tazeleniyor**: açık aylar kapanmıyor,
+  satırlar cevap gelene kadar duruyor.
+
+Form ekranları (harcama ekle/düzenle, grup düzenle, harcama detayı) bilerek
+dışarıda; yazılanın üzerine sunucudaki eski hâl yazılmasın. Sunucu tarafında
+yalnızca bir sözlük satırı değişti. Mobil testler 98 + 145'ten 114 vitest +
+154 jest'e çıktı; beş senaryo simülatörde sunucu günlüğüyle ölçüldü.
+**Yayında değil** — mağazaya yeni bir iOS build'iyle çıkacak.
+
+---
+
 ## 2026-11-07 — Mobil 1.0 için 2FA çerez köprüsü kaldırıldı
 
 Faz 36'da (4 Eylül) mağazadaki 1.0'ın 2FA girişini kurtarmak için konan

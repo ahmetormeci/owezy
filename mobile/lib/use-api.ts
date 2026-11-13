@@ -89,17 +89,59 @@ export function useApiClient() {
   );
 }
 
-/** Bir GET'i ekrana baglar. path null ise istek ATILMAZ. */
+/** Bekleyen refresh() sozlerini cozer. */
+function settle(waiters: { current: (() => void)[] }) {
+  const done = waiters.current;
+  waiters.current = [];
+  for (const resolve of done) resolve();
+}
+
+/**
+ * Bir GET'i ekrana baglar. path null ise istek ATILMAZ.
+ *
+ * IKI YENIDEN CEKME YOLU VAR ve farklari HATADA:
+ *
+ *   reload()  - "yeniden yukle". Basarisiz olursa ekran HATA HALINE geciyor.
+ *               Hata ekranindaki "Tekrar dene" ve bir islemin ardindan
+ *               (uye cikarildi, davet uretildi) listeyi yenilemek bunu
+ *               kullaniyor; davranisi eskisiyle ayni.
+ *   refresh() - "arka planda tazele". Basarisiz olursa ELDEKI VERI KALIYOR
+ *               ve refreshError doluyor; ekran onu kucuk bir uyari olarak
+ *               gosteriyor (components/refresh-notice.tsx).
+ *
+ * NEDEN AYRI BIR YOL: uygulama one gelince tazeleme eklendi (lib/
+ * refresh-signal.ts). Metroda uygulamayi acan kisinin elindeki liste,
+ * reload'un davranisiyla "Baglanti yok" sayfasina donusurdu - tazeleme
+ * eklenmeden once hic olmayan bir kayip. Gordugu veri eski olabilir ve bunu
+ * soylemek dogru; ama onu elinden almak degil.
+ *
+ * refresh() BIR SOZ DONDURUYOR ve istek bitince cozuluyor - basarili ya da
+ * degil. Asagi cekip yenilemenin donen gostergesi tam o an kapanabilsin
+ * diye (lib/screen-refresh.ts). Tahmini bir sure beklemek ya da "istek
+ * suruyor mu" bayragini izlemek ya erken ya gec kapanirdi.
+ */
 export function useApiGet<T>(path: string | null) {
   const { get } = useApiClient();
   const [state, setState] = useState<QueryState<T>>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   // Hangi adresin verisi elimizde? Ayni adres TAZELENIRKEN eldeki veri
   // korunuyor; yoksa harcama eklendikten sonra ozet yeniden cekilirken butun
   // ekran spinner'a duserdi - en sik yapilan isin ardindan sayfanin
   // kaybolmasi demek bu.
   const loadedPath = useRef<string | null>(null);
+
+  /**
+   * Siradaki istegin turu ve ekranda GECERLI veri olup olmadigi.
+   *
+   * hasData loadedPath'ten AYRI: reload basarisiz olunca loadedPath yerinde
+   * kaliyor (yeniden denerken spinner'a dusmemek icin) ama ekranda artik
+   * veri degil hata var. Korunacak bir sey yokken "veriyi koru" denemez.
+   */
+  const mode = useRef<"reload" | "refresh">("reload");
+  const hasData = useRef(false);
+  const waiters = useRef<(() => void)[]>([]);
 
   // Ceviriciyi REF'te tutuyoruz, bagimlilik listesinde degil. Bu dosyanin
   // getToken icin ogrendigi dersin aynisi: efekt bagimliligina konan bir
@@ -114,6 +156,9 @@ export function useApiGet<T>(path: string | null) {
 
   useEffect(() => {
     if (path === null) {
+      // Istek atilmayacak; bekleyen bir refresh() varsa sonsuza dek asili
+      // kalmasin.
+      settle(waiters);
       return;
     }
 
@@ -121,8 +166,25 @@ export function useApiGet<T>(path: string | null) {
     // donen istek artik gorunmeyen bir ekrani guncellemeye calisirdi.
     let cancelled = false;
     if (loadedPath.current !== path) {
+      hasData.current = false;
       setState({ kind: "loading" });
     }
+
+    // Karar istegin BASINDA veriliyor: cevap beklenirken baska bir
+    // reload/refresh cagrilirsa bu istek zaten iptal ediliyor.
+    const keepDataOnError = mode.current === "refresh" && hasData.current;
+
+    const fail = (text: string) => {
+      if (keepDataOnError) {
+        setRefreshError(text);
+        return;
+      }
+      hasData.current = false;
+      // Hata ekrani zaten sebebi yaziyor; ustune bir de uyari satiri koymak
+      // ayni seyi iki kez soylemek olurdu.
+      setRefreshError(null);
+      setState({ kind: "error", text });
+    };
 
     void (async () => {
       try {
@@ -131,6 +193,8 @@ export function useApiGet<T>(path: string | null) {
 
         if (result.ok) {
           loadedPath.current = path;
+          hasData.current = true;
+          setRefreshError(null);
           setState({ kind: "ok", data: result.data });
         } else {
           // Kod DEGIL, cumle gosteriliyor. Onceden "404 · expense.not_found"
@@ -139,12 +203,16 @@ export function useApiGet<T>(path: string | null) {
           // gorecegi hata o ve ona kod gostermek olmaz.
           // translate bilinmeyen kodda kodun kendisini donduruyor, yani en
           // kotu ihtimalde eski davranisa dusuyoruz.
-          setState({ kind: "error", text: tRef.current(result.code) });
+          fail(tRef.current(result.code));
         }
       } catch (error) {
         // Genelde ag hatasi: dev sunucusu kapali ya da
         // EXPO_PUBLIC_API_BASE_URL cihazdan erisilemeyen bir adres.
-        if (!cancelled) setState({ kind: "error", text: String(error) });
+        if (!cancelled) fail(String(error));
+      } finally {
+        // Iptal edilen istegin sozlerini YENISI cozuyor - o da ayni
+        // adresin guncel cevabini getiriyor.
+        if (!cancelled) settle(waiters);
       }
     })();
 
@@ -155,10 +223,30 @@ export function useApiGet<T>(path: string | null) {
     // gercekten yeni bir istek gerektiginde calisiyor.
   }, [path, attempt, get]);
 
-  const reload = useCallback(() => setAttempt((n) => n + 1), []);
+  // Ekran kapanirken bekleyen sozler cozuluyor: iptal edilen istegin yerine
+  // gelecek bir istek artik yok.
+  useEffect(() => () => settle(waiters), []);
+
+  const reload = useCallback(() => {
+    mode.current = "reload";
+    setAttempt((n) => n + 1);
+  }, []);
+
+  const refresh = useCallback(
+    () =>
+      new Promise<void>((resolve) => {
+        waiters.current.push(resolve);
+        mode.current = "refresh";
+        setAttempt((n) => n + 1);
+      }),
+    [],
+  );
 
   // Donen nesne MEMOIZE ediliyor. Her render'da yeni bir nesne dondurmek,
   // onu bir bagimlilik listesine koyan her cagriyi sonsuz donguye sokuyor -
   // 18.6'da useFocusEffect'te tam olarak bu yasandi. Kural CONVENTIONS.md'de.
-  return useMemo(() => ({ state, reload }), [state, reload]);
+  return useMemo(
+    () => ({ state, reload, refresh, refreshError }),
+    [state, reload, refresh, refreshError],
+  );
 }

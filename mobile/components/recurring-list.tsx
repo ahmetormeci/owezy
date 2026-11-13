@@ -34,6 +34,7 @@ export function RecurringList({
   groupId,
   currency,
   currentUserId,
+  refreshKey = 0,
 }: {
   groupId: string;
   currency: string;
@@ -43,6 +44,13 @@ export function RecurringList({
    * dogruluyor.
    */
   currentUserId: string | null;
+  /**
+   * Her degistiginde liste yeniden cekiliyor. Grup ekrani bunu tazelerken
+   * artiriyor (geri donus, one gelme, asagi cekme). Zamanlanmis gorev bir
+   * sablonu calistirinca "sonraki tarih" degisiyor; bu olmasa bolum ekran
+   * kapanip acilana kadar eski tarihi gosterirdi.
+   */
+  refreshKey?: number;
 }) {
   const t = useTranslate();
   const locale = useLocale();
@@ -61,10 +69,16 @@ export function RecurringList({
     tRef.current = t;
   });
 
-  const load = useCallback(async () => {
+  /**
+   * keepRowsOnError: TAZELEMEDE eldeki satirlar korunuyor - basarisiz bir
+   * tazeleme listeyi silmesin (grup ekraninin geri kalaniyla ayni kural,
+   * lib/use-api.ts). Ilk yuklemede korunacak bir sey yok; hata yaziliyor.
+   */
+  const load = useCallback(async (keepRowsOnError = false) => {
     const result = await get<{ recurring: RecurringRow[] }>(
       `/api/v1/groups/${groupId}/recurring-expenses`,
     );
+    if (!result.ok && keepRowsOnError) return;
     if (result.ok) {
       /**
        * ?? [] BIR TEDBIR DEGIL, OLCULMUS BIR KIRILGANLIK: beklenmedik bir
@@ -80,12 +94,21 @@ export function RecurringList({
     }
   }, [get, groupId]);
 
-  const started = useRef(false);
+  /**
+   * Ilk yukleme VE her refreshKey degisimi. Ilk cagri disindakiler TAZELEME
+   * sayiliyor: basarisiz olurlarsa satirlar korunuyor.
+   *
+   * loadedKey, ayni anahtarin IKINCI kez yuklenmesini engelliyor (onceki
+   * "started" korumasinin isi) - efekt baska bir sebeple yeniden calissa da
+   * istek yalnizca anahtar degisince gidiyor.
+   */
+  const loadedKey = useRef<number | null>(null);
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    void load();
-  }, [load]);
+    if (loadedKey.current === refreshKey) return;
+    const isRefresh = loadedKey.current !== null;
+    loadedKey.current = refreshKey;
+    void load(isRefresh);
+  }, [load, refreshKey]);
 
   async function togglePause(row: RecurringRow) {
     if (busyId) return;

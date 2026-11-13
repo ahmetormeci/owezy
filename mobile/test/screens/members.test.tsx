@@ -28,6 +28,9 @@ const mockReload = jest.fn();
 jest.mock("expo-router", () => ({
   useRouter: () => ({ replace: jest.fn(), push: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({ groupId: "g1" }),
+  // Ekran one gelince tazelemeye ODAKTAYKEN abone oluyor (lib/screen-refresh.ts).
+  // Bu dosyanin konusu o degil: abonelik hic kurulmuyor.
+  useFocusEffect: () => undefined,
 }));
 
 const OWNER = { userId: "u-owner", displayName: "Sahip Kisi", role: "OWNER" as const };

@@ -1,12 +1,24 @@
 import { fonts } from "../../../lib/fonts";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate } from "@/lib/dates";
 import { useLocale, useTranslate } from "../../../lib/i18n";
 import { apiBaseUrl } from "../../../lib/api";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
+import { useForegroundRefresh, usePullToRefresh } from "../../../lib/screen-refresh";
+import { RefreshNotice } from "../../../components/refresh-notice";
 import { useTheme, type Theme } from "../../../lib/theme";
 import { Cap, SectionRule, MemberAvatar } from "../../../components/receipt";
 import { FieldInput, SelectField } from "../../../components/field";
@@ -81,6 +93,17 @@ export default function MembersScreen() {
   const invites = useApiGet<InvitesResponse>(
     groupId ? `/api/v1/groups/${groupId}/invites` : null,
   );
+
+  // Uygulama arka plandan donunce ve asagi cekince: baska bir cihazdan
+  // katilan uye ya da kullanilan davet burada da gorunsun.
+  const refreshMembers = members.refresh;
+  const refreshInvites = invites.refresh;
+  const refreshAll = useCallback(
+    () => Promise.all([refreshMembers(), refreshInvites()]),
+    [refreshMembers, refreshInvites],
+  );
+  useForegroundRefresh(refreshAll);
+  const pull = usePullToRefresh(refreshAll);
 
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState<string | null>(null);
@@ -375,7 +398,21 @@ export default function MembersScreen() {
       Grup ekrani da ayni sebeple yerlesik cubugu kullaniyor.
     */
     <SafeAreaView style={s.screen} edges={["left", "right"]}>
-      <ScrollView contentContainerStyle={s.scroll}>
+      <ScrollView
+        contentContainerStyle={s.scroll}
+        testID="members-scroll"
+        refreshControl={
+          <RefreshControl
+            refreshing={pull.refreshing}
+            onRefresh={pull.onRefresh}
+            tintColor={theme.brand}
+          />
+        }
+      >
+        <RefreshNotice
+          text={members.refreshError ?? invites.refreshError}
+          onRetry={() => void refreshAll()}
+        />
         {members.state.kind === "loading" ? (
           <ActivityIndicator style={s.loading} />
         ) : members.state.kind === "error" ? (

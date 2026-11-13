@@ -1,5 +1,6 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
+import { AppState } from "react-native";
 import { LocaleProvider, useTranslate } from "../lib/i18n";
 import { ThemeProvider, useTheme } from "../lib/theme";
 import * as Notifications from "expo-notifications";
@@ -10,6 +11,7 @@ import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/locale";
 import { syncPushToken } from "../lib/push";
 import { SessionProvider, useSession } from "../lib/auth";
 import { UnreadProvider } from "../lib/unread";
+import { createForegroundDetector, emitRefreshSignal } from "../lib/refresh-signal";
 import { NotificationBell } from "../components/notification-bell";
 import { AccountAvatar, HeaderActions } from "../components/header-actions";
 
@@ -119,12 +121,47 @@ function usePushLifecycle() {
   }, [router]);
 }
 
+/**
+ * "GORUNEN EKRANI TAZELE" SINYALININ IKI KAYNAGI (lib/refresh-signal.ts).
+ *
+ * 1. Uygulama ARKA PLANDAN one geldi. Kullanici bildirdi: zamanlanmis
+ *    gorevin urettigi harcama web'de aninda gorunuyor, telefonda ise ancak
+ *    bir ekrana girip cikinca - dakikalar sonra. useFocusEffect telefonun
+ *    ana ekranindan donusu DUYMUYOR; o yalnizca uygulama ici gezinme.
+ * 2. Uygulama ACIKKEN bir push geldi. Bant ekranin ustune dusuyor ama
+ *    altindaki liste degismiyordu - "yeni harcama" diyen bildirimin
+ *    altinda o harcamanin olmadigi bir liste.
+ *
+ * TEK YERDE ve kendi kancasinda: dinleyicinin kendisi her ekrana
+ * serpilseydi, yiginda altta duran ekranlar da tazelenirdi. Ekranlar
+ * yalnizca sinyale abone (lib/screen-refresh.ts) ve abonelik odakta
+ * olanla sinirli.
+ */
+function useRefreshSignals() {
+  useEffect(() => {
+    const returnedToForeground = createForegroundDetector(AppState.currentState);
+    const appState = AppState.addEventListener("change", (next) => {
+      if (returnedToForeground(next)) emitRefreshSignal();
+    });
+    // Yalnizca uygulama ONDEYKEN geliyor; kapaliyken gelen bildirime
+    // dokunma ayri bir yol (usePushLifecycle, grup ekranini aciyor).
+    const pushes = Notifications.addNotificationReceivedListener(() => {
+      emitRefreshSignal();
+    });
+    return () => {
+      appState.remove();
+      pushes.remove();
+    };
+  }, []);
+}
+
 function AuthGuard() {
   const { status } = useSession();
   const segments = useSegments();
   const router = useRouter();
 
   usePushLifecycle();
+  useRefreshSignals();
 
   useEffect(() => {
     if (status === "loading") return;

@@ -30,25 +30,32 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-11-07
+Updated: 2026-11-08
 
 Current task:
-  MOBIL 1.0 ICIN 2FA CEREZ KOPRUSU KALDIRILDI (7 Kasim, kullanicinin
-  onayiyla) - YAYINDA: 563c336, CI 42365542267 success, Production
-  2026-11-07 10:49:45Z success. Canlida hesapsiz kontrol: / 200,
-  /api/auth/get-session 200 (null), verify-totp cerezsiz 401. Olcut: production'da 2FA acik tek
-  hesap kullanicinin kendisi (Neon SQL Editor, kullanici saydi), o da
-  1.0.7'de. route.ts eski haline (toNextJsHandler) dondu; kopru dosyasi,
-  10 birim testi, atlanan E2E testi silindi. ADR-045 eki.
-  Dogrulama: tsc, lint, 851 birim GECTI (861 - 10). TAM E2E 73/73 GECTI
-  (16,5 dk, atlanan yok, sunucu kaydinda P2028 yok).
-  SONRAKI ADIM: yok - kullanicinin yeni gorevi bekleniyor.
+  MOBILDE LISTE TAZELEME (ADR-066, 8 Kasim) - KOD BITTI, DOGRULANDI,
+  COMMIT EDILMEDI. Kullanici tasarim sorularina "a, a, a" dedi. Arka
+  plandan donunce ve acikken bildirim gelince gorunen ekran tazeleniyor;
+  gruplar/grup/bildirimler/odesme/uyeler ekranlarinda asagi cekip
+  yenileme var; basarisiz tazeleme listeyi silmiyor (RefreshNotice);
+  grup ekraninda aylar yerinde tazeleniyor. Form ekranlari bilerek disarida.
+  Dosyalar: mobile/lib/{refresh-signal,screen-refresh,use-api}.ts,
+  mobile/components/{refresh-notice,recurring-list}.tsx, app/_layout.tsx,
+  lib/unread.tsx, bes ekran, src/lib/messages.ts (ui.refresh_failed - tek
+  sunucu degisikligi). Yeni testler: lib/refresh-signal.test.ts,
+  lib/use-api.test.tsx, test/screens/{foreground,group}-refresh.test.tsx.
+  Dogrulama: mobil tsc + lint, 114 vitest + 154 jest; kok tsc + lint,
+  851 birim - HEPSI GECTI. E2E kosulmadi: web akisinda degisen yok (yalnizca
+  sozluk satiri). Simulatorde bes senaryo sunucu gunlugunden olculdu
+  (ADR-066 sonu).
+  SONRAKI ADIM: kullanici isterse commit. KOD COMMIT'I - push ICIN SOR.
+  Commit'ten sonra PROGRESS'teki "_commit bekliyor_" yerine SHA yaz.
+  Magazaya cikmasi YENI iOS BUILD ister - BUILD ALMADAN ONCE SOR.
 
-  ONCEKI (7 Kasim): veritabani sizintisina karsi iki duzeltme -
-  9e9c7a2 (tek seferlik kodlar sifreli, ADR-064) ve 0558fe0 (Bearer yalnizca
-  imzali, ADR-065); CI 42321905971, yayin 01:04:07Z success. Kullanici
-  telefonda dogruladi: oturum acik, gruplar yukleniyor. Ondan once
-  396460e (harcama formu router.refresh). Ayrinti CHANGELOG.
+  ONCEKI (7 Kasim, hepsi YAYINDA): 563c336 (2FA cerez koprusu kaldirildi,
+  ADR-045 eki), 0558fe0 (Bearer yalnizca imzali, ADR-065), 9e9c7a2 (tek
+  seferlik kodlar sifreli, ADR-064), 396460e (harcama formu
+  router.refresh). Ayrinti CHANGELOG.
   UBUNTU 26 (GitHub notu, dokunulmadi): ubuntu-latest 19 Ekim'den beri
     kademeli olarak Ubuntu 26'ya geciyor (actions/runner-images#14748).
     Adimlar kendi Node'unu kuruyor ve yalnizca npm kullaniyor - risk dusuk.
@@ -68,13 +75,32 @@ Current task:
       Sabitleme 1.0.7'de de bilerek duruyor (ADR-058) - kaldirmak SDK 58
       isinin parcasi.
 
-  SIMULATORDE GIRISLI KONTROL - NASIL YAPILIR (5 ve 21 Ekim'de boyle):
+  SIMULATORDE GIRISLI KONTROL - NASIL YAPILIR (5, 21 Ekim ve 8 Kasim):
     Kullanici izin verdi: yerel build'de, yerel gelistirme sunucusuna bagli
     bir TEST hesabiyla giris. Production'a dokunulmadi.
+    - Build: YEREL RELEASE BUILD yolu (MOBIL bolumu), ama
+      EXPO_PUBLIC_API_BASE_URL=http://localhost:3000. Paket Hermes bytecode;
+      adresi dogrulamak icin uretilen main.jsbundle'da strings | grep
+      localhost:3000.
     - Sunucu: RESEND_API_KEY="" npm run dev  (kod e-postasi GITMEZ)
     - Kod: gelistirme veritabani Verification "sign-in-otp-<email>".
       7 Kasim'dan beri SIFRELI (ADR-064): readOtpFromDatabase'in yaptigi
-      gibi better-auth/crypto symmetricDecrypt + BETTER_AUTH_SECRET
+      gibi better-auth/crypto symmetricDecrypt + BETTER_AUTH_SECRET.
+      Betik proje DISINDA (scratchpad) duruyorsa "Cannot find module
+      better-auth/crypto" verir: createRequire("<proje>/package.json")
+      .resolve("better-auth/crypto") ile cozup dinamik import et.
+    - Tazeleme olcumu (ADR-066): sunucu gunlugunu dosyaya yaz, islemden
+      once satir sayisini al, sonra tail -n +<sayi+1>. Denetim Merkezi:
+      sag ust koseden asagi kaydir. Bildirim perdesi iOS 27'de uygulamayi
+      ARKA PLANA atiyor (tazeleme olur - dogru). Acikken bildirim:
+      xcrun simctl push <udid> net.owezy.app <json>. Uygulamanin bildirim
+      izni yoksa simctl "UNErrorDomain 2003 ... not authorized" der AMA
+      bildirim uygulamaya YINE teslim ediliyor - kanit simulatorun
+      gunlugunde: xcrun simctl spawn <udid> log show --last 2m
+      --predicate 'subsystem == "com.apple.UserNotifications"' ->
+      "willPresentNotification delivery succeeded".
+    - iOS Simulator araci TAM UDID istiyor (28E27032-334C-4D36-9D0A-
+      F161F93703FB); kisa onek "No simulator" der.
     - Test verisi: uygulamanin KENDI servis fonksiyonlariyla (createGroup,
       createGroupInvite + acceptGroupInvite, createExpense) - tsx ile
       --env-file=.env.local --tsconfig tsconfig.json, NODE_OPTIONS
@@ -95,7 +121,9 @@ Current task:
       ya da yeniden KURMA oturumu dusurur - giris tekrar gerekir.
     GELISTIRME VERITABANINDA KALAN TEST VERISI: iban@ / iba@ / iban-te@ /
     iban-test-b@ / iban-test-c@owezy.test ve "IBAN testi: ..." gruplari.
-    Zararsiz, istenirse silinebilir.
+    8 Kasim: "IBAN testi: odeyecegim" grubuna (572f02b4) uc harcama
+    eklendi - "Kira (otomatik)", "Su faturasi (cekme testi)", "Internet
+    (bildirim testi)". Zararsiz, istenirse silinebilir.
 
 >>> BUILD YOLU (her surumde) <<<
     eas build --platform ios --profile production --non-interactive --no-wait
@@ -121,7 +149,8 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      kosunca HEMEN yaziliyor (recurring.ts createRecurringExpense), mobil
      grup ekrani ise yalnizca uygulama ICINDE ekrana donulunce tazeleniyor
      (useFocusEffect); uygulamaya geri gelince ya da asagi cekince
-     tazelenmiyor. PROGRESS teknik borc.
+     tazelenmiyordu. 8 Kasim'da kodda duzeltildi (ADR-066, Current task) -
+     yeni iOS build'iyle magazaya cikar.
   2. (KAPANDI 7 Kasim) 2FA KOPRUSU kaldirildi (ADR-045 eki). Yol, benzer
      sorular icin: App Store Connect Analytics kucuk uygulamada surume gore
      sayamiyor; production'da Neon SQL Editor'de sayilir (kullanici yapar)
@@ -159,15 +188,15 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      yeniden boyutlandirilabilir oluyor - duzen farkli genisliklerde
      denenmeli.
 
-DIS DUNYA - 6 KASIM OLCUMU:
+DIS DUNYA - 8 KASIM OLCUMU (6 Kasim'dakiyle ayni; CI ve YAYIN yeni):
   DMARC    v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r;
            rua=mailto:...@dmarc-reports.cloudflare.net   (Cloudflare raporlari)
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
-  CI       563c336 success (kosu 42365542267, 7 Kasim) - onceki
-           0558fe0, 396460e de success
-  YAYIN    563c336 Production success 2026-11-07 10:49:45Z - dokuman commit'leri de
+  CI       972dc84 success (kosu 42386247677, 7 Kasim) - onceki
+           fb59f28, 563c336 de success
+  YAYIN    972dc84 Production success 2026-11-07 15:25:13Z - dokuman commit'leri de
            production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
@@ -175,7 +204,8 @@ DIS DUNYA - 6 KASIM OLCUMU:
   PANEL    olculemez: Resend takibi KAPALI, Cloudflare DMARC ACIK - kullanici
            27 Eylul'de yapti ve DMARC'taki rua bunu dogruluyor.
 
-CANLIDA OLAN: web ve mobil (1.0.7) esit - mobilde bekleyen ozellik yok.
+CANLIDA OLAN: web ve mobil (1.0.7) esit. MOBILDE BEKLEYEN (sonraki build):
+ADR-066 liste tazeleme - commit edilince "bekleyen" sayilir.
 
 AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):
   - MISAFIR (ADR-057): isGuest isaretli, tek gruba bagli User; giris
@@ -369,9 +399,11 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     Bu makinede YALNIZCA Xcode 27 var; sahne acik oldugu icin build iOS 27
     ve 26.5 simulatorlerinde aciliyor. Imzasiz build'de UNIVERSAL LINK
     CALISMAZ - owezy:// semasi calisir (simctl openurl).
-  - SIMULATORLER: 4FC4379D ve 68DF61C6 BASKA PROJENIN - dokunma. Bizimki
-    FCD7F36E (iPhone 17 Pro, iOS 26.5). Ekran: xcrun simctl io <udid>
-    screenshot. Koyu tema: xcrun simctl ui <udid> appearance dark.
+  - SIMULATORLER: 4FC4379D ve 68DF61C6 BASKA PROJENIN - dokunma. Bizimkiler
+    28E27032 ("Owezy Test iOS 27" - girisli kontrol icin bunu kullan) ve
+    FCD7F36E (iPhone 17 Pro, iOS 26.5 - klavye cikmiyor). Ekran: xcrun
+    simctl io <udid> screenshot. Koyu tema: xcrun simctl ui <udid>
+    appearance dark.
   - EXPO GO YOLU (JS degisikligini hizli gormek): once kokte npm run dev
     (mobil .env.local localhost:3000'e bakiyor), sonra cd mobile && npx
     expo start --go ve xcrun simctl openurl booted "exp://127.0.0.1:8081".
@@ -383,7 +415,11 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
   - TEK GRUPLU KULLANICI gruplar listesini hic gormuyor (Redirect) ve GERI
     DUGMESI YOK. Grup ekranindan bir sey kaldirirken "geri dugmesi
     karsilar" denmez.
-  - BIR EKRANDAN DONULDUGUNDE O EKRANIN BUTUN SORGULARI TAZELENMELI.
+  - BIR EKRANDAN DONULDUGUNDE O EKRANIN BUTUN SORGULARI TAZELENMELI - ve
+    one gelince / asagi cekince de ayni fonksiyon (ADR-066, CONVENTIONS
+    "Liste gosteren bir ekran uc yoldan tazelenir"). Otomatik tazelemede
+    refresh() (hatada veri kalir); hata sayfasindaki "Tekrar dene" ve
+    islem sonrasi yenileme reload().
   - HERMES'TE Intl.RelativeTimeFormat YOK (ADR-044). Paylasilan modulden
     gelen her Intl.X mobilde ayrica denenmeli.
   - KOYU TEMA AYRICA DENENMELI - giris ekrani aylarca renklerini elle
@@ -401,9 +437,9 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     spec'in kendisi. Okuma: DesignSync get_file, dogrudan projectId ile
     (list_projects BOS doner).
 
-TESTLER - NE NEREDE (21 Ekim):
+TESTLER - NE NEREDE (8 Kasim):
   KOK      npm test                  851 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      98 vitest + 145 jest
+  MOBIL    cd mobile && npm test      114 vitest + 154 jest
   E2E      npm run test:e2e           73, ~17-23 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.

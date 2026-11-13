@@ -31,6 +31,9 @@ jest.mock("../../lib/review-prompt", () => ({
 jest.mock("expo-router", () => ({
   useRouter: () => ({ back: mockBack, replace: jest.fn(), push: jest.fn() }),
   useLocalSearchParams: () => mockParams,
+  // Ekran one gelince tazelemeye ODAKTAYKEN abone oluyor (lib/screen-refresh.ts).
+  // Bu dosyanin konusu o degil: abonelik hic kurulmuyor.
+  useFocusEffect: () => undefined,
   Stack: { Screen: () => null },
 }));
 

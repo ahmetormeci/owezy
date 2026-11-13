@@ -1,14 +1,24 @@
 import { fonts } from "../../lib/fonts";
 import { Link, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslate } from "../../lib/i18n";
 import { useApiGet } from "../../lib/use-api";
+import { useForegroundRefresh, usePullToRefresh } from "../../lib/screen-refresh";
 import { useTheme, type Theme } from "../../lib/theme";
 import { SectionRule } from "../../components/receipt";
 import { GroupCreator } from "../../components/group-creator";
 import { InviteJoiner } from "../../components/invite-joiner";
+import { RefreshNotice } from "../../components/refresh-notice";
 
 /**
  * Gruplar listesi. HER ZAMAN gorunur, grup sayisi ne olursa olsun.
@@ -29,10 +39,16 @@ export default function GroupsScreen() {
   const theme = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
 
-  const { state, reload } = useApiGet<{ groups: Group[] }>("/api/v1/groups");
+  const { state, reload, refresh, refreshError } = useApiGet<{ groups: Group[] }>(
+    "/api/v1/groups",
+  );
 
   // Yeni grup olusturup geri donuldugunde liste guncel olsun. Ilk odaklanma
   // atlaniyor: mount aninda veri zaten cekiliyor.
+  //
+  // refresh, reload DEGIL: tazeleme basarisiz olursa liste ekranda kaliyor
+  // ve ustunde bir uyari cikiyor (lib/use-api.ts). Eskiden ekran tamamen
+  // hata sayfasina donuyordu.
   const firstFocus = useRef(true);
   useFocusEffect(
     useCallback(() => {
@@ -40,9 +56,12 @@ export default function GroupsScreen() {
         firstFocus.current = false;
         return;
       }
-      reload();
-    }, [reload]),
+      void refresh();
+    }, [refresh]),
   );
+  // Uygulama arka plandan donunce ve asagi cekince de ayni tazeleme.
+  useForegroundRefresh(refresh);
+  const pull = usePullToRefresh(refresh);
 
   if (state.kind === "loading") {
     return (
@@ -71,6 +90,7 @@ export default function GroupsScreen() {
     return (
       <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
         <View style={s.firstRun}>
+          <RefreshNotice text={refreshError} onRetry={() => void refresh()} />
           <Text style={s.wordmark}>Owezy</Text>
           <Text style={s.firstRunText}>{t("ui.no_groups")}</Text>
           {/* IKI YOL, ESIT AGIRLIKTA. Davet edilen kisi giristen sonra tam
@@ -88,7 +108,18 @@ export default function GroupsScreen() {
   return (
     <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
 
-      <ScrollView style={s.list}>
+      <ScrollView
+        style={s.list}
+        testID="groups-scroll"
+        refreshControl={
+          <RefreshControl
+            refreshing={pull.refreshing}
+            onRefresh={pull.onRefresh}
+            tintColor={theme.brand}
+          />
+        }
+      >
+        <RefreshNotice text={refreshError} onRetry={() => void refresh()} />
         {groups.map((group) => (
           <Link key={group.id} href={`/groups/${group.id}`} asChild>
             <Pressable style={s.row}>

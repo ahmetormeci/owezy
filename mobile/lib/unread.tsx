@@ -1,6 +1,7 @@
 import { usePathname } from "expo-router";
 import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import { useSession } from "./auth";
+import { onRefreshSignal } from "./refresh-signal";
 import { useApiGet } from "./use-api";
 
 /**
@@ -57,6 +58,23 @@ export function UnreadProvider({ children }: { children: React.ReactNode }) {
     if (status !== "signed-in") return;
     reload();
   }, [pathname, status, reload]);
+
+  /**
+   * UYGULAMA ONE GELINCE ya da ACIKKEN BILDIRIM GELINCE de tazeleniyor
+   * (lib/refresh-signal.ts). Adresi dinlemek bunu yakalamiyor: arka plandan
+   * donuste adres degismiyor. Push durumunda ozellikle gerekli - bant
+   * ekrana dustugu anda zildeki sayi da artmali.
+   *
+   * reload DEGIL refresh: cevrimdisi bir donuste sayi sifira dusmesin.
+   * Sifir "yeni bildirimin yok" demek; elimizde buna dair bir bilgi yok.
+   */
+  const refresh = query.refresh;
+  useEffect(() => {
+    if (status !== "signed-in") return;
+    return onRefreshSignal(() => {
+      void refresh();
+    });
+  }, [status, refresh]);
 
   const unreadCount = query.state.kind === "ok" ? query.state.data.unreadCount : 0;
 

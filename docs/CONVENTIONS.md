@@ -257,6 +257,17 @@ alan bu bileşeni kullanmamalı. Yazının boyuna göre büyümesi gereken alan
 (rakamın yanında para birimi duran tutarlar) `FieldInput grow` kullanır:
 iOS'ta alan kendi yazısına göre büyümüyor, ipucunun genişliğinde kalıyor.
 
+**Liste gösteren bir ekran üç yoldan tazelenir** (ADR-066): ekrana geri
+dönünce (`useFocusEffect`, ilk odak atlanır), uygulama arka plandan öne
+gelince ya da açıkken bildirim gelince (`useForegroundRefresh`) ve aşağı
+çekince (`usePullToRefresh` + `RefreshControl`). Üçü **aynı** fonksiyonu
+çağırır. Bu arka plan tazelemelerinde `reload()` değil **`refresh()`**
+kullanılır: başarısız olursa eldeki veri kalır ve ekranın üstünde
+`RefreshNotice` görünür; `reload()` ise ekranı hata haline geçirir ve
+yalnızca "Tekrar dene" ile bir işlemin ardından yenilemek içindir. **Form
+ekranlarına** (yazılan bir şeyin üzerine sunucu verisi yazılabilecek her
+ekran) öne gelince tazeleme konmaz.
+
 **Paylaşılan saf modüller `@/lib/...` ile import edilir.** Takma ad
 `mobile/tsconfig.json`'daki `paths` alanından çözülüyor; Metro depo kökünü
 `watchFolders` ile izliyor (`mobile/metro.config.js`). Mobil tarafın kendi

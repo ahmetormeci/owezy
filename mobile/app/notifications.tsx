@@ -1,14 +1,24 @@
 import { fonts } from "../lib/fonts";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { describeNotification, formatRelativeTime } from "@/lib/notification-text";
 import type { NotificationType } from "@prisma/client";
 import { useLocale, useTranslate } from "../lib/i18n";
 import { useApiClient } from "../lib/use-api";
+import { useForegroundRefresh, usePullToRefresh } from "../lib/screen-refresh";
 import { useTheme, type Theme } from "../lib/theme";
 import { PushOptIn } from "../components/push-opt-in";
+import { RefreshNotice } from "../components/refresh-notice";
 
 /**
  * Bildirimler. MOBILDE HIC YOKTU; web'de basliktaki zil bu listeyi acıyor.
@@ -49,6 +59,13 @@ export default function NotificationsScreen() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * ILK SAYFANIN TAZELENMESI basarisiz oldu ama liste ELDE. error'dan ayri:
+   * error listeyi kaldirip yerine hata yaziyor - ilk yuklemede (gosterilecek
+   * bir sey yokken) dogru olan bu. Tazelemede ise liste kaliyor, ustune bir
+   * uyari geliyor (lib/use-api.ts'teki refresh kuraliyla ayni).
+   */
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   /**
    * "Simdi" BIR KEZ SABITLENIYOR.
@@ -92,10 +109,13 @@ export default function NotificationsScreen() {
       );
 
       if (!result.ok) {
-        setError(t(result.code, result.params));
+        const text = t(result.code, result.params);
+        if (cursor) setError(text);
+        else setRefreshError(text);
         setBusy(false);
         return;
       }
+      if (!cursor) setRefreshError(null);
 
       setNewIds((current) => {
         const next = new Set(current);
@@ -144,12 +164,20 @@ export default function NotificationsScreen() {
    * "Simdi" de burada tazeleniyor: ekran acikken donmus bir referansa gore
    * "az once" yazmaya devam etmesin.
    */
+  const refreshNow = useCallback(() => {
+    setNow(new Date());
+    return load(null);
+  }, [load]);
   useFocusEffect(
     useCallback(() => {
-      setNow(new Date());
-      void load(null);
-    }, [load]),
+      void refreshNow();
+    }, [refreshNow]),
   );
+  // Uygulama arka plandan donunce (ya da acikken bildirim gelince) ve asagi
+  // cekince de ayni tazeleme. Bu ekran gorunurken gelen bildirim dogrudan
+  // listeye dusuyor ve okundu sayiliyor - kullanici zaten ona bakiyor.
+  useForegroundRefresh(refreshNow);
+  const pull = usePullToRefresh(refreshNow);
 
   /**
    * Bir satira dokunulunca.
@@ -175,13 +203,27 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={s.screen} edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerStyle={s.content}>
+      <ScrollView
+        contentContainerStyle={s.content}
+        testID="notifications-scroll"
+        refreshControl={
+          <RefreshControl
+            refreshing={pull.refreshing}
+            onRefresh={pull.onRefresh}
+            tintColor={theme.brand}
+          />
+        }
+      >
         {/* Izin istemi listenin USTUNDE: kullanici buraya bildirimlere
             bakmaya geldi, yani baglam tam burada. */}
         <PushOptIn />
-        {error ? (
+        {/* Liste ELDEYKEN basarisiz tazeleme: uyari, listenin ustunde. */}
+        {items !== null ? (
+          <RefreshNotice text={refreshError} onRetry={() => void refreshNow()} />
+        ) : null}
+        {error || (items === null && refreshError) ? (
           <Pressable onPress={() => void load(null)}>
-            <Text style={s.error}>{error}</Text>
+            <Text style={s.error}>{error ?? refreshError}</Text>
             <Text style={s.link}>{t("ui.try_again")}</Text>
           </Pressable>
         ) : items === null ? (
@@ -220,7 +262,8 @@ export default function NotificationsScreen() {
               );
             })}
 
-            {busy ? <ActivityIndicator color={theme.brand} /> : null}
+            {/* Asagi cekerken ust gosterge zaten donuyor; ikincisi fazla. */}
+            {busy && !pull.refreshing ? <ActivityIndicator color={theme.brand} /> : null}
 
             {nextCursor && !busy ? (
               <Pressable onPress={() => void load(nextCursor)}>

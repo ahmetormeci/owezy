@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,11 +18,13 @@ import { formatDate } from "@/lib/dates";
 import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
+import { useForegroundRefresh, usePullToRefresh } from "../../../lib/screen-refresh";
 import { noteSaveAndMaybeAskForReview } from "../../../lib/review-prompt";
 import { useTheme, type Theme } from "../../../lib/theme";
 import { SectionRule } from "../../../components/receipt";
 import { Field, FieldInput, SelectField } from "../../../components/field";
 import { CopyIbanAction } from "../../../components/copy-iban";
+import { RefreshNotice } from "../../../components/refresh-notice";
 import { formatIban, isIbanRecentlyChanged } from "@/lib/iban";
 
 /**
@@ -111,6 +114,34 @@ export default function SettlementsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [extra, setExtra] = useState<Settlement[]>([]);
   const [cursor, setCursor] = useState<string | null | undefined>(undefined);
+
+  /**
+   * ONE GELINCE VE ASAGI CEKINCE TAZELE.
+   *
+   * BU BIR FORM EKRANI ama tazeleme formu SILMIYOR - kod okunarak
+   * dogrulandi: tutar, karsi taraf, not ve yon YEREL state; sunucudan gelen
+   * veriden turetilmiyorlar, yalnizca ilk cizimde adres parametrelerinden
+   * doluyorlar. Tazeleme yalnizca bakiyeleri, uyeleri ve gecmisi yeniliyor.
+   *
+   * ONE GELME BURADA OZELLIKLE ONEMLI: IBAN akisi "kopyala, bankaya git,
+   * ode, don, kaydet" (ADR-059). Kullanici bankadan dondugu an bu ekran
+   * one geliyor.
+   *
+   * "Daha fazla" ile yuklenmis sayfalar SIFIRLANIYOR: ilk sayfa yeniden
+   * geliyor; eski sayfalar onun ardina eklenseydi araya yeni bir kayit
+   * girdiginde bir satir kaybolabilirdi. Sifirlama cevap GELDIKTEN sonra -
+   * once yapilsaydi liste bir an kisalirdi.
+   */
+  const refreshMembers = members.refresh;
+  const refreshBalances = balances.refresh;
+  const refreshHistory = history.refresh;
+  const refreshAll = useCallback(async () => {
+    await Promise.all([refreshMembers(), refreshBalances(), refreshHistory()]);
+    setExtra([]);
+    setCursor(undefined);
+  }, [refreshMembers, refreshBalances, refreshHistory]);
+  useForegroundRefresh(refreshAll);
+  const pull = usePullToRefresh(refreshAll);
 
   const memberList = members.state.kind === "ok" ? members.state.data.members : [];
   const counterparties = memberList.filter((member) => member.userId !== currentUserId);
@@ -252,7 +283,24 @@ export default function SettlementsScreen() {
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={s.scroll}
+          keyboardShouldPersistTaps="handled"
+          testID="settlements-scroll"
+          refreshControl={
+            <RefreshControl
+              refreshing={pull.refreshing}
+              onRefresh={pull.onRefresh}
+              tintColor={theme.brand}
+            />
+          }
+        >
+          <View style={s.notice}>
+            <RefreshNotice
+              text={members.refreshError ?? balances.refreshError ?? history.refreshError}
+              onRetry={() => void refreshAll()}
+            />
+          </View>
           {/* TUTAR EN USTTE - kaydedilen sey bu. Harcama ekleme ekraniyla
               ayni sira ve ayni olcu. */}
           <View style={s.amountBlock}>
@@ -506,6 +554,8 @@ function createStyles(theme: Theme) {
     segmentTextOn: { fontFamily: fonts.semibold, color: theme.onBrand },
 
     historyBlock: { paddingHorizontal: 20, paddingTop: 28 },
+    // Uyari cizilmediginde bu kutu bos kaliyor ve yer KAPLAMIYOR: dolgu yalnizca yatay.
+    notice: { paddingHorizontal: 20 },
     hint: { fontFamily: fonts.body, fontSize: 12.5, color: theme.muted, lineHeight: 18, paddingTop: 14 },
     loading: { paddingVertical: 16 },
     row: {
