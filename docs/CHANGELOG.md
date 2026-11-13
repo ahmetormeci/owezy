@@ -8,6 +8,27 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-13 — Beş Expo SDK 57 yaması; liste tazeleme commit'lendi
+
+Liste tazeleme `a3d76a8` olarak commit'lendi. Aynı build'e girsin diye Expo
+yamaları da alındı: `expo` 57.0.33, `expo-constants`, `expo-linking`,
+`expo-router`, `expo-sharing` (SDK 57'nin en yenisi). Beş paketin kendi
+değişiklikleri Android ve JavaScript tarafında. Ama beraberinde gelen
+`expo-modules-core` 57.0.26, iOS'ta derleme yolunu değiştiriyor: hazır
+derlenmiş parça yerine artık her zaman kaynaktan derleniyor. Bu yüzden
+simülatörde Release build alındı ve şunlar denendi: açılış, giriş (18
+karakter tek seferde geldi), gezinme, dışa aktarma (paylaşım penceresi),
+aşağı çekip yenileme. `expo-router`'daki değişiklik ayarda tanımlı
+yönlendirmelerle ilgili; uygulama bunu kullanmıyor.
+
+Yan bulgu: simülatörde hızlı bir aşağı çekme tazelemeyi tetiklemedi,
+yavaşı tetikledi. Yamasız sürüm aynı Xcode (27.2) ile derlenip denendi ve
+**aynı davrandı**; fark yamalardan değil. Mağaza build'i Xcode 26.6 ile
+alınıyor (ADR-058), bu yüzden aşağı çekme bu build'in TestFlight
+kontrolüne eklendi.
+
+---
+
 ## 2026-11-08 — Mobilde liste öne gelince, açıkken bildirim gelince ve aşağı çekince tazeleniyor
 
 7 Kasım'da canlıda görüldü: cron'un ürettiği harcama web'de anında

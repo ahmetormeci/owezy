@@ -30,11 +30,23 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-11-08
+Updated: 2026-11-13
 
 Current task:
-  MOBILDE LISTE TAZELEME (ADR-066, 8 Kasim) - KOD BITTI, DOGRULANDI,
-  COMMIT EDILMEDI. Kullanici tasarim sorularina "a, a, a" dedi. Arka
+  IKI KOD COMMIT'I HAZIR, PUSH EDILMEDI (13 Kasim, kullanicinin istegiyle):
+    a3d76a8  mobilde liste tazeleme (ADR-066, asagida)
+    sonraki  bes Expo SDK 57 yamasi (expo 57.0.33, expo-constants,
+             expo-linking, expo-router, expo-sharing). Beraberinde gelen
+             expo-modules-core 57.0.26 iOS'ta derleme yolunu degistiriyor
+             (hazir xcframework yerine her zaman kaynaktan) -> simulatorde
+             Release build: acilis, giris, 18 karakter tek seferde, gezinme,
+             disa aktar (paylasim penceresi), asagi cekme. CHANGELOG 13 Kasim.
+  SONRAKI ADIM: PUSH ICIN KULLANICIYA SOR (kod commit'leri). Push'tan sonra
+  CI ve Production yayinini dogrula. Magazaya cikmasi YENI iOS BUILD
+  ister - BUILD ALMADAN ONCE SOR. Bu build'in TestFlight'inda ek olarak:
+  ASAGI CEKIP YENILEME ve uygulamaya geri donunce liste tazeleniyor mu.
+
+  ADR-066 (8 Kasim): Kullanici tasarim sorularina "a, a, a" dedi. Arka
   plandan donunce ve acikken bildirim gelince gorunen ekran tazeleniyor;
   gruplar/grup/bildirimler/odesme/uyeler ekranlarinda asagi cekip
   yenileme var; basarisiz tazeleme listeyi silmiyor (RefreshNotice);
@@ -48,9 +60,6 @@ Current task:
   851 birim - HEPSI GECTI. E2E kosulmadi: web akisinda degisen yok (yalnizca
   sozluk satiri). Simulatorde bes senaryo sunucu gunlugunden olculdu
   (ADR-066 sonu).
-  SONRAKI ADIM: kullanici isterse commit. KOD COMMIT'I - push ICIN SOR.
-  Commit'ten sonra PROGRESS'teki "_commit bekliyor_" yerine SHA yaz.
-  Magazaya cikmasi YENI iOS BUILD ister - BUILD ALMADAN ONCE SOR.
 
   ONCEKI (7 Kasim, hepsi YAYINDA): 563c336 (2FA cerez koprusu kaldirildi,
   ADR-045 eki), 0558fe0 (Bearer yalnizca imzali, ADR-065), 9e9c7a2 (tek
@@ -69,11 +78,11 @@ Current task:
   simulatorde DENENMEDI (giris gerektiriyor) - bir sonraki surumun
   TestFlight'inda fis ve profil fotografi denenmeli.
 
-  EXPO - 4 KASIM OLCUMU:
-    - SDK 58 ARTIK "latest" (npm dist-tags: latest 58.0.23, sdk-57
-      57.0.31). 21 Ekim'de EAS'ta Xcode 27.0 ve 27.1 imajlari vardi.
-      Sabitleme 1.0.7'de de bilerek duruyor (ADR-058) - kaldirmak SDK 58
-      isinin parcasi.
+  EXPO - 13 KASIM OLCUMU:
+    - npm dist-tags: latest 58.0.25, sdk-57 57.0.33 - SDK 57'nin en yenisi
+      13 Kasim'da alindi. 21 Ekim'de EAS'ta Xcode 27.0 ve 27.1 imajlari
+      vardi. Sabitleme (Xcode 26.6) bilerek duruyor (ADR-058) - kaldirmak
+      SDK 58 isinin parcasi.
 
   SIMULATORDE GIRISLI KONTROL - NASIL YAPILIR (5, 21 Ekim ve 8 Kasim):
     Kullanici izin verdi: yerel build'de, yerel gelistirme sunucusuna bagli
@@ -89,9 +98,15 @@ Current task:
       Betik proje DISINDA (scratchpad) duruyorsa "Cannot find module
       better-auth/crypto" verir: createRequire("<proje>/package.json")
       .resolve("better-auth/crypto") ile cozup dinamik import et.
+      SCRATCHPAD /tmp ALTINDA - gunler sonra SILINMIS olabilir (13 Kasim'da
+      8 Kasim'in betikleri gitmisti); betigi yeniden yaz, var sayma.
     - Tazeleme olcumu (ADR-066): sunucu gunlugunu dosyaya yaz, islemden
       once satir sayisini al, sonra tail -n +<sayi+1>. Denetim Merkezi:
-      sag ust koseden asagi kaydir. Bildirim perdesi iOS 27'de uygulamayi
+      sag ust koseden asagi kaydir. ASAGI CEKMEYI YAVAS YAP: Xcode 27.2
+      derlemesinde ~300 nokta / ~400 ms'lik hizli touch_path tetiklemiyor,
+      10 noktalik 100'er ms araliklari + 600 ms bekleme tetikliyor. Yamasiz
+      surum de AYNI davrandi (13 Kasim, ayni Xcode ile karsilastirildi) -
+      uygulamanin degil, simulator/SDK'nin farki. Bildirim perdesi iOS 27'de uygulamayi
       ARKA PLANA atiyor (tazeleme olur - dogru). Acikken bildirim:
       xcrun simctl push <udid> net.owezy.app <json>. Uygulamanin bildirim
       izni yoksa simctl "UNErrorDomain 2003 ... not authorized" der AMA
@@ -115,7 +130,7 @@ Current task:
       klavye CIKMIYOR - iOS 27 simulatoru kullan ("Owezy Test iOS 27",
       28E27032). iOS Simulator aracinda HER KOMUTTA device VER: verilmeyince
       21 Ekim'de bir dokunus BASKA projenin simulatorune (4FC4379D) gitti.
-      "open -a Simulator" bu makinede (Xcode 27.1) uygulamayi bulamiyor;
+      "open -a Simulator" bu makinede (Xcode 27.1; 13 Kasim'da 27.2) uygulamayi bulamiyor;
       panel icin aracin attach'i yetiyor.
     - Imzasiz build'de Keychain kalici degil: uygulamayi YENIDEN BASLATMA
       ya da yeniden KURMA oturumu dusurur - giris tekrar gerekir.
@@ -188,7 +203,7 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      yeniden boyutlandirilabilir oluyor - duzen farkli genisliklerde
      denenmeli.
 
-DIS DUNYA - 8 KASIM OLCUMU (6 Kasim'dakiyle ayni; CI ve YAYIN yeni):
+DIS DUNYA - 13 KASIM OLCUMU (8 Kasim'dakiyle ayni):
   DMARC    v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r;
            rua=mailto:...@dmarc-reports.cloudflare.net   (Cloudflare raporlari)
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
@@ -205,7 +220,7 @@ DIS DUNYA - 8 KASIM OLCUMU (6 Kasim'dakiyle ayni; CI ve YAYIN yeni):
            27 Eylul'de yapti ve DMARC'taki rua bunu dogruluyor.
 
 CANLIDA OLAN: web ve mobil (1.0.7) esit. MOBILDE BEKLEYEN (sonraki build):
-ADR-066 liste tazeleme - commit edilince "bekleyen" sayilir.
+ADR-066 liste tazeleme (a3d76a8) + 13 Kasim Expo yamalari.
 
 AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):
   - MISAFIR (ADR-057): isGuest isaretli, tek gruba bagli User; giris
