@@ -8,6 +8,26 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-14 — Birden fazla ödeyen: mobil
+
+Mobil uygulama da "hesabı ikimiz ödedik"i kaydediyor (ADR-067, Faz 55b).
+Form web'le aynı yönde: "Başka ödeyen ekle", ilk satır kalanı kendisi
+hesaplıyor.
+
+- **Düzenleme dağılımı koruyor.** Ekran "tam değiştirme" gönderiyor;
+  dağılım forma geri yüklenmeseydi bir açıklama düzeltmesi diğer
+  ödeyenleri silerdi. İstemci artık hep `payers` gönderiyor.
+- **Listede payın rengi** artık "ben mi ödedim"e değil, o harcamadaki net
+  duruma bakıyor (ödediğim − payım). Ödeyenlerden biri olup payından az
+  ödeyen kişi borçlu görünüyor; tam payı kadar ödeyende renk yok.
+- **Kalem kalem + tekrarla kusuru** mobilde de vardı: kutu işaretliyken
+  kalem kalem'e geçilince kayıt şablon ucuna gidip hata alıyordu. Kapandı.
+- Simülatörde ekleme, düzenleme, salt okunur detay ve liste denendi.
+
+Telefonlara yeni iOS build'iyle çıkacak.
+
+---
+
 ## 2026-11-13 — Birden fazla ödeyen: sunucu ve web
 
 "Hesabı ikimiz ödedik" artık tek harcama olarak kaydediliyor (ADR-067).

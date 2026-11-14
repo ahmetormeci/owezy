@@ -30,7 +30,7 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-11-13
+Updated: 2026-11-14
 
 Current task:
   BIRDEN FAZLA ODEYEN (ADR-067). Tasarim: artifact
@@ -38,30 +38,28 @@ Current task:
   soruya da onerileni secti (S1 ayri ExpensePayer tablosu + paidById "ana
   odeyen" aynasi; S2 form yonu C, ilk satir kalani alir; S3 sablonlar tek
   odeyenli; S4 eski govde cok odeyenliyi guncelleyemez -> 409
-  expense.multiple_payers). Ayrinti ADR-067, Faz 55a.
+  expense.multiple_payers). Ayrinti ADR-067, Faz 55a ve 55b.
 
-  ADIM 1 - SUNUCU + WEB: BITTI, COMMIT EDILMEDI. Kullanici "commit"
-  deyince TEK kod commit'i (kod + docs) - push'tan once SOR (kod commit'i).
-    Gocu: prisma/migrations/20261113195333_add_expense_payer (gelistirme ve
-    E2E veritabanlarina UYGULANDI; production Vercel derlemesinde
-    `prisma migrate deploy` ile). Gelistirmede 69 harcama / 69 satir /
-    uyusmayan 0.
-    Dogrulama: kok tsc + lint temiz, 904 vitest; mobil tsc + lint temiz,
-    114 vitest + 154 jest; TAM E2E 74/74 (21 dk, olagan). Gocte E2E
-    veritabani bir kez P1001 verdi, ikinci denemede baglandi. Dort negatif
-    kontrol ADR-067'de.
+  ADIM 1 - SUNUCU + WEB: COMMIT d41febe (13 Kasim), PUSH EDILMEDI.
+    PUSH = Vercel production deploy + `prisma migrate deploy` (gocu
+    20261113195333_add_expense_payer production'da calistirir). Push'tan
+    once SOR. Dogrulama: kok 904 vitest, tam E2E 74/74 (21 dk).
 
-  ADIM 2 - MOBIL (Faz 55b, ayri commit), SIRADAKI:
-    - new.tsx ve [expenseId].tsx: yon C odeyen satirlari, `payers` gonder
-      (src/lib/payers.ts: payerRemainder, primaryPayerId, orderPayers).
-      Mobil formda tek odeyen + "Baska odeyen ekle"; ikinci odeyen varken
-      tekrarla YOK. Kontrolsuz metin alanlari (ADR-061, StableTextInput).
-    - [expenseId].tsx'te su an yalnizca derleme duzeltmesi var: cakisma
-      diyalogu "payers" farkini describePayers ile yaziyor.
-    - Grup listesi (index.tsx): payerLine + payin rengi NET isaretine gore
-      (odedigim - payim). Tek odeyende sonuc bugunkuyle ayni.
-    - Simulatorde dogrulama (asagidaki GIRISLI KONTROL tarifi), sonra
-      commit. iOS BUILD ALMADAN ONCE SOR.
+  ADIM 2 - MOBIL (Faz 55b): BITTI, KODDA, COMMIT EDILMEDI. Kullanici
+  "commit" deyince AYRI bir kod commit'i (mobil + docs).
+    Dosyalar: mobile/lib/payer-form.ts (+test), components/payer-fields.tsx,
+    components/field.tsx (hideLabel, SelectField testID), app/groups/
+    [groupId]/{index,expenses/new,expenses/[expenseId]}.tsx; ekran testleri
+    test/screens/{new-expense-payers,expense-detail-payers,group-payers}
+    .test.tsx + new-expense-itemized (+1).
+    Dogrulama: mobil tsc + lint temiz, 129 vitest + 170 jest; kok tsc +
+    lint temiz, 904 vitest. Negatif kontrol ve simulator senaryolari
+    ADR-067 sonunda. E2E kosulmadi: web/sunucu bu adimda degismedi.
+    Simulatorde yaratilan test verisi: gelistirme veritabaninda "Coklu
+    odeyen testi" grubu (cb484ede; iban-test-b + iban-test-c + misafir
+    "Deniz", uc harcama). Zararsiz.
+  SONRAKI ADIM: commit (istenince) -> push'u SOR (iki commit birlikte
+  gider) -> telefonlar icin iOS BUILD ALMADAN ONCE SOR.
   1.0.7 (magazada) cok odeyenli harcamayi yalnizca ana odeyenin adiyla
   gosterir (bakiyeler dogru) ve duzenlemeye calisirsa ham kod
   "expense.multiple_payers" gorur - bilinen ve kabul edilen bedel.
@@ -154,6 +152,9 @@ Current task:
       createGroupInvite + acceptGroupInvite, createExpense) - tsx ile
       --env-file=.env.local --tsconfig tsconfig.json, NODE_OPTIONS
       --conditions=react-server
+      createExpense'e govdeyi expenseBodySchema.parse(...)'tan GECIREREK
+      ver: servis dogrulanmis girdi bekliyor (tarih Date olmali); ham
+      "2026-11-12" Prisma'da "premature end of input" verir.
     - SIMULATOR TUZAKLARI: "yazma karakter dusuruyor" UYGULAMANIN hatasiydi
       (ADR-061), simulatorun degil - 21 Ekim'den sonra 31 karakter tek
       seferde geliyor. Klavye acilirken yer degistiren dugmeye HEMEN
@@ -166,6 +167,10 @@ Current task:
       21 Ekim'de bir dokunus BASKA projenin simulatorune (4FC4379D) gitti.
       "open -a Simulator" bu makinede (Xcode 27.1; 13 Kasim'da 27.2) uygulamayi bulamiyor;
       panel icin aracin attach'i yetiyor.
+      Aracin "detach"i device verilse bile TUM akislari kapatiyor (14
+      Kasim'da 68DF61C6'nin paneli de kapandi; cihaz kendisi calismaya
+      devam etti). Baska projenin simulatoru acikken detach CAGIRMA;
+      kendi cihazini xcrun simctl shutdown <TAM UDID> ile kapat.
     - Imzasiz build'de Keychain kalici degil: uygulamayi YENIDEN BASLATMA
       ya da yeniden KURMA oturumu dusurur - giris tekrar gerekir.
     GELISTIRME VERITABANINDA KALAN TEST VERISI: iban@ / iba@ / iban-te@ /
@@ -499,7 +504,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
 
 TESTLER - NE NEREDE (13 Kasim):
   KOK      npm test                  904 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      114 vitest + 154 jest
+  MOBIL    cd mobile && npm test      129 vitest + 170 jest
   E2E      npm run test:e2e           74, ~17-23 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.

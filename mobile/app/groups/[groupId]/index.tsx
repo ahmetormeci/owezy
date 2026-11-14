@@ -28,6 +28,8 @@ import {
   type SecondaryFields,
 } from "@/lib/expense-list-view";
 import { formatBasisPoints, formatMoney, formatSignedMoney } from "@/lib/money";
+import { payerLine } from "@/lib/payers";
+import { netOnExpense } from "../../../lib/payer-form";
 import type { Locale } from "@/lib/locale";
 import { useLocale, useTranslate, type Translator } from "../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../lib/use-api";
@@ -80,7 +82,13 @@ type ExpenseItem = {
    */
   splitType: keyof typeof EXPENSE_SPLIT_TYPE_SHORT_CODES;
   expenseDate: string;
+  /** Ana odeyen (ADR-067): en cok odeyen. */
   paidById: string;
+  /**
+   * Kim ne kadar odedi (ADR-067). OPSIYONEL: eski bir sunucu cevabinda yok;
+   * o zaman satir tek odeyenli cizilir.
+   */
+  payers?: { userId: string; amount: number }[];
   /**
    * PAYLAR ZATEN GELIYORDU, mobil yalnizca ISTEMIYORDU: liste ucu her satirla
    * birlikte participants'i donduruyor (expenses.ts, include). Web fis
@@ -806,9 +814,14 @@ export default function GroupScreen() {
     return {
       date: formatDate(new Date(expense.expenseDate), locale),
       category: t(EXPENSE_CATEGORY_CODES[expense.category]),
-      payer: t("ui.paid_by", {
-        name: displayNameForLine(nameByUserId[expense.paidById] ?? t("ui.unknown_user")),
-      }),
+      // "Ayse odedi" / "Ayse ve Can odedi" / "Ayse ve 2 kisi odedi" -
+      // cumle web'le ayni yerden kuruluyor (src/lib/payers.ts).
+      payer: payerLine(
+        expense.payers ?? [],
+        expense.paidById,
+        (userId) => displayNameForLine(nameByUserId[userId] ?? t("ui.unknown_user")),
+        t,
+      ),
     };
   }
 
@@ -849,11 +862,15 @@ export default function GroupScreen() {
     const isDeleted = Boolean(expense.deletedAt);
 
     /**
-     * PAYIN RENGI ODEYENE BAKIYOR, paya degil: ben odediysem bu satir bana
-     * ALACAK yaziyor, baskasi odediyse BORC. Tutar iki durumda da ayni sayi;
-     * anlami degistiren kim odedigi.
+     * PAYIN RENGI BU HARCAMADAKI NET DURUMUMA BAKIYOR: odedigim - payim
+     * (ADR-067). Tutar her durumda ayni sayi; anlami degistiren ne kadar
+     * odedigim. Tek odeyende eskisiyle ayni sonuc: ben odediysem alacak,
+     * baskasi odediyse borc. Iki kisi odediginde "ben mi odedim" yetmiyor -
+     * 1.000 odeyip 2.250 pay alan biri odeyenlerden biri ama borclu.
+     * Tam payim kadar odediysem (net sifir) renk yok: durum tasimiyor.
      */
-    const iPaid = expense.paidById === currentUserId;
+    const net = currentUserId ? netOnExpense(expense, currentUserId) : 0;
+    const shareTone = net > 0 ? theme.credit : net < 0 ? theme.debt : theme.muted;
     const share = shouldShowShare(myShare?.shareAmount, expense.amount)
       ? t("ui.your_share_amount", {
           amount: formatMoney(myShare!.shareAmount, currency, locale),
@@ -876,7 +893,7 @@ export default function GroupScreen() {
         meta={isDeleted ? t("ui.deleted_badge") : parts.join(" · ")}
         category={isDeleted ? undefined : t(EXPENSE_CATEGORY_CODES[expense.category])}
         share={share}
-        shareTone={iPaid ? theme.credit : theme.debt}
+        shareTone={shareTone}
         deleted={isDeleted}
         /**
          * FIS ISARETI. Kucuk bir ataç: "bu harcamaya bir sey ekli". KENDISI

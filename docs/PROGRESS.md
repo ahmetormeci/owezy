@@ -2798,7 +2798,7 @@ gönderilmiyor" testi düştü. Mobil 145 jest; web 861 vitest; tam E2E.
 (RNTL 14'te asenkron) sonraki testlerin `screen`'ini bozuyordu — yeni
 testler yalnızca birlikte koşunca düşüyordu; `await` eklendi.
 
-## Faz 55a — Birden fazla ödeyen: sunucu + web · **BİTTİ, KODDA; COMMIT BEKLİYOR (13 Kasım)**
+## Faz 55a — Birden fazla ödeyen: sunucu + web · **BİTTİ, COMMIT d41febe (13 Kasım); PUSH EDİLMEDİ**
 
 "Hesabı ikimiz ödedik" tek harcama olarak kaydediliyor (ADR-067). Kullanıcı
 tasarımdaki dört sorunun dördünde de önerileni seçti.
@@ -2819,10 +2819,24 @@ tasarımdaki dört sorunun dördünde de önerileni seçti.
 eski gövdeyle PUT → 409). Negatif kontroller ADR-067'de. Web 904 vitest;
 mobil 154 jest; tam E2E 74/74.
 
-**Sıradaki — Faz 55b, mobil:** aynı form yönü (yeni harcama ve harcama
-detayı), listede ödeyen satırı ve payın rengi "net" işaretine göre; sonra
-simülatörde doğrulama ve ayrı commit. Telefonlara yeni iOS build'iyle çıkar
-(build almadan önce sor).
+## Faz 55b — Birden fazla ödeyen: mobil · **BİTTİ, KODDA; COMMIT BEKLİYOR (14 Kasım)**
+
+| | |
+|---|---|
+| Yeni harcama | Tek ödeyende "Ödeyen" kategoriyle yan yana, altında "Başka ödeyen ekle"; ikinci satırla ödeyenler kendi bloğuna geçiyor, ilk satır "kalan"ı gösteriyor. İkinci ödeyen varken "Bunu tekrarla" yok |
+| Düzenleme | Dağılım forma geri geliyor; tutar değişince farkı ana ödeyenin kalanı alıyor. Gövde `payers` taşıyor — eski `paidById` çok ödeyenlide 409 alırdı |
+| Salt okunur detay | "ÖDEYENLER" bölümü, kişi başına bir satır |
+| Liste | "Ayşe ve Can ödedi"; payın rengi net işarete göre (ödediğim − payım), sıfırsa renksiz |
+| Ortak | `mobile/lib/payer-form.ts` (saf), `components/payer-fields.tsx`; `Field`/`SelectField`'e `hideLabel` |
+
+**Testler:** `payer-form.test.ts` (15), `new-expense-payers` (8),
+`expense-detail-payers` (5), `group-payers` (2), `new-expense-itemized` (+1).
+Mobil 129 vitest + 170 jest; kök 904 vitest. Simülatörde ekleme, düzenleme,
+salt okunur detay ve liste denendi (ADR-067 sonu).
+
+**Sıradaki:** commit (kullanıcı isteyince). Telefonlara yeni iOS build'iyle
+çıkar — build almadan önce sor. `d41febe` ile birlikte push, production'da
+göçü çalıştırır.
 
 ## Sıradaki adaylar (henüz karar verilmedi)
 
@@ -2839,7 +2853,7 @@ karar vermemiştir.
 | **Apple / Google ile giriş** | Kayıt sürtünmesi; Google eklenirse Apple girişi de zorunlu (4.8) |
 
 > **Birden fazla ödeyen listeden çıktı (13 Kasım, kullanıcının görevi):**
-> Faz 55a (sunucu + web) bitti; mobil 55b.
+> Faz 55a (sunucu + web) ve 55b (mobil) bitti.
 >
 > **`disableLogger` ölçümü listeden çıktı (6 Kasım):** ayar Turbopack'te
 > ölü DEĞİLMİŞ — kaldırılınca tarayıcıya giden JS 7,6 KB büyüdü. Sentry'nin

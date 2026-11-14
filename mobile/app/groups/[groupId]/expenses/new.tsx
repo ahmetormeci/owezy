@@ -31,6 +31,12 @@ import { useApiClient, useApiGet } from "../../../../lib/use-api";
 import { noteSaveAndMaybeAskForReview } from "../../../../lib/review-prompt";
 import { useTheme, type Theme } from "../../../../lib/theme";
 import { Cap } from "../../../../components/receipt";
+import { PayerFields } from "../../../../components/payer-fields";
+import {
+  payerFormState,
+  payersBody,
+  type PayerDraft,
+} from "../../../../lib/payer-form";
 import { apiBaseUrl } from "../../../../lib/api";
 import { useSession } from "../../../../lib/auth";
 import { pickReceipt, receiptEndpoint, uploadReceipt } from "../../../../lib/receipt-file";
@@ -136,6 +142,11 @@ export default function NewExpenseScreen() {
   const [description, setDescription] = useState("");
   const [amountText, setAmountText] = useState("");
   const [paidById, setPaidById] = useState<string | null>(null);
+  /**
+   * ANA ODEYEN DISINDAKI odeyenler (ADR-067). Bos liste = tek odeyen,
+   * eskisi gibi. Ilk satirin tutari yazilmiyor, kalani aliyor.
+   */
+  const [extraPayers, setExtraPayers] = useState<PayerDraft[]>([]);
   const [splitType, setSplitType] = useState<SplitType>("EQUAL");
   /** EQUAL icin: kimler paylasiyor. */
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -489,6 +500,23 @@ export default function NewExpenseScreen() {
     );
   }
 
+  /**
+   * ODEYENLERIN DURUMU. equalShares memo'sundan SONRA hesaplaniyor:
+   * web'de React Compiler, memo'dan once `amount`u bir fonksiyona veren
+   * satiri "degistirebilir" sayip memo'yu korumaktan vazgecmisti (ADR-067).
+   */
+  const payerState = payerFormState(amount, extraPayers);
+
+  /**
+   * TEKRARLAMA NE ZAMAN SUNULUYOR. Kalem kalem (ADR-052) ve cok odeyenli
+   * (ADR-067) bir sablon yok. Kosul TEK YERDE: hem kutunun gorunmesi hem
+   * kaydetmenin hangi uca gidecegi buna bakiyor. Onceden kutu isaretliyken
+   * kalem kalem'e gecen birinin kaydi sablon ucuna gidip reddediliyordu -
+   * kutu gizleniyor ama `repeats` dogru kaliyordu.
+   */
+  const canRepeat = splitType !== "ITEMIZED" && extraPayers.length === 0;
+  const isRecurring = repeats && canRepeat;
+
   /** Kusuratin kime yazildigi GORUNUR olmali - tasarimin kendi ifadesi. */
   const roundingGoesTo = equalShares
     ? (participants.find((m) => equalShares[m.userId] === Math.max(...Object.values(equalShares)))
@@ -517,6 +545,10 @@ export default function NewExpenseScreen() {
       // anlatmiyordu - kullanici bu hatayi 29 Agustos'ta gordu, sebebi de
       // sunucunun kapali olmasiydi.
       setError(t("server.offline"));
+      return;
+    }
+    if (payerState.error) {
+      setError(t(payerState.error));
       return;
     }
 
@@ -582,8 +614,9 @@ export default function NewExpenseScreen() {
      * bir harcama degil bir SABLON - yani baglanacak bir fis kimligi de yok.
      * Fis satiri bu dalda zaten cizilmiyor.
      */
-    if (repeats) {
+    if (isRecurring) {
       setBusy(true);
+      // SABLON TEK ODEYENLI (ADR-067): eski bicim, paidById.
       const created = await post(`/api/v1/groups/${groupId}/recurring-expenses`, {
         description: description.trim(),
         amount,
@@ -612,7 +645,8 @@ export default function NewExpenseScreen() {
     const result = await post<{ expense: { id: string } }>(`/api/v1/groups/${groupId}/expenses`, {
       description: description.trim(),
       amount,
-      paidById: payer,
+      // TEK ODEYENDE DE LISTE (web gibi). paidById eski istemcilerin bicimi.
+      payers: payersBody(payer, amount, extraPayers),
       splitType,
       // Secilmediyse HIC gonderilmiyor; sunucu tahmin ediyor.
       ...(category ? { category } : {}),
@@ -675,6 +709,26 @@ export default function NewExpenseScreen() {
       </SafeAreaView>
     );
   }
+
+  /**
+   * ODEYEN ALANI BIR KEZ kuruluyor, iki yerden biri ciziyor: tek odeyende
+   * kategorinin yaninda, cok odeyende tam genislikte altinda.
+   */
+  const payerFields = (
+    <PayerFields
+      members={memberList}
+      label={t("ui.payer")}
+      primaryId={payer}
+      onPrimaryChange={setPaidById}
+      extras={extraPayers}
+      onExtrasChange={setExtraPayers}
+      rest={payerState.rest}
+      exceeds={payerState.exceeds}
+      currency={currency}
+      disabled={busy}
+      style={s.half}
+    />
+  );
 
   return (
     // edges'te "bottom" YOK: alt payi fis satiri kendi tasiyor.
@@ -772,21 +826,11 @@ export default function NewExpenseScreen() {
             </Field>
 
             {/* ODEYEN VE KATEGORI YAN YANA: ikisi de tek kelimelik kararlar,
-                tam genislik hak etmiyorlar. */}
+                tam genislik hak etmiyorlar. IKINCI ODEYEN EKLENINCE odeyen
+                tam genislikte kendi bolumune tasiniyor - tutarlar yan yana
+                ancak orada sigiyor (web'deki duzenin aynisi). */}
             <View style={s.fieldRow}>
-              <SelectField
-                label={t("ui.payer")}
-                style={s.half}
-                value={
-                  memberList.find((member) => member.userId === payer)?.displayName ?? "—"
-                }
-                options={memberList.map((member) => ({
-                  key: member.userId,
-                  label: member.displayName,
-                }))}
-                onChange={setPaidById}
-                disabled={busy}
-              />
+              {extraPayers.length === 0 ? payerFields : null}
               {/*
                 KATEGORI SECILMEZSE SUNUCU TAHMIN EDIYOR (ADR-028) ve etiketin
                 yaninda "tahmin" yaziyor. Tahmin BIR SECIM DEGIL: alan bos
@@ -796,7 +840,7 @@ export default function NewExpenseScreen() {
               */}
               <SelectField
                 label={t("ui.category")}
-                style={s.half}
+                style={extraPayers.length === 0 ? s.half : s.full}
                 hint={category === null && guessed ? t("ui.guess_hint") : undefined}
                 value={t(
                   EXPENSE_CATEGORY_CODES[category ?? guessed ?? "OTHER"],
@@ -809,6 +853,7 @@ export default function NewExpenseScreen() {
                 disabled={busy}
               />
             </View>
+            {extraPayers.length > 0 ? payerFields : null}
           </View>
 
           <View style={s.splitBlock}>
@@ -1045,10 +1090,11 @@ export default function NewExpenseScreen() {
             sonra "her donem tekrarlansin mi". Fisin USTUNDE cunku fis bu
             dalda hic cizilmiyor.
           */}
-          {/* ITEMIZED'DA HIC CIZILMIYOR: kalem kalem bir SABLON yok
-              (ADR-052) - cizilseydi kullanici isaretler ve sunucudan
-              dogrulama hatasi alirdi. */}
-          {splitType === "ITEMIZED" ? null : (
+          {/* ITEMIZED'DA VE IKINCI ODEYEN VARKEN HIC CIZILMIYOR: kalem
+              kalem (ADR-052) ve cok odeyenli (ADR-067) bir SABLON yok -
+              cizilseydi kullanici isaretler ve sunucudan dogrulama hatasi
+              alirdi. */}
+          {!canRepeat ? null : (
           <View style={s.repeatBlock}>
             <Pressable
               style={s.repeatRow}
@@ -1097,7 +1143,7 @@ export default function NewExpenseScreen() {
             TEKRARLAYANDA HIC CIZILMIYOR: sablonun fotografi olmaz - bagli
             oldugu bir harcama yok, uretilenler ise her donem ayri kayitlar.
           */}
-          {repeats ? null : receiptUri ? (
+          {isRecurring ? null : receiptUri ? (
             <View style={s.receiptRow}>
               <Image source={{ uri: receiptUri }} style={s.receiptThumb} />
               <View style={s.receiptText}>
@@ -1308,6 +1354,7 @@ function createStyles(theme: Theme) {
     fieldInput: { fontFamily: fonts.body, fontSize: 16, color: theme.foreground, padding: 0 },
     fieldRow: { flexDirection: "row", gap: 16 },
     half: { flex: 1 },
+    full: { flex: 1 },
 
     splitBlock: { paddingHorizontal: 20, paddingTop: 22, gap: 12 },
     segments: { flexDirection: "row", gap: 8 },

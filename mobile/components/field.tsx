@@ -28,23 +28,32 @@ export function Field({
   hint,
   children,
   style,
+  hideLabel = false,
 }: {
   label: string;
   /** Etiketin sagindaki kucuk not - bugun yalnizca "tahmin" icin. */
   hint?: string;
   children: React.ReactNode;
   style?: object;
+  /**
+   * Etiket GORUNMESIN - satir ici secicilerde (odeyen satirlari, ADR-067).
+   * Orada bolumun kendi basligi var; her satira "1. ODEYEN" yazmak satiri
+   * ikiye katlardi. Etiket metni yine isteniyor: ekran okuyucu onu okuyor.
+   */
+  hideLabel?: boolean;
 }) {
   const theme = useTheme();
   const locale = useLocale();
   const s = useMemo(() => styles(theme), [theme]);
   return (
     <View style={[s.field, style]}>
-      <View style={s.labelRow}>
-        {/* toLocaleUpperCase(locale) SART: Turkce'de "i" -> "İ". */}
-        <Text style={s.label}>{label.toLocaleUpperCase(locale)}</Text>
-        {hint ? <Text style={s.hint}>{hint}</Text> : null}
-      </View>
+      {hideLabel ? null : (
+        <View style={s.labelRow}>
+          {/* toLocaleUpperCase(locale) SART: Turkce'de "i" -> "İ". */}
+          <Text style={s.label}>{label.toLocaleUpperCase(locale)}</Text>
+          {hint ? <Text style={s.hint}>{hint}</Text> : null}
+        </View>
+      )}
       <View style={s.underline}>{children}</View>
     </View>
   );
@@ -304,6 +313,8 @@ export function SelectField<T extends string>({
   onChange,
   disabled = false,
   style,
+  hideLabel = false,
+  testID,
 }: {
   label: string;
   hint?: string;
@@ -313,6 +324,9 @@ export function SelectField<T extends string>({
   onChange: (key: T) => void;
   disabled?: boolean;
   style?: object;
+  /** Bkz. Field. Erisilebilirlik etiketi yine `label`. */
+  hideLabel?: boolean;
+  testID?: string;
 }) {
   const theme = useTheme();
   const s = useMemo(() => styles(theme), [theme]);
@@ -320,8 +334,9 @@ export function SelectField<T extends string>({
 
   return (
     <>
-      <Field label={label} hint={hint} style={style}>
+      <Field label={label} hint={hint} style={style} hideLabel={hideLabel}>
         <Pressable
+          testID={testID}
           style={s.selectRow}
           onPress={() => setOpen(true)}
           disabled={disabled}

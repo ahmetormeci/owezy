@@ -118,6 +118,23 @@ describe("gonderim", () => {
     expect(body.shares).toBeUndefined();
   });
 
+  it("kutu isaretliyken kalem kalem'e gecilirse kayit SABLON UCUNA gitmiyor", async () => {
+    // GERCEK BIR KUSURDU (ADR-067'de bulundu): kutu gizleniyordu ama
+    // `repeats` dogru kaliyordu, kayit tekrarlayan ucuna gidip
+    // dogrulama hatasi aliyordu.
+    await render(<NewExpenseScreen />);
+    await fireEvent.press(screen.getByText("Bunu tekrarla"));
+    await fireEvent.changeText(screen.getByTestId("description"), "Akşam yemeği");
+    await fireEvent.press(screen.getByText("kalem kalem"));
+    await fireEvent.changeText(screen.getByTestId("item-name-0"), "Pizza");
+    await fireEvent.changeText(screen.getByTestId("item-amount-0"), "200");
+    await fireEvent.press(screen.getByText("Veli"));
+    await fireEvent.press(screen.getByTestId("save"));
+
+    await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(1));
+    expect(mockPost.mock.calls[0][0]).toBe("/api/v1/groups/g1/expenses");
+  });
+
   it("kalemsiz kisi varsa GONDERMIYOR ve sebebini yaziyor", async () => {
     await render(<NewExpenseScreen />);
     await fireEvent.changeText(screen.getByTestId("description"), "Akşam yemeği");

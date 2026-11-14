@@ -531,7 +531,7 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 ---
 
 ## ADR-067 — Birden fazla ödeyen: ayrı `ExpensePayer` tablosu, `paidById` "ana ödeyen" aynası; eski gövde çok ödeyenli harcamayı ezemez
-**Tarih:** 2026-11-13 · **Durum:** Kabul edildi · **UYGULANDI: sunucu + web 2026-11-13 (kodda); mobil sonraki adım**
+**Tarih:** 2026-11-13 · **Durum:** Kabul edildi · **UYGULANDI: sunucu + web 2026-11-13 (d41febe); mobil 2026-11-14 (kodda, commit bekliyor)**
 
 **Bağlam:** "Hesabı ikimiz ödedik" durumu kaydedilemiyordu: `Expense.paidById`
 tek bir alan, bakiye de "ödediği" tarafını oradan ve `amount`'tan okuyordu.
@@ -610,8 +610,22 @@ listesindeydi; kullanıcı 13 Kasım'da tasarım istedi.
     9); sürüm sayacı misafirin ödeyen olduğu harcamalarda da artıyor.
     Sahiplenen kişi zaten grupta olamadığı için (`guest.claim_already_member`)
     aynı harcamada iki ödeyen satırının çakışması mümkün değil.
-13. **Mobil (sonraki adım):** aynı form yönü; listede payın rengi "net"
-    işaretine bakacak (ödediğim − payım). Tek ödeyende sonuç bugünküyle aynı.
+13. **Mobil (14 Kasım):** aynı form yönü, yeni harcamada ve düzenlemede.
+    Tek ödeyende "Ödeyen" kategoriyle yan yana durur, altında "Başka ödeyen
+    ekle"; ikinci satır eklenince kategori tam genişliğe geçer ve ödeyenler
+    kendi bloğunda alt alta dizilir. İstemci artık **her zaman `payers`**
+    gönderiyor (tek ödeyende de); `paidById` yalnızca tekrarlayan şablonun
+    biçimi. Düzenleme dağılımı forma geri yüklüyor (`extraPayerDrafts`) —
+    yüklemeseydi "tam değiştirme" gövdesi bir açıklama düzeltmesinde diğer
+    ödeyenleri silerdi. Formun kuralları saf bir modülde
+    (`mobile/lib/payer-form.ts`): ekrandaki "kalan" ile gönderilen tutar aynı
+    fonksiyondan geçiyor. Listede payın rengi **net** işaretine bakıyor
+    (ödediğim − payım; sıfırsa renksiz) — tek ödeyende sonuç eskisiyle aynı,
+    iki ödeyende "ödeyenlerden biriyim ama payımdan az ödedim" borç
+    görünüyor. Salt okunur detayda kişi başına bir satır ("ÖDEYENLER").
+    Web'deki kusurun aynısı mobilde de vardı (kutu işaretliyken kalem
+    kalem'e geçince kayıt şablon ucuna gidiyordu) ve aynı `canRepeat`
+    koşuluyla kapandı.
 
 **Alternatifler:** `Expense`'e JSON kolon (toplam veritabanında
 denetlenemez, `groupBy` olmaz); `paidById`'yi kaldırmak (1.0.7 kırılır);
@@ -642,6 +656,19 @@ sıradaki" kuralı ters çevrilince (iki test), bildirim alıcılarından ödeye
 düştü. Web 904 vitest, mobil 114 vitest + 154 jest, tam E2E 74/74 (21 dk,
 tekrar denenen test yok). E2E veritabanı göç sırasında bir kez `P1001`
 ("sunucuya ulaşılamıyor") verdi, ikinci denemede bağlandı.
+
+**Mobil test (14 Kasım):** `mobile/lib/payer-form.test.ts` (15, yeni),
+`test/screens/new-expense-payers.test.tsx` (8, yeni),
+`expense-detail-payers.test.tsx` (5, yeni), `group-payers.test.tsx` (2,
+yeni), `new-expense-itemized.test.tsx` (+1, kalem kalem'e geçince şablon ucu).
+Negatif kontrol: listede eski kurallar geri konunca (renk "ben mi ödedim",
+satır yalnızca ana ödeyen) iki liste testi de düştü. Mobil 129 vitest + 170
+jest. **Simülatörde** (yerel Release build, yerel sunucu, geliştirme
+veritabanında test hesabı): iki ödeyenli harcama eklendi (kalan canlı
+güncellendi, "aşıyor" uyarısı canlı çıktı, kayıt 150 + 100), düzenlemede
+dağılım forma geldi ve tutar 300'e çıkınca fark ana ödeyene gitti (200 +
+100, sürüm 2); başkasının kaydında "PAID BY" kişi başına satır; listede iki
+ödeyen satırı ve net renkleri; bakiye kartı elle hesaplananla aynı.
 
 ---
 

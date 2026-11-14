@@ -16,15 +16,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES, EXPENSE_SPLIT_TYPE_CODES } from "@/lib/expense-labels";
 import { diffExpenses, type ExpenseChange } from "@/lib/expense-diff";
-import { describePayers, primaryPayerId } from "@/lib/payers";
+import { describePayers, orderPayers, primaryPayerId } from "@/lib/payers";
 import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
 import { useTheme, type Theme } from "../../../../lib/theme";
 import { SectionRule } from "../../../../components/receipt";
-import { Field, FieldInput, SelectField, StableTextInput } from "../../../../components/field";
+import { Field, FieldInput, StableTextInput } from "../../../../components/field";
 import { ReceiptPhoto } from "../../../../components/receipt-photo";
 import { ExpenseComments } from "../../../../components/expense-comments";
+import { PayerFields } from "../../../../components/payer-fields";
+import {
+  extraPayerDrafts,
+  payerFormState,
+  payersBody,
+  type PayerDraft,
+} from "../../../../lib/payer-form";
 
 /**
  * Tek harcama: detay ve - izin varsa - duzenleme.
@@ -49,7 +56,13 @@ type Expense = {
   category: keyof typeof EXPENSE_CATEGORY_CODES;
   splitType: "EQUAL" | "EXACT" | "PERCENTAGE" | "ITEMIZED";
   expenseDate: string;
+  /** Ana odeyen (ADR-067): en cok odeyen. */
   paidById: string;
+  /**
+   * Kim ne kadar odedi (ADR-067). OPSIYONEL: eski bir sunucu cevabinda
+   * yok; o zaman tek odeyen, tutarin tamami.
+   */
+  payers?: { userId: string; amount: number }[];
   createdById: string;
   participants: Participant[];
   /**
@@ -100,6 +113,8 @@ export default function ExpenseScreen() {
   const [description, setDescription] = useState("");
   const [amountText, setAmountText] = useState("");
   const [paidById, setPaidById] = useState("");
+  /** Ana odeyen disindakiler (ADR-067); ilk satir kalani aliyor. */
+  const [extraPayers, setExtraPayers] = useState<PayerDraft[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -126,6 +141,10 @@ export default function ExpenseScreen() {
     setDescription(loaded.description);
     setAmountText(formatMoneyForInput(loaded.amount, locale));
     setPaidById(loaded.paidById);
+    // DAGILIM GERI GELIYOR: gelmeseydi telefondan yapilan bir aciklama
+    // duzeltmesi diger odeyenleri SILERDI - eski govdenin sunucuda
+    // reddedilmesinin (expense.multiple_payers) sebebi tam bu.
+    setExtraPayers(extraPayerDrafts(loaded.payers, loaded.paidById, locale));
     setBaseline(loaded);
   }, [loaded, locale]);
 
@@ -186,6 +205,10 @@ export default function ExpenseScreen() {
     ? item.participants.find((participant) => participant.userId === currentUserId)
     : undefined;
 
+  /** Kayitli odeyenler; alan gelmediyse tek odeyen. Salt okunur gorunum icin. */
+  const savedPayers = item.payers ?? [{ userId: item.paidById, amount: item.amount }];
+  const payerState = payerFormState(parseMoney(amountText), extraPayers);
+
   async function save() {
     if (busy) return;
     setError(null);
@@ -201,6 +224,11 @@ export default function ExpenseScreen() {
     }
     if (amount === null || amount <= 0) {
       setError(t("ui.amount_required"));
+      return;
+    }
+    const payerCheck = payerFormState(amount, extraPayers);
+    if (payerCheck.error) {
+      setError(t(payerCheck.error));
       return;
     }
 
@@ -261,7 +289,12 @@ export default function ExpenseScreen() {
       const result = await put(`/api/v1/groups/${groupId}/expenses/${expenseId}`, {
         description: description.trim(),
         amount,
-        paidById,
+        /**
+         * ODEYENLER LISTE OLARAK (ADR-067). Eski bicim (paidById) cok
+         * odeyenli bir harcamada sunucuda reddediliyor; tek odeyende de
+         * liste gidiyor ki iki yol olmasin.
+         */
+        payers: payersBody(paidById, amount, extraPayers),
         ...splitBody,
         version: baseline.version,
       });
@@ -509,15 +542,17 @@ export default function ExpenseScreen() {
             )}
 
             {canEdit ? (
-              <SelectField
+              <PayerFields
+                members={memberList}
                 label={t("ui.who_paid")}
-                value={nameByUserId[paidById ?? ""] ?? t("ui.unknown_user")}
-                options={memberList.map((member) => ({
-                  key: member.userId,
-                  label: member.displayName,
-                }))}
-                onChange={setPaidById}
-                disabled={busy}
+                primaryId={paidById}
+                onPrimaryChange={setPaidById}
+                extras={extraPayers}
+                onExtrasChange={setExtraPayers}
+                rest={payerState.rest}
+                exceeds={payerState.exceeds}
+                currency={item.currency}
+                disabled={busy || gone}
               />
             ) : null}
           </View>
@@ -537,7 +572,7 @@ export default function ExpenseScreen() {
               label={t("ui.category")}
               value={t(EXPENSE_CATEGORY_CODES[item.category])}
             />
-            {!canEdit ? (
+            {!canEdit && savedPayers.length === 1 ? (
               <Fact
                 styles={s}
                 label={t("ui.who_paid")}
@@ -552,6 +587,24 @@ export default function ExpenseScreen() {
               />
             ) : null}
           </View>
+
+          {/* ODEYENLER (ADR-067) - SALT OKUNUR, yalnizca birden fazlaysa.
+              Tek satirda "Ayse 800,00 · Can 400,00" dar ekranda tasiyordu;
+              kisi basina bir satir, kalemlerle ayni dil. Duzenleyebilen
+              kisi ayni bilgiyi yukaridaki satirlarda goruyor. */}
+          {!canEdit && savedPayers.length > 1 ? (
+            <View style={s.itemsBlock}>
+              <SectionRule label={t("ui.payers")} />
+              {orderPayers(savedPayers, item.paidById).map((payer) => (
+                <Fact
+                  key={payer.userId}
+                  styles={s}
+                  label={nameByUserId[payer.userId] ?? t("ui.unknown_user")}
+                  value={formatMoney(payer.amount, item.currency, locale)}
+                />
+              ))}
+            </View>
+          ) : null}
 
           {/* KALEMLER (ADR-052) - SALT OKUNUR.
               Duzenleme web'de: dar bir ekranda kalem adi + tutar + kisi
