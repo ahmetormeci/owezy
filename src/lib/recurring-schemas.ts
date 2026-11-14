@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { nonItemizedExpenseBodySchema } from "@/lib/expense-schemas";
+import { templateExpenseBodySchema } from "@/lib/expense-schemas";
 
 /**
  * Bir cagrida en fazla kac donem yakalanir (ADR-051).
@@ -31,9 +31,10 @@ export const createRecurringSchema = z.intersection(
    * KALEM KALEM BIR SABLON YOK (ADR-052). "Her ay ayni restoran hesabi,
    * ayni kalemlerle" diye bir ihtiyac yok; kira ve abonelik duz bir toplam.
    * Ayrim TIPTE: ITEMIZED bir govde buraya ULASAMIYOR, bir kontrol satiri
-   * unutulsa bile.
+   * unutulsa bile. Cok odeyenli bir govde de oyle (ADR-067): sablon tek
+   * odeyenli ve paidById zorunlu.
    */
-  nonItemizedExpenseBodySchema,
+  templateExpenseBodySchema,
   z.object({
     interval: intervalSchema,
     startsOn: z.coerce.date(),

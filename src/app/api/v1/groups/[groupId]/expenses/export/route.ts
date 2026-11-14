@@ -5,6 +5,7 @@ import { listExpensesForExport } from "@/lib/expenses";
 import { listExpensesQuerySchema } from "@/lib/expense-schemas";
 import { EXPENSE_CATEGORY_CODES } from "@/lib/expense-labels";
 import { formatMoneyForInput } from "@/lib/money";
+import { describePayers } from "@/lib/payers";
 import { CSV_BOM, toCsv } from "@/lib/csv";
 import { getLocale, getTranslate } from "@/lib/i18n-server";
 import { handleApiError } from "@/lib/api";
@@ -77,7 +78,16 @@ export async function GET(
         expense.expenseDate.toISOString().slice(0, 10),
         expense.description,
         t(EXPENSE_CATEGORY_CODES[expense.category]),
-        nameByUserId.get(expense.paidById) ?? t("ui.unknown_user"),
+        // Birden fazla odeyende "Ayse 800,00 + Can 400,00" (ADR-067). AYNI
+        // HUCREDE, ayri sutunlarda degil: odeyen sayisi harcamadan harcamaya
+        // degisiyor ve sutun sayisi degisen bir tablo Excel'de okunmaz.
+        describePayers(
+          expense.payers,
+          expense.paidById,
+          (userId) => nameByUserId.get(userId) ?? t("ui.unknown_user"),
+          (amount) => formatMoneyForInput(amount, locale),
+          " + ",
+        ),
         formatMoneyForInput(expense.amount, locale),
         // Katilimci degilsem bos: "0,00" yazmak paya girdigimi ve sifir
         // odedigimi soylerdi.

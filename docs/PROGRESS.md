@@ -18,10 +18,10 @@ CI'dan geçiyor.
 
 | Test | Sayı | Son durum |
 |---|---|---|
-| Birim — kök (Vitest) | 742 | ✅ tümü geçiyor |
-| Birim — mobil (Vitest) | 86 | ✅ tümü geçiyor |
-| Ekran — mobil (jest-expo) | 83 | ✅ tümü geçiyor |
-| E2E (Playwright) | 61 | ✅ tümü geçiyor |
+| Birim — kök (Vitest) | 904 | ✅ tümü geçiyor (13 Kasım) |
+| Birim — mobil (Vitest) | 114 | ✅ tümü geçiyor (13 Kasım) |
+| Ekran — mobil (jest-expo) | 154 | ✅ tümü geçiyor (13 Kasım) |
+| E2E (Playwright) | 74 | ✅ tümü geçiyor (13 Kasım) |
 | `npx tsc --noEmit` | — | ✅ temiz (kök + mobil) |
 | `npm run lint` | — | ✅ temiz (kök + mobil) |
 
@@ -2798,6 +2798,32 @@ gönderilmiyor" testi düştü. Mobil 145 jest; web 861 vitest; tam E2E.
 (RNTL 14'te asenkron) sonraki testlerin `screen`'ini bozuyordu — yeni
 testler yalnızca birlikte koşunca düşüyordu; `await` eklendi.
 
+## Faz 55a — Birden fazla ödeyen: sunucu + web · **BİTTİ, KODDA; COMMIT BEKLİYOR (13 Kasım)**
+
+"Hesabı ikimiz ödedik" tek harcama olarak kaydediliyor (ADR-067). Kullanıcı
+tasarımdaki dört sorunun dördünde de önerileni seçti.
+
+| | |
+|---|---|
+| Veri | Yeni `ExpensePayer` tablosu; bakiye, özet, ayrılma denetimi, yorum alıcıları oradan okuyor. `Expense.paidById` "ana ödeyen" aynası (en çok ödeyen) |
+| Veritabanı | Ödeyen toplamı = tutar ve ana ödeyen ödeyenlerden biri; `Expense` üzerindeki yeni tetikleyici tutar değişince payları da denetliyor. Göç her harcamaya bir satır kopyaladı (geliştirmede 69/69) |
+| API | `payers` (yeni) ya da `paidById` (1.0.7, hızlı giriş, şablonlar) — ikisinden biri. Eski gövde çok ödeyenli harcamayı güncelleyemez: 409 `expense.multiple_payers` |
+| Web formu | "Başka ödeyen ekle"; ilk satır kalanı kendisi hesaplıyor. İkinci ödeyen varken "Bunu tekrarla" yok |
+| Liste ve CSV | "Ayşe ve Can ödedi" / "Ayşe ve 2 kişi ödedi"; CSV'de "Ayşe 800,00 + Can 400,00" |
+| Bildirim | Ödeyenlere de gidiyor |
+| Misafir | `ExpensePayer.userId` taşınıyor (taşınan alanlar 9) |
+
+**Testler:** `payers.test.ts` ve `expense-schemas.test.ts` yeni;
+`expenses.test.ts` +10, `balances` +2, `summary` +1, `expense-diff` +3,
+`recurring` +1, POST route +2; `e2e/expenses.spec.ts` +1 (30/70 ödenen 100 ₺,
+eski gövdeyle PUT → 409). Negatif kontroller ADR-067'de. Web 904 vitest;
+mobil 154 jest; tam E2E 74/74.
+
+**Sıradaki — Faz 55b, mobil:** aynı form yönü (yeni harcama ve harcama
+detayı), listede ödeyen satırı ve payın rengi "net" işaretine göre; sonra
+simülatörde doğrulama ve ayrı commit. Telefonlara yeni iOS build'iyle çıkar
+(build almadan önce sor).
+
 ## Sıradaki adaylar (henüz karar verilmedi)
 
 Aşağıdakiler **planlanmış iş değildir**; kullanıcı hangisinin yapılacağına
@@ -2809,10 +2835,12 @@ karar vermemiştir.
 | Aday | Neden önemli |
 |---|---|
 | **SDK 58'e geçiş** | **Seçmeli değil, acil de değil.** Sahne düzeni Faz 51'de SDK 57'de açıldı; kalan: SDK 58 kararlı çıkınca yükseltmek, `enableSceneSupport`'u kaldırmak, EAS'ta Xcode 27 imajı gelince sabitlemeyi kaldırmak. Son tarih **Nisan 2027** (Apple, iOS 27 SDK zorunluluğu). Bilinen işler: `csv-export.tsx`'teki `file.write` async oluyor, expo-router çekirdeği, RN 0.88 katı TS API; Xcode 27 ile uygulama yeniden boyutlandırılabilir oluyor (ADR-058) |
-| **Birden fazla ödeyen** | "Hesabı ikimiz ödedik". Settle Up ücretsiz veriyor. `Expense.paidById` tek alan |
 | **Birden fazla para birimi** | Yurt dışı tatili. Kur kaynağı gerekiyor (dış servis → gizlilik beyanı) |
 | **Apple / Google ile giriş** | Kayıt sürtünmesi; Google eklenirse Apple girişi de zorunlu (4.8) |
 
+> **Birden fazla ödeyen listeden çıktı (13 Kasım, kullanıcının görevi):**
+> Faz 55a (sunucu + web) bitti; mobil 55b.
+>
 > **`disableLogger` ölçümü listeden çıktı (6 Kasım):** ayar Turbopack'te
 > ölü DEĞİLMİŞ — kaldırılınca tarayıcıya giden JS 7,6 KB büyüdü. Sentry'nin
 > önerdiği yeni ada (`bundleSizeOptimizations.excludeDebugStatements`)

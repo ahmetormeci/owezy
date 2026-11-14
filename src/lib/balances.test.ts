@@ -9,7 +9,8 @@ const { mockPrisma } = vi.hoisted(() => ({
     groupMember: { findFirst: vi.fn(), findMany: vi.fn() },
     // Servis artik ham satir okumuyor: toplama veritabaninda GROUP BY ile
     // yapiliyor ve donen satir sayisi harcama sayisina degil uye sayisina bagli.
-    expense: { groupBy: vi.fn() },
+    // Odenen, Expense'ten degil odeyen tablosundan toplaniyor (ADR-067).
+    expensePayer: { groupBy: vi.fn() },
     expenseParticipant: { groupBy: vi.fn() },
     settlement: { groupBy: vi.fn() },
   },
@@ -37,8 +38,7 @@ const DENIZ = "deniz";
 //   Internet: Berk 150 TL odedi, 3 kisiye esit bolundu (50 TL each)
 // Beklenen net: Ali +150 TL, Berk 0, Can -150 TL
 const marketExpense: ExpenseForBalance = {
-  paidById: ALI,
-  amount: 30000,
+  payers: [{ userId: ALI, amount: 30000 }],
   participants: [
     { userId: ALI, shareAmount: 10000 },
     { userId: BERK, shareAmount: 10000 },
@@ -47,8 +47,7 @@ const marketExpense: ExpenseForBalance = {
 };
 
 const internetExpense: ExpenseForBalance = {
-  paidById: BERK,
-  amount: 15000,
+  payers: [{ userId: BERK, amount: 15000 }],
   participants: [
     { userId: ALI, shareAmount: 5000 },
     { userId: BERK, shareAmount: 5000 },
@@ -75,8 +74,7 @@ describe("calculateBalances", () => {
 
   it("odeyen kisi katilimci degilse tutarin tamamini alacak yazar", () => {
     const expense: ExpenseForBalance = {
-      paidById: ALI,
-      amount: 10000,
+      payers: [{ userId: ALI, amount: 10000 }],
       participants: [
         { userId: BERK, shareAmount: 5000 },
         { userId: CAN, shareAmount: 5000 },
@@ -85,6 +83,48 @@ describe("calculateBalances", () => {
 
     expect(calculateBalances([expense], [])).toEqual([
       { userId: ALI, amount: 10000 },
+      { userId: BERK, amount: -5000 },
+      { userId: CAN, amount: -5000 },
+    ]);
+  });
+
+  // ADR-067'nin tasarim ornegi: aksam yemegi 1.200 TL, 800'unu Ali 400'unu
+  // Berk odedi, uc kisi esit boldu (400'er).
+  it("birden fazla odeyende her odeyen yalnizca odedigi kadar alacak yazar", () => {
+    const dinner: ExpenseForBalance = {
+      payers: [
+        { userId: ALI, amount: 80000 },
+        { userId: BERK, amount: 40000 },
+      ],
+      participants: [
+        { userId: ALI, shareAmount: 40000 },
+        { userId: BERK, shareAmount: 40000 },
+        { userId: CAN, shareAmount: 40000 },
+      ],
+    };
+
+    expect(calculateBalances([dinner], [])).toEqual([
+      { userId: ALI, amount: 40000 },
+      { userId: BERK, amount: 0 },
+      { userId: CAN, amount: -40000 },
+    ]);
+  });
+
+  it("bolusumde olmayan ikinci odeyen de alacak yazar", () => {
+    const expense: ExpenseForBalance = {
+      payers: [
+        { userId: ALI, amount: 6000 },
+        { userId: DENIZ, amount: 4000 },
+      ],
+      participants: [
+        { userId: BERK, shareAmount: 5000 },
+        { userId: CAN, shareAmount: 5000 },
+      ],
+    };
+
+    expect(calculateBalances([expense], [])).toEqual([
+      { userId: ALI, amount: 6000 },
+      { userId: DENIZ, amount: 4000 },
       { userId: BERK, amount: -5000 },
       { userId: CAN, amount: -5000 },
     ]);
@@ -163,8 +203,7 @@ describe("calculateBalances", () => {
         // Tam bolunmeyen tutar: 10000 / 3 -> 3334 + 3333 + 3333
         expenses: [
           {
-            paidById: ALI,
-            amount: 10000,
+            payers: [{ userId: ALI, amount: 10000 }],
             participants: [
               { userId: ALI, shareAmount: 3334 },
               { userId: BERK, shareAmount: 3333 },
@@ -176,7 +215,7 @@ describe("calculateBalances", () => {
       },
       {
         expenses: [
-          { paidById: DENIZ, amount: 1, participants: [{ userId: ALI, shareAmount: 1 }] },
+          { payers: [{ userId: DENIZ, amount: 1 }], participants: [{ userId: ALI, shareAmount: 1 }] },
         ],
         settlements: [],
       },
@@ -190,8 +229,7 @@ describe("calculateBalances", () => {
   it("alacakliden borcluya siralar, esitlikte userId'ye gore kesinlestirir", () => {
     // Berk ve Can'in bakiyeleri esit (-5000); siralamada berk once gelmeli.
     const expense: ExpenseForBalance = {
-      paidById: ALI,
-      amount: 10000,
+      payers: [{ userId: ALI, amount: 10000 }],
       participants: [
         { userId: CAN, shareAmount: 5000 },
         { userId: BERK, shareAmount: 5000 },
@@ -396,7 +434,7 @@ describe("getGroupBalances", () => {
     mockPrisma.group.findUnique.mockReset();
     mockPrisma.groupMember.findFirst.mockReset();
     mockPrisma.groupMember.findMany.mockReset();
-    mockPrisma.expense.groupBy.mockReset();
+    mockPrisma.expensePayer.groupBy.mockReset();
     mockPrisma.expenseParticipant.groupBy.mockReset();
     mockPrisma.settlement.groupBy.mockReset();
     // Varsayilan: hicbir hareket yok. Senaryosu olan testler ustune yaziyor.
@@ -420,7 +458,9 @@ describe("getGroupBalances", () => {
       target.set(key, (target.get(key) ?? 0) + value);
 
     for (const expense of expenses) {
-      bump(paid, expense.paidById, expense.amount);
+      for (const payer of expense.payers) {
+        bump(paid, payer.userId, payer.amount);
+      }
       for (const participant of expense.participants) {
         bump(share, participant.userId, participant.shareAmount);
       }
@@ -430,8 +470,8 @@ describe("getGroupBalances", () => {
       bump(received, settlement.toUserId, settlement.amount);
     }
 
-    mockPrisma.expense.groupBy.mockResolvedValue(
-      [...paid].map(([paidById, amount]) => ({ paidById, _sum: { amount } })),
+    mockPrisma.expensePayer.groupBy.mockResolvedValue(
+      [...paid].map(([userId, amount]) => ({ userId, _sum: { amount } })),
     );
     mockPrisma.expenseParticipant.groupBy.mockResolvedValue(
       [...share].map(([userId, shareAmount]) => ({ userId, _sum: { shareAmount } })),
@@ -468,7 +508,7 @@ describe("getGroupBalances", () => {
     mockPrisma.group.findUnique.mockResolvedValue(null);
 
     await expect(getGroupBalances(ALI, GROUP_ID)).rejects.toBeInstanceOf(NotFoundError);
-    expect(mockPrisma.expense.groupBy).not.toHaveBeenCalled();
+    expect(mockPrisma.expensePayer.groupBy).not.toHaveBeenCalled();
   });
 
   it("grup soft-delete edilmisse NotFoundError firlatir", async () => {
@@ -482,7 +522,7 @@ describe("getGroupBalances", () => {
     mockPrisma.groupMember.findFirst.mockResolvedValue(null);
 
     await expect(getGroupBalances(ALI, GROUP_ID)).rejects.toBeInstanceOf(ForbiddenError);
-    expect(mockPrisma.expense.groupBy).not.toHaveBeenCalled();
+    expect(mockPrisma.expensePayer.groupBy).not.toHaveBeenCalled();
   });
 
   it("yalnizca silinmemis harcamalari ve iptal edilmemis odemeleri hesaba katar", async () => {
@@ -491,12 +531,11 @@ describe("getGroupBalances", () => {
 
     await getGroupBalances(ALI, GROUP_ID);
 
-    expect(mockPrisma.expense.groupBy.mock.calls[0][0].where).toEqual({
-      groupId: GROUP_ID,
-      deletedAt: null,
+    // Odenen ve paylar: silinmis bir harcamanin ikisi de disarida kalmali;
+    // filtre iki tabloda da iliski uzerinden kuruluyor.
+    expect(mockPrisma.expensePayer.groupBy.mock.calls[0][0].where).toEqual({
+      expense: { groupId: GROUP_ID, deletedAt: null },
     });
-    // Silinmis bir harcamanin paylari da disarida kalmali; filtre iliski
-    // uzerinden kuruluyor.
     expect(mockPrisma.expenseParticipant.groupBy.mock.calls[0][0].where).toEqual({
       expense: { groupId: GROUP_ID, deletedAt: null },
     });
@@ -543,7 +582,7 @@ describe("getGroupBalances", () => {
   it("gruptan ayrilmis ama borcu duran uye listede kalir ve isaretlenir", async () => {
     readableGroup();
     givenMovements(
-      [{ paidById: ALI, amount: 10000, participants: [{ userId: CAN, shareAmount: 10000 }] }],
+      [{ payers: [{ userId: ALI, amount: 10000 }], participants: [{ userId: CAN, shareAmount: 10000 }] }],
       [],
     );
     mockPrisma.groupMember.findMany.mockResolvedValue([

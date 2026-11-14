@@ -46,9 +46,69 @@ describe("diffExpenses", () => {
         { field: "category", before: "FOOD", after: "SHOPPING" },
         { field: "splitType", before: "EQUAL", after: "EXACT" },
         { field: "expenseDate", before: "2026-08-01", after: "2026-08-09" },
-        { field: "paidById", before: USER_A, after: USER_B },
+        // Ana odeyen degisikligi artik ODEYENLER farki (ADR-067). Alani
+        // tasimayan kayitlarda tek odeyen, tutarin tamami sayiliyor.
+        {
+          field: "payers",
+          before: [{ userId: USER_A, amount: 9000 }],
+          after: [{ userId: USER_B, amount: 12000 }],
+        },
       ]),
     );
+  });
+
+  it("tek odeyen ayni kaldiysa tutar degisikligi ikinci bir odeyen satiri uretmiyor", () => {
+    const changes = diffExpenses(expense(), expense({ amount: 12000 }));
+
+    expect(changes).toEqual([{ field: "amount", before: 9000, after: 12000 }]);
+  });
+
+  it("odeyenlerin dagilimi degistiyse bildirir, sira farkini saymaz", () => {
+    const before = expense({
+      payers: [
+        { userId: USER_A, amount: 6000 },
+        { userId: USER_B, amount: 3000 },
+      ],
+    });
+
+    expect(
+      diffExpenses(
+        before,
+        expense({
+          payers: [
+            { userId: USER_B, amount: 3000 },
+            { userId: USER_A, amount: 6000 },
+          ],
+        }),
+      ),
+    ).toEqual([]);
+
+    expect(
+      diffExpenses(
+        before,
+        expense({
+          payers: [
+            { userId: USER_A, amount: 4500 },
+            { userId: USER_B, amount: 4500 },
+          ],
+        }),
+      ),
+    ).toEqual([
+      {
+        field: "payers",
+        before: before.payers,
+        after: [
+          { userId: USER_A, amount: 4500 },
+          { userId: USER_B, amount: 4500 },
+        ],
+      },
+    ]);
+  });
+
+  it("alani tasimayan eski kayit ile tek satirlik yeni liste ayni sayilir", () => {
+    expect(
+      diffExpenses(expense(), expense({ payers: [{ userId: USER_A, amount: 9000 }] })),
+    ).toEqual([]);
   });
 
   // Tarih iki bicimde dolasiyor: sunucudan JSON'a cikarken tam ISO oluyor,

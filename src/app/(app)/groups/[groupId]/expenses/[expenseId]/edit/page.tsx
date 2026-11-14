@@ -61,6 +61,9 @@ export default async function EditExpensePage({
           description: expense.description,
           amount: expense.amount,
           paidById: expense.paidById,
+          // Odeyenler (ADR-067): form ana odeyeni ilk satira, digerlerini
+          // tutarlariyla alt satirlara diziyor.
+          payers: expense.payers,
           category: expense.category,
           splitType: expense.splitType,
           expenseDate: expense.expenseDate.toISOString().slice(0, 10),

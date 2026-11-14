@@ -468,8 +468,8 @@ async function assertBalanceIsSettled(
     tx.expense.findMany({
       where: { groupId, deletedAt: null },
       select: {
-        paidById: true,
-        amount: true,
+        // Odenen, odeyen tablosundan (ADR-067) - paidById "ana odeyen".
+        payers: { select: { userId: true, amount: true } },
         participants: { select: { userId: true, shareAmount: true } },
       },
     }),

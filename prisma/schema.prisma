@@ -201,6 +201,7 @@ model User {
   expensesDeleted Expense[] @relation("deletedBy")
 
   expenseParticipations ExpenseParticipant[]
+  payerShares           ExpensePayer[]       @relation("expensePayerUser")
 
   // User <-> Settlement arasinda DORT ayri iliski var
   settlementsSent      Settlement[] @relation("fromUser")
@@ -288,6 +289,15 @@ model GroupMember {
 model Expense {
   id              String          @id @default(uuid()) @db.Uuid
   groupId         String          @db.Uuid
+  /// ANA ODEYEN - bakiye BUNDAN OKUNMUYOR (ADR-067). Kim ne kadar odedi
+  /// sorusunun cevabi `payers` (ExpensePayer). Bu alan onlarin en cok
+  /// odeyeni; esitlikte istemcinin gonderdigi sirada ilki. Ayni islemde
+  /// yaziliyor ve bir veritabani tetikleyicisi bu kisinin odeyenlerden
+  /// biri oldugunu denetliyor.
+  ///
+  /// NEDEN DURUYOR: magazadaki eski mobil surumler (1.0.7) yalnizca bu
+  /// alani okuyup yaziyor. Ayrica tek odeyenli harcamalarda - yani
+  /// neredeyse hepsinde - listede "X odedi" icin ek bir okuma gerekmiyor.
   paidById        String          @db.Uuid
   createdById     String          @db.Uuid
   deletedById     String?         @db.Uuid
@@ -336,6 +346,7 @@ model Expense {
   createdBy    User                 @relation("createdBy", fields: [createdById], references: [id], onDelete: Restrict)
   deletedBy    User?                @relation("deletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
   participants ExpenseParticipant[]
+  payers       ExpensePayer[]
   edits        ExpenseEdit[]
   receipt      ExpenseReceipt?
   comments     ExpenseComment[]
@@ -378,6 +389,39 @@ model ExpenseParticipant {
 
   @@unique([expenseId, userId])
   @@index([expenseId])
+  @@index([userId])
+}
+
+/// Kim ne kadar ODEDI (ADR-067). ExpenseParticipant'in ikizi: o "kim ne
+/// kadar borclandi" sorusunu cevapliyor, bu "kim ne kadar odedi".
+///
+/// Her harcamanin EN AZ BIR satiri var - tek odeyenli harcamada da. "Tek
+/// odeyen = satir yok, paidById'ye bak" demek, bakiyeyi iki ayri yoldan
+/// toplamak olurdu; tek yol bu tablo.
+///
+/// Odeyen bolusumde olmak ZORUNDA DEGIL (bugunku kural korunuyor): bir
+/// arkadasinin yerine odeyip hic pay almayan kisi burada satirli,
+/// ExpenseParticipant'ta satirsiz.
+model ExpensePayer {
+  id        String   @id @default(uuid()) @db.Uuid
+  expenseId String   @db.Uuid
+  userId    String   @db.Uuid
+  /// Bu kisinin odedigi kisim, kurus cinsinden.
+  amount    Int
+  createdAt DateTime @default(now())
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  user    User    @relation("expensePayerUser", fields: [userId], references: [id], onDelete: Restrict)
+
+  // NOT (custom SQL migration - 20261113195333_add_expense_payer):
+  //   CHECK (amount > 0) - sifir odeyen, odeyen degil.
+  //   SUM(amount) WHERE expenseId = X, Expense.amount'a HER ZAMAN esit.
+  //   Expense.paidById bu harcamanin odeyenlerinden biri olmali.
+  //   Ikisi de ertelenmis tetikleyiciyle COMMIT aninda denetleniyor.
+
+  // expenseId ile baslayan benzersiz indeks, harcamaya gore aramayi da
+  // karsiliyor; ayrica bir [expenseId] indeksi gerekmiyor.
+  @@unique([expenseId, userId])
   @@index([userId])
 }
 

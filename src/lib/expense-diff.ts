@@ -32,6 +32,12 @@ export type ExpenseComparable = {
   splitType: ExpenseSplitTypeValue;
   expenseDate: string;
   paidById: string;
+  /**
+   * Kim ne kadar odedi (ADR-067). OPSIYONEL: bu alan gelmeden onceki
+   * istemci tipleri ve sunucu cevaplari onu tasimiyordu. Yoksa tek odeyen
+   * (paidById) ve tutarin tamami sayiliyor - o gunlerin tek gercegi buydu.
+   */
+  payers?: { userId: string; amount: number }[];
   participants: {
     userId: string;
     shareAmount: number;
@@ -51,7 +57,16 @@ export type ExpenseChange =
   | { field: "category"; before: string; after: string }
   | { field: "splitType"; before: ExpenseSplitTypeValue; after: ExpenseSplitTypeValue }
   | { field: "expenseDate"; before: string; after: string }
-  | { field: "paidById"; before: string; after: string }
+  /**
+   * ODEYENLER (ADR-067) - eski "paidById" farkinin yerini aldi. Ana
+   * odeyen ayrica raporlanmiyor: o, listenin bir sonucu; iki kez yazmak
+   * ayni degisikligi iki satirda soylemek olurdu.
+   */
+  | {
+      field: "payers";
+      before: { userId: string; amount: number }[];
+      after: { userId: string; amount: number }[];
+    }
   | {
       field: "participants";
       addedUserIds: string[];
@@ -59,6 +74,33 @@ export type ExpenseChange =
       /** Ayni kisiler duruyor ama paylari (ya da yuzdeleri) degismis. */
       sharesChanged: boolean;
     };
+
+/** Odeyen listesi; alani tasimayan kayitta tek odeyen, tutarin tamami. */
+function payersOf(expense: ExpenseComparable): { userId: string; amount: number }[] {
+  return expense.payers ?? [{ userId: expense.paidById, amount: expense.amount }];
+}
+
+/**
+ * Sira farki degisiklik sayilmiyor: kisi kisi ve tutar tutar ayni mi.
+ *
+ * IKI TARAF DA TEK ODEYENLIYSE yalnizca KISIYE bakiliyor. Tek odeyen her
+ * zaman tutarin tamamini odemis; tutar degistiyse o zaten "amount" farki
+ * olarak raporlaniyor. Burada da saysaydik ayni degisiklik "Odeyen: Ayse
+ * -> Ayse" diye ikinci, anlamsiz bir satir uretirdi.
+ */
+function samePayers(
+  before: { userId: string; amount: number }[],
+  after: { userId: string; amount: number }[],
+): boolean {
+  if (before.length !== after.length) {
+    return false;
+  }
+  if (before.length === 1) {
+    return before[0].userId === after[0].userId;
+  }
+  const afterById = new Map(after.map((payer) => [payer.userId, payer.amount]));
+  return before.every((payer) => afterById.get(payer.userId) === payer.amount);
+}
 
 /** "2026-08-05T00:00:00.000Z" ve "2026-08-05" ayni gundur. */
 function normalizeDate(value: string): string {
@@ -132,8 +174,10 @@ export function diffExpenses(
   if (before.amount !== after.amount) {
     changes.push({ field: "amount", before: before.amount, after: after.amount });
   }
-  if (before.paidById !== after.paidById) {
-    changes.push({ field: "paidById", before: before.paidById, after: after.paidById });
+  const payersBefore = payersOf(before);
+  const payersAfter = payersOf(after);
+  if (!samePayers(payersBefore, payersAfter)) {
+    changes.push({ field: "payers", before: payersBefore, after: payersAfter });
   }
   if (before.category !== after.category) {
     changes.push({ field: "category", before: before.category, after: after.category });

@@ -493,4 +493,100 @@ test.describe("harcamalar", () => {
     await expect(page.getByLabel("Ne aldın?")).toHaveValue("Bozuk tutar");
     await expect(page.getByLabel("Ne kadar?")).toHaveValue("abc");
   });
+
+  /**
+   * BIRDEN FAZLA ODEYEN (ADR-067). Uc iddia, uc katman:
+   *   - Bakiye ODEYENLER tablosundan okunuyor: 100'u 30/70 odeyip esit
+   *     bolen iki kiside 70 odeyen 20 alacakli. paidById'den okunsaydi
+   *     tamamini o odemis sayilir, 50 alacakli gorunurdu.
+   *   - Ilk satirin tutari GIRILMIYOR: "kalan" olarak hesaplaniyor.
+   *   - Eski govde (yalnizca paidById) cok odeyenli bir harcamayi
+   *     ezemiyor: magazadaki 1.0.7 onu tek odeyene cevirirdi.
+   */
+  test("iki kisi odeyen harcama bakiyeye dogru yansir, eski govde onu ezemez", async ({
+    browser,
+  }) => {
+    const owner = await pageAs(browser, "owner");
+    const member = await pageAs(browser, "member");
+    const groupName = uniqueGroupName("iki-odeyen");
+
+    await createGroupAndOpen(owner, groupName);
+    const groupId = new URL(owner.url()).pathname.split("/")[2];
+    const inviteLink = await createInviteLink(owner, groupName);
+    await joinViaInvite(member, inviteLink, groupName);
+
+    await openGroup(owner, groupName);
+    await owner.getByRole("link", { name: "Harcama ekle" }).click();
+    await owner.getByLabel("Açıklama").fill("Iki odeyenli yemek");
+    await owner.getByLabel("Tutar").fill("100");
+
+    // Tek odeyenken tekrarlama sunuluyor...
+    const repeat = owner.getByRole("checkbox", { name: "Bunu tekrarla" });
+    await expect(repeat).toBeVisible();
+
+    // Ikinci satir bos olan ilk uyeyle aciliyor: owner zaten ilk satirda.
+    await owner.getByRole("button", { name: "Başka ödeyen ekle" }).click();
+    await owner.getByLabel("testuser2 ödediği tutar").fill("70");
+
+    // Ilk satir HESAPLANIYOR - kimse 30 yazmadi.
+    await expect(owner.locator('[data-slot="payer-rest"]')).toHaveText("30,00 ₺");
+
+    // ...ikinci odeyen varken sunulmuyor (sablon tek odeyenli, S3).
+    await expect(repeat).toBeHidden();
+
+    await owner.getByRole("button", { name: "Harcamayı kaydet" }).click();
+    await expect(owner.getByText("Iki odeyenli yemek")).toBeVisible();
+
+    // owner: 30 odedi, payi 50 -> 20 borclu. member: 70 odedi, payi 50 -> 20 alacakli.
+    await expect(owner.getByText("Bu tutarı borçlusun")).toBeVisible();
+    await expect(owner.getByText("20,00 ₺").first()).toBeVisible();
+    // Ana odeyen daha cok odeyen: satirda once o.
+    await expect(owner.getByText(/testuser2 ve testuser1 ödedi/)).toBeVisible();
+
+    await openGroup(member, groupName);
+    await expect(member.getByText("Bu tutar sana borçlu")).toBeVisible();
+
+    // Duzenleme formu dagilimi geri getiriyor: ana odeyen (member) ilk
+    // satirda kalan olarak, owner'in 30'u ikinci satirda.
+    await owner.getByRole("link", { name: "Düzenle" }).first().click();
+    // Tam sayi tutar alana kurussuz yaziliyor (formatMoneyForInput).
+    await expect(owner.getByLabel("testuser1 ödediği tutar")).toHaveValue("30");
+    await expect(owner.locator('[data-slot="payer-rest"]')).toHaveText("70,00 ₺");
+
+    // --- Eski govde: magazadaki 1.0.7'nin gonderdigi sekil ---
+    const list = await owner.request.get(`/api/v1/groups/${groupId}/expenses`);
+    const { expenses } = (await list.json()) as {
+      expenses: {
+        id: string;
+        description: string;
+        paidById: string;
+        version: number;
+        payers: { userId: string; amount: number }[];
+        participants: { userId: string }[];
+      }[];
+    };
+    const expense = expenses.find((item) => item.description === "Iki odeyenli yemek");
+    expect(expense).toBeTruthy();
+    expect(expense!.payers.map((payer) => payer.amount).sort((a, b) => a - b)).toEqual([
+      3000, 7000,
+    ]);
+
+    const legacy = await owner.request.put(`/api/v1/groups/${groupId}/expenses/${expense!.id}`, {
+      data: {
+        splitType: "EQUAL",
+        description: "Iki odeyenli yemek",
+        amount: 10000,
+        paidById: expense!.paidById,
+        participantUserIds: expense!.participants.map((participant) => participant.userId),
+        version: expense!.version,
+      },
+    });
+    expect(legacy.status()).toBe(409);
+    expect(await legacy.json()).toMatchObject({ ok: false, code: "expense.multiple_payers" });
+
+    // Ve hicbir sey degismedi: bakiye ayni.
+    await openGroup(owner, groupName);
+    await expect(owner.getByText("Bu tutarı borçlusun")).toBeVisible();
+    await expect(owner.getByText("20,00 ₺").first()).toBeVisible();
+  });
 });

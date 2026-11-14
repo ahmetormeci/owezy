@@ -8,6 +8,34 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-13 — Birden fazla ödeyen: sunucu ve web
+
+"Hesabı ikimiz ödedik" artık tek harcama olarak kaydediliyor (ADR-067).
+Formda "Başka ödeyen ekle" bağlantısı var. İkinci ödeyen eklenince ilk
+satırın tutarı kendiliğinden "kalan" olarak hesaplanıyor; kimse toplamı
+elle tutturmak zorunda değil. Bakiyeler artık yeni `ExpensePayer`
+tablosundan okunuyor; `Expense.paidById` en çok ödeyeni gösteren bir ayna
+olarak kalıyor, çünkü mağazadaki 1.0.7 onu okuyor.
+
+- **Liste:** "Ayşe ve Can ödedi", üç ve fazlasında "Ayşe ve 2 kişi ödedi".
+  CSV'de "Ayşe 800,00 + Can 400,00".
+- **Eski uygulama:** 1.0.7 çok ödeyenli bir harcamayı görür (yalnızca ana
+  ödeyenin adıyla; bakiyeler doğru) ama düzenleyemez: sunucu
+  `expense.multiple_payers` ile reddediyor. Kabul etseydi diğer
+  ödeyenlerin payı sessizce silinirdi.
+- **Veritabanı:** ödeyen toplamı = tutar ve ana ödeyen ödeyenlerden biri,
+  commit anında denetleniyor. Yeni bir tetikleyici `Expense.amount`
+  değişince payların toplamını da denetliyor — eski tetikleyici bunu
+  kaçırıyordu. Mevcut harcamalar göçte birer ödeyen satırı aldı.
+- **Bildirimler** ödeyenlere de gidiyor.
+- **Tekrarlayan harcamalar** tek ödeyenli kalıyor; ikinci ödeyen varken
+  "Bunu tekrarla" görünmüyor. Aynı koşul, kutu işaretliyken kalem kalem
+  bölüşüme geçince kaydın yanlış uca gitmesini de düzeltti.
+
+Mobil uygulama bir sonraki adım; telefonlara yeni iOS build'iyle çıkar.
+
+---
+
 ## 2026-11-13 — Beş Expo SDK 57 yaması; liste tazeleme commit'lendi
 
 Liste tazeleme `a3d76a8` olarak commit'lendi. Aynı build'e girsin diye Expo

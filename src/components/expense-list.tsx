@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ApiClientError, apiRequest } from "@/lib/api-client";
 import { formatMoney } from "@/lib/money";
+import { payerLine } from "@/lib/payers";
 import { formatDate, formatMonth } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES, EXPENSE_CATEGORY_OPTIONS } from "@/lib/expense-labels";
 import {
@@ -40,7 +41,13 @@ export type ExpenseListItem = {
   amount: number;
   category: ExpenseCategory;
   expenseDate: string;
+  /** Ana odeyen (ADR-067). */
   paidById: string;
+  /**
+   * Kim ne kadar odedi. Opsiyonel: bu alandan once uretilmis bir cevapta
+   * yoksa satir tek odeyenli gibi cizilir (paidById).
+   */
+  payers?: { userId: string; amount: number }[];
   createdById: string;
   participants: { userId: string; shareAmount: number }[];
   /** Optimistic locking sayaci (ADR-032). Silme istegiyle birlikte gidiyor. */
@@ -591,9 +598,14 @@ export function ExpenseList({
     return {
       date: formatDate(new Date(expense.expenseDate), locale),
       category: t(EXPENSE_CATEGORY_CODES[expense.category]),
-      payer: t("ui.paid_by", {
-        name: displayNameForLine(nameByUserId[expense.paidById] ?? t("ui.unknown_user")),
-      }),
+      // "Ayse odedi" / "Ayse ve Can odedi" / "Ayse ve 2 kisi odedi" -
+      // cumle mobille ayni yerden kuruluyor (payers.ts).
+      payer: payerLine(
+        expense.payers ?? [],
+        expense.paidById,
+        (userId) => displayNameForLine(nameByUserId[userId] ?? t("ui.unknown_user")),
+        t,
+      ),
     };
   }
 

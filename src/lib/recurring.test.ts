@@ -20,6 +20,7 @@ const { mockPrisma, mockTx } = vi.hoisted(() => {
     recurringExpense: { updateMany: vi.fn(), create: vi.fn() },
     expense: { create: vi.fn() },
     expenseParticipant: { createMany: vi.fn() },
+    expensePayer: { create: vi.fn() },
     group: { findUnique: vi.fn() },
     groupMember: { findMany: vi.fn() },
   };
@@ -149,6 +150,19 @@ describe("uretim", () => {
     const rows = mockTx.expenseParticipant.createMany.mock.calls[0][0].data;
     expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({ userId: USER, shareAmount: 250000 });
+  });
+
+  it("TEK bir odeyen satiri yaziliyor: sablonun odeyeni, tutarin tamami (ADR-067)", async () => {
+    // Bakiyeler artik ExpensePayer'dan okunuyor. Bu satir yazilmasaydi
+    // uretilen harcama "kimse odemedi" sayilir ve veritabaninin ertelenmis
+    // tetikleyicisi commit'i reddederdi.
+    dueOnce();
+    await runDueRecurringExpenses(d("2026-09-10"));
+
+    expect(mockTx.expensePayer.create).toHaveBeenCalledTimes(1);
+    expect(mockTx.expensePayer.create).toHaveBeenCalledWith({
+      data: { expenseId: "e1", userId: USER, amount: 500000 },
+    });
   });
 
   it("bildirim EXPENSE_RECURRED ve olusturan HARIC herkese", async () => {

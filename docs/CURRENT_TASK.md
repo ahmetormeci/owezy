@@ -33,7 +33,40 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-13
 
 Current task:
-  IKI KOD COMMIT'I PUSH EDILDI (13 Kasim, kullanicinin istegiyle) - CI
+  BIRDEN FAZLA ODEYEN (ADR-067). Tasarim: artifact
+  https://claude.ai/artifact/P2N43hMBXgegW1zD9wcSxZ . Kullanici dort
+  soruya da onerileni secti (S1 ayri ExpensePayer tablosu + paidById "ana
+  odeyen" aynasi; S2 form yonu C, ilk satir kalani alir; S3 sablonlar tek
+  odeyenli; S4 eski govde cok odeyenliyi guncelleyemez -> 409
+  expense.multiple_payers). Ayrinti ADR-067, Faz 55a.
+
+  ADIM 1 - SUNUCU + WEB: BITTI, COMMIT EDILMEDI. Kullanici "commit"
+  deyince TEK kod commit'i (kod + docs) - push'tan once SOR (kod commit'i).
+    Gocu: prisma/migrations/20261113195333_add_expense_payer (gelistirme ve
+    E2E veritabanlarina UYGULANDI; production Vercel derlemesinde
+    `prisma migrate deploy` ile). Gelistirmede 69 harcama / 69 satir /
+    uyusmayan 0.
+    Dogrulama: kok tsc + lint temiz, 904 vitest; mobil tsc + lint temiz,
+    114 vitest + 154 jest; TAM E2E 74/74 (21 dk, olagan). Gocte E2E
+    veritabani bir kez P1001 verdi, ikinci denemede baglandi. Dort negatif
+    kontrol ADR-067'de.
+
+  ADIM 2 - MOBIL (Faz 55b, ayri commit), SIRADAKI:
+    - new.tsx ve [expenseId].tsx: yon C odeyen satirlari, `payers` gonder
+      (src/lib/payers.ts: payerRemainder, primaryPayerId, orderPayers).
+      Mobil formda tek odeyen + "Baska odeyen ekle"; ikinci odeyen varken
+      tekrarla YOK. Kontrolsuz metin alanlari (ADR-061, StableTextInput).
+    - [expenseId].tsx'te su an yalnizca derleme duzeltmesi var: cakisma
+      diyalogu "payers" farkini describePayers ile yaziyor.
+    - Grup listesi (index.tsx): payerLine + payin rengi NET isaretine gore
+      (odedigim - payim). Tek odeyende sonuc bugunkuyle ayni.
+    - Simulatorde dogrulama (asagidaki GIRISLI KONTROL tarifi), sonra
+      commit. iOS BUILD ALMADAN ONCE SOR.
+  1.0.7 (magazada) cok odeyenli harcamayi yalnizca ana odeyenin adiyla
+  gosterir (bakiyeler dogru) ve duzenlemeye calisirsa ham kod
+  "expense.multiple_payers" gorur - bilinen ve kabul edilen bedel.
+
+  ONCEKI: IKI KOD COMMIT'I PUSH EDILDI (13 Kasim, kullanicinin istegiyle) - CI
   43492010771 success, Production 2026-11-13 19:26:00Z success. CI'daki
   Expo yamasi uyarisi KALKTI (kalan tek uyari Ubuntu 26 notu).
     a3d76a8  mobilde liste tazeleme (ADR-066, asagida)
@@ -225,7 +258,7 @@ ADR-066 liste tazeleme (a3d76a8) + 13 Kasim Expo yamalari.
 
 AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):
   - MISAFIR (ADR-057): isGuest isaretli, tek gruba bagli User; giris
-    YAPAMAZ. Sahiplenme GUEST_REFERENCE_POLICY'den (28 User alani).
+    YAPAMAZ. Sahiplenme GUEST_REFERENCE_POLICY'den (29 User alani).
     YENI BIR TABLO User'a baglanirsa orada siniflanmali - yoksa
     guests.test.ts'teki sema testi duser. Onay SUNUCUDA (confirmGuestId).
   - IBAN (ADR-059): ortak gruptaki herkes goruyor; kayit bicimi tek
@@ -313,7 +346,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     basarisizken de 0 donuyor.
 
   E2E
-  - Tam kosu ~17-23 dk, 73 test, atlanan yok (2FA kopru testi 7 Kasim'da
+  - Tam kosu ~17-23 dk, 74 test (13 Kasim), atlanan yok (2FA kopru testi 7 Kasim'da
     kopruyle birlikte silindi).
     KOSU SURERKEN PROJE DOSYALARINA DOKUNMA. Sema degistiyse once
     npm run db:migrate:e2e. Tek seferlik kodlar veritabanindan okunuyor.
@@ -343,6 +376,17 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     E2E sunucusunun kendi CRON_SECRET'i playwright.config.ts webServer.env.
 
   WEB
+  - YENI GOC: npx prisma migrate dev --create-only, sonra migration.sql'de
+    "ALTER TABLE "Expense" ALTER COLUMN "descriptionFold" DROP DEFAULT;"
+    satirini SIL (uretilmis kolon - Prisma her seferinde sahte bir fark
+    goruyor). Gelistirme veritabanina "migrate dev" ile DEGIL
+    "npx prisma migrate deploy" ile uygula (sifirlama sorusu cikmaz).
+    E2E: npm run db:migrate:e2e - P1001 verirse Neon uyaniyordur, bir kez
+    daha dene.
+  - LINT "preserve-manual-memoization" (React Compiler): useMemo'nun
+    bagimliligi olan bir degeri (parseMoney sonucu gibi) memo'dan ONCE bir
+    fonksiyona verme - derleyici duz sayi oldugunu bilmiyor, "degismis
+    olabilir" sayiyor. Hesabi memo'dan sonraya tasi (expense-form.tsx).
   - E2E YAVASSA ONCE MAKINEYE BAK: uptime + ps -A -o %cpu,comm | sort -rn.
     7 Kasim'da oyun acikti: ayni kod 71/2 dustu (60 sn butce), formu hic
     kullanmayan testler de 2-3 kat yavasladi. Dusen testi tek basina kostur;
@@ -453,10 +497,10 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     spec'in kendisi. Okuma: DesignSync get_file, dogrudan projectId ile
     (list_projects BOS doner).
 
-TESTLER - NE NEREDE (8 Kasim):
-  KOK      npm test                  851 birim (vitest, src/**)
+TESTLER - NE NEREDE (13 Kasim):
+  KOK      npm test                  904 birim (vitest, src/**)
   MOBIL    cd mobile && npm test      114 vitest + 154 jest
-  E2E      npm run test:e2e           73, ~17-23 dk
+  E2E      npm run test:e2e           74, ~17-23 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.
   Mobil testler KOKTEN kosmuyor: agacta iki ayri React kopyasi var.

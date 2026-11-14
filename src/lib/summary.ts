@@ -12,7 +12,8 @@ import { loadGroupTotals, type UserTotals } from "@/lib/balances";
 import { BASIS_POINTS_TOTAL } from "@/lib/split";
 
 export type ExpenseForSummary = {
-  paidById: string;
+  /** Kim ne kadar odedi (ADR-067) - tek odeyenli harcamada tek satir. */
+  payers: { userId: string; amount: number }[];
   amount: number;
   expenseDate: Date;
   category: ExpenseCategory;
@@ -174,8 +175,11 @@ export function calculateGroupSummary(
   for (const expense of expenses) {
     totalAmount += expense.amount;
 
-    if (expense.paidById === userId) {
-      mine.paid += expense.amount;
+    // Tutarin tamami degil, BENIM odedigim kisim (ADR-067).
+    for (const payer of expense.payers) {
+      if (payer.userId === userId) {
+        mine.paid += payer.amount;
+      }
     }
     for (const participant of expense.participants) {
       if (participant.userId === userId) {

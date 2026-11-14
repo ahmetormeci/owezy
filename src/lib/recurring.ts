@@ -469,6 +469,13 @@ async function claimAndCreate(
         })),
       });
 
+      // SABLON TEK ODEYENLI (ADR-067): tutarin tamamini paidById odedi.
+      // Bu satir yazilmasaydi Expense uzerindeki ertelenmis tetikleyici
+      // commit'i reddederdi - unutulmasi mumkun degil.
+      await tx.expensePayer.create({
+        data: { expenseId: expense.id, userId: template.paidById, amount: template.amount },
+      });
+
       /**
        * BILDIRIM KATILIMCILARA - sablonu kuran HARIC (createNotifications
        * actorId'yi eliyor). Kuran kisi zaten bu takvimi kendisi kurdu;

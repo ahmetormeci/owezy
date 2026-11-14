@@ -287,6 +287,7 @@ describe("claimGuest", () => {
         "Expense.paidById",
         "ExpenseItemShare.userId",
         "ExpenseParticipant.userId",
+        "ExpensePayer.userId",
         "GroupMember.userId",
         "RecurringExpense.paidById",
         "RecurringExpenseShare.userId",
@@ -395,7 +396,11 @@ describe("claimGuest", () => {
     expect(tx.expense.updateMany.mock.calls[0][0]).toEqual({
       where: {
         groupId: GROUP,
-        OR: [{ paidById: GUEST }, { participants: { some: { userId: GUEST } } }],
+        OR: [
+          { paidById: GUEST },
+          { payers: { some: { userId: GUEST } } },
+          { participants: { some: { userId: GUEST } } },
+        ],
       },
       data: { version: { increment: 1 } },
     });

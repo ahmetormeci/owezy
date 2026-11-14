@@ -178,6 +178,11 @@ export const MESSAGES_TR = {
   "expense.not_deleted": "Harcama zaten silinmemiş",
   "expense.participants_not_active": "Şu kullanıcılar grubun aktif üyesi değil: {userIds}",
   "expense.version_conflict": "Bu harcama sen düzenlerken başkası tarafından değiştirildi",
+  // ESKI ISTEMCI (yalnizca paidById gonderen) cok odeyenli bir harcamayi
+  // guncellemeye calisti (ADR-067). Kabul etseydik diger odeyenlerin
+  // payi sessizce silinirdi. Eski surum bu kodun cevirisini bilmiyor ve
+  // kodu oldugu gibi gosteriyor; yeni surumler bu metni gosterir.
+  "expense.multiple_payers": "Bu harcamada birden fazla ödeyen var. Düzenlemek için uygulamayı güncelle.",
 
   // --- Odeme kaydi ---
   "settlement.not_found": "Ödeme kaydı bulunamadı",
@@ -212,6 +217,13 @@ export const MESSAGES_TR = {
   "split.item_amount_invalid": "kalem tutarı pozitif bir tam sayı olmalıdır",
   "split.item_no_participants": "her kalemi en az bir kişi paylaşmalı",
   "split.failed": "Bölüşüm hesaplanamadı",
+
+  // --- Odeyenler (ADR-067). Teknik dilde: form bu durumlari kaydetmeden
+  // once kendisi yakaliyor, bu metinler API'yi dogrudan cagirana. ---
+  "payer.none": "en az bir ödeyen gerekli",
+  "payer.duplicate": "aynı ödeyen birden fazla kez belirtilemez: {userId}",
+  "payer.amount_invalid": "{userId} için ödenen tutar pozitif bir tam sayı olmalıdır",
+  "payer.sum_mismatch": "ödeyenlerin toplamı ({total}) amount'a ({amount}) eşit değil",
 
   // --- Dogrulama (Zod semalari bu kodlari mesaj olarak tasiyor) ---
   "validation.invalid": "Geçersiz istek",
@@ -743,6 +755,16 @@ export const MESSAGES_TR = {
   "ui.items_tip": "Bahşiş / servis",
   "ui.items_discount": "İndirim",
   "ui.each_item_amount_required": "Her kalem için geçerli bir tutar gir",
+  // --- Birden fazla odeyen (ADR-067) ---
+  "ui.payers": "Ödeyenler",
+  "ui.add_payer": "Başka ödeyen ekle",
+  "ui.remove_payer": "Ödeyeni çıkar",
+  // Ilk satirin hesaplanan tutarinin onundeki kucuk etiket: "kalan 800,00".
+  "ui.payer_remainder": "kalan",
+  "ui.payer_amount_label": "{name} ödediği tutar",
+  "ui.payer_person_label": "{index}. ödeyen",
+  "ui.each_payer_amount_required": "Her ödeyen için geçerli bir tutar gir",
+  "ui.payers_exceed": "Diğer ödeyenler tutarın tamamını karşılıyor; ilk ödeyene kalan yok.",
   "ui.each_item_description_required": "Her kaleme bir ad ver",
   /**
    * FORMDAKI ACIKLAMA. Bahsisin/indirimin nasil dagildigini kullanici
@@ -758,6 +780,8 @@ export const MESSAGES_TR = {
   // kelime sirasi ters ("paid by X"), yani parca birlestirmek ceviriyi bozar.
   // Butun cumle olarak duruyorlar.
   "ui.paid_by": "{name} ödedi",
+  "ui.paid_by_two": "{first} ve {second} ödedi",
+  "ui.paid_by_many": "{first} ve {count} kişi ödedi",
   "ui.your_share_amount": "senin payın {amount}",
   // E2E bu etiketleri secici olarak kullaniyor: input[aria-label$="tutarı"].
   "ui.participant_amount_label": "{name} tutarı",
@@ -1116,6 +1140,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "expense.participants_not_active":
     "These users are not active members of the group: {userIds}",
   "expense.version_conflict": "Someone else changed this expense while you were editing it",
+  "expense.multiple_payers": "This expense has more than one payer. Update the app to edit it.",
 
   // --- Settlement ---
   "settlement.not_found": "Settlement not found",
@@ -1147,6 +1172,12 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "split.item_amount_invalid": "an item amount must be a positive integer",
   "split.item_no_participants": "each item needs at least one person",
   "split.failed": "The split could not be calculated",
+
+  // --- Payers (ADR-067) ---
+  "payer.none": "at least one payer is required",
+  "payer.duplicate": "the same payer cannot be listed twice: {userId}",
+  "payer.amount_invalid": "the amount paid by {userId} must be a positive integer",
+  "payer.sum_mismatch": "the payers ({total}) do not add up to amount ({amount})",
 
   // --- Validation (Zod schemas carry these codes as messages) ---
   "validation.invalid": "Invalid request",
@@ -1545,6 +1576,14 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.items_total": "Items total",
   "ui.items_tip": "Tip / service",
   "ui.items_discount": "Discount",
+  "ui.payers": "Paid by",
+  "ui.add_payer": "Add another payer",
+  "ui.remove_payer": "Remove payer",
+  "ui.payer_remainder": "rest",
+  "ui.payer_amount_label": "Amount paid by {name}",
+  "ui.payer_person_label": "Payer {index}",
+  "ui.each_payer_amount_required": "Enter a valid amount for each payer",
+  "ui.payers_exceed": "The other payers already cover the whole amount; nothing is left for the first payer.",
   "ui.each_item_amount_required": "Enter a valid amount for each item",
   "ui.each_item_description_required": "Give each item a name",
   "ui.items_hint":
@@ -1555,6 +1594,8 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   // Kelime sirasi Turkcenin tersi - bu ikisinin butun cumle olarak
   // tutulmasinin sebebi tam olarak bu.
   "ui.paid_by": "paid by {name}",
+  "ui.paid_by_two": "paid by {first} and {second}",
+  "ui.paid_by_many": "paid by {first} and {count} others",
   "ui.your_share_amount": "your share {amount}",
   "ui.participant_amount_label": "{name} amount",
   "ui.participant_percentage_label": "{name} percentage",

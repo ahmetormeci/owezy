@@ -193,7 +193,8 @@ async function commentRecipients(
   const expense = await tx.expense.findUniqueOrThrow({
     where: { id: expenseId },
     select: {
-      paidById: true,
+      // Ana odeyen degil, BUTUN odeyenler (ADR-067).
+      payers: { select: { userId: true } },
       createdById: true,
       participants: { select: { userId: true } },
     },
@@ -206,7 +207,7 @@ async function commentRecipients(
   });
 
   return [
-    expense.paidById,
+    ...expense.payers.map((payer) => payer.userId),
     expense.createdById,
     ...expense.participants.map((participant) => participant.userId),
     ...commenters.map((commenter) => commenter.userId),

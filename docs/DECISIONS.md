@@ -530,6 +530,121 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 
 ---
 
+## ADR-067 — Birden fazla ödeyen: ayrı `ExpensePayer` tablosu, `paidById` "ana ödeyen" aynası; eski gövde çok ödeyenli harcamayı ezemez
+**Tarih:** 2026-11-13 · **Durum:** Kabul edildi · **UYGULANDI: sunucu + web 2026-11-13 (kodda); mobil sonraki adım**
+
+**Bağlam:** "Hesabı ikimiz ödedik" durumu kaydedilemiyordu: `Expense.paidById`
+tek bir alan, bakiye de "ödediği" tarafını oradan ve `amount`'tan okuyordu.
+İki kişi ödediyse kullanıcı ya harcamayı ikiye bölüyor ya da birini "tamamını
+ödedi" sayıp sonra bir ödeme kaydıyla düzeltiyordu. Sıradaki adaylar
+listesindeydi; kullanıcı 13 Kasım'da tasarım istedi.
+
+**Kararlar** (kullanıcı dört sorunun dördünde de önerileni seçti):
+
+1. **Ayrı tablo** `ExpensePayer` (`expenseId`, `userId`, `amount`;
+   `@@unique([expenseId, userId])`, CHECK `amount > 0`, iki FK de
+   `Restrict`). Bakiye, özet, gruptan ayrılma denetimi ve yorum alıcıları
+   artık bu tablodan okuyor; bakiyede "ödediği" toplamı
+   `expensePayer.groupBy` ile veritabanında (ADR-025).
+2. **`Expense.paidById` KALIYOR, "ana ödeyen" aynası olarak:** en çok
+   ödeyen, eşitlikte istekteki listede ilk sıradaki (`primaryPayerId`).
+   Ödeyen satırlarıyla **aynı işlemde** yazılıyor. Bakiye onu **okumuyor**.
+   Kalma sebebi: mağazadaki 1.0.7 "X ödedi"yi oradan okuyor; satıra tek ad
+   sığıyorsa en az yanıltan ad en çok ödeyeninki. Kaldırmak eski istemciyi
+   kırardı.
+3. **Veritabanı iki kuralı da commit anında denetliyor**
+   (`DEFERRABLE INITIALLY DEFERRED`):
+   - `trg_expense_payer_sum_check` (`ExpensePayer` üzerinde): ödeyenlerin
+     toplamı = `Expense.amount` **ve** `paidById` ödeyenlerden biri.
+   - `trg_expense_totals_check` (`Expense` üzerinde, `INSERT` ve
+     `UPDATE OF amount, paidById`): payların toplamı ve ödeyenler. Bu,
+     init'teki pay tetikleyicisinin bilinen boşluğunu da kapattı: o yalnızca
+     `ExpenseParticipant` değişince çalışıyordu, `amount` tek başına
+     değişirse çalışmıyordu. Artık paysız ya da ödeyensiz bir harcama
+     commit edilemiyor.
+4. **Veri göçü:** mevcut her harcamaya (silinmişler dahil) bir satır
+   kopyalandı — `paidById`, `amount`. Geliştirme veritabanında 69 harcama,
+   69 satır, uyuşmayan 0. Production'da göç Vercel derlemesinde
+   (`prisma migrate deploy`) çalışır; tetikleyiciler göçün sonunda kurulduğu
+   için kopya kendi kuralına takılmıyor.
+5. **API iki gövde biçimini de kabul ediyor:**
+   - `payers: [{ userId, amount }]` — yeni istemciler. Web tek ödeyende de
+     tek satırlık liste gönderiyor.
+   - `paidById` — eski biçim: 1.0.7, fişin üstündeki hızlı giriş satırı
+     (orada ödeyen hep "sen"), tekrarlayan şablonlar.
+   İkisi birden ya da hiçbiri 400 (`expenseBodySchema` → `superRefine`).
+   Toplamın tutara eşitliği, aynı kişinin iki kez yazılması ve sıfır/kesirli
+   tutar servis katmanında kendi kodlarıyla reddediliyor (`payer.*`,
+   `src/lib/payers.ts`) — mobil form da aynı kuralı oradan okuyacak.
+6. **Eski gövde çok ödeyenli harcamayı güncelleyemez (S4):**
+   `payers` gelmeden ve kayıtta birden fazla ödeyen varken
+   `ConflictError("expense.multiple_payers")` (409). Kabul edilseydi 1.0.7
+   diğer ödeyenlerin payını **sessizce silip** bakiyeleri değiştirirdi.
+   **Bedeli:** 1.0.7 bu kodun çevirisini bilmiyor, ekranda ham kod görünür.
+   409 olması 1.0.7'de çakışma diyaloğunu açmıyor: istemciler çakışmayı
+   koddan (`expense.version_conflict`) tanıyor, durumdan değil.
+7. **Form yönü C (S2):** tek ödeyende eski seçici + küçük "Başka ödeyen
+   ekle" bağlantısı. İkinci ödeyen eklenince tam genişlikte bir "Ödeyenler"
+   bloğu açılıyor; **ilk satırın tutarı girilmiyor**, "kalan" olarak
+   hesaplanıyor (`payerRemainder`). Toplam tutmazlığı böylece neredeyse
+   imkânsız; canlı gösterilen tek hata "diğerleri tutarı dolduruyor".
+8. **Tekrarlayan şablonlar tek ödeyenli (S3):** ayrım tipte —
+   `templateExpenseBodySchema` yalnızca `paidById` kabul ediyor. Formda
+   ikinci ödeyen varken "Bunu tekrarla" görünmüyor (`canRepeat`). Bu koşul
+   gizli bir hatayı da kapattı: kutu işaretliyken kalem kalem bölüşüme geçen
+   birinin kaydı şablon ucuna gidip reddediliyordu.
+9. **Bildirimler ödeyenlere de gidiyor** (ekleme, güncelleme, silme;
+   güncellemede eski ve yeni ödeyenler). Bölüşümde olmayan tek ödeyenin
+   haber almaması eskiden de olan bir boşluktu; kapandı. Yorum bildirimleri
+   bütün ödeyenlere genişledi.
+10. **Gösterim tek yerde** (`src/lib/payers.ts`, saf, mobil de import
+    ediyor — ADR-042): liste satırı "Ayşe ödedi" / "Ayşe ve Can ödedi" /
+    "Ayşe ve 2 kişi ödedi" (`payerLine`; üç kalıp sözlükte bütün cümle,
+    İngilizcede kelime sırası ters). CSV'de "Ayşe 800,00 + Can 400,00"
+    (`describePayers`).
+11. **Çakışma uyarısı** (`expense-diff`): `paidById` farkının yerini
+    `payers` farkı aldı. Sıra farkı değişiklik sayılmıyor; iki taraf da tek
+    ödeyenliyse yalnızca kişiye bakılıyor (tutar zaten ayrı satır). Alanı
+    taşımayan eski cevaplar `paidById` + `amount`'tan okunuyor.
+12. **Misafir sahiplenme:** `ExpensePayer.userId` "move" (taşınan alanlar
+    9); sürüm sayacı misafirin ödeyen olduğu harcamalarda da artıyor.
+    Sahiplenen kişi zaten grupta olamadığı için (`guest.claim_already_member`)
+    aynı harcamada iki ödeyen satırının çakışması mümkün değil.
+13. **Mobil (sonraki adım):** aynı form yönü; listede payın rengi "net"
+    işaretine bakacak (ödediğim − payım). Tek ödeyende sonuç bugünküyle aynı.
+
+**Alternatifler:** `Expense`'e JSON kolon (toplam veritabanında
+denetlenemez, `groupBy` olmaz); `paidById`'yi kaldırmak (1.0.7 kırılır);
+eski gövdeyi çok ödeyenli harcamada kabul edip tek ödeyene çevirmek (sessiz
+veri kaybı); formda her satıra tutar yazdırmak (tasarımdaki A/B yönleri —
+toplam tutmazlığı sık ve her seferinde hesap makinesi); şablonlara da ödeyen
+tablosu (ilk sürüm için kimsenin istemediği bir yetenek, iki tablo daha).
+
+**Yan bulgu — React Compiler:** formda ödeyen hesapları önizleme
+`useMemo`'sundan **önce** durunca lint `preserve-manual-memoization` ile
+düştü: derleyici `parseMoney`'den dönen `amount`'un düz sayı olduğunu
+bilmiyor ve onu bir fonksiyona veren satırı "değiştirebilir" sayıyor. Blok
+memo'dan sonraya taşındı (yorumu dosyada); sonuç değişmiyor, önizleme bu
+değerleri kullanmıyor.
+
+**Test:** `src/lib/payers.test.ts` (yeni), `src/lib/expense-schemas.test.ts`
+(yeni: iki biçim, ikisi birden/hiçbiri, şablon `payers` kabul etmiyor),
+`expenses.test.ts` (+10, "birden fazla odeyen"), `balances.test.ts` (+2),
+`summary.test.ts` (+1), `expense-diff.test.ts` (+3), `recurring.test.ts`
+(+1, üretilen harcamaya ödeyen satırı), harcama POST route testi (+2),
+`e2e/expenses.spec.ts` (+1: 30/70 ödenen 100 ₺'de bakiye ±20, "kalan"
+satırı, liste satırı, düzenleme formu, eski gövdeyle PUT → 409 ve bakiye
+değişmiyor).
+
+**Negatif kontroller:** eski gövde koruması kaldırılınca, eşitlikte "ilk
+sıradaki" kuralı ters çevrilince (iki test), bildirim alıcılarından ödeyenler
+çıkarılınca ve şablon üretiminde ödeyen satırı yazılmayınca ilgili testler
+düştü. Web 904 vitest, mobil 114 vitest + 154 jest, tam E2E 74/74 (21 dk,
+tekrar denenen test yok). E2E veritabanı göç sırasında bir kez `P1001`
+("sunucuya ulaşılamıyor") verdi, ikinci denemede bağlandı.
+
+---
+
 ## ADR-066 — Mobilde liste tazeleme: öne gelince, açıkken bildirim gelince, aşağı çekince; başarısız tazeleme veriyi silmez
 **Tarih:** 2026-11-08 · **Durum:** Kabul edildi · **UYGULANDI: 2026-11-08 (kodda; mağazaya yeni iOS build'iyle çıkar)**
 

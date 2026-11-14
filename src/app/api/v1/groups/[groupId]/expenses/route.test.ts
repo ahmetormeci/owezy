@@ -107,6 +107,43 @@ describe("POST /api/v1/groups/[groupId]/expenses", () => {
     expect(mockCreateExpense).toHaveBeenCalledWith(USER_ID, GROUP_ID, body);
   });
 
+  it("payers listesi createExpense'e AYNEN ulasiyor (ADR-067)", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+    mockCreateExpense.mockResolvedValue({ id: "expense-1", participants: [] });
+
+    const body = {
+      splitType: "EQUAL",
+      description: "Aksam yemegi",
+      amount: 10000,
+      payers: [
+        { userId: USER_ID, amount: 6000 },
+        { userId: PARTICIPANT_ID, amount: 4000 },
+      ],
+      participantUserIds: [USER_ID, PARTICIPANT_ID],
+    };
+
+    const response = await callRoute(body);
+
+    expect(response.status).toBe(201);
+    expect(mockCreateExpense).toHaveBeenCalledWith(USER_ID, GROUP_ID, body);
+  });
+
+  it("paidById ve payers BIRLIKTE gelirse 400 ve servis cagrilmiyor", async () => {
+    mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
+
+    const response = await callRoute({
+      splitType: "EQUAL",
+      description: "Aksam yemegi",
+      amount: 10000,
+      paidById: USER_ID,
+      payers: [{ userId: USER_ID, amount: 10000 }],
+      participantUserIds: [USER_ID],
+    });
+
+    expect(response.status).toBe(400);
+    expect(mockCreateExpense).not.toHaveBeenCalled();
+  });
+
   it("body'de currency gonderilse bile Zod tarafindan elenir, createExpense'e ulasmaz", async () => {
     mockGetOrCreateCurrentUser.mockResolvedValue({ id: USER_ID });
     mockCreateExpense.mockResolvedValue({ id: "expense-2", participants: [] });

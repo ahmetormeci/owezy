@@ -178,6 +178,7 @@ export const GUEST_REFERENCE_POLICY = {
   "GroupMember.userId": "move",
   "Expense.paidById": "move",
   "ExpenseParticipant.userId": "move",
+  "ExpensePayer.userId": "move",
   "ExpenseItemShare.userId": "move",
   "Settlement.fromUserId": "move",
   "Settlement.toUserId": "move",
@@ -377,7 +378,11 @@ export async function claimGuest(
   await tx.expense.updateMany({
     where: {
       groupId,
-      OR: [{ paidById: guestId }, { participants: { some: { userId: guestId } } }],
+      OR: [
+        { paidById: guestId },
+        { payers: { some: { userId: guestId } } },
+        { participants: { some: { userId: guestId } } },
+      ],
     },
     data: { version: { increment: 1 } },
   });

@@ -20,6 +20,8 @@ const { mockTx } = vi.hoisted(() => ({
       findUniqueOrThrow: vi.fn(),
     },
     expenseParticipant: { createMany: vi.fn(), deleteMany: vi.fn() },
+    // Odeyenler (ADR-067): paylarla ayni desen - tam degistirme.
+    expensePayer: { createMany: vi.fn(), deleteMany: vi.fn() },
     // Kalemler (ADR-052). deleteMany KOSULSUZ cagriliyor - tur degistiren
     // bir harcamanin altinda eski kalemler kalmasin diye.
     expenseItem: { create: vi.fn(), deleteMany: vi.fn() },
@@ -76,6 +78,9 @@ const baseEqualInput = {
 function resetMocks() {
   // Bildirim alicilarindan misafirler suzuluyor (ADR-057); varsayilan: misafir YOK.
   mockTx.user.findMany.mockReset().mockResolvedValue([]);
+  // Alicilari soran testler mock.calls[0]'a bakiyor; onceki testten sizan
+  // bir cagri yanlis listeyi okuturdu.
+  mockTx.notification.createMany.mockReset();
   mockTx.group.findUnique.mockReset();
   mockTx.groupMember.findMany.mockReset();
   mockTx.groupMember.findFirst.mockReset();
@@ -86,6 +91,8 @@ function resetMocks() {
   mockTx.expense.findUniqueOrThrow.mockReset();
   mockTx.expenseParticipant.createMany.mockReset();
   mockTx.expenseParticipant.deleteMany.mockReset();
+  mockTx.expensePayer.createMany.mockReset();
+  mockTx.expensePayer.deleteMany.mockReset();
   // Kalemler (ADR-052). SIFIRLANMASI SART: "kac kez cagrildi" ve "hic
   // cagrilmadi" iddialarinin ikisi de bir onceki testten sizan cagrilarla
   // sessizce yanlis cevap verirdi - nitekim verdi.
@@ -305,7 +312,7 @@ const EXPENSE_ID = "expense-1";
 
 // Guncellenmeden onceki hali: 9000 kurus, EQUAL, iki kisiye 4500/4500.
 function existingExpense(overrides: Record<string, unknown> = {}) {
-  return {
+  const merged = {
     id: EXPENSE_ID,
     groupId: GROUP_ID,
     paidById: PAYER_ID,
@@ -332,6 +339,18 @@ function existingExpense(overrides: Record<string, unknown> = {}) {
      */
     items: [],
     ...overrides,
+  };
+  /**
+   * ODEYENLER (ADR-067): verilmediyse tek odeyen, tutarin tamami - yani
+   * paidById ve amount'tan TURETILIYOR. Sabit yazilsaydi paidById'yi ya da
+   * tutari degistiren bir test, veritabaninda olamayacak bir satir
+   * (ana odeyeni odeyenlerde olmayan) sinamis olurdu.
+   */
+  return {
+    ...merged,
+    payers: (overrides.payers as { userId: string; amount: number }[] | undefined) ?? [
+      { userId: merged.paidById as string, amount: merged.amount as number },
+    ],
   };
 }
 
@@ -559,6 +578,8 @@ describe("updateExpense", () => {
         { userId: PARTICIPANT_ID, shareAmount: 4500, basisPoints: null },
         { userId: PAYER_ID, shareAmount: 4500, basisPoints: null },
       ].sort((a, b) => a.userId.localeCompare(b.userId)),
+      // Odeyenler de snapshot'ta (ADR-067): eski odeyenlerin tek kaydi bu.
+      payers: [{ userId: PAYER_ID, amount: 9000 }],
     });
 
     expect(auditArgs.newData).toMatchObject({
@@ -572,6 +593,8 @@ describe("updateExpense", () => {
         { userId: PARTICIPANT_ID, shareAmount: 6000, basisPoints: null },
       ].sort((a, b) => a.userId.localeCompare(b.userId)),
     );
+    // Eski govde (paidById) tek odeyen demek: yeni tutarin tamami.
+    expect(auditArgs.newData.payers).toEqual([{ userId: PAYER_ID, amount: 12000 }]);
   });
 
   it("splitType degistirilebilir (EQUAL -> EXACT)", async () => {
@@ -1123,6 +1146,9 @@ describe("listExpenses", () => {
      */
     expect(mockPrisma.expense.findMany.mock.calls[0][0].include).toEqual({
       participants: true,
+      // ODEYENLER (ADR-067): yalnizca kim ve ne kadar - satirda "Ayse ve
+      // Can odedi" yazabilmek icin.
+      payers: { select: { userId: true, amount: true } },
       receipt: { select: { id: true } },
       // YORUM: yalnizca SAYISI, ve yalnizca silinmemis olanlar. Metinler
       // burada tasinsaydi liste her acilista butun sohbetleri indirirdi.
@@ -1408,6 +1434,7 @@ describe("getExpenseForUser", () => {
      */
     expect(mockPrisma.expense.findUnique.mock.calls[0][0].include).toEqual({
       participants: true,
+      payers: { select: { userId: true, amount: true } },
       receipt: { select: { contentType: true, byteSize: true, createdAt: true } },
       items: {
         include: { shares: { select: { userId: true } } },
@@ -1564,6 +1591,213 @@ describe("monthKeyToRange", () => {
  *   3. KALEMLERIN SNAPSHOT'A GIRMESI. ExpenseItem satirlari guncellemede
  *      FIZIKSEL olarak siliniyor - eski masanin tek kalici kaydi audit log.
  */
+/**
+ * BIRDEN FAZLA ODEYEN (ADR-067).
+ *
+ * Iki govde bicimi var: `payers` (yeni istemciler) ve `paidById` (eski
+ * istemciler, hizli giris). Bakiye artik ExpensePayer'dan okunuyor;
+ * Expense.paidById "ana odeyen" aynasi.
+ */
+describe("birden fazla odeyen", () => {
+  const OUTSIDER_ID = "user-outsider";
+
+  beforeEach(() => {
+    resetMocks();
+    mockTx.group.findUnique.mockResolvedValue({ id: GROUP_ID, currency: "TRY", deletedAt: null });
+    allMembersActive();
+    mockTx.expense.create.mockResolvedValue({ id: "expense-1" });
+  });
+
+  /** Iki odeyenli govde: 9000'in 6000'ini PAYER, 3000'ini PARTICIPANT odedi. */
+  function twoPayerInput() {
+    // paidById ACIKCA undefined: yeni govdede yalnizca payers var.
+    return {
+      ...baseEqualInput,
+      paidById: undefined,
+      payers: [
+        { userId: PARTICIPANT_ID, amount: 3000 },
+        { userId: PAYER_ID, amount: 6000 },
+      ],
+    };
+  }
+
+  it("eski govde (paidById) tek odeyen satiri yazar: tutarin tamami", async () => {
+    await createExpense(CALLER_ID, GROUP_ID, baseEqualInput);
+
+    expect(mockTx.expensePayer.createMany).toHaveBeenCalledWith({
+      data: [{ expenseId: "expense-1", userId: PAYER_ID, amount: 9000 }],
+    });
+    expect(mockTx.expense.create.mock.calls[0][0].data.paidById).toBe(PAYER_ID);
+  });
+
+  it("iki odeyenin ikisi de yaziliyor; ana odeyen en cok odeyen", async () => {
+    await createExpense(CALLER_ID, GROUP_ID, twoPayerInput());
+
+    expect(mockTx.expensePayer.createMany).toHaveBeenCalledWith({
+      data: [
+        { expenseId: "expense-1", userId: PARTICIPANT_ID, amount: 3000 },
+        { expenseId: "expense-1", userId: PAYER_ID, amount: 6000 },
+      ],
+    });
+    // Listede once gelen PARTICIPANT, ama daha cok odeyen PAYER.
+    expect(mockTx.expense.create.mock.calls[0][0].data.paidById).toBe(PAYER_ID);
+  });
+
+  it("esit odemede ana odeyen listede ILK siradaki", async () => {
+    await createExpense(CALLER_ID, GROUP_ID, {
+      ...baseEqualInput,
+      paidById: undefined,
+      payers: [
+        { userId: PARTICIPANT_ID, amount: 4500 },
+        { userId: PAYER_ID, amount: 4500 },
+      ],
+    });
+
+    expect(mockTx.expense.create.mock.calls[0][0].data.paidById).toBe(PARTICIPANT_ID);
+  });
+
+  it("odeyenlerin toplami tutmazsa ValidationError, hicbir sey yazilmaz", async () => {
+    const input = twoPayerInput();
+    input.payers[1].amount = 5000; // 3000 + 5000 = 8000 != 9000
+
+    const error = await createExpense(CALLER_ID, GROUP_ID, input).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect(error.code).toBe("payer.sum_mismatch");
+    expect(error.params).toEqual({ total: 8000, amount: 9000 });
+    expect(mockTx.expense.create).not.toHaveBeenCalled();
+    expect(mockTx.expensePayer.createMany).not.toHaveBeenCalled();
+  });
+
+  it("odeyenlerden biri aktif uye degilse ForbiddenError", async () => {
+    const input = twoPayerInput();
+    input.payers[0].userId = OUTSIDER_ID;
+
+    await expect(createExpense(CALLER_ID, GROUP_ID, input)).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+    // Uyelik sorgusu odeyenleri de kapsamali.
+    expect(mockTx.groupMember.findMany.mock.calls[0][0].where.userId.in).toContain(OUTSIDER_ID);
+    expect(mockTx.expense.create).not.toHaveBeenCalled();
+  });
+
+  it("bildirim bolusumde OLMAYAN odeyene de gidiyor - onun da bakiyesi degisti", async () => {
+    mockTx.groupMember.findMany.mockResolvedValue([
+      { userId: CALLER_ID },
+      { userId: PAYER_ID },
+      { userId: PARTICIPANT_ID },
+      { userId: OUTSIDER_ID },
+    ]);
+
+    await createExpense(CALLER_ID, GROUP_ID, {
+      description: "Market",
+      amount: 9000,
+      payers: [
+        { userId: PAYER_ID, amount: 5000 },
+        { userId: OUTSIDER_ID, amount: 4000 },
+      ],
+      splitType: "EQUAL",
+      participantUserIds: [PAYER_ID, PARTICIPANT_ID],
+    });
+
+    const recipients = mockTx.notification.createMany.mock.calls[0][0].data.map(
+      (row: { userId: string }) => row.userId,
+    );
+    expect(recipients.sort()).toEqual([OUTSIDER_ID, PARTICIPANT_ID, PAYER_ID].sort());
+  });
+
+  it("guncellemede odeyenler silinip yeniden yaziliyor ve snapshot'a giriyor", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(existingExpense());
+
+    await updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, twoPayerInput(), CURRENT_VERSION);
+
+    expect(mockTx.expensePayer.deleteMany).toHaveBeenCalledWith({
+      where: { expenseId: EXPENSE_ID },
+    });
+    expect(mockTx.expensePayer.createMany).toHaveBeenCalledWith({
+      data: [
+        { expenseId: EXPENSE_ID, userId: PARTICIPANT_ID, amount: 3000 },
+        { expenseId: EXPENSE_ID, userId: PAYER_ID, amount: 6000 },
+      ],
+    });
+    expect(mockTx.expense.updateMany.mock.calls[0][0].data.paidById).toBe(PAYER_ID);
+
+    const audit = mockTx.expenseEdit.create.mock.calls[0][0].data;
+    expect(audit.previousData.payers).toEqual([{ userId: PAYER_ID, amount: 9000 }]);
+    // Snapshot'ta userId'ye gore sirali - sira farki sahte degisiklik uretmesin.
+    expect(audit.newData.payers).toEqual(
+      [
+        { userId: PARTICIPANT_ID, amount: 3000 },
+        { userId: PAYER_ID, amount: 6000 },
+      ].sort((a, b) => a.userId.localeCompare(b.userId)),
+    );
+  });
+
+  /**
+   * KULLANICININ KARARI (ADR-067, S4): magazadaki 1.0.7 yalnizca paidById
+   * gonderiyor. Cok odeyenli bir harcamada kabul etseydik diger odeyenin
+   * payi sessizce silinirdi.
+   */
+  it("eski govde (paidById) cok odeyenli harcamayi guncelleyemez - hicbir yazma olmaz", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(
+      existingExpense({
+        payers: [
+          { userId: PAYER_ID, amount: 6000 },
+          { userId: PARTICIPANT_ID, amount: 3000 },
+        ],
+      }),
+    );
+
+    const error = await updateExpense(
+      CALLER_ID,
+      GROUP_ID,
+      EXPENSE_ID,
+      updateInput,
+      CURRENT_VERSION,
+    ).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(ConflictError);
+    expect(error.code).toBe("expense.multiple_payers");
+    expect(mockTx.expense.updateMany).not.toHaveBeenCalled();
+    expect(mockTx.expensePayer.deleteMany).not.toHaveBeenCalled();
+    expect(mockTx.expenseEdit.create).not.toHaveBeenCalled();
+  });
+
+  it("ayni harcamayi yeni govde (payers) guncelleyebiliyor", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(
+      existingExpense({
+        payers: [
+          { userId: PAYER_ID, amount: 6000 },
+          { userId: PARTICIPANT_ID, amount: 3000 },
+        ],
+      }),
+    );
+
+    await expect(
+      updateExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, twoPayerInput(), CURRENT_VERSION),
+    ).resolves.toBeDefined();
+  });
+
+  it("silinen harcamanin bildirimi odeyenlere de gidiyor", async () => {
+    mockTx.expense.findUnique.mockResolvedValue(
+      existingExpense({
+        participants: [{ userId: PARTICIPANT_ID, shareAmount: 9000, basisPoints: null }],
+        payers: [
+          { userId: PAYER_ID, amount: 6000 },
+          { userId: OUTSIDER_ID, amount: 3000 },
+        ],
+      }),
+    );
+
+    await deleteExpense(CALLER_ID, GROUP_ID, EXPENSE_ID, CURRENT_VERSION);
+
+    const recipients = mockTx.notification.createMany.mock.calls[0][0].data.map(
+      (row: { userId: string }) => row.userId,
+    );
+    expect(recipients.sort()).toEqual([OUTSIDER_ID, PARTICIPANT_ID, PAYER_ID].sort());
+  });
+});
+
 describe("createExpense - ITEMIZED", () => {
   beforeEach(() => {
     resetMocks();

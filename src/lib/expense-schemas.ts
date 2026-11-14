@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ExpenseCategory } from "@prisma/client";
 import { MAX_SPLIT_AMOUNT } from "@/lib/split";
+import { MAX_EXPENSE_PAYERS } from "@/lib/payers";
 
 // Sayfalama sinirlari API sozlesmesinin parcasi oldugu icin sema dosyasinda
 // tanimli; servis katmani (expenses.ts) bunlari buradan okur. Ters yonde
@@ -15,13 +16,58 @@ const categorySchema = z.enum(
   Object.values(ExpenseCategory) as [ExpenseCategory, ...ExpenseCategory[]],
 );
 
-const baseExpenseSchema = z.object({
+const commonExpenseFields = {
   description: z.string().min(1).max(500),
   amount: z.number().int().positive().max(MAX_SPLIT_AMOUNT),
-  paidById: z.uuid(),
   category: categorySchema.optional(),
   expenseDate: z.coerce.date().optional(),
+};
+
+/**
+ * TEK ODEYENLI govde: tekrarlayan harcama sablonlari (ADR-067, S3).
+ * Sablon cok odeyenli olamiyor ve bu ayrim TIPTE - kalemlerde oldugu gibi.
+ */
+const singlePayerExpenseSchema = z.object({
+  ...commonExpenseFields,
+  paidById: z.uuid(),
 });
+
+const payerSchema = z.object({
+  userId: z.uuid(),
+  amount: z.number().int().positive().max(MAX_SPLIT_AMOUNT),
+});
+
+/**
+ * Harcama govdesi: odeyenler IKI BICIMDEN BIRIYLE geliyor (ADR-067).
+ *
+ *   payers    - yeni istemciler. Tek odeyenli harcamada da tek satirlik
+ *               bir liste.
+ *   paidById  - ESKI bicim. Magazadaki 1.0.7 yalnizca bunu biliyor ve
+ *               gondermeye devam edecek; hizli giris satiri da bunu
+ *               kullaniyor (orada odeyen her zaman "sen").
+ *
+ * IKISI BIRDEN ya da HICBIRI gecersiz - asagidaki exactlyOnePayerForm.
+ * Ikisi birden gelseydi hangisinin kazandigi sozlesmede yazili olmayan
+ * bir kural olurdu.
+ *
+ * Toplamin tutara esitligi ve tekrar eden kisi burada DEGIL, servis
+ * katmaninda (payers.ts) denetleniyor: o hatalarin kendi kodlari var ve
+ * mobil form da ayni kurali oradan okuyor.
+ */
+const multiPayerExpenseSchema = z.object({
+  ...commonExpenseFields,
+  paidById: z.uuid().optional(),
+  payers: z.array(payerSchema).min(1).max(MAX_EXPENSE_PAYERS).optional(),
+});
+
+function exactlyOnePayerForm(
+  body: { paidById?: string; payers?: unknown[] },
+  ctx: z.RefinementCtx,
+) {
+  if ((body.paidById === undefined) === (body.payers === undefined)) {
+    ctx.addIssue({ code: "custom", message: "validation.invalid", path: ["payers"] });
+  }
+}
 
 const exactShareSchema = z.object({
   userId: z.uuid(),
@@ -107,46 +153,54 @@ export const deleteExpenseQuerySchema = z.object({
   version: z.coerce.number().int().positive(),
 });
 
+const equalFields = {
+  splitType: z.literal("EQUAL"),
+  participantUserIds: z.array(z.uuid()).min(1),
+};
+const exactFields = {
+  splitType: z.literal("EXACT"),
+  shares: z.array(exactShareSchema).min(1),
+};
+const percentageFields = {
+  splitType: z.literal("PERCENTAGE"),
+  shares: z.array(percentageShareSchema).min(1),
+};
+
 /**
- * KALEMSIZ UC TUR - ayri durmasinin sebebi TEKRARLAYAN HARCAMA.
+ * SABLONUN TARIF ETTIGI HARCAMA: kalemsiz UC tur, TEK odeyen.
  *
  * Bir sablon kalem kalem OLAMIYOR (ADR-052): "her ay ayni restoran hesabi,
  * ayni kalemlerle" diye bir ihtiyac yok; kira ve abonelik duz bir toplam.
  * Desteklemek, kalemler icin ikinci bir tablo cifti ve her uretimde onlarin
  * kopyalanmasi demekti - karsiliginda kimsenin kullanmayacagi bir yetenek.
  *
+ * Cok odeyenli de OLAMIYOR (ADR-067, kullanicinin karari): ilk surumun
+ * disinda. Ihtiyac cikarsa sablona da bir odeyen tablosu gerekecek.
+ *
  * Ayrimi TIPTE tutuyoruz, bir kontrol satirinda degil: recurring-schemas.ts
- * bu birlesimi kullaniyor ve ITEMIZED bir govde oraya ULASAMIYOR.
+ * bu birlesimi kullaniyor ve ITEMIZED ya da "payers" tasiyan bir govde
+ * oraya ULASAMIYOR (Zod'un "strip" davranisi fazladan alani eliyor,
+ * paidById ise zorunlu).
  */
-export const expenseSplitVariants = [
-  baseExpenseSchema.extend({
-    splitType: z.literal("EQUAL"),
-    participantUserIds: z.array(z.uuid()).min(1),
-  }),
-  baseExpenseSchema.extend({
-    splitType: z.literal("EXACT"),
-    shares: z.array(exactShareSchema).min(1),
-  }),
-  baseExpenseSchema.extend({
-    splitType: z.literal("PERCENTAGE"),
-    shares: z.array(percentageShareSchema).min(1),
-  }),
-] as const;
-
-export const nonItemizedExpenseBodySchema = z.discriminatedUnion(
-  "splitType",
-  expenseSplitVariants,
-);
-
-export const expenseBodySchema = z.discriminatedUnion("splitType", [
-  ...expenseSplitVariants,
-  /**
-   * KATILIMCI LISTESI YOK ve olmamali: katilimcilar kalem atamalarinin
-   * BIRLESIMI. Iki yerden girilebilseydi ikisi celisebilirdi - hicbir
-   * kaleme atanmamis bir "katilimci" ne demek olurdu?
-   */
-  baseExpenseSchema.extend({
-    splitType: z.literal("ITEMIZED"),
-    items: z.array(itemSchema).min(1).max(MAX_EXPENSE_ITEMS),
-  }),
+export const templateExpenseBodySchema = z.discriminatedUnion("splitType", [
+  singlePayerExpenseSchema.extend(equalFields),
+  singlePayerExpenseSchema.extend(exactFields),
+  singlePayerExpenseSchema.extend(percentageFields),
 ]);
+
+export const expenseBodySchema = z
+  .discriminatedUnion("splitType", [
+    multiPayerExpenseSchema.extend(equalFields),
+    multiPayerExpenseSchema.extend(exactFields),
+    multiPayerExpenseSchema.extend(percentageFields),
+    /**
+     * KATILIMCI LISTESI YOK ve olmamali: katilimcilar kalem atamalarinin
+     * BIRLESIMI. Iki yerden girilebilseydi ikisi celisebilirdi - hicbir
+     * kaleme atanmamis bir "katilimci" ne demek olurdu?
+     */
+    multiPayerExpenseSchema.extend({
+      splitType: z.literal("ITEMIZED"),
+      items: z.array(itemSchema).min(1).max(MAX_EXPENSE_ITEMS),
+    }),
+  ])
+  .superRefine(exactlyOnePayerForm);

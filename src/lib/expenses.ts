@@ -25,11 +25,19 @@ import {
   type PercentageShareInput,
   type SplitShare,
 } from "@/lib/split";
+import { primaryPayerId, resolvePayers, type PayerShare } from "@/lib/payers";
 
 type CreateExpenseBase = {
   description: string;
   amount: number;
-  paidById: string;
+  /**
+   * ODEYENLER IKI BICIMDEN BIRIYLE (ADR-067): yeni istemciler `payers`,
+   * eski istemciler ve hizli giris `paidById` gonderiyor. Hangisinin
+   * geldigi yalnizca bir yerde onemli: eski bicimle cok odeyenli bir
+   * harcama guncellenemiyor (updateExpense).
+   */
+  paidById?: string;
+  payers?: PayerShare[];
   category?: ExpenseCategory;
   expenseDate?: Date;
 };
@@ -134,6 +142,14 @@ type ExpenseSnapshot = {
   // saklayabildigimiz bir seyi kaybediyor demektir.
   participants: { userId: string; shareAmount: number; basisPoints: number | null }[];
   /**
+   * ODEYENLER DE SNAPSHOT'A GIRIYOR (ADR-067). Gerekce paylarinkiyle ayni:
+   * ExpensePayer satirlari guncellemede silinip yeniden yaziliyor, eski
+   * odeyenlerin tek kalici kaydi bu. Bu alandan ONCEKI kayitlarda yok -
+   * okuyan taraf (expense-diff.ts) o kayitlari paidById + amount'tan
+   * kuruyor: o gunlerde tek odeyen vardi ve tutarin tamamini odemisti.
+   */
+  payers: { userId: string; amount: number }[];
+  /**
    * KALEMLER DE SNAPSHOT'A GIRIYOR (ADR-052) ve gerekcesi paylarinkiyle
    * ayni: ExpenseItem satirlari guncellemede FIZIKSEL olarak silinip
    * yeniden yaziliyor, yani eski masanin tek kalici kaydi bu.
@@ -160,6 +176,7 @@ type SnapshotExpenseFields = {
 function buildSnapshot(
   expense: SnapshotExpenseFields,
   participants: { userId: string; shareAmount: number; basisPoints: number | null }[],
+  payers: { userId: string; amount: number }[],
   items?: { description: string; amount: number; userIds: string[] }[],
 ): ExpenseSnapshot {
   return {
@@ -182,6 +199,10 @@ function buildSnapshot(
         shareAmount: participant.shareAmount,
         basisPoints: participant.basisPoints,
       }))
+      .sort((a, b) => a.userId.localeCompare(b.userId)),
+    // Paylardaki kuralin aynisi: sira farki sahte bir "degisiklik" uretmesin.
+    payers: payers
+      .map((payer) => ({ userId: payer.userId, amount: payer.amount }))
       .sort((a, b) => a.userId.localeCompare(b.userId)),
   };
 }
@@ -245,6 +266,14 @@ function storedItemsForSnapshot(
       userIds: item.shares.map((share) => share.userId).sort((a, b) => a.localeCompare(b)),
     }));
 }
+
+/**
+ * Odeyenler (ADR-067): yalnizca kim ve ne kadar. Istemciye giden sekil de
+ * bu; satir kimligi ve tarihi kimsenin isine yaramiyor.
+ */
+const PAYERS_SELECT = {
+  select: { userId: true, amount: true },
+} satisfies Prisma.Expense$payersArgs;
 
 /** Snapshot ve duzenleme icin kalemleri de getiren include. */
 const ITEMS_INCLUDE = {
@@ -363,6 +392,8 @@ export async function listExpenses(
       where,
       include: {
         participants: true,
+        // Satirda "Ayse ve Can odedi" yazabilmek icin (ADR-067).
+        payers: PAYERS_SELECT,
         /**
          * YALNIZCA VARLIGI, tek bir kimlik alani. Listede "fis var mi"
          * sorusunun cevabi gerekiyor; baytlar degil, hatta icerik bilgisi
@@ -440,6 +471,8 @@ export async function getExpenseForUser(
     where: { id: expenseId },
     include: {
       participants: true,
+      // Duzenleme formu odeyenleri yeniden kurabilmeli (ADR-067).
+      payers: PAYERS_SELECT,
       /**
        * FISIN VARLIGI, BAYTLARI DEGIL. Istemcinin sormasi gereken sey
        * "gosterecek bir sey var mi"; baytlar ayri bir uctan, yetki yeniden
@@ -492,8 +525,13 @@ export async function createExpense(userId: string, groupId: string, input: Crea
       throw new NotFoundError("group.not_found");
     }
 
+    // Odeyenler UYELIK KONTROLUNDEN ONCE cozuluyor: kontrol edilecek
+    // kimlikler onlardan da geliyor.
+    const payers = resolvePayers(input);
     const participantUserIds = getParticipantUserIds(input);
-    const userIdsToCheck = [...new Set([userId, input.paidById, ...participantUserIds])];
+    const userIdsToCheck = [
+      ...new Set([userId, ...payers.map((payer) => payer.userId), ...participantUserIds]),
+    ];
 
     const activeMemberships = await tx.groupMember.findMany({
       where: { groupId, userId: { in: userIdsToCheck }, leftAt: null },
@@ -515,7 +553,8 @@ export async function createExpense(userId: string, groupId: string, input: Crea
     const expense = await tx.expense.create({
       data: {
         groupId,
-        paidById: input.paidById,
+        // ANA ODEYEN - bakiye bundan okunmuyor (ADR-067, schema.prisma).
+        paidById: primaryPayerId(payers),
         createdById: userId,
         description: input.description,
         amount: input.amount,
@@ -541,6 +580,16 @@ export async function createExpense(userId: string, groupId: string, input: Crea
       })),
     });
 
+    // Odeyenler de bakiyeye giriyor; toplamlarini da ertelenmis bir
+    // tetikleyici commit aninda denetliyor (ADR-067).
+    await tx.expensePayer.createMany({
+      data: payers.map((payer) => ({
+        expenseId: expense.id,
+        userId: payer.userId,
+        amount: payer.amount,
+      })),
+    });
+
     // Kalemler PAYLARDAN SONRA yaziliyor: paylarin toplamini bekleyen
     // tetikleyici COMMIT aninda calisiyor (DEFERRABLE), yani sira onemli
     // degil - ama okuyan icin "once bakiyeye giren, sonra girdi katmani"
@@ -549,12 +598,17 @@ export async function createExpense(userId: string, groupId: string, input: Crea
       await writeItems(tx, expense.id, input.items);
     }
 
-    // Bildirim yalnizca KATILIMCILARA gider, tum gruba degil: harcamaya dahil
-    // olmayan birinin bakiyesi degismiyor, dolayisiyla haber vermek gurultu olur.
+    // Bildirim BAKIYESI DEGISENLERE gider, tum gruba degil: katilimcilar ve
+    // odeyenler. Harcamada hicbir rolu olmayanin bakiyesi degismiyor,
+    // dolayisiyla haber vermek gurultu olur. Odeyenler ADR-067 ile eklendi -
+    // bolusumde olmayan bir odeyenin de bakiyesi degisiyor.
     await createNotifications(tx, {
       type: "EXPENSE_ADDED",
       actorId: userId,
-      recipientIds: shares.map((share) => share.userId),
+      recipientIds: [
+        ...shares.map((share) => share.userId),
+        ...payers.map((payer) => payer.userId),
+      ],
       payload: {
         groupId,
         groupName: group.name,
@@ -567,7 +621,7 @@ export async function createExpense(userId: string, groupId: string, input: Crea
 
     return tx.expense.findUniqueOrThrow({
       where: { id: expense.id },
-      include: { participants: true },
+      include: { participants: true, payers: PAYERS_SELECT },
     });
   });
 }
@@ -588,7 +642,8 @@ export async function updateExpense(
     const existing = await tx.expense.findUnique({
       where: { id: expenseId },
       // Kalemler de: eski masanin snapshot'a girmesi icin (ADR-052).
-      include: { participants: true, items: ITEMS_INCLUDE },
+      // Odeyenler de: ayni sebep, ve eski istemci kontrolu icin (ADR-067).
+      include: { participants: true, payers: PAYERS_SELECT, items: ITEMS_INCLUDE },
     });
 
     // Soft-delete edilmis harcama guncellenemez. groupId eslesmesi de burada
@@ -605,15 +660,34 @@ export async function updateExpense(
 
     await assertCanModifyExpense(tx, groupId, existing, userId);
 
-    // Snapshot, participant VE item satirlari silinmeden ONCE aliniyor.
+    /**
+     * ESKI ISTEMCI, COK ODEYENLI HARCAMA (ADR-067, kullanicinin karari).
+     *
+     * Magazadaki 1.0.7 yalnizca paidById biliyor. Bu harcamayi kabul
+     * etseydik govdesi "tutarin tamamini X odedi" demek olurdu ve diger
+     * odeyenlerin payi SESSIZCE silinirdi - bakiyeleri degisirdi, kimse
+     * bunu istememisken. Reddediyoruz; yeni surumler bu harcamayi
+     * odeyenleriyle birlikte duzenleyebiliyor.
+     *
+     * Tek odeyenli harcamada eski bicim sorunsuz: anlami ayni.
+     */
+    if (input.payers === undefined && existing.payers.length > 1) {
+      throw new ConflictError("expense.multiple_payers");
+    }
+
+    // Snapshot; participant, payer VE item satirlari silinmeden ONCE aliniyor.
     const previousData = buildSnapshot(
       existing,
       existing.participants,
+      existing.payers,
       existing.items.length > 0 ? storedItemsForSnapshot(existing.items) : undefined,
     );
 
+    const payers = resolvePayers(input);
     const participantUserIds = getParticipantUserIds(input);
-    const userIdsToCheck = [...new Set([userId, input.paidById, ...participantUserIds])];
+    const userIdsToCheck = [
+      ...new Set([userId, ...payers.map((payer) => payer.userId), ...participantUserIds]),
+    ];
 
     const activeMemberships = await tx.groupMember.findMany({
       where: { groupId, userId: { in: userIdsToCheck }, leftAt: null },
@@ -651,7 +725,7 @@ export async function updateExpense(
       data: {
         description: input.description,
         amount: input.amount,
-        paidById: input.paidById,
+        paidById: primaryPayerId(payers),
         // Opsiyonel alanlar gonderilmezse mevcut deger korunur (sifirlanmaz).
         category: input.category ?? existing.category,
         splitType: input.splitType,
@@ -685,6 +759,14 @@ export async function updateExpense(
       })),
     });
 
+    // ODEYENLER DE TAM DEGISTIRME (ADR-067) - paylarla ayni desen. Tutar
+    // degistiyse ve bu satirlar yeniden yazilmasaydi, Expense uzerindeki
+    // ertelenmis tetikleyici commit'i reddederdi.
+    await tx.expensePayer.deleteMany({ where: { expenseId } });
+    await tx.expensePayer.createMany({
+      data: payers.map((payer) => ({ expenseId, userId: payer.userId, amount: payer.amount })),
+    });
+
     /**
      * KALEMLER DE TAM DEGISTIRME (ADR-052): eskiler silinip yenileri
      * yaziliyor - ExpenseParticipant ile ayni desen ve ayni gerekce.
@@ -705,7 +787,7 @@ export async function updateExpense(
     // sart; iki ayri okuma yapmak ise ayni veriyi iki kez cekmek olurdu.
     const updated = await tx.expense.findUniqueOrThrow({
       where: { id: expenseId },
-      include: { participants: true },
+      include: { participants: true, payers: PAYERS_SELECT },
     });
 
     const newData = buildSnapshot(
@@ -715,6 +797,7 @@ export async function updateExpense(
         shareAmount: share.amount,
         basisPoints: basisPointsByUser?.get(share.userId) ?? null,
       })),
+      payers,
       itemsForSnapshot(input),
     );
 
@@ -732,13 +815,16 @@ export async function updateExpense(
     });
 
     // Hem YENI hem ESKI katilimcilar haber almali: paylasimdan cikarilan kisinin
-    // borcu da degisti ve bunu yalnizca bu bildirimden ogrenebilir.
+    // borcu da degisti ve bunu yalnizca bu bildirimden ogrenebilir. Odeyenler
+    // icin de ayni (ADR-067): odeyenlikten cikarilanin alacagi degisti.
     await createNotifications(tx, {
       type: "EXPENSE_UPDATED",
       actorId: userId,
       recipientIds: [
         ...shares.map((share) => share.userId),
         ...existing.participants.map((participant) => participant.userId),
+        ...payers.map((payer) => payer.userId),
+        ...existing.payers.map((payer) => payer.userId),
       ],
       payload: {
         groupId,
@@ -770,8 +856,9 @@ export async function deleteExpense(
   return prisma.$transaction(async (tx) => {
     const existing = await tx.expense.findUnique({
       where: { id: expenseId },
-      // Kalemler de: silinen kaydin snapshot'i EKSIK olmamali (ADR-052).
-      include: { participants: true, items: ITEMS_INCLUDE },
+      // Kalemler ve odeyenler de: silinen kaydin snapshot'i EKSIK olmamali
+      // (ADR-052, ADR-067).
+      include: { participants: true, payers: PAYERS_SELECT, items: ITEMS_INCLUDE },
     });
 
     // Zaten silinmis bir harcama tekrar silinemez; baska grubun harcamasi da
@@ -790,6 +877,7 @@ export async function deleteExpense(
     const previousData = buildSnapshot(
       existing,
       existing.participants,
+      existing.payers,
       existing.items.length > 0 ? storedItemsForSnapshot(existing.items) : undefined,
     );
 
@@ -822,7 +910,10 @@ export async function deleteExpense(
     await createNotifications(tx, {
       type: "EXPENSE_DELETED",
       actorId: userId,
-      recipientIds: existing.participants.map((participant) => participant.userId),
+      recipientIds: [
+        ...existing.participants.map((participant) => participant.userId),
+        ...existing.payers.map((payer) => payer.userId),
+      ],
       payload: {
         groupId,
         groupName: group.name,
@@ -835,7 +926,7 @@ export async function deleteExpense(
 
     return tx.expense.findUniqueOrThrow({
       where: { id: expenseId },
-      include: { participants: true },
+      include: { participants: true, payers: PAYERS_SELECT },
     });
   });
 }
@@ -844,7 +935,7 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
   return prisma.$transaction(async (tx) => {
     const existing = await tx.expense.findUnique({
       where: { id: expenseId },
-      include: { participants: true, items: ITEMS_INCLUDE },
+      include: { participants: true, payers: PAYERS_SELECT, items: ITEMS_INCLUDE },
     });
 
     if (!existing || existing.groupId !== groupId) {
@@ -865,6 +956,7 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
     const previousData = buildSnapshot(
       existing,
       existing.participants,
+      existing.payers,
       existing.items.length > 0 ? storedItemsForSnapshot(existing.items) : undefined,
     );
 
@@ -882,6 +974,7 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
     const newData = buildSnapshot(
       restored,
       existing.participants,
+      existing.payers,
       existing.items.length > 0 ? storedItemsForSnapshot(existing.items) : undefined,
     );
 
@@ -898,7 +991,7 @@ export async function restoreExpense(userId: string, groupId: string, expenseId:
 
     return tx.expense.findUniqueOrThrow({
       where: { id: expenseId },
-      include: { participants: true },
+      include: { participants: true, payers: PAYERS_SELECT },
     });
   });
 }
@@ -932,7 +1025,7 @@ export async function listExpensesForExport(
 
   return prisma.expense.findMany({
     where: buildExpenseWhere(userId, groupId, options),
-    include: { participants: true },
+    include: { participants: true, payers: PAYERS_SELECT },
     // Disa aktarmada ESKIDEN YENIYE: tablo okuyan biri zaman sirasi bekler,
     // ekrandaki "en yenisi ustte" mantigi burada gecerli degil.
     orderBy: [{ expenseDate: "asc" }, { createdAt: "asc" }, { id: "asc" }],

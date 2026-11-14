@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate } from "@/lib/dates";
 import { EXPENSE_CATEGORY_CODES, EXPENSE_SPLIT_TYPE_CODES } from "@/lib/expense-labels";
 import { diffExpenses, type ExpenseChange } from "@/lib/expense-diff";
+import { describePayers, primaryPayerId } from "@/lib/payers";
 import { formatMoney, formatMoneyForInput, parseMoney } from "@/lib/money";
 import { useLocale, useTranslate } from "../../../../lib/i18n";
 import { useApiClient, useApiGet } from "../../../../lib/use-api";
@@ -360,11 +361,11 @@ export default function ExpenseScreen() {
           before: formatMoney(change.before, item.currency, locale),
           after: formatMoney(change.after, item.currency, locale),
         });
-      case "paidById":
+      case "payers":
         return t("ui.conflict_change", {
-          field: t("ui.payer"),
-          before: nameByUserId[change.before] ?? t("ui.unknown_user"),
-          after: nameByUserId[change.after] ?? t("ui.unknown_user"),
+          field: t("ui.payers"),
+          before: describeChangedPayers(change.before),
+          after: describeChangedPayers(change.after),
         });
       case "category":
         return t("ui.conflict_change", {
@@ -400,6 +401,16 @@ export default function ExpenseScreen() {
         return lines.join(" · ");
       }
     }
+  }
+
+  /** "Ayse" ya da "Ayse 800,00 · Can 400,00" (ADR-067). Web'dekiyle ayni. */
+  function describeChangedPayers(list: { userId: string; amount: number }[]): string {
+    return describePayers(
+      list,
+      primaryPayerId(list),
+      (userId) => nameByUserId[userId] ?? t("ui.unknown_user"),
+      (value) => formatMoney(value, item.currency, locale),
+    );
   }
 
   function joinNames(userIds: string[]): string {

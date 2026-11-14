@@ -36,6 +36,7 @@ import {
   EXPENSE_SPLIT_TYPE_CODES,
 } from "@/lib/expense-labels";
 import { diffExpenses, type ExpenseChange } from "@/lib/expense-diff";
+import { describePayers, orderPayers, payerRemainder, primaryPayerId } from "@/lib/payers";
 import { formatDate } from "@/lib/dates";
 import { AppError } from "@/lib/errors";
 import { useLocale, useTranslate } from "@/lib/i18n";
@@ -49,7 +50,10 @@ export type ExpenseFormInitialValues = {
   id: string;
   description: string;
   amount: number;
+  /** Ana odeyen (ADR-067): en cok odeyen. Formun ilk odeyen satiri. */
   paidById: string;
+  /** Kim ne kadar odedi. Tek odeyenli harcamada tek satir. */
+  payers: { userId: string; amount: number }[];
   category: ExpenseCategory;
   splitType: SplitType;
   expenseDate: string;
@@ -69,6 +73,15 @@ type ItemDraft = {
   description: string;
   amountText: string;
   userIds: string[];
+};
+
+/**
+ * ILK SATIRIN DISINDAKI bir odeyen (ADR-067, yon C). Ilk odeyen `paidById`
+ * durumunda ve tutari GIRILMIYOR: tutardan bunlarin toplami cikariliyor.
+ */
+type PayerDraft = {
+  userId: string;
+  amountText: string;
 };
 
 type ParticipantDraft = {
@@ -180,6 +193,22 @@ export function ExpenseForm({
     initialValues ? formatMoneyForInput(initialValues.amount, locale) : "",
   );
   const [paidById, setPaidById] = useState(initialValues?.paidById ?? currentUserId);
+  /**
+   * DIGER ODEYENLER (ADR-067, yon C). Bos liste = tek odeyen; formun
+   * bugunku hali. Duzenlemede ana odeyen ilk satira, digerleri buraya
+   * diziliyor - ana odeyen en cok odeyen oldugu icin "kalan" onun kayitli
+   * tutarini birebir veriyor.
+   */
+  const [extraPayers, setExtraPayers] = useState<PayerDraft[]>(() =>
+    initialValues
+      ? orderPayers(initialValues.payers, initialValues.paidById)
+          .filter((payer) => payer.userId !== initialValues.paidById)
+          .map((payer) => ({
+            userId: payer.userId,
+            amountText: formatMoneyForInput(payer.amount, locale),
+          }))
+      : [],
+  );
   const [category, setCategory] = useState<ExpenseCategory>(
     initialValues?.category ?? "OTHER",
   );
@@ -256,6 +285,15 @@ export function ExpenseForm({
 
   const amount = parseMoney(amountText);
   const selected = participants.filter((participant) => participant.selected);
+
+  /**
+   * TEKRARLAMA NE ZAMAN SUNULUYOR. Kalem kalem (ADR-052) ve cok odeyenli
+   * (ADR-067) bir sablon yok. Kosul TEK YERDE: hem kutunun gorunmesi hem
+   * de kaydetmenin hangi uca gidecegi buna bakiyor - kutu isaretliyken
+   * kalemlere ya da ikinci odeyene gecen birinin kaydi sablon ucuna gidip
+   * reddedilmesin.
+   */
+  const canRepeat = !isEditing && splitType !== "ITEMIZED" && extraPayers.length === 0;
 
   // Onizleme, sunucunun kullanacagi AYNI saf fonksiyonlarla hesaplaniyor.
   // Boylece kullanici kaydetmeden once kalan kurusun kime gittigini de,
@@ -339,6 +377,52 @@ export function ExpenseForm({
     }
   }, [amount, selected, splitType, items, t, currency, locale]);
 
+  // ODEYEN HESAPLARI ONIZLEMEDEN SONRA - bilerek. React Compiler parseMoney'nin
+  // dondurdugu `amount`un duz bir sayi oldugunu bilmiyor; memo'dan ONCE bir
+  // fonksiyona verildigini gorunce "degismis olabilir" sayip onizlemenin
+  // memo'sunu koruyamiyor (react-hooks/preserve-manual-memoization). Memo'dan
+  // sonra deger donmus sayiliyor. Onizleme bu degerlerin hicbirini kullanmiyor.
+  /**
+   * ODEYENLERIN DURUMU (ADR-067). Ilk satirin tutari HESAPLANIYOR; kalan
+   * ile "kaydedilebilir mi" ayni yerden cikiyor ki ekrandaki sayi ile
+   * gonderilen ayrisamasin.
+   */
+  const extraAmounts = extraPayers.map((payer) => parseMoney(payer.amountText));
+  const payerRest = amount === null ? null : payerRemainder(amount, extraAmounts);
+  const payerAmountMissing = extraAmounts.some((value) => value === null || value <= 0);
+  /**
+   * CANLI GOSTERILEN TEK HATA bu: digerleri tutari doldurdu. Eksik tutar
+   * yazarken gecici bir durum - ancak kaydetmeye basinca soyleniyor.
+   */
+  const payersExceed = !payerAmountMissing && payerRest !== null && payerRest <= 0;
+  const payerError =
+    extraPayers.length === 0
+      ? null
+      : payerAmountMissing
+        ? t("ui.each_payer_amount_required")
+        : payersExceed
+          ? t("ui.payers_exceed")
+          : null;
+  /** Bir odeyen satirinda secilebilecek kisiler: baska satirda olmayanlar. */
+  const takenPayerIds = new Set([paidById, ...extraPayers.map((payer) => payer.userId)]);
+  const canAddPayer = members.some((member) => !takenPayerIds.has(member.userId));
+
+  function addPayer() {
+    const next = members.find((member) => !takenPayerIds.has(member.userId));
+    if (!next) return;
+    setExtraPayers((current) => [...current, { userId: next.userId, amountText: "" }]);
+  }
+
+  function updatePayer(index: number, changes: Partial<PayerDraft>) {
+    setExtraPayers((current) =>
+      current.map((payer, at) => (at === index ? { ...payer, ...changes } : payer)),
+    );
+  }
+
+  function removePayer(index: number) {
+    setExtraPayers((current) => current.filter((_, at) => at !== index));
+  }
+
   /** Kalem toplami - hepsi gecerliyse. Bir tanesi bile bos ise null. */
   const itemsTotal =
     splitType === "ITEMIZED"
@@ -395,11 +479,31 @@ export function ExpenseForm({
     );
   }
 
-  function buildRequestBody() {
+  /**
+   * `forTemplate`: tekrarlayan sablon ucu yalnizca paidById biliyor (sablon
+   * tek odeyenli, ADR-067). Harcama ucuna HER ZAMAN `payers` gidiyor - tek
+   * odeyenli olsa bile. Eski bicim (paidById) yalnizca eski istemciler
+   * icin; yeni istemcinin onu kullanmasi, cok odeyenli bir harcamayi
+   * guncellerken sunucunun "uygulamayi guncelle" demesine yol acardi.
+   */
+  function buildRequestBody(forTemplate = false) {
+    const payerFields = forTemplate
+      ? { paidById }
+      : {
+          payers: [
+            // ILK SATIR KALANI ALIYOR. Esitlikte sunucu ilk satiri ana
+            // odeyen yapiyor (payers.ts, primaryPayerId).
+            { userId: paidById, amount: payerRest ?? 0 },
+            ...extraPayers.map((payer) => ({
+              userId: payer.userId,
+              amount: parseMoney(payer.amountText) ?? 0,
+            })),
+          ],
+        };
     const base = {
       description: description.trim(),
       amount,
-      paidById,
+      ...payerFields,
       category,
       expenseDate,
       // Yalnizca duzenlemede: olusturmada ortada bir surum yok ve sunucunun
@@ -475,6 +579,10 @@ export function ExpenseForm({
       setError(t("ui.participant_required"));
       return;
     }
+    if (payerError) {
+      setError(payerError);
+      return;
+    }
     if (preview && "error" in preview) {
       setError(preview.error);
       return;
@@ -483,7 +591,7 @@ export function ExpenseForm({
     setIsSubmitting(true);
     setConflict(null);
     try {
-      const isRecurring = repeats && !isEditing;
+      const isRecurring = repeats && canRepeat;
       /**
        * TEKRARLAYAN OLARAK KAYDEDILIYORSA BASKA BIR UCA GIDIYOR.
        *
@@ -502,7 +610,7 @@ export function ExpenseForm({
         method: isEditing && !isRecurring ? "PUT" : "POST",
         body: JSON.stringify(
           isRecurring
-            ? { ...buildRequestBody(), interval, startsOn: expenseDate }
+            ? { ...buildRequestBody(true), interval, startsOn: expenseDate }
             : buildRequestBody(),
         ),
       });
@@ -597,11 +705,11 @@ export function ExpenseForm({
           before: formatMoney(change.before, currency, locale),
           after: formatMoney(change.after, currency, locale),
         });
-      case "paidById":
+      case "payers":
         return t("ui.conflict_change", {
-          field: t("ui.payer"),
-          before: nameByUserId.get(change.before) ?? t("ui.unknown_user"),
-          after: nameByUserId.get(change.after) ?? t("ui.unknown_user"),
+          field: t("ui.payers"),
+          before: describeChangedPayers(change.before),
+          after: describeChangedPayers(change.after),
         });
       case "category":
         return t("ui.conflict_change", {
@@ -639,6 +747,16 @@ export function ExpenseForm({
         return lines.join(" · ");
       }
     }
+  }
+
+  /** "Ayse" ya da "Ayse 800,00 · Can 400,00". Ana odeyen once. */
+  function describeChangedPayers(list: { userId: string; amount: number }[]): string {
+    return describePayers(
+      list,
+      primaryPayerId(list),
+      (userId) => nameByUserId.get(userId) ?? t("ui.unknown_user"),
+      (value) => formatMoney(value, currency, locale),
+    );
   }
 
   function joinNames(userIds: string[]): string {
@@ -697,21 +815,38 @@ export function ExpenseForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="paidBy">{t("ui.who_paid")}</Label>
-          <select
-            id="paidBy"
-            className={selectClassName}
-            value={paidById}
-            onChange={(event) => setPaidById(event.target.value)}
-          >
-            {members.map((member) => (
-              <option key={member.userId} value={member.userId}>
-                {member.displayName}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/*
+          ODEYEN (ADR-067, yon C). Tek odeyenken bugunku secici ve altinda
+          kucuk bir "Baska odeyen ekle". Ikinci odeyen eklenince secici
+          asagidaki tam genislikteki ODEYENLER blogunun ilk satirina
+          tasiniyor - tutarlar yan yana ancak orada sigiyor.
+        */}
+        {extraPayers.length === 0 ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="paidBy">{t("ui.who_paid")}</Label>
+            <select
+              id="paidBy"
+              className={selectClassName}
+              value={paidById}
+              onChange={(event) => setPaidById(event.target.value)}
+            >
+              {members.map((member) => (
+                <option key={member.userId} value={member.userId}>
+                  {member.displayName}
+                </option>
+              ))}
+            </select>
+            {canAddPayer ? (
+              <button
+                type="button"
+                onClick={addPayer}
+                className="self-start rounded-[3px] text-xs text-brand underline underline-offset-3 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                {t("ui.add_payer")}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="category">{t("ui.category")}</Label>
@@ -732,6 +867,97 @@ export function ExpenseForm({
           </select>
         </div>
       </div>
+
+      {extraPayers.length > 0 ? (
+        /*
+          ODEYENLER BLOGU (ADR-067). ILK SATIRIN TUTARI GIRILMIYOR, kalan
+          olarak hesaplaniyor: toplam tutmazligi boylece neredeyse imkansiz.
+          Tek hata durumu "digerleri tutari dolduruyor" ve asagida yaziyor.
+          Kalem editoruyle ayni dil: satirlar, ince ayrac, "ekle" baglantisi.
+        */
+        <div className="flex flex-col gap-3" data-slot="payers">
+          <Label htmlFor="paidBy">{t("ui.payers")}</Label>
+          <ul className="flex flex-col gap-2">
+            <li className="flex items-center gap-2">
+              <select
+                id="paidBy"
+                className={`${selectClassName} flex-1`}
+                value={paidById}
+                onChange={(event) => setPaidById(event.target.value)}
+                aria-label={t("ui.payer_person_label", { index: 1 })}
+              >
+                {members
+                  .filter(
+                    (member) =>
+                      member.userId === paidById || !takenPayerIds.has(member.userId),
+                  )
+                  .map((member) => (
+                    <option key={member.userId} value={member.userId}>
+                      {member.displayName}
+                    </option>
+                  ))}
+              </select>
+              <span className="money w-40 shrink-0 text-right text-sm text-muted-foreground">
+                {t("ui.payer_remainder")}{" "}
+                <span className="text-foreground" data-slot="payer-rest">
+                  {payerRest === null ? "—" : formatMoney(payerRest, currency, locale)}
+                </span>
+              </span>
+            </li>
+            {extraPayers.map((payer, index) => (
+              <li key={index} className="flex items-center gap-2">
+                <select
+                  className={`${selectClassName} flex-1`}
+                  value={payer.userId}
+                  onChange={(event) => updatePayer(index, { userId: event.target.value })}
+                  aria-label={t("ui.payer_person_label", { index: index + 2 })}
+                >
+                  {members
+                    .filter(
+                      (member) =>
+                        member.userId === payer.userId || !takenPayerIds.has(member.userId),
+                    )
+                    .map((member) => (
+                      <option key={member.userId} value={member.userId}>
+                        {member.displayName}
+                      </option>
+                    ))}
+                </select>
+                <Input
+                  className="w-32"
+                  value={payer.amountText}
+                  onChange={(event) => updatePayer(index, { amountText: event.target.value })}
+                  placeholder="0,00"
+                  inputMode="decimal"
+                  aria-label={t("ui.payer_amount_label", {
+                    name: nameByUserId.get(payer.userId) ?? "",
+                  })}
+                />
+                <button
+                  type="button"
+                  onClick={() => removePayer(index)}
+                  className="w-6 shrink-0 rounded-[3px] py-2 text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                  aria-label={t("ui.remove_payer")}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+          {payersExceed ? (
+            <p className="text-sm text-destructive">{t("ui.payers_exceed")}</p>
+          ) : null}
+          {canAddPayer ? (
+            <button
+              type="button"
+              onClick={addPayer}
+              className="self-start rounded-[3px] text-xs text-brand underline underline-offset-3 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              {t("ui.add_payer")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
@@ -775,10 +1001,11 @@ export function ExpenseForm({
         DUZENLEMEDE HIC CIZILMIYOR: var olan bir harcamayi tekrarlayana
         cevirmek, onu baska bir seye donusturmek olurdu.
       */}
-      {/* ITEMIZED'DA HIC CIZILMIYOR: kalem kalem bir SABLON yok (ADR-052).
-          Cizilseydi kullanici isaretler, kaydeder ve sunucudan bir dogrulama
-          hatasi alirdi - olmayan bir yetenegi vaat etmis olurduk. */}
-      {!isEditing && splitType !== "ITEMIZED" ? (
+      {/* ITEMIZED'DA VE IKINCI ODEYEN EKLENINCE HIC CIZILMIYOR: kalem kalem
+          (ADR-052) ve cok odeyenli (ADR-067) bir SABLON yok. Cizilseydi
+          kullanici isaretler, kaydeder ve sunucudan bir dogrulama hatasi
+          alirdi - olmayan bir yetenegi vaat etmis olurduk. */}
+      {canRepeat ? (
         <div className="flex flex-col gap-3 border-t border-line-soft pt-4">
           <label className="flex cursor-pointer items-center gap-2 text-sm">
             <input

@@ -97,8 +97,7 @@ function noOutstandingBalances() {
 function memberOwesMoney() {
   mockTx.expense.findMany.mockResolvedValue([
     {
-      paidById: OWNER,
-      amount: 5000,
+      payers: [{ userId: OWNER, amount: 5000 }],
       participants: [{ userId: MEMBER, shareAmount: 5000 }],
     },
   ]);
@@ -583,8 +582,7 @@ describe("leaveGroup", () => {
     mockTx.groupMember.findFirst.mockResolvedValue({ id: "m1", role: "MEMBER" });
     mockTx.expense.findMany.mockResolvedValue([
       {
-        paidById: MEMBER,
-        amount: 5000,
+        payers: [{ userId: MEMBER, amount: 5000 }],
         participants: [{ userId: OTHER, shareAmount: 5000 }],
       },
     ]);

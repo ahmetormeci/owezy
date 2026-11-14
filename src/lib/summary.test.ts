@@ -8,6 +8,8 @@ const { mockPrisma } = vi.hoisted(() => ({
     groupMember: { findFirst: vi.fn(), findMany: vi.fn() },
     // Toplama veritabaninda: servis ham satir okumuyor.
     expense: { groupBy: vi.fn(), aggregate: vi.fn() },
+    // Odenen odeyen tablosundan toplaniyor (ADR-067).
+    expensePayer: { groupBy: vi.fn() },
     expenseParticipant: { groupBy: vi.fn() },
     settlement: { groupBy: vi.fn() },
   },
@@ -25,15 +27,21 @@ const ALI = "ali";
 const BERK = "berk";
 const CAN = "can";
 
+/**
+ * `paidBy`: tek odeyenli harcamanin kisa yazimi - tutarin tamamini o odedi.
+ * Birden fazla odeyen gerekiyorsa `payers` dogrudan veriliyor (ADR-067).
+ */
 function expense(
-  overrides: Partial<ExpenseForSummary> & Pick<ExpenseForSummary, "amount">,
+  overrides: Partial<ExpenseForSummary> &
+    Pick<ExpenseForSummary, "amount"> & { paidBy?: string },
 ): ExpenseForSummary {
+  const { paidBy, ...rest } = overrides;
   return {
-    paidById: ALI,
+    payers: [{ userId: paidBy ?? ALI, amount: overrides.amount }],
     expenseDate: new Date("2026-08-12T00:00:00.000Z"),
     category: "OTHER",
     participants: [],
-    ...overrides,
+    ...rest,
   };
 }
 
@@ -64,7 +72,7 @@ describe("calculateGroupSummary - toplamlar", () => {
       [
         expense({
           amount: 30000,
-          paidById: ALI,
+          paidBy: ALI,
           participants: [
             { userId: ALI, shareAmount: 10000 },
             { userId: BERK, shareAmount: 20000 },
@@ -72,7 +80,7 @@ describe("calculateGroupSummary - toplamlar", () => {
         }),
         expense({
           amount: 10000,
-          paidById: BERK,
+          paidBy: BERK,
           participants: [{ userId: ALI, shareAmount: 10000 }],
         }),
       ],
@@ -83,6 +91,30 @@ describe("calculateGroupSummary - toplamlar", () => {
     // Ali 30000 odedi; payi 10000 + 10000.
     expect(summary.myPaid).toBe(30000);
     expect(summary.myShare).toBe(20000);
+  });
+
+  it("birden fazla odeyende yalnizca BENIM odedigim kisim sayiliyor", () => {
+    const summary = calculateGroupSummary(
+      [
+        expense({
+          amount: 120000,
+          payers: [
+            { userId: ALI, amount: 80000 },
+            { userId: BERK, amount: 40000 },
+          ],
+          participants: [
+            { userId: ALI, shareAmount: 60000 },
+            { userId: BERK, shareAmount: 60000 },
+          ],
+        }),
+      ],
+      [],
+      BERK,
+    );
+
+    expect(summary.myPaid).toBe(40000);
+    expect(summary.myShare).toBe(60000);
+    expect(summary.myBalance).toBe(-20000);
   });
 
   it("odemeler yon ayirt ederek toplaniyor", () => {
@@ -107,7 +139,7 @@ describe("calculateGroupSummary - bakiye acilimi", () => {
   const expenses: ExpenseForSummary[] = [
     expense({
       amount: 30000,
-      paidById: ALI,
+      paidBy: ALI,
       participants: [
         { userId: ALI, shareAmount: 10000 },
         { userId: BERK, shareAmount: 10000 },
@@ -116,7 +148,7 @@ describe("calculateGroupSummary - bakiye acilimi", () => {
     }),
     expense({
       amount: 15000,
-      paidById: BERK,
+      paidBy: BERK,
       participants: [
         { userId: ALI, shareAmount: 5000 },
         { userId: BERK, shareAmount: 5000 },
@@ -269,7 +301,7 @@ describe("getGroupSummary - SQL toplamasi bellek toplamasiyla ayni", () => {
   const expenses: ExpenseForSummary[] = [
     expense({
       amount: 30000,
-      paidById: ALI,
+      paidBy: ALI,
       category: "FOOD",
       expenseDate: new Date("2026-08-10T00:00:00.000Z"),
       participants: [
@@ -279,14 +311,14 @@ describe("getGroupSummary - SQL toplamasi bellek toplamasiyla ayni", () => {
     }),
     expense({
       amount: 12000,
-      paidById: BERK,
+      paidBy: BERK,
       category: "TRANSPORT",
       expenseDate: new Date("2026-08-24T00:00:00.000Z"),
       participants: [{ userId: ALI, shareAmount: 12000 }],
     }),
     expense({
       amount: 8000,
-      paidById: ALI,
+      paidBy: ALI,
       category: "FOOD",
       expenseDate: new Date("2026-07-03T00:00:00.000Z"),
       participants: [{ userId: BERK, shareAmount: 8000 }],
@@ -309,13 +341,11 @@ describe("getGroupSummary - SQL toplamasi bellek toplamasiyla ayni", () => {
 
     // Veritabaninin dondurecegi toplanmis satirlari elle kuruyoruz; hangi
     // sorgu oldugunu "by" soyluyor.
+    mockPrisma.expensePayer.groupBy.mockResolvedValue([
+      { userId: ALI, _sum: { amount: 38000 } },
+      { userId: BERK, _sum: { amount: 12000 } },
+    ]);
     mockPrisma.expense.groupBy.mockImplementation((args: { by: string[] }) => {
-      if (args.by[0] === "paidById") {
-        return Promise.resolve([
-          { paidById: ALI, _sum: { amount: 38000 } },
-          { paidById: BERK, _sum: { amount: 12000 } },
-        ]);
-      }
       if (args.by[0] === "category") {
         return Promise.resolve([
           { category: "FOOD", _sum: { amount: 38000 } },

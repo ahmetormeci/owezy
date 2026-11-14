@@ -13,9 +13,18 @@ import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 import { assertActiveMemberOfGroup } from "@/lib/group-access";
 
+/**
+ * Bakiyeye giren bir harcama: KIM NE KADAR ODEDI ve KIM NE KADAR
+ * BORCLANDI. Tutarin kendisi burada yok - iki listenin toplami da ona
+ * esit (veritabani iki kurali da denetliyor) ve hesap yalnizca listelere
+ * bakiyor.
+ *
+ * paidById yerine payers (ADR-067): tek odeyenli harcama tek satirlik bir
+ * liste. "Tek odeyen ise paidById, degilse payers" diye iki yol tutmak
+ * hesabin iki yerde yasamasi olurdu.
+ */
 export type ExpenseForBalance = {
-  paidById: string;
-  amount: number;
+  payers: { userId: string; amount: number }[];
   participants: { userId: string; shareAmount: number }[];
 };
 
@@ -98,8 +107,11 @@ export function calculateBalances(
   };
 
   for (const expense of expenses) {
-    // Parayi odeyen kisi tutarin tamamini "alacak" yazar...
-    entryFor(expense.paidById).paid += expense.amount;
+    // Her odeyen odedigi kadar "alacak" yazar - tek odeyenli harcamada
+    // tutarin tamami...
+    for (const payer of expense.payers) {
+      entryFor(payer.userId).paid += payer.amount;
+    }
     // ...ve her katilimci kendi payi kadar borclanir. Odeyen kisi katilimci
     // olmak zorunda degil (baskasi adina odeme senaryosu).
     for (const participant of expense.participants) {
@@ -203,9 +215,13 @@ export type GroupBalanceEntry = UserBalance & {
  */
 export const loadGroupTotals = cache(async (groupId: string): Promise<UserTotals[]> => {
   const [paidRows, shareRows, outRows, inRows] = await Promise.all([
-    prisma.expense.groupBy({
-      by: ["paidById"],
-      where: { groupId, deletedAt: null },
+    // ODENEN, ODEYEN TABLOSUNDAN (ADR-067) - Expense.paidById'den degil.
+    // O alan artik yalnizca "ana odeyen"; iki kisinin odedigi bir hesapta
+    // tutarin tamamini tek kisiye yazardi. Paylarla ayni desen: harcamaya
+    // baglanarak filtreleniyor, silinmis harcama bakiyeye girmiyor.
+    prisma.expensePayer.groupBy({
+      by: ["userId"],
+      where: { expense: { groupId, deletedAt: null } },
       _sum: { amount: true },
     }),
     // Katilimci paylari harcamaya baglanarak filtreleniyor: silinmis bir
@@ -238,7 +254,7 @@ export const loadGroupTotals = cache(async (groupId: string): Promise<UserTotals
   };
 
   // _sum hic satir yoksa null doner; 0'a cevirmezsek aritmetik NaN uretirdi.
-  for (const row of paidRows) entryFor(row.paidById).paid = row._sum.amount ?? 0;
+  for (const row of paidRows) entryFor(row.userId).paid = row._sum.amount ?? 0;
   for (const row of shareRows) entryFor(row.userId).share = row._sum.shareAmount ?? 0;
   for (const row of outRows) entryFor(row.fromUserId).settledOut = row._sum.amount ?? 0;
   for (const row of inRows) entryFor(row.toUserId).settledIn = row._sum.amount ?? 0;

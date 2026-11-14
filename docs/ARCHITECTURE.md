@@ -250,11 +250,14 @@ Kurallar:
 3. **Bildirimler aynı transaction'da yazılır.** `createNotifications(tx, ...)`
    çağıranın transaction'ını alır, kendi transaction'ını açmaz. Harcama
    kaydedildiyse bildirim de kaydedilmiştir.
-4. **Harcama güncellemesinde paylar her zaman baştan yazılır** (`deleteMany`
-   + `createMany`). Sebebi: toplam kontrolü yapan trigger yalnızca
-   `ExpenseParticipant` değişiminde tetiklenir, `Expense.amount` değişiminde
-   değil. Payları yeniden yazmak trigger'ın her güncellemede çalışmasını
-   garanti eder.
+4. **Harcama güncellemesinde paylar ve ödeyenler her zaman baştan yazılır**
+   (`deleteMany` + `createMany`). İlk sebebi: pay toplamını denetleyen
+   trigger yalnızca `ExpenseParticipant` değişiminde tetikleniyordu,
+   `Expense.amount` değişiminde değil. 13 Kasım'dan beri `Expense` üzerinde
+   de bir trigger var (ADR-067, DATABASE.md kural 23); baştan yazma kuralı
+   yine geçerli — tam değiştirme semantiği (PUT) ve tetikleyici onun
+   unutulmasını yakalayan ikinci hat. `Expense.paidById` (ana ödeyen)
+   ödeyen satırlarıyla **aynı** transaction'da yazılır.
 5. **Transaction eş zamanlılığı ÇÖZMEZ.** Sık karışan nokta bu: `$transaction`
    tek bir isteğin içini atomik yapar, ama iki *ayrı* isteğin arasındaki
    bayatlığı görmez. Aynı harcamayı iki cihazdan düzenlemek buna örnek —

@@ -499,6 +499,7 @@ export default async function GroupDetailPage({
             category: expense.category,
             expenseDate: expense.expenseDate.toISOString(),
             paidById: expense.paidById,
+            payers: expense.payers,
             createdById: expense.createdById,
             participants: expense.participants.map((participant) => ({
               userId: participant.userId,

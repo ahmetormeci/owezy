@@ -109,8 +109,9 @@ Detay: [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Yetki mantığı tek yerde.** `src/lib/group-access.ts` — harcama ve ödeme
   kayıtları aynı kuralları paylaşır; iki yere kopyalanıp zamanla ayrışması
   güvenlik hatalarının klasik kaynağıdır.
-- **Kaydı yalnızca oluşturan değiştirebilir.** `paidById` hiçbir yetki
-  vermez (düzenlenebilir bir alan olduğu için yetki yükseltme yolu olurdu).
+- **Kaydı yalnızca oluşturan değiştirebilir.** `paidById` ve ödeyenler
+  listesi (ADR-067) hiçbir yetki vermez (düzenlenebilir alanlar oldukları
+  için yetki yükseltme yolu olurdu).
   OWNER yalnızca oluşturan kişi gruptan ayrıldıysa devreye girer.
 - **Var olmayan ile yetkisiz aynı cevabı alır.** Üye olmadığın bir grup 404
   döner — grubun varlığı bile sızdırılmaz.

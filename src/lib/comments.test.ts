@@ -77,7 +77,7 @@ beforeEach(() => {
   mockAssertMember.mockResolvedValue(undefined);
   mockCreateNotifications.mockResolvedValue(null);
   mockTx.expense.findUniqueOrThrow.mockResolvedValue({
-    paidById: "payer",
+    payers: [{ userId: "payer" }],
     createdById: "creator",
     participants: [{ userId: "p1" }, { userId: "p2" }],
   });

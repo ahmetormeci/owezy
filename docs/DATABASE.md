@@ -115,6 +115,9 @@ sonuçtan girdiye her zaman geri dönülemez. Yalnızca `PERCENTAGE` bölüşüm
 dolu; `EQUAL`/`EXACT`'ta ve kolondan önceki kayıtlarda `null` (ADR-022).
 
 `Expense` üç ayrı `User` ilişkisi taşır: `paidById`, `createdById`, `deletedById`.
+`paidById` 13 Kasım'dan beri **"ana ödeyen" aynası**: en çok ödeyen, eşitlikte
+istekteki listede ilk sıradaki. Ödeyen satırlarıyla aynı işlemde yazılır;
+bakiye onu **okumaz** (ADR-067, aşağıda `ExpensePayer`).
 
 `Expense.version` (`Int`, varsayılan 1) optimistic locking sayacıdır (ADR-032).
 Okuyan istemci sayacı da alır, yazarken geri gönderir; sunucu
@@ -123,6 +126,18 @@ güncelleme, **silme** ve **geri yükleme** artırır — üçü de kaydı deği
 Eşleşen satır yoksa yazma hiç olmaz ve istek 409 döner. Kontrolün `WHERE`
 içinde olması şart: Read Committed'da okuma satırı kilitlemediği için JS
 tarafında karşılaştırmak eş zamanlı iki isteğin ikisini de geçirebilirdi.
+
+### ExpensePayer
+Harcamayı **kim ne kadar ödedi** (ADR-067). `amount` kuruş cinsinden `Int`,
+CHECK `> 0` — hiçbir şey ödememiş biri ödeyen değil. `@@unique([expenseId,
+userId])`, `@@index([userId])`; iki FK de `Restrict`. Tek ödeyenli harcamada
+tek satır, tutarın tamamı. Bakiyede "ödediği" toplamı buradan
+(`expensePayer.groupBy`), `Expense.paidById`'den değil. Silinmiş harcamaların
+satırları da duruyor (soft delete); toplamlar `expense.deletedAt IS NULL` ile
+süzülüyor. Göç mevcut her harcamaya — silinmişler dahil — bir satır kopyaladı.
+
+Tekrarlayan şablonların (`RecurringExpense`) ödeyen tablosu **yok**: şablon
+tek ödeyenli, üretim `paidById` ve tutardan tek satır yazıyor.
 
 ### Settlement
 "X kişisi Y kişisine Z tutar ödedi" kaydı. **Gerçek para transferi değildir**;
@@ -288,6 +303,9 @@ Sonradan eklenen kısıtlar (kendi migration'larında):
 | 18 | `iban` ile `ibanUpdatedAt` **birlikte** yazılır, birlikte silinir | CHECK `User_iban_updated_pair` |
 | 19 | Misafirin IBAN'ı olamaz | CHECK `User_guest_no_iban` |
 | 20 | Silinmiş hesabın IBAN'ı olamaz — hesap silme unutursa **düşer** | CHECK `User_deleted_no_iban` |
+| 21 | `ExpensePayer.amount > 0` | CHECK `ExpensePayer_amount_positive` (`20261113195333`) |
+| 22 | `SUM(ExpensePayer.amount) == Expense.amount` **ve** `Expense.paidById` ödeyenlerden biri | **DEFERRABLE INITIALLY DEFERRED** constraint trigger `trg_expense_payer_sum_check` (`ExpensePayer` üzerinde) |
+| 23 | 8 ve 22 numaralı kurallar `Expense`'in **kendisi** değişince de (`INSERT`, `UPDATE OF amount, paidById`) | **DEFERRABLE INITIALLY DEFERRED** constraint trigger `trg_expense_totals_check` (`Expense` üzerinde) |
 
 11–14'ün dördü de geliştirme veritabanında geri alınan işlemlerle
 **denendi** (27 Eylül): dokuz denemenin dokuzu doğru — iki olumlu kontrol
@@ -309,10 +327,17 @@ Bir harcamanın 3 payı tek tek INSERT edilir. Kontrol her satırda çalışsayd
 ilk pay eklendiği anda "toplam tutmuyor" diye patlardı. `DEFERRABLE INITIALLY
 DEFERRED` sayesinde kontrol **COMMIT anında** yapılır.
 
-Trigger `AFTER INSERT OR UPDATE OR DELETE ON "ExpenseParticipant"` üzerindedir
-— yani `Expense.amount` tek başına değiştirilirse **tetiklenmez**. Uygulama
-katmanı bu yüzden güncellemede payları her zaman baştan yazar
-(bkz. [ARCHITECTURE.md](ARCHITECTURE.md#transaction-yaklaşımı)).
+Trigger `AFTER INSERT OR UPDATE OR DELETE ON "ExpenseParticipant"`
+üzerindedir — yani `Expense.amount` tek başına değiştirilirse **o**
+tetiklenmez. 13 Kasım'a kadar bu bir boşluktu; artık 23 numaralı kural
+(`Expense` üzerindeki `trg_expense_totals_check`) tutar değişince payların
+toplamını da denetliyor, ve paysız ya da ödeyensiz bir harcama commit
+edilemiyor. Uygulama katmanı yine de güncellemede payları ve ödeyenleri her
+zaman baştan yazar (bkz. [ARCHITECTURE.md](ARCHITECTURE.md#transaction-yaklaşımı));
+tetikleyici o disiplinin unutulmasını yakalıyor.
+
+22 numaralı kural aynı sebepten ertelenmiş: ödeyenler tek tek yazılıyor ve
+`paidById` ödeyen satırlarından **önce** güncelleniyor.
 
 `DEFERRABLE INITIALLY DEFERRED` olması sıralamayı da serbest bırakıyor:
 `updateExpense` önce `amount`'u yazıp sonra payları siliyor (sürüm kontrolü
@@ -333,7 +358,8 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | Yüzdelerin toplamı tam olarak %100 (10000 bp) | `src/lib/split.ts` |
 | Kaydı yalnızca oluşturan değiştirebilir; OWNER yalnızca oluşturan ayrıldıysa | `src/lib/group-access.ts` |
 | Ödeme kaydını yalnızca tarafları girebilir | `src/lib/settlements.ts` |
-| Harcama katılımcıları grubun **aktif** üyesi olmalı | `src/lib/expenses.ts` |
+| Harcama katılımcıları ve ödeyenleri grubun **aktif** üyesi olmalı | `src/lib/expenses.ts` |
+| Bir harcamada aynı kişi iki kez ödeyen olamaz (veritabanında da unique), ödeyen tutarı tam sayı | `src/lib/payers.ts` |
 | Ödeme tarafları üye olmalı (aktif olmak zorunda değil — borç kapatılabilmeli) | `src/lib/settlements.ts` |
 | Gruptan ayrılmadan önce bakiye kapatılmalı | `src/lib/groups.ts` |
 | Her grupta her zaman bir OWNER bulunur | `src/lib/groups.ts` |
@@ -369,6 +395,7 @@ Veritabanı bunları zorlamaz; ihlal edilirse veri sessizce bozulur:
 | `20260927180000_add_guest_claim` | `GroupInvite.guestUserId` + `User.mergedIntoId` + `User.mergedAt`; tek kullanımlık misafir linki ve devir şekli CHECK'leri (ADR-057, kurallar 15–16) |
 | `20260927210000_add_user_iban` | `User.iban` + `User.ibanUpdatedAt`; biçim, ikili, misafir ve silinmiş hesap CHECK'leri (ADR-059, kurallar 17–20) |
 | `20260927120000_add_guest_members` | `User.isGuest` + `User.guestGroupId`; CHECK `User_guest_shape`; misafire oturum/hesap ve yanlış grup/sahiplik trigger'ları (ADR-057, kurallar 11–14) |
+| `20261113195333_add_expense_payer` | `ExpensePayer` + mevcut her harcamaya bir satır (silinmişler dahil); CHECK ve iki ertelenmiş tetikleyici (ADR-067, kurallar 21–23). `migrate dev --create-only`'nin eklediği sahte `descriptionFold DROP DEFAULT` satırı elle silindi |
 | `20261106120000_relax_account_issuer` | `Account.issuer` → boş bırakılabilir (yalnızca `DROP NOT NULL`; sütun ve eski veri duruyor). better-auth 1.7.18'e geçiş için (ADR-063). Rehberdeki `issuer + accountId` indeksi bizde hiç oluşturulmamıştı |
 
 Migration'lar **havuzsuz (direct) bağlantı** üzerinden uygulanır — bkz.
