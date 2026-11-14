@@ -2798,7 +2798,7 @@ gönderilmiyor" testi düştü. Mobil 145 jest; web 861 vitest; tam E2E.
 (RNTL 14'te asenkron) sonraki testlerin `screen`'ini bozuyordu — yeni
 testler yalnızca birlikte koşunca düşüyordu; `await` eklendi.
 
-## Faz 55a — Birden fazla ödeyen: sunucu + web · **BİTTİ, COMMIT d41febe (13 Kasım); PUSH EDİLMEDİ**
+## Faz 55a — Birden fazla ödeyen: sunucu + web · **BİTTİ, YAYINDA (d41febe, 14 Kasım)**
 
 "Hesabı ikimiz ödedik" tek harcama olarak kaydediliyor (ADR-067). Kullanıcı
 tasarımdaki dört sorunun dördünde de önerileni seçti.
@@ -2819,7 +2819,7 @@ tasarımdaki dört sorunun dördünde de önerileni seçti.
 eski gövdeyle PUT → 409). Negatif kontroller ADR-067'de. Web 904 vitest;
 mobil 154 jest; tam E2E 74/74.
 
-## Faz 55b — Birden fazla ödeyen: mobil · **BİTTİ, KODDA; COMMIT BEKLİYOR (14 Kasım)**
+## Faz 55b — Birden fazla ödeyen: mobil · **BİTTİ, COMMIT fcce126 (14 Kasım); TELEFONLARA YENİ iOS BUILD'İYLE**
 
 | | |
 |---|---|
@@ -2834,9 +2834,9 @@ mobil 154 jest; tam E2E 74/74.
 Mobil 129 vitest + 170 jest; kök 904 vitest. Simülatörde ekleme, düzenleme,
 salt okunur detay ve liste denendi (ADR-067 sonu).
 
-**Sıradaki:** commit (kullanıcı isteyince). Telefonlara yeni iOS build'iyle
-çıkar — build almadan önce sor. `d41febe` ile birlikte push, production'da
-göçü çalıştırır.
+**Yayın (14 Kasım):** `d41febe` ve `fcce126` push edildi; CI başarılı,
+production deploy başarılı (göç dahil). Web çoklu ödeyeni destekliyor.
+**Sıradaki:** telefonlara yeni iOS build'iyle çıkar — build almadan önce sor.
 
 ## Sıradaki adaylar (henüz karar verilmedi)
 

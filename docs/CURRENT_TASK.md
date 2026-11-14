@@ -40,26 +40,22 @@ Current task:
   odeyenli; S4 eski govde cok odeyenliyi guncelleyemez -> 409
   expense.multiple_payers). Ayrinti ADR-067, Faz 55a ve 55b.
 
-  ADIM 1 - SUNUCU + WEB: COMMIT d41febe (13 Kasim), PUSH EDILMEDI.
-    PUSH = Vercel production deploy + `prisma migrate deploy` (gocu
-    20261113195333_add_expense_payer production'da calistirir). Push'tan
-    once SOR. Dogrulama: kok 904 vitest, tam E2E 74/74 (21 dk).
-
-  ADIM 2 - MOBIL (Faz 55b): BITTI, KODDA, COMMIT EDILMEDI. Kullanici
-  "commit" deyince AYRI bir kod commit'i (mobil + docs).
-    Dosyalar: mobile/lib/payer-form.ts (+test), components/payer-fields.tsx,
-    components/field.tsx (hideLabel, SelectField testID), app/groups/
-    [groupId]/{index,expenses/new,expenses/[expenseId]}.tsx; ekran testleri
-    test/screens/{new-expense-payers,expense-detail-payers,group-payers}
-    .test.tsx + new-expense-itemized (+1).
-    Dogrulama: mobil tsc + lint temiz, 129 vitest + 170 jest; kok tsc +
-    lint temiz, 904 vitest. Negatif kontrol ve simulator senaryolari
-    ADR-067 sonunda. E2E kosulmadi: web/sunucu bu adimda degismedi.
+  IKI KOD COMMIT'I PUSH EDILDI (14 Kasim, kullanicinin istegiyle):
+    d41febe  sunucu + web (Faz 55a). Gocu 20261113195333_add_expense_payer
+             production'da Vercel derlemesinde calisti.
+    fcce126  mobil (Faz 55b)
+    CI 43589944108 success (tek not: Ubuntu 26). Production deploy
+    7786866336 success 2026-11-14T11:26:09Z. Canli: /support 200, /sign-in
+    200, /api/v1/me oturumsuz 401.
+    Dogrulama: kok 904 vitest, tam E2E 74/74 (21 dk); mobil 129 vitest +
+    170 jest. Negatif kontroller ve simulator senaryolari ADR-067 sonunda.
     Simulatorde yaratilan test verisi: gelistirme veritabaninda "Coklu
     odeyen testi" grubu (cb484ede; iban-test-b + iban-test-c + misafir
     "Deniz", uc harcama). Zararsiz.
-  SONRAKI ADIM: commit (istenince) -> push'u SOR (iki commit birlikte
-  gider) -> telefonlar icin iOS BUILD ALMADAN ONCE SOR.
+  SONRAKI ADIM: mobil telefonlara YENI iOS BUILD ile cikar - BUILD ALMADAN
+  ONCE SOR (EAS kotasi). O build'in TestFlight'inda: iki odeyenli harcama
+  ekle/duzenle, liste rengi, ASAGI CEKIP YENILEME ve geri donunce tazeleme
+  (ADR-066), fis ve profil fotografi (Expo yamalari).
   1.0.7 (magazada) cok odeyenli harcamayi yalnizca ana odeyenin adiyla
   gosterir (bakiyeler dogru) ve duzenlemeye calisirsa ham kod
   "expense.multiple_payers" gorur - bilinen ve kabul edilen bedel.

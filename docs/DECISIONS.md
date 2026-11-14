@@ -531,7 +531,7 @@ olacak ve `/api/v1` orada devreye girecek. Çerez o zaman da hızlı yol ve
 ---
 
 ## ADR-067 — Birden fazla ödeyen: ayrı `ExpensePayer` tablosu, `paidById` "ana ödeyen" aynası; eski gövde çok ödeyenli harcamayı ezemez
-**Tarih:** 2026-11-13 · **Durum:** Kabul edildi · **UYGULANDI: sunucu + web 2026-11-13 (d41febe); mobil 2026-11-14 (kodda, commit bekliyor)**
+**Tarih:** 2026-11-13 · **Durum:** Kabul edildi · **UYGULANDI: sunucu + web d41febe, mobil fcce126; ikisi de 2026-11-14'te yayında (mobil telefonlara yeni iOS build'iyle)**
 
 **Bağlam:** "Hesabı ikimiz ödedik" durumu kaydedilemiyordu: `Expense.paidById`
 tek bir alan, bakiye de "ödediği" tarafını oradan ve `amount`'tan okuyordu.
