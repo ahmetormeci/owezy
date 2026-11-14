@@ -52,10 +52,19 @@ Current task:
     Simulatorde yaratilan test verisi: gelistirme veritabaninda "Coklu
     odeyen testi" grubu (cb484ede; iban-test-b + iban-test-c + misafir
     "Deniz", uc harcama). Zararsiz.
-  SONRAKI ADIM: mobil telefonlara YENI iOS BUILD ile cikar - BUILD ALMADAN
-  ONCE SOR (EAS kotasi). O build'in TestFlight'inda: iki odeyenli harcama
-  ekle/duzenle, liste rengi, ASAGI CEKIP YENILEME ve geri donunce tazeleme
-  (ADR-066), fis ve profil fotografi (Expo yamalari).
+  1.0.8 HAZIRLANDI (14 Kasim, commit EDILMEDI): kullanici "once uzun ad
+  duzeltmesi, sonra build" dedi.
+    - Listede alt satir iki satira sariyor (receipt.tsx numberOfLines
+      1 -> 2; ADR-067 eki). Mobil tsc + lint, 129 vitest + 171 jest, expo
+      export temiz; simulatorde uc satir tam okunuyor.
+    - app.json 1.0.8; surum notlari iki dilde STORE.md. Expo yamalari
+      guncel (expo install --check, 14 Kasim). App Privacy degismiyor.
+  SONRAKI ADIM: commit (kullanici isteyince) -> eas build (BUILD ALMADAN
+  ONCE SOR - kullanici 14 Kasim'da "build al" dedi) -> log'da Xcode 26.6
+  -> eas submit -> TestFlight'ta: iki odeyenli harcama ekle/duzenle, liste
+  rengi ve uzun ad sarmasi, ASAGI CEKIP YENILEME ve geri donunce tazeleme
+  (ADR-066), fis ve profil fotografi (Expo yamalari) + her surumun uc
+  kontrolu.
   1.0.7 (magazada) cok odeyenli harcamayi yalnizca ana odeyenin adiyla
   gosterir (bakiyeler dogru) ve duzenlemeye calisirsa ham kod
   "expense.multiple_payers" gorur - bilinen ve kabul edilen bedel.
@@ -121,6 +130,9 @@ Current task:
       localhost:3000.
     - Sunucu: RESEND_API_KEY="" npm run dev  (kod e-postasi GITMEZ)
     - Kod: gelistirme veritabani Verification "sign-in-otp-<email>".
+      KODU GORMEDEN GIRMEK: betik kodu dosyaya yazsin, sonra
+      xcrun simctl pbcopy <TAM UDID> < dosya; rm dosya -> kod alanina
+      uzun bas -> "Paste" (14 Kasim'da calisti).
       7 Kasim'dan beri SIFRELI (ADR-064): readOtpFromDatabase'in yaptigi
       gibi better-auth/crypto symmetricDecrypt + BETTER_AUTH_SECRET.
       Betik proje DISINDA (scratchpad) duruyorsa "Cannot find module
@@ -500,7 +512,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
 
 TESTLER - NE NEREDE (13 Kasim):
   KOK      npm test                  904 birim (vitest, src/**)
-  MOBIL    cd mobile && npm test      129 vitest + 170 jest
+  MOBIL    cd mobile && npm test      129 vitest + 171 jest
   E2E      npm run test:e2e           74, ~17-23 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.

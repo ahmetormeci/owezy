@@ -508,6 +508,40 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
+## 1.0.8 — HAZIRLANIYOR (14 Kasım)
+
+| | |
+|---|---|
+| Birden fazla ödeyen ("Başka ödeyen ekle") | Faz 55b · ADR-067 · web'de 14 Kasım'dan beri canlı |
+| Listede uzun adlar iki satıra sarıyor (kesilmiyor) | ADR-067 eki · 14 Kasım |
+| Aşağı çekip yenileme; geri dönünce ve bildirim gelince tazeleme | ADR-066 |
+| 5 Expo paketinin yaması (expo 57.0.33, expo-router …) + 6 Kasım'da gelen expo-image-picker / expo-image-manipulator | native parçalar değişti — TestFlight'ta fiş ve profil fotoğrafı denenmeli |
+
+Yeni native paket YOK. **App Privacy değişmiyor:** kimin ne kadar ödediği
+zaten beyan edilen Financial Info'nun parçası; yeni veri türü yok.
+
+### Sürüm notu taslağı — 1.0.8 Türkçe
+
+```
+• Bir harcamayı birden fazla kişi ödediyse artık hepsini yazabilirsin:
+  "Başka ödeyen ekle" ile her kişinin ödediği tutarı gir, kalanı ilk
+  ödeyene yazılır.
+• Listeyi aşağı çekerek yenileyebilirsin. Uygulamaya geri döndüğünde ya
+  da yeni bir bildirim geldiğinde liste kendiliğinden güncelleniyor.
+```
+
+### Sürüm notu taslağı — 1.0.8 İngilizce
+
+```
+• When more than one person paid for an expense, you can now add them
+  all: tap "Add another payer" and enter what each person paid; the
+  rest goes to the first payer.
+• Pull down to refresh the list. It also updates on its own when you
+  come back to the app or a new notification arrives.
+```
+
+---
+
 ## 1.0.7 — YAYINDA (5 Kasım; build 28 — 4 Kasım'da gönderildi, TestFlight'ta geçti)
 
 EAS build `73244045` (commit 6910d2f, log'da Xcode 26.6 (17F113), imaj
