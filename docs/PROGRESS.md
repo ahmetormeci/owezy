@@ -2836,9 +2836,8 @@ salt okunur detay ve liste denendi (ADR-067 sonu).
 
 **Yayın (14 Kasım):** `d41febe` ve `fcce126` push edildi; CI başarılı,
 production deploy başarılı (göç dahil). Web çoklu ödeyeni destekliyor.
-**Sıradaki:** 1.0.8 hazırlandı (`app.json` 1.0.8, sürüm notları STORE.md);
-kullanıcı "önce uzun ad düzeltmesi, sonra build" dedi — commit ve EAS build
-sırada.
+**1.0.8 (14 Kasım):** build 29 alındı (Xcode 26.6) ve App Store Connect'e
+yüklendi. **Sıradaki:** kullanıcının TestFlight kontrolü, sonra inceleme.
 
 ## Sıradaki adaylar (henüz karar verilmedi)
 

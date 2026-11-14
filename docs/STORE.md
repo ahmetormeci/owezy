@@ -508,7 +508,11 @@ yani kuruşu kuruşuna doğru. `demo@owezy.net`'in görünen adı
 `demo@owezy.net`'ten `Ahmet`'e çekildi; **yalnızca geliştirme
 veritabanında**, üretime dokunulmadı.
 
-## 1.0.8 — HAZIRLANIYOR (14 Kasım)
+## 1.0.8 — BUILD 29 YÜKLENDİ, TESTFLIGHT KONTROLÜ BEKLİYOR (14 Kasım)
+
+EAS build `1d3daf03` (commit ab60199, log'da Xcode 26.6 (17F113), imaj
+`macos-tahoe-26.5-xcode-26.6`), submit `36d7e14b` başarılı (14 Kasım).
+İncelemeye gönderme kullanıcıda, TestFlight kontrolünden sonra.
 
 | | |
 |---|---|

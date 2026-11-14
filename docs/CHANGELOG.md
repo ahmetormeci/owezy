@@ -16,6 +16,9 @@ bölüşüm türü kesiliyordu. Kısa satırlar değişmedi. Kullanıcı üç yo
 bunu seçti (ADR-067 eki). Sürüm 1.0.8'e çıkarıldı; sürüm notları iki dilde
 STORE.md'de.
 
+1.0.8 build 29 alındı (Xcode 26.6) ve App Store Connect'e yüklendi;
+TestFlight kontrolü kullanıcıda.
+
 ---
 
 ## 2026-11-14 — Birden fazla ödeyen: mobil

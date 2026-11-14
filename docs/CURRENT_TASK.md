@@ -52,19 +52,22 @@ Current task:
     Simulatorde yaratilan test verisi: gelistirme veritabaninda "Coklu
     odeyen testi" grubu (cb484ede; iban-test-b + iban-test-c + misafir
     "Deniz", uc harcama). Zararsiz.
-  1.0.8 HAZIRLANDI (14 Kasim, commit EDILMEDI): kullanici "once uzun ad
-  duzeltmesi, sonra build" dedi.
+  1.0.8 BUILD 29 APP STORE CONNECT'TE (14 Kasim, kullanicinin istegiyle):
+    8d7ee82 uzun ad duzeltmesi, ab60199 surum 1.0.8 - push edildi; CI
+    43601974089 success, Production 7788496588 success 13:53:37Z.
+    EAS build 1d3daf03 FINISHED (commit ab60199, log'da Xcode 26.6
+    (17F113)); eas submit 36d7e14b basarili - Apple isliyor.
     - Listede alt satir iki satira sariyor (receipt.tsx numberOfLines
       1 -> 2; ADR-067 eki). Mobil tsc + lint, 129 vitest + 171 jest, expo
       export temiz; simulatorde uc satir tam okunuyor.
     - app.json 1.0.8; surum notlari iki dilde STORE.md. Expo yamalari
       guncel (expo install --check, 14 Kasim). App Privacy degismiyor.
-  SONRAKI ADIM: commit (kullanici isteyince) -> eas build (BUILD ALMADAN
-  ONCE SOR - kullanici 14 Kasim'da "build al" dedi) -> log'da Xcode 26.6
-  -> eas submit -> TestFlight'ta: iki odeyenli harcama ekle/duzenle, liste
+  SONRAKI ADIM: KULLANICI TestFlight'ta build 29'u telefonda denesin: iki odeyenli harcama ekle/duzenle, liste
   rengi ve uzun ad sarmasi, ASAGI CEKIP YENILEME ve geri donunce tazeleme
   (ADR-066), fis ve profil fotografi (Expo yamalari) + her surumun uc
-  kontrolu.
+  kontrolu. Gecerse: GONDERIM KONTROL LISTESI 3-5 (appreview@ girisi,
+  App Privacy DEGISMIYOR, surum notlari STORE.md) -> incelemeye kullanici
+  gonderir.
   1.0.7 (magazada) cok odeyenli harcamayi yalnizca ana odeyenin adiyla
   gosterir (bakiyeler dogru) ve duzenlemeye calisirsa ham kod
   "expense.multiple_payers" gorur - bilinen ve kabul edilen bedel.
@@ -266,8 +269,9 @@ DIS DUNYA - 13 KASIM OLCUMU (8 Kasim'dakiyle ayni):
   PANEL    olculemez: Resend takibi KAPALI, Cloudflare DMARC ACIK - kullanici
            27 Eylul'de yapti ve DMARC'taki rua bunu dogruluyor.
 
-CANLIDA OLAN: web ve mobil (1.0.7) esit. MOBILDE BEKLEYEN (sonraki build):
-ADR-066 liste tazeleme (a3d76a8) + 13 Kasim Expo yamalari.
+CANLIDA OLAN: web'de coklu odeyen var; magazadaki mobil 1.0.7. MOBILDE
+BEKLEYEN 1.0.8 (build 29, TestFlight'ta): coklu odeyen (fcce126), uzun ad
+sarmasi (8d7ee82), ADR-066 liste tazeleme (a3d76a8), 13 Kasim Expo yamalari.
 
 AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):
   - MISAFIR (ADR-057): isGuest isaretli, tek gruba bagli User; giris
