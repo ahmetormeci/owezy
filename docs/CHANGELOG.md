@@ -8,6 +8,16 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-14 — Listede uzun adlar kesilmiyor; 1.0.8 hazırlığı
+
+Mobil grup listesinde alt satır ("Deniz (IBAN testi) ve Ece (IBAN testi)
+ödedi · eşit") sığmazsa artık iki satıra sarıyor; önce ikinci ödeyen ve
+bölüşüm türü kesiliyordu. Kısa satırlar değişmedi. Kullanıcı üç yoldan
+bunu seçti (ADR-067 eki). Sürüm 1.0.8'e çıkarıldı; sürüm notları iki dilde
+STORE.md'de.
+
+---
+
 ## 2026-11-14 — Birden fazla ödeyen: mobil
 
 Mobil uygulama da "hesabı ikimiz ödedik"i kaydediyor (ADR-067, Faz 55b).

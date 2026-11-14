@@ -9,6 +9,8 @@ import GroupScreen from "../../app/groups/[groupId]";
  *   2. PAYIN RENGI NET DURUMA bakiyor (odedigim - payim), "ben mi odedim"e
  *      degil. Odeyenlerden biri olup payindan AZ odeyen kisi BORCLU
  *      gorunmeli; eski kural onu alacakli boyardi.
+ *   3. ALT SATIR IKI SATIRA SARABILIYOR. Tek satirken uzun adlar ikinci
+ *      odeyeni ve bolusum turunu kesiyordu (14 Kasim, simulator).
  *
  * Renkler LIGHT temadan (lib/theme.tsx): testte saglayici yok, useTheme
  * sistem ayarina - jest'te aciga - dusuyor.
@@ -177,4 +179,14 @@ it("payin rengi NET duruma bakiyor: odeyenlerden biri olsam da az odediysem borc
   expect(screen.getByText("senin payın 51,00 ₺")).toHaveStyle({ color: DEBT });
   expect(screen.getByText("senin payın 52,00 ₺")).toHaveStyle({ color: CREDIT });
   expect(screen.getByText("senin payın 53,00 ₺")).toHaveStyle({ color: MUTED });
+});
+
+it("alt satir iki satira kadar sariyor, baslik tek satir kaliyor", async () => {
+  await render(<GroupScreen />);
+  expect(await screen.findByText("Aksam yemegi")).toBeTruthy();
+
+  // Kesmenin kendisi platformda oluyor, jest metni olcmuyor. Olculebilen
+  // sey sinirin kendisi: 1'e geri donerse bu test duser.
+  expect(screen.getByText(/Veli ve Ben ödedi/)).toHaveProp("numberOfLines", 2);
+  expect(screen.getByText("Aksam yemegi")).toHaveProp("numberOfLines", 1);
 });

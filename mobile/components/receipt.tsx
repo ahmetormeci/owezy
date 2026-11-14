@@ -394,8 +394,14 @@ export function ExpenseRow({
         </View>
         {meta || category || action ? (
           <View style={s.expenseMetaRow}>
+            {/* ALT SATIR IKI SATIRA KADAR SARIYOR. Tek satirda uzun adlar
+                ("Deniz (IBAN testi) ve Ece (IBAN testi) odedi") ikinci
+                odeyeni ve bolusum turunu kesiyordu - kesilen tam okunmasi
+                gereken bilgiydi. Kisa satirlar yine tek satir; yalnizca
+                sigmayan uzuyor. Ucuncu satir yok: "ve N kisi" bicimi en
+                fazla iki ad yazdigi icin iki satir pratikte yetiyor. */}
             {meta ? (
-              <Text style={s.expenseMeta} numberOfLines={1}>
+              <Text style={s.expenseMeta} numberOfLines={2}>
                 {meta}
               </Text>
             ) : null}

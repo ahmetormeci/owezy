@@ -2826,17 +2826,19 @@ mobil 154 jest; tam E2E 74/74.
 | Yeni harcama | Tek ödeyende "Ödeyen" kategoriyle yan yana, altında "Başka ödeyen ekle"; ikinci satırla ödeyenler kendi bloğuna geçiyor, ilk satır "kalan"ı gösteriyor. İkinci ödeyen varken "Bunu tekrarla" yok |
 | Düzenleme | Dağılım forma geri geliyor; tutar değişince farkı ana ödeyenin kalanı alıyor. Gövde `payers` taşıyor — eski `paidById` çok ödeyenlide 409 alırdı |
 | Salt okunur detay | "ÖDEYENLER" bölümü, kişi başına bir satır |
-| Liste | "Ayşe ve Can ödedi"; payın rengi net işarete göre (ödediğim − payım), sıfırsa renksiz |
+| Liste | "Ayşe ve Can ödedi"; payın rengi net işarete göre (ödediğim − payım), sıfırsa renksiz. Alt satır sığmazsa iki satıra sarıyor (14 Kasım, ADR-067 eki — uzun adlar ikinci ödeyeni kesiyordu) |
 | Ortak | `mobile/lib/payer-form.ts` (saf), `components/payer-fields.tsx`; `Field`/`SelectField`'e `hideLabel` |
 
 **Testler:** `payer-form.test.ts` (15), `new-expense-payers` (8),
-`expense-detail-payers` (5), `group-payers` (2), `new-expense-itemized` (+1).
-Mobil 129 vitest + 170 jest; kök 904 vitest. Simülatörde ekleme, düzenleme,
+`expense-detail-payers` (5), `group-payers` (3), `new-expense-itemized` (+1).
+Mobil 129 vitest + 171 jest; kök 904 vitest. Simülatörde ekleme, düzenleme,
 salt okunur detay ve liste denendi (ADR-067 sonu).
 
 **Yayın (14 Kasım):** `d41febe` ve `fcce126` push edildi; CI başarılı,
 production deploy başarılı (göç dahil). Web çoklu ödeyeni destekliyor.
-**Sıradaki:** telefonlara yeni iOS build'iyle çıkar — build almadan önce sor.
+**Sıradaki:** 1.0.8 hazırlandı (`app.json` 1.0.8, sürüm notları STORE.md);
+kullanıcı "önce uzun ad düzeltmesi, sonra build" dedi — commit ve EAS build
+sırada.
 
 ## Sıradaki adaylar (henüz karar verilmedi)
 

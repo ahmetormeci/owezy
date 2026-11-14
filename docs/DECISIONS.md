@@ -670,6 +670,20 @@ dağılım forma geldi ve tutar 300'e çıkınca fark ana ödeyene gitti (200 +
 100, sürüm 2); başkasının kaydında "PAID BY" kişi başına satır; listede iki
 ödeyen satırı ve net renkleri; bakiye kartı elle hesaplananla aynı.
 
+**Ek (14 Kasım) — listede alt satır iki satıra sarıyor.** Simülatörde
+uzun adlarla ("Deniz (IBAN testi)") iki ödeyenli satır tek satırda
+kesiliyordu: ikinci ödeyen ve bölüşüm türü görünmüyordu. Kullanıcı üç
+yoldan **iki satıra sarmayı** seçti; reddedilenler: ödeyenleri her
+harcamada ayrı satıra almak (bütün satırlar uzar, listede daha az harcama
+görünür) ve birden fazla ödeyende yalnızca ilk adı yazmak (aynı ilk adlı
+iki üye karışır). Değişiklik tek satır: `mobile/components/receipt.tsx`
+`ExpenseRow` alt satırında `numberOfLines` 1 → 2. Kısa satırlar yine tek
+satır. Üçüncü satır yok, çünkü "ve N kişi" biçimi en fazla iki ad yazıyor.
+Web'e dokunulmadı. Web'in alt satırı da tek satır (`truncate`) ve
+"senin payın"ı da taşıyor; telefon tarayıcısında kesilebilir — ÖLÇÜLMEDİ,
+bu işin kapsamı dışında bırakıldı. Test: `group-payers.test.tsx` +1; sınır
+1'e geri konunca düştü. Simülatörde üç satır da tam okunuyor.
+
 ---
 
 ## ADR-066 — Mobilde liste tazeleme: öne gelince, açıkken bildirim gelince, aşağı çekince; başarısız tazeleme veriyi silmez
