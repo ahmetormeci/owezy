@@ -29,8 +29,21 @@ const SWITCH_LABEL_CODES: Record<Locale, string> = {
  * gosterim tercihi - bugun hicbir yere kaydedilmiyor. 11.4d'de User.locale
  * geldiginde o gercekten bir kayit olacak ve API ucu orada anlam kazanacak;
  * cerez o zaman da hizli yol ve "cikis yapmis kullanici" yolu olarak kalir.
+ *
+ * saveToAccount ZORUNLU, varsayilani yok: dugmeyi yeni bir yere koyan kisi
+ * "burada oturum var mi" sorusunu atlayamasin diye. Bilesen istemcide calisiyor
+ * ve oturumu kendisi bilemez - oturum cerezi httpOnly, JavaScript okuyamaz.
+ * Cevabi onu cizen sunucu veriyor (bkz. public-controls.tsx).
  */
-export function LanguageToggle() {
+export function LanguageToggle({
+  saveToAccount,
+}: {
+  /**
+   * true: tercih cereze VE hesaba yazilir. false: yalnizca cereze - cikis
+   * yapmis ziyaretcide hesap istegi 401'den baska bir sey donmez.
+   */
+  saveToAccount: boolean;
+}) {
   const locale = useLocale();
   const t = useTranslate();
 
@@ -46,23 +59,29 @@ export function LanguageToggle() {
 
     // Tercihi hesaba da yaz: baska bir cihazda cerez olmayacak.
     //
+    // YALNIZCA OTURUM VARKEN. Eskiden herkes icin gidiyordu; cikis yapmis
+    // ziyaretcide sunucu dogru olarak 401 donuyor, istek bosa gidiyor ve
+    // tarayici konsoluna her seferinde bir hata satiri dusuyordu.
+    //
     // BEKLENMIYOR (await yok): gorunen isi cerez zaten yapti. Bunu beklemek
-    // arayuzu bir ag istegi boyunca duraklatirdi. Hata da yutuluyor - cikis
-    // yapmis kullanicida 401 gelmesi normal ve kullanicinin gordugu hicbir sey
-    // bozulmuyor. Sessizce kaybolmasin diye konsola dusuyor.
+    // arayuzu bir ag istegi boyunca duraklatirdi. Ag hatasi yutuluyor -
+    // kullanicinin gordugu hicbir sey bozulmuyor. Sessizce kaybolmasin diye
+    // konsola dusuyor.
     //
     // keepalive: hemen ardindan sayfa bosaltiliyor ve
     // normalde tarayici ucusta olan istegi iptal ederdi - tercih hesaba hic
     // yazilmazdi. keepalive istegin sayfa omrunu asmasina izin veriyor.
     // Istek kucuk (tek alanli JSON), keepalive'in 64 KB sinirinin cok altinda.
-    void fetch("/api/v1/me", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ locale: target }),
-      keepalive: true,
-    }).catch((error) => {
-      console.warn("Dil tercihi hesaba yazilamadi", error);
-    });
+    if (saveToAccount) {
+      void fetch("/api/v1/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale: target }),
+        keepalive: true,
+      }).catch((error) => {
+        console.warn("Dil tercihi hesaba yazilamadi", error);
+      });
+    }
 
     // TAM YENILEME, HER YERDE.
     //

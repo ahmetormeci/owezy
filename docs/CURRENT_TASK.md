@@ -30,9 +30,24 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
     panel    olculemez - KULLANICIYA SOR, varsaymadan
 -->
 
-Updated: 2026-11-14
+Updated: 2026-11-15
 
 Current task:
+  DIL DUGMESI (15 Kasim, ADR-023 eki, yalnizca web): cikis yapmis
+  ziyaretcide hesaba PATCH atmiyor; oturumu PublicControls sunucuda
+  findCurrentUser ile soruyor. LanguageToggle'in saveToAccount ayari
+  ZORUNLU. Dosyalar: language-toggle.tsx, public-controls.tsx, app/page.tsx,
+  app/(app)/layout.tsx, e2e/language.spec.ts (+2 test).
+  Dogrulama: tsc, lint, 904 birim, language.spec 5/5 (yeni "istek
+  gitmez" testi eski kodla dustu), tam E2E 76/76 (21 dk).
+  COMMIT KULLANICI ISTEYINCE; kod commit'i -> push'u SOR (Vercel deploy).
+
+  SDK 58 (ADR-068): sdk-58 DALINDA commit 8017ba8, PUSH YOK. Ayrinti o
+  dalin dokumanlarinda (CURRENT_TASK, ADR-068, Faz 56). 1.0.8 onaylaninca
+  main'e birlesir, tek basina 1.0.9. O ZAMANA KADAR main'e MOBIL kod
+  girmez (1.0.9'a karisir); web/sunucu isi serbest. Birlestirmede
+  dokumanlarda cakisma beklenir (CHANGELOG, CURRENT_TASK, PROGRESS).
+
   BIRDEN FAZLA ODEYEN (ADR-067). Tasarim: artifact
   https://claude.ai/artifact/P2N43hMBXgegW1zD9wcSxZ . Kullanici dort
   soruya da onerileni secti (S1 ayri ExpensePayer tablosu + paidById "ana
@@ -253,15 +268,15 @@ ACIK KALANLAR - KULLANICIDAN CEVAP YA DA KARAR BEKLEYENLER:
      yeniden boyutlandirilabilir oluyor - duzen farkli genisliklerde
      denenmeli.
 
-DIS DUNYA - 13 KASIM OLCUMU (8 Kasim'dakiyle ayni):
+DIS DUNYA - 15 KASIM OLCUMU (13 Kasim'dakiyle ayni):
   DMARC    v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r;
            rua=mailto:...@dmarc-reports.cloudflare.net   (Cloudflare raporlari)
   CANLI    / , /support , /privacy , /.well-known/apple-app-site-association -> 200
            Apple CDN AASA -> 200
   MAGAZA   1.0.7 | 2026-11-05 | (us ve tr)
-  CI       ea9d384 success (kosu 43492010771, 13 Kasim) - onceki
-           972dc84, fb59f28 de success
-  YAYIN    ea9d384 Production success 2026-11-13 19:26:00Z - dokuman commit'leri de
+  CI       73a18fc success (kosu 43602481038, 14 Kasim) - onceki
+           ab60199, b3908dd de success. sdk-58 dali push edilmedi, CI'i yok.
+  YAYIN    73a18fc Production success 2026-11-14 13:59:50Z - dokuman commit'leri de
            production'a yayinlaniyor (her commit'in Production kaydi var)
   ENV      15 ad: DATABASE_URL, E2E_DATABASE_URL, E2E_USER_1..3_EMAIL/PASSWORD,
            RESEND_API_KEY, BETTER_AUTH_SECRET/URL, R2_ACCOUNT_ID,
@@ -363,7 +378,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     basarisizken de 0 donuyor.
 
   E2E
-  - Tam kosu ~17-23 dk, 74 test (13 Kasim), atlanan yok (2FA kopru testi 7 Kasim'da
+  - Tam kosu ~17-23 dk, 76 test (15 Kasim), atlanan yok (2FA kopru testi 7 Kasim'da
     kopruyle birlikte silindi).
     KOSU SURERKEN PROJE DOSYALARINA DOKUNMA. Sema degistiyse once
     npm run db:migrate:e2e. Tek seferlik kodlar veritabanindan okunuyor.
@@ -517,7 +532,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
 TESTLER - NE NEREDE (13 Kasim):
   KOK      npm test                  904 birim (vitest, src/**)
   MOBIL    cd mobile && npm test      129 vitest + 171 jest
-  E2E      npm run test:e2e           74, ~17-23 dk
+  E2E      npm run test:e2e           76, ~17-23 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.
   Mobil testler KOKTEN kosmuyor: agacta iki ayri React kopyasi var.

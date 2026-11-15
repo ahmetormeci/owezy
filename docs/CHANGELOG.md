@@ -8,6 +8,22 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-15 — Dil düğmesi çıkış yapmış ziyaretçide hesaba istek atmıyor (web)
+
+Dil düğmesi tercihi hesaba yazmak için herkes adına sunucuya istek
+atıyordu. Çıkış yapmış ziyaretçide bu her seferinde 401 dönüyor ve tarayıcı
+konsoluna hata satırı düşürüyordu — zararsız ama boşa istek ve gürültü.
+Artık istek yalnızca oturum varken gidiyor; oturumu sunucu söylüyor
+(ADR-023 eki).
+
+- Giriş yapmış kullanıcı gizlilik, destek ya da davet sayfasında dili
+  değiştirirse tercih **yine** hesaba yazılıyor — karar sayfaya göre değil
+  oturuma göre.
+- İki yeni E2E testi (`language.spec.ts`); ilki eski kodla düştü.
+- Yalnızca web: mobil uygulamaya dokunulmadı.
+
+---
+
 ## 2026-11-14 — Listede uzun adlar kesilmiyor; 1.0.8 hazırlığı
 
 Mobil grup listesinde alt satır ("Deniz (IBAN testi) ve Ece (IBAN testi)

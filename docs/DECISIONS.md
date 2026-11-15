@@ -3694,6 +3694,33 @@ değişince yeniden mount etmek. Kök layout tüm uygulamayı sarmalıyor, yani
 uygulama içinde dil değiştiren kullanıcı bütün istemci state'ini kaybederdi —
 yeniden yüklemenin bedelini ödeyip ekstra bir Clerk kurulumu da eklerdi.
 
+**EK (2026-11-15) — Hesaba yazma isteği yalnızca oturum varken gider.**
+Düğme `PATCH /api/v1/me`'yi herkes için atıyordu; çıkış yapmış ziyaretçide
+sunucu doğru olarak 401 dönüyor, istek boşa gidiyor ve tarayıcı konsoluna
+her seferinde hata satırı düşüyordu. Artık `LanguageToggle`'ın **zorunlu**
+bir `saveToAccount` ayarı var (varsayılanı yok: düğmeyi yeni bir yere koyan
+"burada oturum var mı" sorusunu atlayamasın).
+
+- **Karar sayfanın türüne göre değil, OTURUMA göre.** `PublicControls`'un
+  durduğu sayfalara (gizlilik, destek, özellikle davet linki) giriş yapmış
+  kullanıcı da geliyor ve orada tercih hesaba yazılmalı. "Herkese açık
+  sayfada istek atma" bunu bozardı.
+- **Oturumu sunucu söylüyor:** `PublicControls` artık `findCurrentUser()`
+  soruyor. İstemci bilemez — oturum çerezi httpOnly. Maliyet: oturum çerezi
+  yoksa Better Auth veritabanına gitmeden boş dönüyor (`getSession`,
+  ölçüldü: `session.mjs`); varsa `cache()` sayesinde aynı istekteki ikinci
+  soru bedava.
+- Karşılama sayfası `false` (giriş yapmış kullanıcı oradan yönlendiriliyor),
+  `(app)` düzeni `true` (oturum yoksa giriş sayfasına yönlendiriliyor).
+- **Reddedilen:** sunucuda yalnızca oturum çerezinin VARLIĞINA bakmak (süresi
+  dolmuş çerezde 401 yine gelir, tek kimlik kapısı atlanır); oturumsuz
+  PATCH'e 401 yerine 204 dönmek (API'nin "kim olduğunu bilmiyorum" cevabını
+  yalan söyletir).
+- **Testler (E2E, `language.spec.ts`):** çıkış yapmış ziyaretçi karşılama
+  ve giriş sayfasında dili değiştirir, hiç PATCH gitmez — eski kodla iki
+  PATCH yakalayıp düştü; giriş yapmış kullanıcı `/privacy`'de değiştirir,
+  tercih hesaba yazılır — yanlış düzeltmeye karşı bekçi.
+
 ---
 
 ## ADR-022 — Kullanıcının girdiği yüzde saklanır; geri hesaplama ancak ispatlanırsa kullanılır

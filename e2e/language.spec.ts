@@ -47,6 +47,51 @@ test.describe("dil degistirme", () => {
     await context.close();
   });
 
+  // BU TESTIN SEBEBI: dugme hesaba yazma istegini eskiden HERKES icin
+  // atiyordu. Cikis yapmis ziyaretcide sunucu dogru olarak 401 donuyordu;
+  // kod bunu yutuyordu ama istek bosunaydi ve tarayici konsoluna her
+  // seferinde bir hata satiri dusuyordu - gercek bir hatayi ararken gurultu.
+  // Artik oturum yoksa istek hic gitmiyor.
+  test("cikis yapmis ziyaretcide dil degisir ama hesaba istek gitmez", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    /**
+     * BAGLAM DUZEYINDE dinliyoruz, sayfa duzeyinde degil: istek keepalive ile
+     * gidiyor ve hemen ardindan sayfa yeniden yukleniyor (asagidaki testin
+     * yorumu). Baglamin dinleyicisi sayfanin yikimindan etkilenmiyor.
+     *
+     * Yalnizca PATCH sayiliyor: olcmek istedigimiz sey "hesaba yazma
+     * denemesi". Baska bir bilesenin ileride GET atmasi bu testi ilgilendirmez.
+     */
+    const accountWrites: string[] = [];
+    context.on("request", (request) => {
+      if (request.method() === "PATCH" && new URL(request.url()).pathname === "/api/v1/me") {
+        accountWrites.push(request.url());
+      }
+    });
+
+    // Karsilama sayfasi: dugme dogrudan basligin icinde ve "hesaba yazma"
+    // orada SABIT olarak kapali (giris yapmis kullanici / adresinde kalmiyor).
+    await page.goto("/");
+    await page.getByRole("button", { name: "İngilizceye geç" }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+    // Giris sayfasi: dugme ortak kosede (PublicControls). Oturumu SUNUCUDA
+    // soran yol bu - karsilama sayfasindakinden farkli bir kod yolu.
+    await page.goto("/sign-in");
+    await page.getByRole("button", { name: "Switch to Turkish" }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "tr");
+
+    // Iki tiklamanin istegi de (gidecek olsaydi) yeniden yuklemeden ONCE
+    // cikiyordu; dil degistiyse yeniden yukleme olmus, yani artik gelmez.
+    expect(accountWrites).toEqual([]);
+
+    await context.close();
+  });
+
   test("bozuk dil cerezi sayfayi cokertmez", async ({ browser }) => {
     // Cerez kullanicinin kontrolunde. Ham deger Intl'e gitseydi RangeError
     // firlatir ve sunucuda render edilen sayfa 500 verirdi - yani konsoldan
@@ -136,6 +181,45 @@ test.describe("dil degistirme", () => {
       })
       .toBe("tr");
     await expect(page.getByRole("heading", { name: "Gruplarım" })).toBeVisible();
+
+    await context.close();
+  });
+
+  // BU TESTIN SEBEBI: "cikis yapmis ziyaretcide istek gitmez" testinin TERSI.
+  // Dugmenin durdugu herkese acik sayfalara giris yapmis kullanici da geliyor
+  // (gizlilik, destek, davet linki). Orada tercih hesaba YAZILMALI. Karari
+  // sayfanin turune gore veren bir duzeltme ("herkese acik sayfada istek
+  // atma") burada duser - karar oturuma gore verilmeli.
+  test("giris yapmis kullanici herkese acik sayfada dili degistirince tercih hesaba yazilir", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      storageState: userByKey("outsider").storageStatePath,
+    });
+    const page = await context.newPage();
+
+    await page.goto("/privacy");
+
+    // Kaydi API'den okuyarak dogruluyoruz - neden ag olayini beklemedigimiz
+    // bir onceki testin yorumunda.
+    await page.getByRole("button", { name: "İngilizceye geç" }).click();
+    await expect
+      .poll(async () => {
+        const response = await context.request.get("/api/v1/me");
+        return (await response.json()).user.locale;
+      })
+      .toBe("en");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+    // Geri al: bu test de KALICI bir kayit birakiyor (bkz. bir onceki test).
+    await page.getByRole("button", { name: "Switch to Turkish" }).click();
+    await expect
+      .poll(async () => {
+        const response = await context.request.get("/api/v1/me");
+        return (await response.json()).user.locale;
+      })
+      .toBe("tr");
+    await expect(page.locator("html")).toHaveAttribute("lang", "tr");
 
     await context.close();
   });

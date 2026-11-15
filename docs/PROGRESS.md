@@ -3023,12 +3023,9 @@ kaldı (ADR-054).
   **Not:** "package-lock.json yazmaya kapalı" engeli sanıldığı kadar güçlü
   değilmiş — `.claude/settings.json`'daki kural Claude'un dosya düzenleme
   araçlarını engelliyor, `npm` komutunu değil.
-- Dil düğmesi `/api/v1/me`'ye **çıkış yapmışken de** PATCH atıyor; herkese
-  açık sayfalarda bu her zaman 401 dönüyor ve tarayıcı konsoluna hata
-  düşüyor. Zararsız (kod bunu bekliyor ve yutuyor) ama gereksiz istek ve
-  gürültü. Çözüm bir prop: `PublicControls` zaten herkese açık sayfalarda
-  kullanılıyor, oturum durumunu sunucudan geçirmek yeterli. (Öneri bir ara
-  "Clerk'in `useAuth().isSignedIn`'i" diyordu — Clerk 25.7'de söküldü.)
+- ~~Dil düğmesi çıkış yapmışken de PATCH atıyor~~ — **ÇÖZÜLDÜ (15 Kasım,
+  ADR-023 eki):** istek yalnızca oturum varken gidiyor; oturumu sunucu
+  söylüyor.
 - `PublicControls` konumunu `fixed` ile kendisi belirliyor. Dar ve kısa bir
   ekranda üstteki kartla çakışabilir. **11.6'nın listesindeydi, yapılmadı** —
   ölçülmedi de; kalan tek 11.6 maddesi bu.

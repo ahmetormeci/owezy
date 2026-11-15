@@ -61,7 +61,10 @@ export default async function HomePage() {
         <span className="hidden h-px w-[22px] bg-copper sm:block" aria-hidden />
         <span className="cap hidden sm:block">{t("ui.landing_platforms")}</span>
         <div className="ml-auto flex items-center gap-2 sm:gap-4">
-          <LanguageToggle />
+          {/* Hesaba yazma KAPALI: buraya gelen giris yapmis kullanici
+              yukarida zaten gruplarina yonlendirildi, yani bu sayfayi
+              yalnizca cikis yapmis ziyaretci goruyor. */}
+          <LanguageToggle saveToAccount={false} />
           <ThemeToggle />
           <Link
             href="/sign-in"

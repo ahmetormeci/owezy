@@ -79,7 +79,9 @@ export default async function AppLayout({
             ) : null}
           </div>
           <div className="flex items-center gap-1">
-            <LanguageToggle />
+            {/* Bu duzenin altinda oturum HER ZAMAN var (yoksa yukarida
+                giris sayfasina yonlendiriliyor). */}
+            <LanguageToggle saveToAccount />
             <ThemeToggle />
             <NotificationBell initialUnreadCount={unreadCount} />
             <UserMenu
