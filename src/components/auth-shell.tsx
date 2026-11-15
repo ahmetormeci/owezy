@@ -57,7 +57,12 @@ export async function AuthShell({
   return (
     <div className="paper relative flex flex-1 flex-col items-center justify-center p-6">
       <div className="paper-grain" aria-hidden />
-      <PublicControls />
+      {/* SABIT KOSE burada dogru: bu dort sayfa neredeyse hic kaymiyor ve
+          sutun ortada. 15 Kasim olcumunde 320px'ten masaustune, yatay
+          telefon dahil, dugmelerin altindan hicbir sey gecmedi. */}
+      <div className="fixed top-2 right-3 z-40">
+        <PublicControls />
+      </div>
 
       <div className={cn("relative w-full max-w-sm", className)}>
         <Link

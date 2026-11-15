@@ -87,3 +87,85 @@ test.describe("gizlilik ve destek sayfalari", () => {
     });
   }
 });
+
+/**
+ * DAR EKRAN DUZENI. Iki hata 15 Kasim'da canlida olculdu (7 sayfa x 10
+ * ekran boyutu):
+ *
+ *  - Gizlilik ve destekte dil/tema dugmeleri SABIT kosedeydi ve arkalari
+ *    seffafti: telefonda ve tablette kaydirinca yazi altlarindan geciyordu
+ *    ("ortak" -> "ortEN"). Sayfa ilk acildiginda cakisma YOKTU - o yuzden
+ *    olcum butun kaydirma boyunca yapiliyor.
+ *  - Karsilama basligi 320px'e sigmiyordu: sayfa 18px yana kayiyor, "Kayit
+ *    ol" kesiliyor, logo 0px'e eziliyordu (375px'te 13px).
+ */
+test.describe("dar ekran duzeni", () => {
+  test("kaydirinca dil ve tema dugmeleri yazinin ustune binmiyor", async ({ browser }) => {
+    const page = await anonymousPage(browser);
+    await page.setViewportSize({ width: 375, height: 667 });
+
+    for (const path of ["/privacy", "/support"]) {
+      await page.goto(path);
+      await expect(page.getByRole("button", { name: "İngilizceye geç" })).toBeVisible();
+
+      /**
+       * Sayfanin TAMAMI 50px adimlarla kaydiriliyor; her adimda metnin GERCEK
+       * satir kutulari dugmelerin kutusuyla kesisiyor mu diye bakiliyor.
+       * Kapsayici kutu (p, li) DEGIL: kisa bir satir sag kenara ulasmaz ama
+       * paragrafin kutusu ulasir - yanlis alarm verirdi.
+       *
+       * Tek bir evaluate icinde: scrollTo'dan sonra getBoundingClientRect
+       * duzeni senkron yeniden hesapliyor, ara bekleme gerekmiyor.
+       */
+      const overlaps = await page.evaluate(() => {
+        const controls = document.querySelector('button[aria-label="İngilizceye geç"]')!
+          .parentElement!;
+        const hits: string[] = [];
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        for (let y = 0; y <= max; y += 50) {
+          window.scrollTo(0, y);
+          const c = controls.getBoundingClientRect();
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+          for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+            const text = n.textContent?.trim();
+            if (!text || controls.contains(n)) continue;
+            const range = document.createRange();
+            range.selectNodeContents(n);
+            for (const r of range.getClientRects()) {
+              const crosses =
+                r.left < c.right && r.right > c.left && r.top < c.bottom && r.bottom > c.top;
+              // 1px'lik kutular ekran okuyucu metni (sr-only) - gorunmuyor.
+              if (crosses && r.width > 1 && r.height > 1) {
+                hits.push(`y=${y}: ${text.slice(0, 30)}`);
+              }
+            }
+          }
+        }
+        return hits;
+      });
+
+      expect(overlaps, `${path}: dugmelerin altindan gecen yazi`).toEqual([]);
+    }
+  });
+
+  for (const width of [320, 375]) {
+    test(`karsilama basligi ${width}px'e sigiyor, logo ezilmiyor`, async ({ browser }) => {
+      const page = await anonymousPage(browser);
+      await page.setViewportSize({ width, height: 640 });
+      await page.goto("/");
+
+      // Baslikta, cunku sayfanin govdesinde de "Kayit ol" var.
+      await expect(
+        page.locator("header").getByRole("link", { name: "Kayıt ol", exact: true }),
+      ).toBeInViewport({ ratio: 1 });
+
+      const layout = await page.evaluate(() => ({
+        overflow: document.documentElement.scrollWidth - window.innerWidth,
+        mark: document.querySelector("header svg")!.getBoundingClientRect().width,
+      }));
+      expect(layout.overflow, "sayfa yana kayiyor").toBe(0);
+      // Logo size-6 = 24px. Yer daralinca tarayicinin ILK ezdigi oydu.
+      expect(layout.mark, "logo ezilmis").toBe(24);
+    });
+  }
+});

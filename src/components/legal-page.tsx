@@ -33,16 +33,23 @@ export function LegalPage({
 }) {
   return (
     <div className="flex flex-1 flex-col items-center px-6 py-12">
-      <PublicControls />
-
       <article className="w-full max-w-2xl">
-        <Link
-          href="/"
-          className="mb-10 inline-flex items-center gap-2 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <BrandMark className="size-4 text-brand" />
-          <span className="text-sm font-medium">Owezy</span>
-        </Link>
+        {/* UST SATIR: solda Owezy, sagda dil ve tema. Dugmeler eskiden sabit
+            sag ust kosedeydi ve arkalari seffafti - telefonda ve tablette
+            kaydirirken bu uzun metin altlarindan geciyordu ("ortak" ->
+            "ortEN", 15 Kasim olcumu). Simdi sayfayla birlikte kayiyorlar.
+            Arkasi dolu sabit bir serit REDDEDILDI: yatay telefonda ekran
+            320px yuksekliginde ve okuma sayfasinda o yer metnindir. */}
+        <div className="mb-10 flex items-center justify-between gap-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <BrandMark className="size-4 text-brand" />
+            <span className="text-sm font-medium">Owezy</span>
+          </Link>
+          <PublicControls />
+        </div>
 
         <h1 className="text-3xl font-semibold tracking-tight">{document.title}</h1>
 

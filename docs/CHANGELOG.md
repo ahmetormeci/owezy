@@ -8,6 +8,25 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-15 — Dar ekranda gizlilik/destek ve karşılama başlığı düzeldi (web)
+
+Teknik borçtaki "dil/tema düğmeleri dar ekranda çakışabilir" maddesi canlıda
+ölçüldü (7 sayfa × 10 ekran boyutu). Korkulan çakışma yoktu; ölçüm başka
+iki şey buldu (ADR-048 eki):
+
+- **Gizlilik ve destek:** telefonda kaydırırken yazı, sağ üstteki sabit
+  düğmelerin altından geçiyordu ("ortak" → "ortEN"). Düğmeler sayfanın üst
+  satırına alındı, sayfayla birlikte kayıyor. Giriş/kayıt/davet sayfalarında
+  sorun yoktu, orada sabit köşe kaldı.
+- **Karşılama başlığı:** 320 px'te sayfa yana kayıyor, "Kayıt ol" kesiliyor
+  ve logo kayboluyordu; 375 px'te logo yarıya eziliyordu. Logo artık
+  ezilmiyor, 360 px'e kadar tek satır, daha darda düğmeler ikinci satıra
+  iniyor.
+- Üç yeni E2E testi (`legal.spec.ts`); üçü de eski kodla düştü.
+- Yalnızca web.
+
+---
+
 ## 2026-11-15 — Dil düğmesi çıkış yapmış ziyaretçide hesaba istek atmıyor (web)
 
 Dil düğmesi tercihi hesaba yazmak için herkes adına sunucuya istek

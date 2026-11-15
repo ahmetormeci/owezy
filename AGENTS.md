@@ -119,7 +119,7 @@ Bunlar tartışılmış ve karara bağlanmıştır (gerekçeler DECISIONS.md'de)
 - Üç ayrı veritabanı: geliştirme, E2E, production. `E2E_DATABASE_URL` ile
   `DATABASE_URL` **asla** aynı olmamalı — `e2e/db-cleanup.ts` aynıysa
   çalışmayı reddeder.
-- Tam E2E koşusu ~17–23 dakika sürer (15 Kasım'da 76 test, 21 dk) ve gerçek
+- Tam E2E koşusu ~17–23 dakika sürer (15 Kasım'da 79 test, 20 dk) ve gerçek
   bir dev sunucusu başlatır (3100).
   **Koşu sürerken proje dosyalarına dokunma.**
 - **`-g` ile tek test koşturmak kurulumu ELEMİYOR** (6 Kasım'da ölçüldü,

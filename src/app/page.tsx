@@ -54,13 +54,23 @@ export default async function HomePage() {
           sabit kosesinde degil: o bilesenin kendi yorumu "11.6 bu sayfalari
           elden gecirdiginde burasi yeniden degerlendirilmeli, dar ekranda
           ustteki bir kartla cakisabilir" diyordu. Giris ve kayit sayfalari
-          PublicControls'u kullanmaya devam ediyor. */}
-      <header className="flex items-center gap-3.5 border-b border-border px-6 py-5 sm:px-[30px]">
-        <BrandMark className="size-6 text-brand" />
+          PublicControls'u kullanmaya devam ediyor.
+
+          DAR EKRAN (15 Kasim olcumu): satir 386px istiyordu. 320px'te sayfa
+          18px yana kayiyor, "Kayit ol" kesiliyor, logo 0px'e eziliyordu;
+          375px'te (iPhone SE, mini) logo 13px'e. Uc onlem:
+            - logo shrink-0: flex'te yer daralinca tarayici ILK onu eziyordu.
+            - sm altinda bosluklar ve "Kayit ol"un ic boslugu daraliyor:
+              satir 358px'e iniyor, 360px'e kadar TEK satir.
+            - flex-wrap: daha dar ekranda ya da tarayici yakinlastirmasinda
+              (yakinlastirma da ekrani daraltilmis sayar) dugme grubu tasmak
+              yerine ikinci satira iniyor. */}
+      <header className="flex flex-wrap items-center gap-x-2.5 gap-y-3 border-b border-border px-6 py-5 sm:gap-x-3.5 sm:px-[30px]">
+        <BrandMark className="size-6 shrink-0 text-brand" />
         <span className="font-heading text-2xl">{t("ui.app_name")}</span>
         <span className="hidden h-px w-[22px] bg-copper sm:block" aria-hidden />
         <span className="cap hidden sm:block">{t("ui.landing_platforms")}</span>
-        <div className="ml-auto flex items-center gap-2 sm:gap-4">
+        <div className="ml-auto flex items-center gap-1 sm:gap-4">
           {/* Hesaba yazma KAPALI: buraya gelen giris yapmis kullanici
               yukarida zaten gruplarina yonlendirildi, yani bu sayfayi
               yalnizca cikis yapmis ziyaretci goruyor. */}
@@ -74,7 +84,7 @@ export default async function HomePage() {
           </Link>
           <Link
             href="/sign-up"
-            className="rounded-[3px] bg-brand px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-primary-foreground transition-colors outline-none hover:bg-brand-strong focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="rounded-[3px] bg-brand px-3 py-2.5 text-sm font-semibold whitespace-nowrap text-primary-foreground transition-colors outline-none hover:bg-brand-strong focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4"
           >
             {t("ui.sign_up")}
           </Link>

@@ -10,10 +10,16 @@ import { findCurrentUser } from "@/lib/auth";
  * Ingilizce sozluk geldigi anda, Ingilizce bir ekrani goren ziyaretci dili
  * degistiremez hale gelirdi - hem de tam giris yapmadan once.
  *
- * Karsilama, giris, kayit ve davet sayfalarinin ortak bir basligi yok
- * (dordu de dogrudan kok layout'un altinda), o yuzden konumu kendisi
- * belirliyor. 11.6 bu sayfalari elden gecirdiginde burasi da yeniden
- * degerlendirilmeli: dar ekranda ust ortadaki bir kartla cakisabilir.
+ * KONUMU ONU KOYAN SAYFA BELIRLIYOR, bu bilesen degil. Eskiden kendisi
+ * "fixed" ile sag ust koseye yerlesiyordu ve her sayfada ayni yerde
+ * duruyordu. 15 Kasim'da olculdu (7 sayfa x 10 ekran boyutu):
+ *   - Giris, kayit, parola ve davet sayfalari neredeyse hic kaymiyor ve
+ *     sutun ortada: sabit kosede altindan hicbir sey gecmiyor. Orada
+ *     sabit kaldi (auth-shell.tsx).
+ *   - Gizlilik ve destek uzun metin: arkasi seffaf sabit dugmelerin
+ *     altindan kaydirirken yazi geciyordu ("ortak" -> "ortEN"). Orada
+ *     dugmeler sayfanin ust satirinda ve sayfayla birlikte kayiyor
+ *     (legal-page.tsx).
  */
 export async function PublicControls() {
   /**
@@ -31,7 +37,7 @@ export async function PublicControls() {
   const signedIn = (await findCurrentUser()) !== null;
 
   return (
-    <div className="fixed top-2 right-3 z-40 flex items-center gap-1">
+    <div className="flex items-center gap-1">
       <LanguageToggle saveToAccount={signedIn} />
       <ThemeToggle />
     </div>

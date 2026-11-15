@@ -33,6 +33,20 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-15
 
 Current task:
+  DAR EKRAN DUZENI (15 Kasim, ADR-048 eki, yalnizca web): gizlilik/destek'te
+  dil ve tema dugmeleri sabit koseden sayfanin ust satirina alindi
+  (kaydirirken yazi altlarindan geciyordu); karsilama basligi 320px'e
+  sigiyor, logo ezilmiyor. Giris/kayit/davet'te sabit kose KALDI (olcumde
+  sorun yoktu). Dosyalar: public-controls.tsx, auth-shell.tsx,
+  legal-page.tsx, app/page.tsx, e2e/legal.spec.ts (+3 test, ucu de eski
+  kodla dustu). Dogrulama: tsc, lint, legal.spec 9/9, yerel olcum 168/168
+  temiz (iki dil, 12 boyut, 7 sayfa), 904 birim, tam E2E 79/79 (20 dk).
+  Commit + push kullanicinin istegiyle (15 Kasim).
+  OLCUM YONTEMI (tekrar gerekirse): e2e/ altina GECICI spec - butun kaydirma
+  boyunca metin dugumlerinin range.getClientRects() kutulari ile dugme
+  grubunun kutusu kesisiyor mu; kapsayici kutu (p, li) yanlis alarm verir.
+  Spec'i sil.
+
   DIL DUGMESI (15 Kasim, ADR-023 eki, yalnizca web): cikis yapmis
   ziyaretcide hesaba PATCH atmiyor; oturumu PublicControls sunucuda
   findCurrentUser ile soruyor. LanguageToggle'in saveToAccount ayari
@@ -383,7 +397,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     basarisizken de 0 donuyor.
 
   E2E
-  - Tam kosu ~17-23 dk, 76 test (15 Kasim), atlanan yok (2FA kopru testi 7 Kasim'da
+  - Tam kosu ~17-23 dk, 79 test (15 Kasim), atlanan yok (2FA kopru testi 7 Kasim'da
     kopruyle birlikte silindi).
     KOSU SURERKEN PROJE DOSYALARINA DOKUNMA. Sema degistiyse once
     npm run db:migrate:e2e. Tek seferlik kodlar veritabanindan okunuyor.
@@ -537,7 +551,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
 TESTLER - NE NEREDE (13 Kasim):
   KOK      npm test                  904 birim (vitest, src/**)
   MOBIL    cd mobile && npm test      129 vitest + 171 jest
-  E2E      npm run test:e2e           76, ~17-23 dk
+  E2E      npm run test:e2e           79, ~17-23 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.
   Mobil testler KOKTEN kosmuyor: agacta iki ayri React kopyasi var.

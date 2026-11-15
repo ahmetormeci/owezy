@@ -2254,6 +2254,34 @@ kurulmadığı için tutarsız bir melez olurdu); bakırı tek token yapmak
 (etiketler okunmazdı); mono'yu korumak (yeni ailede iki yazı tipi bir arada
 gereksiz kalıyordu).
 
+**EK (2026-11-15) — Herkese açık sayfalarda dil/tema düğmelerinin yeri
+sayfaya ait; karşılama başlığı dar ekrana sığıyor.** Canlıda ölçüldü (7 sayfa
+× 10 ekran boyutu, metnin gerçek satır kutularıyla, bütün kaydırma boyunca):
+
+- **İlk açılışta hiçbir yerde çakışma yoktu.** 11.6'nın korkusu ("dar ekranda
+  üstteki karta biner") bu ADR'de kartlar kalkınca düşmüştü.
+- **Gizlilik ve destekte kaydırırken yazı, arkası şeffaf SABİT düğmelerin
+  altından geçiyordu** (telefon ve tablet; "ortak" → "ortEN"). Düğmeler
+  oralarda sayfanın üst satırına alındı (solda Owezy, sağda dil ve tema) ve
+  sayfayla birlikte kayıyor. Masaüstünde artık pencere köşesinde değil, metin
+  sütununun sağ kenarında.
+- **Giriş, kayıt, parola, davet: sabit köşe KALDI** — neredeyse hiç
+  kaymıyorlar, sütun ortada; altlarından hiçbir şey geçmedi.
+- Bu yüzden `PublicControls` konumunu artık kendisi belirlemiyor; onu koyan
+  sayfa belirliyor.
+- **Reddedilen:** arkası dolu sabit şerit (yatay telefonda ekran 320 px
+  yüksek; okuma sayfasında o yer metnin); metnin sağında boşluk (dar ekranda
+  genişlik israfı).
+- **Karşılama başlığı 386 px istiyordu:** 320 px'te sayfa 18 px yana
+  kayıyor, "Kayıt ol" kesiliyor, logo 0 px'e eziliyordu; 375 px'te (iPhone SE,
+  mini) logo 13 px. Logo `shrink-0`; `sm` altında boşluklar ve "Kayıt ol"un
+  iç boşluğu daraldı (358 px — 360'a kadar tek satır); `flex-wrap` ile daha
+  dar ekranda ve tarayıcı yakınlaştırmasında düğme grubu ikinci satıra iniyor.
+- **Testler (`e2e/legal.spec.ts`, "dar ekran düzeni"):** gizlilik/destek
+  bütün kaydırma boyunca düğmelerle kesişen yazı yok; karşılama 320 ve 375
+  px'te taşmıyor, logo 24 px. Üçü de eski kodla düştü. Yerelde iki dilde
+  12 boyut × 7 sayfa yeniden ölçüldü: 168/168 temiz. Tam E2E 79/79.
+
 ---
 
 ## ADR-047 — Push bildiriminde tutar ve kişi adı yok; gönderim commit'ten sonra

@@ -3026,9 +3026,11 @@ kaldı (ADR-054).
 - ~~Dil düğmesi çıkış yapmışken de PATCH atıyor~~ — **ÇÖZÜLDÜ (15 Kasım,
   ADR-023 eki):** istek yalnızca oturum varken gidiyor; oturumu sunucu
   söylüyor.
-- `PublicControls` konumunu `fixed` ile kendisi belirliyor. Dar ve kısa bir
-  ekranda üstteki kartla çakışabilir. **11.6'nın listesindeydi, yapılmadı** —
-  ölçülmedi de; kalan tek 11.6 maddesi bu.
+- ~~`PublicControls` konumunu `fixed` ile kendisi belirliyor~~ — **ÖLÇÜLDÜ VE
+  ÇÖZÜLDÜ (15 Kasım, ADR-048 eki):** kartla çakışma yoktu; asıl sorun
+  gizlilik/destekte kaydırırken yazının düğmelerin altından geçmesiydi.
+  Ölçüm ayrıca karşılama başlığının 320 px'e sığmadığını buldu — o da
+  düzeldi. 11.6'nın son maddesi kapandı.
 - `src/components/ui/dialog.tsx` içinde ekran okuyucuya görünen `"Close"`
   metni sözlükte değil. `ui/` altı shadcn'in ürettiği kod; oraya dokunmak
   ayrı bir karar (yeniden üretimde kaybolur).
