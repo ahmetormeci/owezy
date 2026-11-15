@@ -40,7 +40,12 @@ Current task:
   app/(app)/layout.tsx, e2e/language.spec.ts (+2 test).
   Dogrulama: tsc, lint, 904 birim, language.spec 5/5 (yeni "istek
   gitmez" testi eski kodla dustu), tam E2E 76/76 (21 dk).
-  COMMIT KULLANICI ISTEYINCE; kod commit'i -> push'u SOR (Vercel deploy).
+  YAYINDA: e648611 push edildi (kullanicinin istegiyle); CI 43753956045
+  success, Production 7808869319 success 2026-11-15T19:43:31Z. Canlida
+  olculdu: owezy.net/sign-in'de oturumsuz dil degisimi, fetch sayaci
+  (sessionStorage, yeniden yuklemeyi asiyor) /api/v1/me icin 0.
+  NOT: ag kaydi okuyucusu yeniden yuklemede sifirlaniyor - "istek yok"
+  demek icin tek basina delil DEGIL; sayac yontemi o yuzden.
 
   SDK 58 (ADR-068): sdk-58 DALINDA commit 8017ba8, PUSH YOK. Ayrinti o
   dalin dokumanlarinda (CURRENT_TASK, ADR-068, Faz 56). 1.0.8 onaylaninca
