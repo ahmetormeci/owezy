@@ -41,7 +41,9 @@ Current task:
   legal-page.tsx, app/page.tsx, e2e/legal.spec.ts (+3 test, ucu de eski
   kodla dustu). Dogrulama: tsc, lint, legal.spec 9/9, yerel olcum 168/168
   temiz (iki dil, 12 boyut, 7 sayfa), 904 birim, tam E2E 79/79 (20 dk).
-  Commit + push kullanicinin istegiyle (15 Kasim).
+  YAYINDA: 63c9202 push edildi (kullanicinin istegiyle); CI 43757987993
+  success, Production 7809428276 success 2026-11-15T20:25:58Z. Canlida
+  ayni olcum: 70/70 temiz; karsilama 300-360px'te tasma 0, logo 24px.
   OLCUM YONTEMI (tekrar gerekirse): e2e/ altina GECICI spec - butun kaydirma
   boyunca metin dugumlerinin range.getClientRects() kutulari ile dugme
   grubunun kutusu kesisiyor mu; kapsayici kutu (p, li) yanlis alarm verir.
