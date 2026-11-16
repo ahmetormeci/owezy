@@ -97,8 +97,19 @@ export function ExpenseComposer({
       setAmountText("");
       // Bugunun ayina donuyoruz: fiste acik ay baska bir ay olabilir ve
       // kullanici az once ekledigi satiri goremezdi (Faz 16.2).
+      //
+      // ARDINDAN router.refresh() YOK - ve bu olculdu (16 Kasim). Eskiden
+      // vardi ve sayfayi IKINCI KEZ urettiriyordu: kayittan sonra sunucuya
+      // iki sayfa istegi gidiyordu. Next 16 dinamik sayfayi her gezinmede
+      // taze cekiyor, adres zaten bu aydaysa (AYNI adrese gezinme) bile -
+      // uc durumda da (adreste ay yok / ayni ay / gecmis ay) refresh'siz
+      // tek istek ve yeni satir 9/9 gorundu, sure ayni (~2,1 sn). Refresh'in
+      // ek getirdigi tek sey ortak baslik (okunmamis bildirim, grup listesi)
+      // ve harcama eklemek ikisini de degistirmiyor: bildirim ekleyene
+      // gitmiyor, gruplar katilma tarihine gore. Harcama formunda ayni
+      // ikili 7 Kasim'da ayni gerekceyle kaldirildi. Ayni-ay durumunu
+      // e2e/expenses.spec.ts'teki "ay zaten aciksa" testi bekliyor.
       router.push(`/groups/${groupId}?month=${today.slice(0, 7)}`);
-      router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("server.unexpected"));
     } finally {

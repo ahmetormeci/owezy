@@ -8,6 +8,30 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-16 — Satır içi giriş: kayıttan sonra sayfa bir kez üretiliyor (web)
+
+Teknik borçtaki son ölçüm maddesi. Satır içi giriş kayıttan sonra
+`router.push` ile hemen ardından `router.refresh()` çağırıyordu ve sunucu
+sayfayı **iki kez** üretiyordu. 7 Kasım'da harcama formunda aynısı
+kaldırılmıştı; burası bilerek bırakılmıştı, çünkü kullanıcıyı bulunduğu
+sayfaya geri gönderiyor — adres zaten bu aydaysa AYNI adrese gezinme.
+
+Ölçüm (geçici E2E, üç durum × üç tur): bugünkü kodla her durumda 2 sayfa
+isteği; refresh'siz 1 istek ve yeni satır 9/9 görünüyor — aynı adrese
+gezinmede de. Görünme süresi değişmedi (~2,1 sn); kazanç sunucu tarafında.
+Refresh'in ek getirdiği tek şey ortak başlık ve harcama eklemek onu
+değiştirmiyor (bildirim ekleyene gitmiyor, gruplar katılma tarihine göre).
+
+- `router.refresh()` kaldırıldı; yerinde ölçümü anlatan yorum.
+- Yeni E2E: "satır içi giriş, ay zaten açıksa da yeni satırı gösterir" —
+  gezinme kapatılınca düştü. Tam E2E 80/80.
+- CONVENTIONS'a kural: refresh yalnızca işlem ortak bir düzenin verisini
+  değiştirdiyse. Koddaki diğer push/replace + refresh çiftleri bu kurala
+  göre gerekli (gruba katılma/ayrılma, bildirim, giriş/çıkış).
+- Yalnızca web.
+
+---
+
 ## 2026-11-15 — Dar ekranda gizlilik/destek ve karşılama başlığı düzeldi (web)
 
 Teknik borçtaki "dil/tema düğmeleri dar ekranda çakışabilir" maddesi canlıda

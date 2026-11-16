@@ -2988,13 +2988,10 @@ kaldı (ADR-054).
   kodda aranmamali; dogrudan "temiz agacta da oluyor mu" sorusuyla
   baslanmali - o soru bir turu bastan eliyor.
 
-- **Satır içi giriş (`expense-composer.tsx`) hâlâ `router.push` + hemen
-  ardından `router.refresh()` çağırıyor.** Harcama formundaki aynı ikili 7
-  Kasım'da ölçüldü ve kaldırıldı (takılma değil, sayfanın iki kez
-  üretilmesiydi — CHANGELOG 2026-11-07). Satır içi giriş bilerek
-  bırakıldı: kullanıcıyı **bulunduğu** sayfaya geri gönderiyor, orada
-  refresh'in gerekip gerekmediği ayrıca ölçülmeli. Ölçüm yolu: aynı E2E
-  testini `--trace on` ile koştur, kayıttan sonraki `_rsc=` isteklerini say.
+- ~~Satır içi giriş `router.push` + `router.refresh()` çağırıyor~~ —
+  **ÖLÇÜLDÜ VE KALDIRILDI (16 Kasım):** üç durumda da (adreste ay yok /
+  aynı ay / geçmiş ay) refresh'siz tek istek, yeni satır 9/9 görünüyor.
+  Kural CONVENTIONS'ta ("Web: kayıttan sonra gezinme").
 - `schema.prisma` başındaki yorum bloğu güncel değil
 - Vitest'te iki zararsız uyarı (CJS config yükleme, `vite-tsconfig-paths`
   artık Vite'a gömülü) — kullanıcı bunlara dokunulmamasını istedi

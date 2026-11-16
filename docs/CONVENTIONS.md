@@ -135,6 +135,23 @@ dokunursa biri diğerini sessizce ezer mi?
   neyin değiştiği gösterilir. Locking üzerine yazmayı engellemez, **sessiz
   olmasını** engeller — arayüz metni de bunu söylemeli, fazlasını değil.
 
+## Web: kayıttan sonra gezinme ve `router.refresh()`
+
+- **Gezinme sayfayı zaten taze çeker.** Next 16 dinamik sayfayı her
+  `router.push`/`replace`'te sunucudan istiyor — aynı adrese gezinmede bile
+  (16 Kasım'da ölçüldü).
+- **Ortak düzenler (layout) gezinmede yeniden çekilmez.** Ardından
+  `router.refresh()` yalnızca işlem bir düzenin gösterdiği veriyi
+  değiştirdiyse gerekir: `(app)` başlığı (okunmamış bildirim, grup listesi)
+  ya da kök düzen (oturum, dil). Gruba katılmak, gruptan ayrılmak, bildirime
+  tıklamak, giriş/çıkış → refresh doğru. Harcama eklemek → değil.
+- **Gereksiz refresh hata vermez, sessizce sayfayı İKİ KEZ ürettirir.**
+  Harcama formunda (7 Kasım) ve satır içi girişte (16 Kasım) bulundu ve
+  kaldırıldı. Emin değilsen ölç: kayıttan sonra `RSC: 1` başlıklı
+  istekleri say.
+- Gezinme olmayan yerde (aynı sayfada kalıp sunucu verisini tazelemek)
+  `router.refresh()` tek başına doğru yol.
+
 ## Test yaklaşımı
 
 **Birim testler (Vitest)** — servis ve saf mantık. Prisma `vi.hoisted` +

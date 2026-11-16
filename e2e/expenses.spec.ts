@@ -476,6 +476,29 @@ test.describe("harcamalar", () => {
     await expect(page.getByText("Eşit bölünür")).toBeHidden();
   });
 
+  // BU TESTIN SEBEBI (16 Kasim): satir ici giris kayittan sonra kullaniciyi
+  // grubun BU AYINA gonderiyor. Adres zaten oradaysa bu AYNI adrese bir
+  // gezinme. Next 16 o durumda da sayfayi taze cekiyor - olculdu, o yuzden
+  // ardindan gelen router.refresh() kaldirildi (sayfayi ikinci kez
+  // urettiriyordu). Bir onceki test adreste ay OLMAYAN durumu siniyor; Next
+  // bir gun ayni adrese gezinmede sayfayi cekmeyi birakirsa yalnizca bu
+  // test duser.
+  test("satir ici giris, ay zaten aciksa da yeni satiri gosterir", async ({ browser }) => {
+    const page = await pageAs(browser, "owner");
+    await createGroupAndOpen(page, uniqueGroupName("satirici-ay"));
+
+    // Bilesen ayi UTC'den uretiyor (toISOString) - test de ayni yoldan.
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    await page.goto(`${page.url().split("?")[0]}?month=${thisMonth}`);
+
+    await page.getByLabel("Ne aldın?").fill("Ayni ay satiri");
+    await page.getByLabel("Ne kadar?").fill("75,00");
+    await page.getByRole("button", { name: "Ekle" }).click();
+
+    await expect(page.getByText("Ayni ay satiri")).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`month=${thisMonth}$`));
+  });
+
   test("satir ici giris bozuk tutari reddeder", async ({ browser }) => {
     const page = await pageAs(browser, "owner");
     await createGroupAndOpen(page, uniqueGroupName("satirici-hata"));
