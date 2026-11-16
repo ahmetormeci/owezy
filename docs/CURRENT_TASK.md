@@ -33,13 +33,23 @@ BU DOSYA HER YENIDEN YAZILDIGINDA O MADDELER TEK TEK OLCULMELI:
 Updated: 2026-11-16
 
 Current task:
+  PENCERE X DUGMESI (16 Kasim, yalnizca web): ekran okuyucu adi her dilde
+  "Close" idi (shadcn sabit metni) -> "Pencereyi kapat" / "Close dialog"
+  (ui.close_dialog). Duz "Kapat" DEGIL: guvenlik penceresinde 2FA'yi
+  kapatan gorunen bir "Kapat" var. Dosyalar: ui/dialog.tsx, messages.ts,
+  e2e/groups.spec.ts (+1, eski kodla dustu). Kural CONVENTIONS
+  "src/components/ui/". Dogrulama: tsc, lint, 904 birim, groups +
+  two-factor 15/15, tam E2E 81/81 (19 dk). Commit + push kullanicinin
+  istegiyle.
+
   SATIR ICI GIRIS REFRESH'I (16 Kasim, yalnizca web): expense-composer.tsx
   kayittan sonra push + refresh yapiyordu -> sayfa iki kez uretiliyordu.
   Olculdu (adreste ay yok / ayni ay / gecmis ay, 3'er tur): refresh'siz
   tek istek, yeni satir 9/9, sure ayni. refresh kaldirildi. Yeni E2E
   "satir ici giris, ay zaten aciksa..." (gezinme kapatilinca dustu).
   Kural CONVENTIONS "Web: kayittan sonra gezinme". Dogrulama: tsc, lint,
-  904 birim, tam E2E 80/80 (19 dk). Commit + push kullanicinin istegiyle.
+  904 birim, tam E2E 80/80 (19 dk). YAYINDA: 72526b3; CI 43807941738
+  success, Production 7816010397 success 2026-11-16T05:05:43Z.
 
   DAR EKRAN DUZENI (15 Kasim, ADR-048 eki, yalnizca web): gizlilik/destek'te
   dil ve tema dugmeleri sabit koseden sayfanin ust satirina alindi
@@ -407,7 +417,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
     basarisizken de 0 donuyor.
 
   E2E
-  - Tam kosu ~17-23 dk, 80 test (16 Kasim), atlanan yok (2FA kopru testi 7 Kasim'da
+  - Tam kosu ~17-23 dk, 81 test (16 Kasim), atlanan yok (2FA kopru testi 7 Kasim'da
     kopruyle birlikte silindi).
     KOSU SURERKEN PROJE DOSYALARINA DOKUNMA. Sema degistiyse once
     npm run db:migrate:e2e. Tek seferlik kodlar veritabanindan okunuyor.
@@ -561,7 +571,7 @@ TUZAKLAR VE YOLLAR - her oturumda gecerli (hikayeleri CHANGELOG'da):
 TESTLER - NE NEREDE (13 Kasim):
   KOK      npm test                  904 birim (vitest, src/**)
   MOBIL    cd mobile && npm test      129 vitest + 171 jest
-  E2E      npm run test:e2e           80, ~17-23 dk
+  E2E      npm run test:e2e           81, ~17-23 dk
   Mobilde IKI KOSUCU, sinir dizine gore (ADR-042, ADR-043):
     lib/** -> vitest · components/**, test/screens/** -> jest.
   Mobil testler KOKTEN kosmuyor: agacta iki ayri React kopyasi var.

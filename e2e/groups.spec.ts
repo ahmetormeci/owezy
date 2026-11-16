@@ -24,6 +24,26 @@ test.describe("gruplar", () => {
     await expect(page.getByText("Grup adı boş olamaz")).toBeVisible();
   });
 
+  // BU TESTIN SEBEBI (16 Kasim): pencerelerin kosesindeki X dugmesinin ekran
+  // okuyucu adi her dilde "Close" idi - shadcn'den kalma sabit metin. Ad
+  // "Kapat" DEGIL "Pencereyi kapat": guvenlik penceresinde "iki adimli
+  // dogrulamayi kapat" anlaminda GORUNEN bir "Kapat" dugmesi var; ayni adli
+  // iki dugme, ekran okuyucuda hangisinin neyi kapattigini belirsiz
+  // birakirdi. O pencerede tam "Kapat" adli tek dugmenin 2FA dugmesi
+  // kaldigini two-factor.spec.ts zaten siniyor (ayni ad iki kez olsaydi
+  // getByRole orada coklu eslesmeden duserdi).
+  test("pencerenin kapatma dugmesi Turkce adli ve pencereyi kapatiyor", async ({ browser }) => {
+    const page = await pageAs(browser, "owner");
+
+    await page.goto("/groups");
+    await page.getByRole("button", { name: "Yeni grup", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByLabel("Grup adı")).toBeVisible();
+
+    await dialog.getByRole("button", { name: "Pencereyi kapat", exact: true }).click();
+    await expect(dialog).toBeHidden();
+  });
+
   test("grup sahibi grup adini ve aciklamasini duzenleyebilir", async ({ browser }) => {
     const page = await pageAs(browser, "owner");
     const name = uniqueGroupName("duzenleme");

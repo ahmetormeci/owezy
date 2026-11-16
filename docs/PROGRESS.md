@@ -3028,9 +3028,11 @@ kaldı (ADR-054).
   gizlilik/destekte kaydırırken yazının düğmelerin altından geçmesiydi.
   Ölçüm ayrıca karşılama başlığının 320 px'e sığmadığını buldu — o da
   düzeldi. 11.6'nın son maddesi kapandı.
-- `src/components/ui/dialog.tsx` içinde ekran okuyucuya görünen `"Close"`
-  metni sözlükte değil. `ui/` altı shadcn'in ürettiği kod; oraya dokunmak
-  ayrı bir karar (yeniden üretimde kaybolur).
+- ~~`dialog.tsx`'teki ekran okuyucu metni `"Close"` sözlükte değil~~ —
+  **ÇÖZÜLDÜ (16 Kasım):** "Pencereyi kapat" / "Close dialog"
+  (`ui.close_dialog`). "Yeniden üretimde kaybolur" endişesi geçersizdi:
+  dosya ADR-048'de zaten değiştirilmişti. Kural CONVENTIONS'ta
+  ("`src/components/ui/`").
 - `.claude/settings.json` (`.env.local` ve `package-lock.json` yazma koruması)
   **git'te değil** — `.claude/` gitignore'da. Yeni bir klonda bu koruma
   bulunmaz; elle yeniden oluşturulması gerekir.

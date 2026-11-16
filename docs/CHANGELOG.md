@@ -8,6 +8,28 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-16 — Pencerelerin X düğmesi ekran okuyucuda Türkçe (web)
+
+Uygulamadaki her pencerenin köşesindeki X düğmesi ekran okuyucuya her
+dilde "Close" diyordu — shadcn'den kalma sabit metin. Artık "Pencereyi
+kapat" / "Close dialog" (`ui.close_dialog`).
+
+- **Neden düz "Kapat" değil:** güvenlik penceresinde "iki adımlı
+  doğrulamayı kapat" anlamında görünen bir "Kapat" düğmesi var. Aynı adlı
+  iki düğme, ekran okuyucuda hangisinin neyi kapattığını belirsiz
+  bırakırdı.
+- Pencerenin alt şeridindeki kullanılmayan "Close" düğmesi de çevrildi
+  (bugün hiçbir pencere açmıyor).
+- Teknik borç notu "ui/ shadcn'in kodu, yeniden üretimde kaybolur"
+  diyordu; dosya ADR-048'de zaten değiştirilmişti. CONVENTIONS'a kural:
+  `ui/` bizim kodumuz, içine sabit metin yazılmaz.
+- Yeni E2E (`groups.spec.ts`): X "Pencereyi kapat" adıyla bulunuyor ve
+  pencereyi kapatıyor — eski kodla düştü. 2FA testleri güvenlik
+  penceresinde tek "Kapat" kaldığını zaten sınıyor. Tam E2E 81/81.
+- Yalnızca web.
+
+---
+
 ## 2026-11-16 — Satır içi giriş: kayıttan sonra sayfa bir kez üretiliyor (web)
 
 Teknik borçtaki son ölçüm maddesi. Satır içi giriş kayıttan sonra

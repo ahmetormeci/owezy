@@ -5,7 +5,13 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useTranslate } from "@/lib/i18n"
 import { XIcon } from "lucide-react"
+
+// BU DOSYA ARTIK BIZIM KODUMUZ, shadcn'den yeniden uretilmiyor: yuzeyi,
+// baslik cizgisi ve alt seridi ADR-048 icin degistirildi. O yuzden metinler
+// de sozlukten geliyor - shadcn'in sabit "Close"u her dilde Ingilizce
+// okunuyordu (CONVENTIONS, "src/components/ui/").
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -47,6 +53,8 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  const t = useTranslate()
+
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -79,7 +87,9 @@ function DialogContent({
           >
             <XIcon
             />
-            <span className="sr-only">Close</span>
+            {/* "Pencereyi kapat", duz "Kapat" degil - gerekce sozlukte
+                (ui.close_dialog). */}
+            <span className="sr-only">{t("ui.close_dialog")}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
@@ -108,6 +118,8 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
 }) {
+  const t = useTranslate()
+
   return (
     <div
       data-slot="dialog-footer"
@@ -123,8 +135,10 @@ function DialogFooter({
     >
       {children}
       {showCloseButton && (
+        // Bugun hicbir pencere bu dugmeyi ACMIYOR (varsayilan kapali). Yine
+        // de cevrildi: biri acarsa Ingilizce cikmasin.
         <DialogPrimitive.Close render={<Button variant="outline" />}>
-          Close
+          {t("ui.close_dialog")}
         </DialogPrimitive.Close>
       )}
     </div>

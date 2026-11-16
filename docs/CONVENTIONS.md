@@ -290,6 +290,21 @@ ekran) öne gelince tazeleme konmaz.
 `watchFolders` ile izliyor (`mobile/metro.config.js`). Mobil tarafın kendi
 kodu göreli yolla import edilir — `@/` yalnızca web ile paylaşılanı gösterir.
 
+## `src/components/ui/`
+
+- Bu klasör shadcn'den **başladı** ama artık bizim kodumuz: `dialog.tsx`
+  gibi dosyalar ADR-048 için değiştirildi (5710b59) ve kütüphaneden yeniden
+  üretilmiyor. "shadcn'in kodu, dokunma" diye bir kural **yok**.
+- **İçine sabit metin yazılmaz.** Görünen ya da yalnızca ekran okuyucuya
+  giden her metin sözlükten gelir (`useTranslate`). shadcn'in sabit
+  "Close"u Türkçe arayüzde de İngilizce okunuyordu (16 Kasım'da düzeldi).
+- Yeni bir shadcn parçası eklenince önce içindeki İngilizce metinler
+  sözlüğe taşınır.
+- **Ekran okuyucu adı aynı penceredeki başka bir düğmeyle çakışmamalı.**
+  Pencerenin X'i "Pencereyi kapat", düz "Kapat" değil: güvenlik
+  penceresinde "iki adımlı doğrulamayı kapat" anlamında görünen bir "Kapat"
+  var.
+
 ## Bağımlılıklar
 
 - Yeni paket eklemeden önce mevcut bağımlılıkların yeterli olup olmadığına

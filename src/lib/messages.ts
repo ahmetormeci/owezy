@@ -167,6 +167,11 @@ export const MESSAGES_TR = {
   "ui.choose_from_library": "Galeriden seç",
   "ui.receipt_hint": "Fotoğrafı çek ya da galerinden seç",
   "ui.close": "Kapat",
+  // Pencerelerin kosesindeki X dugmesinin EKRAN OKUYUCU adi. Duz "Kapat"
+  // degil: guvenlik penceresinde "iki adimli dogrulamayi kapat" anlaminda
+  // GORUNEN bir "Kapat" dugmesi var (ui.two_factor_disable). Ayni adli iki
+  // dugme, hangisinin neyi kapattigini belirsiz birakirdi.
+  "ui.close_dialog": "Pencereyi kapat",
   "ui.tap_to_enlarge": "Büyütmek için dokun",
   "ui.receipt_will_be_attached": "Harcama kaydedilince eklenecek.",
   /**
@@ -1133,6 +1138,7 @@ export const MESSAGES_EN: Record<MessageCode, string> = {
   "ui.choose_from_library": "Choose from library",
   "ui.receipt_hint": "Take a photo or choose one from your library",
   "ui.close": "Close",
+  "ui.close_dialog": "Close dialog",
   "ui.tap_to_enlarge": "Tap to enlarge",
   "ui.receipt_will_be_attached": "It will be attached once the expense is saved.",
   "ui.expense_saved_receipt_failed": "The expense was saved but the receipt could not be attached.",
