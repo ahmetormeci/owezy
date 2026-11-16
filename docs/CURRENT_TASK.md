@@ -39,8 +39,8 @@ Current task:
   kapatan gorunen bir "Kapat" var. Dosyalar: ui/dialog.tsx, messages.ts,
   e2e/groups.spec.ts (+1, eski kodla dustu). Kural CONVENTIONS
   "src/components/ui/". Dogrulama: tsc, lint, 904 birim, groups +
-  two-factor 15/15, tam E2E 81/81 (19 dk). Commit + push kullanicinin
-  istegiyle.
+  two-factor 15/15, tam E2E 81/81 (19 dk). YAYINDA: e36c87d; CI
+  43810606710 success, Production 7816355540 success 2026-11-16T05:30:27Z.
 
   SATIR ICI GIRIS REFRESH'I (16 Kasim, yalnizca web): expense-composer.tsx
   kayittan sonra push + refresh yapiyordu -> sayfa iki kez uretiliyordu.
@@ -116,12 +116,15 @@ Current task:
       export temiz; simulatorde uc satir tam okunuyor.
     - app.json 1.0.8; surum notlari iki dilde STORE.md. Expo yamalari
       guncel (expo install --check, 14 Kasim). App Privacy degismiyor.
-  SONRAKI ADIM: KULLANICI TestFlight'ta build 29'u telefonda denesin: iki odeyenli harcama ekle/duzenle, liste
-  rengi ve uzun ad sarmasi, ASAGI CEKIP YENILEME ve geri donunce tazeleme
-  (ADR-066), fis ve profil fotografi (Expo yamalari) + her surumun uc
-  kontrolu. Gecerse: GONDERIM KONTROL LISTESI 3-5 (appreview@ girisi,
-  App Privacy DEGISMIYOR, surum notlari STORE.md) -> incelemeye kullanici
-  gonderir.
+  TESTFLIGHT GECTI (16 Kasim, kullanicinin telefonu, build 29): acilis,
+  iki odeyenli harcama ekle/duzenle, uzun ad sarmasi, asagi cekip
+  yenileme, uygulama KAPALIYKEN davet linki, bildirime dokunma, fis ve
+  profil fotografi - hepsi denendi, hepsi gecti.
+  SONRAKI ADIM (KULLANICI): GONDERIM KONTROL LISTESI 3-5 - appreview@
+  gizli pencerede parolayla (ikinci adim istememeli), App Privacy
+  DEGISMIYOR, App Store Connect -> Owezy -> iOS App 1.0.8 -> What's New
+  (STORE.md) -> Build 29 -> Add for Review -> Submit to App Review.
+  ONAY GELINCE: sdk-58 -> main, 1.0.9 (ADR-068), build ONCE SOR.
   1.0.7 (magazada) cok odeyenli harcamayi yalnizca ana odeyenin adiyla
   gosterir (bakiyeler dogru) ve duzenlemeye calisirsa ham kod
   "expense.multiple_payers" gorur - bilinen ve kabul edilen bedel.
@@ -324,7 +327,7 @@ DIS DUNYA - 15 KASIM OLCUMU (13 Kasim'dakiyle ayni):
            27 Eylul'de yapti ve DMARC'taki rua bunu dogruluyor.
 
 CANLIDA OLAN: web'de coklu odeyen var; magazadaki mobil 1.0.7. MOBILDE
-BEKLEYEN 1.0.8 (build 29, TestFlight'ta): coklu odeyen (fcce126), uzun ad
+BEKLEYEN 1.0.8 (build 29, TestFlight'ta GECTI 16 Kasim; inceleme bekliyor): coklu odeyen (fcce126), uzun ad
 sarmasi (8d7ee82), ADR-066 liste tazeleme (a3d76a8), 13 Kasim Expo yamalari.
 
 AKILDA TUTULACAKLAR - URUN (ayrinti ADR'lerde):

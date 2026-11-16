@@ -2837,7 +2837,7 @@ salt okunur detay ve liste denendi (ADR-067 sonu).
 **Yayın (14 Kasım):** `d41febe` ve `fcce126` push edildi; CI başarılı,
 production deploy başarılı (göç dahil). Web çoklu ödeyeni destekliyor.
 **1.0.8 (14 Kasım):** build 29 alındı (Xcode 26.6) ve App Store Connect'e
-yüklendi. **Sıradaki:** kullanıcının TestFlight kontrolü, sonra inceleme.
+yüklendi. **TestFlight'ta geçti (16 Kasım):** açılış, iki ödeyenli harcama ekleme/düzenleme, uzun adın iki satıra sarması, aşağı çekip yenileme, uygulama kapalıyken davet linki, bildirime dokunma, fiş ve profil fotoğrafı. **Sıradaki:** kullanıcı incelemeye gönderir.
 
 ## Sıradaki adaylar (henüz karar verilmedi)
 

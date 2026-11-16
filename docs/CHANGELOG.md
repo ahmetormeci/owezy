@@ -8,6 +8,13 @@ gerekçesi için [DECISIONS.md](DECISIONS.md).
 
 ---
 
+## 2026-11-16 — 1.0.8 (build 29) TestFlight'ta geçti
+
+Kullanıcı telefonunda denedi: açılış, iki ödeyenli harcama ekleme/düzenleme, uzun adın iki satıra sarması, aşağı çekip yenileme, uygulama kapalıyken davet linki, bildirime dokunma, fiş ve profil fotoğrafı — hepsi geçti. İncelemeye gönderme kullanıcıda; onay gelince
+`sdk-58` dalı main'e birleşir ve 1.0.9 olarak tek başına çıkar (ADR-068).
+
+---
+
 ## 2026-11-16 — Pencerelerin X düğmesi ekran okuyucuda Türkçe (web)
 
 Uygulamadaki her pencerenin köşesindeki X düğmesi ekran okuyucuya her
